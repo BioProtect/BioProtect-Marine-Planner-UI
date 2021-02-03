@@ -8,15 +8,19 @@
  */
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBookOpen } from "@fortawesome/free-solid-svg-icons";
-import { faStar } from "@fortawesome/free-solid-svg-icons";
-import { faWrench } from "@fortawesome/free-solid-svg-icons";
-import { faThLarge } from "@fortawesome/free-solid-svg-icons";
-import { faArrowAltCircleLeft } from "@fortawesome/free-solid-svg-icons";
-import { faArrowAltCircleRight } from "@fortawesome/free-solid-svg-icons";
-import { faArrowAltCircleLeft as a } from "@fortawesome/free-regular-svg-icons";
-import { faArrowAltCircleRight as b } from "@fortawesome/free-regular-svg-icons";
-import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBookOpen,
+  faGlobeEurope,
+  faStar,
+  faWrench,
+  faThLarge,
+  faArrowAltCircleLeft,
+  faArrowAltCircleRight,
+  faArrowAltCircleLeft as a,
+  faArrowAltCircleRight as b,
+  faQuestionCircle,
+  faLayerGroup,
+} from "@fortawesome/free-solid-svg-icons";
 import { Toolbar, ToolbarGroup } from "material-ui/Toolbar";
 
 class AppBar extends React.Component {
@@ -75,6 +79,20 @@ class AppBar extends React.Component {
               icon={faThLarge}
               onClick={this.props.openPlanningGridsDialog.bind(this)}
               title="Planning grids"
+              className={"appBarIcon"}
+              style={{ fontSize: "20px" }}
+            />
+            <FontAwesomeIcon
+              icon={faGlobeEurope}
+              onClick={this.props.openAtlasLayersDialog}
+              title="Atlas Layers"
+              className={"appBarIcon"}
+              style={{ fontSize: "20px" }}
+            />
+            <FontAwesomeIcon
+              icon={faLayerGroup}
+              onClick={this.props.openCumulativeImpactDialog}
+              title="Impact"
               className={"appBarIcon"}
               style={{ fontSize: "20px" }}
             />
