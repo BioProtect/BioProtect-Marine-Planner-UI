@@ -86,6 +86,7 @@ import UpdateWDPADialog from "./UpdateWDPADialog";
 import ImportGBIFDialog from "./ImportGBIFDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import ImportImpactsDialog from "./ImportImpactsDialog";
+import CumulativeImpactDialog from "./CumulativeImpactDialog";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -227,6 +228,7 @@ class App extends React.Component {
       atlasLayersDialogOpen: false,
       closeAtlasLayersDialog: false,
       activities: [],
+      newImpactPopoverOpen: false,
     };
   }
 
@@ -3957,9 +3959,9 @@ class App extends React.Component {
     let layerName = impact.tilesetid.split(".")[1];
     console.log("layerName ", layerName);
     let layerId = "marxan_impact_layer_" + layerName;
-    if (this.state.map.getLayer(layerId)) {
+    if (this.map.getLayer(layerId)) {
       this.removeMapLayer(layerId);
-      this.state.map.removeSource(layerId);
+      this.map.removeSource(layerId);
       this.updateImpact(impact, { impact_layer_loaded: false });
     } else {
       //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
@@ -4092,18 +4094,45 @@ class App extends React.Component {
   }
 
   uploadRaster(data) {
+    console.log("data ", data);
     return new Promise((resolve, reject) => {
       this.setState({ loading: true });
       const formData = new FormData();
       Object.keys(data).forEach((key) => {
         formData.append(key, data[key]);
       });
+
       //the binary data for the file
       //the filename
       this._post("uploadRaster", formData).then(function (response) {
         resolve(response);
       });
     });
+  }
+
+  closeCumulativeImpactDialog() {
+    this.setState({ cumulativeImpactDialogOpen: false });
+    this.hideImportImpactPopover();
+  }
+
+  openCumulativeImpactDialog() {
+    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
+    // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
+    this.getImpacts();
+    this.setState({ cumulativeImpactDialogOpen: true });
+  }
+
+  showImportImpactPopover() {
+    this.setState({ importImpactPopoverOpen: true });
+  }
+  hideImportImpactPopover() {
+    this.setState({ importImpactPopoverOpen: false });
+  }
+  showNewImpactPopover() {
+    this.setState({ newImpactPopoverOpen: true });
+  }
+  hideNewImpactPopover() {
+    this.setState({ newImpactPopoverOpen: false });
   }
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // MANAGING INTEREST FEATURES SECTION
@@ -6411,6 +6440,27 @@ class App extends React.Component {
             }
             runningImpactMessage={this.state.runningImpactMessage}
             fileUpload={this.uploadRaster.bind(this)}
+          />
+          <CumulativeImpactDialog
+            loading={this.state.loading || this.state.uploading}
+            marxanServer={this.state.marxanServer}
+            open={this.state.cumulativeImpactDialogOpen}
+            onOk={this.closeCumulativeImpactDialog.bind(this)}
+            onCancel={this.closeCumulativeImpactDialog.bind(this)}
+            openImportImpactsDialog={this.openImportImpactsDialog.bind(this)}
+            metadata={this.state.metadata}
+            allImpacts={this.state.allImpacts}
+            clickImpact={this.clickImpact.bind(this)}
+            newImpactPopoverOpen={this.state.newImpactPopoverOpen}
+            hideNewImpactPopover={this.hideNewImpactPopover.bind(this)}
+            hideImportImpactPopover={this.hideImportImpactPopover.bind(this)}
+            importImpactPopoverOpen={this.state.importImpactPopoverOpen}
+            initialiseDigitising={this.initialiseDigitising.bind(this)}
+            showImportImpactPopover={this.showImportImpactPopover.bind(this)}
+            showNewImpactPopover={this.showNewImpactPopover.bind(this)}
+            selectedImpactIds={this.state.selectedImpactIds}
+            setSnackBar={this.setSnackBar.bind(this)}
+            userRole={this.state.userData.ROLE}
           />
           <AppBar
             open={this.state.loggedIn}

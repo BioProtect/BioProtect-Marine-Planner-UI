@@ -54,6 +54,7 @@ class ImportImpactsDialog extends React.Component {
   }
 
   setSelectedActivity(activity) {
+    console.log("activity ", activity);
     this.setState({ selectedActivity: activity });
   }
 
@@ -100,13 +101,15 @@ class ImportImpactsDialog extends React.Component {
 
   closeDialog() {
     //delete the zip file and shapefile
-    console.log("closing the dialog.....");
-
-    this.setFilename("");
-    this.changeDescription("");
-    this.setSelectedActivity("");
-    this.searchTextChanged("");
-    console.log("this.state ", this.state);
+    this.setState({
+      steps: ["Select Activity", "raster", "metadata"],
+      stepIndex: 0,
+      filename: "",
+      description: "",
+      searchText: "",
+      selectedActivity: "",
+      message: "",
+    });
     this.props.onCancel();
   }
 
@@ -201,6 +204,7 @@ class ImportImpactsDialog extends React.Component {
                   },
 
                   onClick: (e) => {
+                    console.log("e ", e);
                     this.setSelectedActivity(rowInfo.original.activity);
                   },
                 };
@@ -208,6 +212,7 @@ class ImportImpactsDialog extends React.Component {
               getTdProps={(state, rowInfo, column) => {
                 return {
                   onClick: (e) => {
+                    console.log("e in TD ", e);
                     this.setSelectedActivity(rowInfo.original.activity);
                   },
                 };

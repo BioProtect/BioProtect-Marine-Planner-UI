@@ -37,14 +37,33 @@ class FileUpload extends React.Component {
       //set the loading state
       this.setState({ loading: true });
       //get the filename
-      this.filename = e.target.files[0].name;
+      let target = e.target.files[0];
       //upload the file
-      this.props
-        .fileUpload(e.target.files[0], this.filename, this.destFolder)
-        .then((response) => {
-          this.setState({ loading: false, active: false });
-          this.props.setFilename(this.filename);
-        });
+      // if its an impact it uploads slightly differently
+      if (this.props.selectedActivity) {
+        this.props
+          .fileUpload({
+            value: target,
+            filename: target.name,
+            destFolder: this.destFolder,
+            activity: this.props.selectedActivity,
+          })
+          .then((response) => {
+            this.setState({
+              loading: false,
+              active: false,
+              message: response.info,
+            });
+            this.props.setFilename(response.file);
+          });
+      } else {
+        this.props
+          .fileUpload(target, target.name, this.destFolder)
+          .then((response) => {
+            this.setState({ loading: false, active: false });
+            this.props.setFilename(this.filename);
+          });
+      }
       //reset the file selector
       document.getElementById(this.id).value = "";
     }
