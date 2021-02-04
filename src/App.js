@@ -84,6 +84,9 @@ import GapAnalysisDialog from "./GapAnalysisDialog";
 import ResetDialog from "./ResetDialog";
 import UpdateWDPADialog from "./UpdateWDPADialog";
 import ImportGBIFDialog from "./ImportGBIFDialog";
+import AtlasLayersDialog from "./AtlasLayersDialog";
+import ImportImpactsDialog from "./ImportImpactsDialog";
+import CumulativeImpactDialog from "./CumulativeImpactDialog";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -210,6 +213,22 @@ class App extends React.Component {
       costsLoading: false,
       protected_area_intersections: [],
       visibleLayers: [],
+      atlasLayers: [],
+      selectedLayers: [],
+      selectedImpactIds: [],
+      impact_metadata: {},
+      importImpactsDialogOpen: false,
+      impactDatasetFilename: "",
+      importImpactPopoverOpen: false,
+      runningImpactMessage: "Import Activity",
+      newFeaturePopoverOpen: false,
+      allImpacts: [],
+      cumulativeImpactDialogOpen: false,
+      closeCumulativeImpactDialog: false,
+      atlasLayersDialogOpen: false,
+      closeAtlasLayersDialog: false,
+      activities: [],
+      newImpactPopoverOpen: false,
     };
   }
 
@@ -590,7 +609,7 @@ class App extends React.Component {
         name: name,
         protocol: window.location.protocol,
         host: window.location.hostname,
-        port: 80,
+        port: 5000,
         description: "Local machine",
         type: "local",
       });
@@ -3740,6 +3759,7 @@ class App extends React.Component {
   setNewFeatureDatasetFilename(filename) {
     this.setState({ featureDatasetFilename: filename });
   }
+
   //used by the import wizard to import a users zipped shapefile as the planning units
   importZippedShapefileAsPu(zipname, alias, description) {
     //the zipped shapefile has been uploaded to the MARXAN folder - it will be imported to PostGIS and a record will be entered in the metadata_planning_units table
@@ -3752,7 +3772,368 @@ class App extends React.Component {
         description
     );
   }
+  // ----------------------------
+  // --------------------------------------------------------
+  // ------------------------------------------------------------------------------------
+  // ----------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------------------------------
+  // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  // CUMULATIVE IMPACT
+  // ----------------------------
+  // --------------------------------------------------------
+  // ------------------------------------------------------------------------------------
+  // ----------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------------------------------
+  // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  openAtlasLayersDialog() {
+    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
+    if (this.state.atlasLayers.length < 1) {
+      this.getAtlasLayers();
+    }
+    this.setState({ atlasLayersDialogOpen: true });
+  }
+  openCumulativeImpactDialog() {
+    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
+    // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
+    this.getImpacts();
+    this.setState({ cumulativeImpactDialogOpen: true });
+  }
+  //makes a call to get the impacts from the server and returns them
+  getImpacts() {
+    return new Promise((resolve, reject) => {
+      this._get("getAllImpacts")
+        .then((response) => {
+          this.setState({
+            allImpacts: response.data,
+          });
+          resolve();
+        })
+        .catch((error) => {
+          //do something
+        });
+    });
+  }
 
+  getAtlasLayers() {
+    fetch(this.state.marxanServer.endpoint + "getAtlasLayers", {
+      credentials: "include",
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        let parseddata = data.map(JSON.parse);
+        parseddata.forEach((layer) => {
+          this.map.addSource(layer.layer, {
+            type: "raster",
+            tiles: [
+              "http://www.atlas-horizon2020.eu/gs/ows?layers=" +
+                layer.layer +
+                "&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}",
+            ],
+            tileSize: 256,
+          });
+          this.map.addLayer({
+            id: layer.layer,
+            type: "raster",
+            source: layer.layer,
+            layout: {
+              // make layer visible by default
+              visibility: "none",
+            },
+          });
+          // this.setState({ map: map });
+        });
+        this.setState({ atlasLayers: parseddata });
+      })
+      .catch((error) => console.error("Error:", error));
+  }
+
+  getActivities() {
+    return new Promise((resolve, reject) => {
+      this._get("getActivities")
+        .then((response) => JSON.parse(response.data))
+        .then((data) => {
+          this.setState({
+            activities: data,
+            fetched: true,
+          });
+          resolve();
+        })
+        .catch((error) => {
+          //do something
+        });
+    });
+  }
+
+  clearSelactedLayers() {
+    let layers = [...this.state.selectedLayers];
+    layers.forEach((layer) => {
+      this.setselectedLayers(layer);
+    });
+    this.closeAtlasLayersDialog();
+  }
+
+  setselectedLayers(layer) {
+    // Check if the layer is visibile or not. Toggle it based on this check
+    // Check if this layer is in the seletced layers. If it is remove it else add it
+    let visibility =
+      this.map.getLayoutProperty(layer, "visibility") === "visible"
+        ? "none"
+        : "visible";
+    this.map.setLayoutProperty(layer, "visibility", visibility);
+    this.state.selectedLayers.includes(layer)
+      ? this.setState((prevState) => ({
+          selectedLayers: [...prevState.selectedLayers].filter(
+            (item) => item !== layer
+          ),
+        }))
+      : this.setState((prevState) => ({
+          selectedLayers: [...prevState.selectedLayers, layer],
+        }));
+  }
+
+  closeAtlasLayersDialog() {
+    this.setState({ atlasLayersDialogOpen: false });
+  }
+
+  getImpacts() {
+    return new Promise((resolve, reject) => {
+      this._get("getAllImpacts")
+        .then((response) => {
+          this.setState({
+            allImpacts: response.data,
+          });
+          resolve();
+        })
+        .catch((error) => {
+          //do something
+        });
+    });
+  }
+
+  //when a user clicks a impact in the ImpactsDialog
+  clickImpact(impact) {
+    let ids = this.state.selectedImpactIds;
+    if (ids.includes(impact.id)) {
+      //remove the impact if it is already selected
+      this.removeImpact(impact);
+    } else {
+      //add the impact to the selected impact array
+      this.addImpact(impact);
+      this.toggleImpactLayer(impact);
+    }
+  }
+
+  //adds a impact to the selectedImpactIds array
+  addImpact(impact, callback) {
+    let ids = this.state.selectedImpactIds;
+    //add the feautre to the selected impact array
+    ids.push(impact.id);
+    this.setState({ selectedImpactIds: ids }, callback);
+  }
+
+  //removes a impact from the selectedImpactIds array
+  removeImpact(impact) {
+    let ids = this.state.selectedImpactIds;
+    //remove the impact  - this requires a callback on setState otherwise the state is not updated before updateSelectedImpacts is called
+    ids = ids.filter((value, index, arr) => {
+      return value !== impact.id;
+    });
+    return new Promise((resolve, reject) => {
+      this.setState({ selectedImpactIds: ids }, () => {
+        resolve("Impact removed");
+      });
+    });
+  }
+
+  //toggles the impact layer on the map
+  toggleImpactLayer(impact) {
+    if (impact.tilesetid === "") {
+      this.setSnackBar(
+        "This impact does not have a tileset on Mapbox. See <a href='" +
+          CONSTANTS.ERRORS_PAGE +
+          "#the-tileset-from-source-source-was-not-found' target='blank'>here</a>"
+      );
+      return;
+    }
+    // this.closeImpactMenu();
+    let layerName = impact.tilesetid.split(".")[1];
+    console.log("layerName ", layerName);
+    let layerId = "marxan_impact_layer_" + layerName;
+    if (this.map.getLayer(layerId)) {
+      this.removeMapLayer(layerId);
+      this.map.removeSource(layerId);
+      this.updateImpact(impact, { impact_layer_loaded: false });
+    } else {
+      //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
+      var layers = this.getLayers([
+        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+      ]);
+      //get the before layer
+      let beforeLayer = layers.length > 0 ? layers[0].id : "";
+      console.log(
+        "mapbox:// + impact.tilesetid ",
+        "mapbox://" + impact.tilesetid
+      );
+      //   type: "raster",
+      //   source: {
+      //     type: "raster",
+      //     url: "mapbox://" + impact.tilesetid + ".png",
+      let rasterLayer = {
+        id: layerId,
+        metadata: {
+          name: impact.alias,
+          type: "impact",
+        },
+        type: "raster",
+        source: {
+          type: "raster",
+          tiles: [
+            "https://api.mapbox.com/v4/" +
+              impact.tilesetid +
+              "/{z}/{x}/{y}.png256?access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg",
+          ],
+        },
+        layout: {
+          visibility: "visible",
+        },
+        "source-layer": layerName,
+        paint: { "raster-opacity": 0.85 },
+      };
+      // console.log(rasterLayer);
+
+      this.addMapLayer(rasterLayer, beforeLayer);
+      this.updateImpact(impact, { impact_layer_loaded: true });
+    }
+  }
+
+  //gets the ids of the selected impacts
+  getSelectedImpactIds() {
+    let ids = [];
+    this.state.allImpacts.forEach((impact) => {
+      if (impact.selected) ids.push(impact.id);
+    });
+    this.setState({ selectedImpactIds: ids });
+  }
+
+  //updates the properties of a impact and then updates the impacts state
+  updateImpact(impact, newProps) {
+    let impacts = this.state.allImpacts;
+    //get the position of the impact
+    var index = impacts.findIndex((element) => {
+      return element.id === impact.id;
+    });
+    if (index !== -1) {
+      Object.assign(impacts[index], newProps);
+      //update allImpacts and projectImpacts with the new value
+      this.setImpactsState(impacts);
+    }
+  }
+
+  //the callback is optional and will be called when the state has updated
+  setImpactsState(newImpacts, callback) {
+    //update allImpacts and projectImpacts with the new value
+    this.setState(
+      {
+        allImpacts: newImpacts,
+        projectImpacts: newImpacts.filter((item) => {
+          return item.selected;
+        }),
+      },
+      callback
+    );
+  }
+
+  openImportImpactsDialog() {
+    this.getActivities();
+    this.setState({ importImpactsDialogOpen: true });
+  }
+
+  closeImportImpactsDialog() {
+    this.setState({ importImpactsDialogOpen: false });
+  }
+
+  //create new impact from the created pressures
+  importImpacts(filename, selectedActivity, description) {
+    //start the logging
+    this.setState({ loading: true });
+    this.startLogging();
+    return new Promise((resolve, reject) => {
+      //get the request url
+      let url =
+        "runCumumlativeImpact?filename=" +
+        filename +
+        "&activity=" +
+        selectedActivity +
+        "&description=" +
+        description;
+      //get the message and pass it to the msgCallback function
+      this._ws(url, this.wsMessageCallback.bind(this))
+        .then((message) => {
+          //get the uploadIds
+          let uploadIds = message.uploadIds;
+          //get a promise array to see when all of the uploads are done
+          let promiseArray = [];
+          //iterate through the uploadIds to see when they are done
+          for (var i = 0; i < uploadIds.length; ++i) {
+            promiseArray.push(this.pollMapbox(uploadIds[i]));
+          }
+          //see when they're done
+          Promise.all(promiseArray).then((response) => {
+            this.setState({ loading: false });
+            resolve("Cumulative Impact Layer uploaded");
+          });
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    }); //return
+  }
+
+  setNewImpactDatasetFilename(filename) {
+    this.setState({ impactDatasetFilename: filename });
+  }
+
+  uploadRaster(data) {
+    console.log("data ", data);
+    return new Promise((resolve, reject) => {
+      this.setState({ loading: true });
+      const formData = new FormData();
+      Object.keys(data).forEach((key) => {
+        formData.append(key, data[key]);
+      });
+
+      //the binary data for the file
+      //the filename
+      this._post("uploadRaster", formData).then(function (response) {
+        resolve(response);
+      });
+    });
+  }
+
+  closeCumulativeImpactDialog() {
+    this.setState({ cumulativeImpactDialogOpen: false });
+    this.hideImportImpactPopover();
+  }
+
+  openCumulativeImpactDialog() {
+    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
+    // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
+    this.getImpacts();
+    this.setState({ cumulativeImpactDialogOpen: true });
+  }
+
+  showImportImpactPopover() {
+    this.setState({ importImpactPopoverOpen: true });
+  }
+  hideImportImpactPopover() {
+    this.setState({ importImpactPopoverOpen: false });
+  }
+  showNewImpactPopover() {
+    this.setState({ newImpactPopoverOpen: true });
+  }
+  hideNewImpactPopover() {
+    this.setState({ newImpactPopoverOpen: false });
+  }
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // MANAGING INTEREST FEATURES SECTION
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5523,8 +5904,6 @@ class App extends React.Component {
             messages={this.state.logMessages}
             activeResultsTab={this.state.activeResultsTab}
             setActiveTab={this.setActiveTab.bind(this)}
-            setActiveTab={this.setActiveTab.bind(this)}
-            setActiveTab={this.setActiveTab.bind(this)}
             clearLog={this.clearLog.bind(this)}
             owner={this.state.owner}
             resultsLayer={this.state.resultsLayer}
@@ -6037,6 +6416,52 @@ class App extends React.Component {
               this.state.project
             }
           />
+          <AtlasLayersDialog
+            open={this.state.atlasLayersDialogOpen}
+            onOk={this.closeAtlasLayersDialog.bind(this)}
+            onCancel={this.clearSelactedLayers.bind(this)}
+            loading={this.state.loading}
+            atlasLayers={this.state.atlasLayers}
+            marxanServer={this.state.marxanServer}
+            setSnackBar={this.setSnackBar.bind(this)}
+            selectedLayers={this.state.selectedLayers}
+            setselectedLayers={this.setselectedLayers.bind(this)}
+          />
+          <ImportImpactsDialog
+            open={this.state.importImpactsDialogOpen}
+            importImpacts={this.importImpacts.bind(this)}
+            activities={this.state.activities}
+            setSnackBar={this.setSnackBar.bind(this)}
+            onCancel={this.closeImportImpactsDialog.bind(this)}
+            loading={
+              this.state.loading ||
+              this.state.preprocessing ||
+              this.state.uploading
+            }
+            runningImpactMessage={this.state.runningImpactMessage}
+            fileUpload={this.uploadRaster.bind(this)}
+          />
+          <CumulativeImpactDialog
+            loading={this.state.loading || this.state.uploading}
+            marxanServer={this.state.marxanServer}
+            open={this.state.cumulativeImpactDialogOpen}
+            onOk={this.closeCumulativeImpactDialog.bind(this)}
+            onCancel={this.closeCumulativeImpactDialog.bind(this)}
+            openImportImpactsDialog={this.openImportImpactsDialog.bind(this)}
+            metadata={this.state.metadata}
+            allImpacts={this.state.allImpacts}
+            clickImpact={this.clickImpact.bind(this)}
+            newImpactPopoverOpen={this.state.newImpactPopoverOpen}
+            hideNewImpactPopover={this.hideNewImpactPopover.bind(this)}
+            hideImportImpactPopover={this.hideImportImpactPopover.bind(this)}
+            importImpactPopoverOpen={this.state.importImpactPopoverOpen}
+            initialiseDigitising={this.initialiseDigitising.bind(this)}
+            showImportImpactPopover={this.showImportImpactPopover.bind(this)}
+            showNewImpactPopover={this.showNewImpactPopover.bind(this)}
+            selectedImpactIds={this.state.selectedImpactIds}
+            setSnackBar={this.setSnackBar.bind(this)}
+            userRole={this.state.userData.ROLE}
+          />
           <AppBar
             open={this.state.loggedIn}
             user={this.state.user}
@@ -6053,6 +6478,10 @@ class App extends React.Component {
             showHelpMenu={this.showHelpMenu.bind(this)}
             marxanServer={this.state.marxanServer.name}
             openServerDetailsDialog={this.openServerDetailsDialog.bind(this)}
+            openCumulativeImpactDialog={this.openCumulativeImpactDialog.bind(
+              this
+            )}
+            openAtlasLayersDialog={this.openAtlasLayersDialog.bind(this)}
           />
         </React.Fragment>
       </MuiThemeProvider>
