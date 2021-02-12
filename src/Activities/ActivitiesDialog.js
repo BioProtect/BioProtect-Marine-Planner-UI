@@ -22,7 +22,7 @@ import Popover from "material-ui/Popover";
 import Menu from "material-ui/Menu";
 import MenuItem from "material-ui/MenuItem";
 
-class UploadedActivitiesDialog extends React.Component {
+class ActivitiesDialog extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -31,11 +31,13 @@ class UploadedActivitiesDialog extends React.Component {
       description: "",
       snackbarOpen: false,
       snackbarMessage: "",
+      selectedActivities: "",
+      selectedActivitiesIds: [],
     };
   }
   _delete() {
-    this.props.deleteActivity(this.state.selectedActivity);
-    this.setState({ selectedActivity: undefined });
+    this.props.deleteActivity(this.state.selectedActivities);
+    this.setState({ selectedActivities: undefined });
   }
   showNewActivityPopover(event) {
     this.setState({ newActivityAnchor: event.currentTarget });
@@ -49,7 +51,7 @@ class UploadedActivitiesDialog extends React.Component {
     //close the dialog
     this.props.onCancel();
     //show the new feature dialog
-    this.props.openImportActivityDialog("import");
+    this.props.openImportActivityDialog();
   }
   _newByDigitising() {
     //hide this dialog
@@ -65,7 +67,7 @@ class UploadedActivitiesDialog extends React.Component {
       event.shiftKey,
       this.state.previousRow
     );
-    this.setState({ selectedActivity: rowInfo.original });
+    this.setState({ selectedActivities: rowInfo.original });
   }
   //gets the features ids between the two passed rows and toggles their selection state
   getActivitysBetweenRows(previousRow, thisRow) {
@@ -79,14 +81,14 @@ class UploadedActivitiesDialog extends React.Component {
     //toggle the selected features depending on if the current features are filtered
     if (this.filteredRows.length < this.props.allActivitys.length) {
       selectedIds = this.toggleSelectionState(
-        this.props.selectedActivityIds,
+        this.props.selectedActivitiesIds,
         this.filteredRows,
         idx1,
         idx2
       );
     } else {
       selectedIds = this.toggleSelectionState(
-        this.props.selectedActivityIds,
+        this.props.selectedActivitiesIds,
         this.props.allActivitys,
         idx1,
         idx2
@@ -204,37 +206,37 @@ class UploadedActivitiesDialog extends React.Component {
           <React.Fragment key="k10">
             <div id="projectsTable">
               <MarxanTable
-                data={this.props.allActivitys}
+                data={this.props.uploadedActivities}
                 searchColumns={["alias", "description", "source", "created_by"]}
                 searchText={this.state.searchText}
                 dataFiltered={this.dataFiltered.bind(this)}
-                selectedActivityIds={this.props.selectedActivityIds}
+                selectedActivitiesIds={this.props.selectedActivitiesIds}
                 clickActivity={this.clickActivity.bind(this)}
                 preview={this.preview.bind(this)}
                 columns={tableColumns}
                 getTrProps={(state, rowInfo, column) => {
                   console.log("rowInfo ", rowInfo);
                   console.log(
-                    "tate.selectedActivityIds.includes(rowInfo.original.id) ",
-                    state.selectedActivityIds.includes(rowInfo.original.id)
+                    "tate.selectedActivitiesIds.includes(rowInfo.original.id) ",
+                    state.selectedActivitiesIds.includes(rowInfo.original.id)
                   );
                   console.log(
-                    "state.selectedActivityIds ",
-                    state.selectedActivityIds
+                    "state.selectedActivitiesIds ",
+                    state.selectedActivitiesIds
                   );
                   console.log(
-                    "state.selectedActivity ",
-                    state.selectedActivity
+                    "state.selectedActivities ",
+                    state.selectedActivities
                   );
 
                   return {
                     style: {
                       background:
-                        state.selectedActivityIds.includes(
+                        state.selectedActivitiesIds.includes(
                           rowInfo.original.id
                         ) ||
-                        (state.selectedActivity &&
-                          state.selectedActivity.id === rowInfo.original.id)
+                        (state.selectedActivities &&
+                          state.selectedActivities.id === rowInfo.original.id)
                           ? "aliceblue"
                           : "",
                     },
@@ -270,26 +272,11 @@ class UploadedActivitiesDialog extends React.Component {
                     : "false"
                 }
                 icon={<FontAwesomeIcon icon={faPlusCircle} />}
-                title="New feature"
+                title="Create a new activity by digitsing it on screen"
                 disabled={this.props.loading}
-                onClick={this.showNewActivityPopover.bind(this)}
-                label={"New"}
+                onClick={this._newByDigitising.bind(this)}
+                label={"Draw"}
               />
-              <Popover
-                open={this.props.newActivityPopoverOpen}
-                anchorEl={this.state.newActivityAnchor}
-                anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-                targetOrigin={{ horizontal: "left", vertical: "top" }}
-                onRequestClose={this.props.hideNewActivityPopover}
-              >
-                <Menu desktop={true}>
-                  <MenuItem
-                    primaryText="Draw on screen"
-                    title="Create a new feature by digitising it on the screen"
-                    onClick={this._newByDigitising.bind(this)}
-                  />
-                </Menu>
-              </Popover>
               <ToolbarButton
                 show={
                   !this.props.metadata.OLDVERSION &&
@@ -298,26 +285,11 @@ class UploadedActivitiesDialog extends React.Component {
                     : "false"
                 }
                 icon={<Import style={{ height: "20px", width: "20px" }} />}
-                title="Create a new cumulative impact layer"
+                title="Upload a new activity raster"
                 disabled={this.props.loading}
-                onClick={this.showImportActivityPopover.bind(this)}
+                onClick={this._openImportActivityDialog.bind(this)}
                 label={"Import"}
               />
-              <Popover
-                open={this.props.importActivityPopoverOpen}
-                anchorEl={this.state.importActivityAnchor}
-                anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-                targetOrigin={{ horizontal: "left", vertical: "top" }}
-                onRequestClose={this.props.hideImportActivityPopover}
-              >
-                <Menu desktop={true}>
-                  <MenuItem
-                    primaryText="From a raster"
-                    title="Load an activity raster"
-                    onClick={this._openImportActivityDialog.bind(this)}
-                  />
-                </Menu>
-              </Popover>
               <ToolbarButton
                 show="true"
                 icon={
@@ -328,10 +300,10 @@ class UploadedActivitiesDialog extends React.Component {
                 }
                 title="Delete feature"
                 disabled={
-                  this.state.selectedActivity === undefined ||
+                  this.state.selectedActivities === undefined ||
                   this.props.loading ||
-                  (this.state.selectedActivity &&
-                    this.state.selectedActivity.created_by === "global admin")
+                  (this.state.selectedActivities &&
+                    this.state.selectedActivities.created_by === "global admin")
                 }
                 onClick={this._delete.bind(this)}
                 label={"Delete"}
@@ -351,4 +323,4 @@ class UploadedActivitiesDialog extends React.Component {
   }
 }
 
-export default UploadedActivitiesDialog;
+export default ActivitiesDialog;

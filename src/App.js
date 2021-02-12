@@ -87,6 +87,8 @@ import ImportGBIFDialog from "./ImportGBIFDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import ImportImpactsDialog from "./Impacts/ImportImpactsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
+import ActivitiesDialog from "./Activities/ActivitiesDialog";
+import ImportActivityDialog from "./Activities/ImportActivityDialog";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -228,6 +230,8 @@ class App extends React.Component {
       atlasLayersDialogOpen: false,
       activities: [],
       newImpactPopoverOpen: false,
+      uploadedActivities: [],
+      importActivityDialogOpen: false,
     };
   }
 
@@ -3795,7 +3799,7 @@ class App extends React.Component {
         .then((response) => JSON.parse(response.data))
         .then((data) => {
           this.setState({
-            activities: data,
+            uploadedActivities: data,
             fetched: true,
           });
           resolve();
@@ -3972,7 +3976,9 @@ class App extends React.Component {
   }
 
   openImportImpactsDialog() {
-    this.getActivities();
+    if (this.state.activities.length < 1) {
+      this.getActivities();
+    }
     this.setState({ importImpactsDialogOpen: true });
   }
 
@@ -4034,39 +4040,29 @@ class App extends React.Component {
     });
   }
 
-  closeCumulativeImpactDialog() {
-    this.setState({ cumulativeImpactDialogOpen: false });
-    this.hideImportImpactPopover();
-  }
-
-  showImportImpactPopover() {
-    this.setState({ importImpactPopoverOpen: true });
-  }
-  hideImportImpactPopover() {
-    this.setState({ importImpactPopoverOpen: false });
-  }
-  showNewImpactPopover() {
-    this.setState({ newImpactPopoverOpen: true });
-  }
-  hideNewImpactPopover() {
-    this.setState({ newImpactPopoverOpen: false });
-  }
-
-  // ------------------------------------ activities
-  closeActivitiesDialog() {
-    this.setState({ activitiesDialogOpen: false });
-    // this.hideImportImpactPopover();
-  }
-
   openActivitiesDialog() {
     //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
     // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
-    this.getActivities();
+    console.log("click....");
+    if (this.state.uploadedActivities.length < 1) {
+      this.getUploadedActivities();
+    }
     this.setState({ activitiesDialogOpen: true });
   }
 
-  openDialog(obj) {
-    this.setState(obj);
+  openImportActivityDialog() {
+    if (this.state.activities.length < 1) {
+      this.getActivities();
+    }
+    this.setState({ importActivityDialogOpen: true });
+  }
+
+  closeImportActivityDialog() {
+    this.setState({ importActivityDialogOpen: false });
+  }
+
+  updateState(state_obj) {
+    this.setState(state_obj);
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6256,24 +6252,57 @@ class App extends React.Component {
           />
           <CumulativeImpactDialog
             loading={this.state.loading || this.state.uploading}
-            marxanServer={this.state.marxanServer}
             open={this.state.cumulativeImpactDialogOpen}
-            onOk={this.closeCumulativeImpactDialog.bind(this)}
-            onCancel={this.closeCumulativeImpactDialog.bind(this)}
+            onOk={() =>
+              this.updateState({
+                cumulativeImpactDialogOpen: false,
+                importImpactPopoverOpen: false,
+              })
+            }
+            onCancel={() =>
+              this.updateState({
+                cumulativeImpactDialogOpen: false,
+                importImpactPopoverOpen: false,
+              })
+            }
             openImportImpactsDialog={this.openImportImpactsDialog.bind(this)}
             metadata={this.state.metadata}
             allImpacts={this.state.allImpacts}
             clickImpact={this.clickImpact.bind(this)}
             newImpactPopoverOpen={this.state.newImpactPopoverOpen}
-            hideNewImpactPopover={this.hideNewImpactPopover.bind(this)}
-            hideImportImpactPopover={this.hideImportImpactPopover.bind(this)}
             importImpactPopoverOpen={this.state.importImpactPopoverOpen}
             initialiseDigitising={this.initialiseDigitising.bind(this)}
-            showImportImpactPopover={this.showImportImpactPopover.bind(this)}
-            showNewImpactPopover={this.showNewImpactPopover.bind(this)}
+            updateState={this.updateState.bind(this)}
             selectedImpactIds={this.state.selectedImpactIds}
             setSnackBar={this.setSnackBar.bind(this)}
             userRole={this.state.userData.ROLE}
+          />
+          <ActivitiesDialog
+            loading={this.state.loading || this.state.uploading}
+            open={this.state.activitiesDialogOpen}
+            onOk={() => this.updateState({ activitiesDialogOpen: false })}
+            onCancel={() => this.updateState({ activitiesDialogOpen: false })}
+            updateState={this.updateState.bind(this)}
+            metadata={this.state.metadata}
+            uploadedActivities={this.state.uploadedActivities}
+            openImportActivityDialog={this.openImportActivityDialog.bind(this)}
+            clickImpact={this.clickImpact.bind(this)}
+            initialiseDigitising={this.initialiseDigitising.bind(this)}
+            selectedImpactIds={this.state.selectedImpactIds}
+            setSnackBar={this.setSnackBar.bind(this)}
+            userRole={this.state.userData.ROLE}
+          />
+          <ImportActivityDialog
+            open={this.state.importActivityDialogOpen}
+            activities={this.state.activities}
+            setSnackBar={this.setSnackBar.bind(this)}
+            onCancel={this.closeImportImpactsDialog.bind(this)}
+            loading={
+              this.state.loading ||
+              this.state.preprocessing ||
+              this.state.uploading
+            }
+            fileUpload={this.uploadRaster.bind(this)}
           />
           <AppBar
             open={this.state.loggedIn}
@@ -6289,7 +6318,9 @@ class App extends React.Component {
             showUserMenu={this.showUserMenu.bind(this)}
             showHelpMenu={this.showHelpMenu.bind(this)}
             marxanServer={this.state.marxanServer.name}
+            openProjectsDialog={this.openProjectsDialog.bind(this)}
             openServerDetailsDialog={this.openServerDetailsDialog.bind(this)}
+            openActivitiesDialog={this.openActivitiesDialog.bind(this)}
             openCumulativeImpactDialog={this.openCumulativeImpactDialog.bind(
               this
             )}

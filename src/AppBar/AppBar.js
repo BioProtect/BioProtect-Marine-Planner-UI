@@ -84,8 +84,8 @@ class AppBar extends React.Component {
             />
             <AppBarIcon
               icon={faFingerprint}
-              // onClick={this.props.openActivitesDialog}
-              title="Impact"
+              onClick={this.props.openActivitiesDialog}
+              title="Activities"
             />
             <AppBarIcon
               icon={faLayerGroup}

@@ -41,15 +41,18 @@ class CumulativeImpactDialog extends React.Component {
   }
   showNewImpactPopover(event) {
     this.setState({ newImpactAnchor: event.currentTarget });
-    this.props.showNewImpactPopover();
+    this.props.updateState({ newImpactPopoverOpen: true });
   }
   showImportImpactPopover(event) {
     this.setState({ importImpactAnchor: event.currentTarget });
-    this.props.showImportImpactPopover();
+    this.props.updateState({ importImpactPopoverOpen: true });
   }
   _openImportImpactsDialog() {
     //close the dialog
-    this.props.onCancel();
+    this.props.updateState({
+      cumulativeImpactDialogOpen: false,
+      importImpactPopoverOpen: false,
+    });
     //show the new feature dialog
     this.props.openImportImpactsDialog("import");
   }
@@ -277,7 +280,9 @@ class CumulativeImpactDialog extends React.Component {
                 anchorEl={this.state.newImpactAnchor}
                 anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
                 targetOrigin={{ horizontal: "left", vertical: "top" }}
-                onRequestClose={this.props.hideNewImpactPopover}
+                onRequestClose={() =>
+                  this.props.updateState({ newImpactPopoverOpen: false })
+                }
               >
                 <Menu desktop={true}>
                   <MenuItem
@@ -305,7 +310,9 @@ class CumulativeImpactDialog extends React.Component {
                 anchorEl={this.state.importImpactAnchor}
                 anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
                 targetOrigin={{ horizontal: "left", vertical: "top" }}
-                onRequestClose={this.props.hideImportImpactPopover}
+                onRequestClose={() =>
+                  this.props.updateState({ importImpactPopoverOpen: false })
+                }
               >
                 <Menu desktop={true}>
                   <MenuItem
