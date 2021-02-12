@@ -53,6 +53,8 @@ class PlanningGridsDialog extends React.Component {
     this.props.onOk();
   }
   preview(planning_grid_metadata) {
+    console.log("planning_grid_metadata ", planning_grid_metadata);
+
     this.props.previewPlanningGrid(planning_grid_metadata);
   }
   sortDate(a, b, desc) {

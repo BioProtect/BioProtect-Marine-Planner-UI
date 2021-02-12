@@ -71,6 +71,7 @@ class FeaturesDialog extends React.Component {
     this.props.onCancel();
   }
   clickFeature(event, rowInfo) {
+    console.log("rowInfo ", rowInfo);
     //if adding or removing features from a project
     if (this.props.addingRemovingFeatures) {
       //if the shift key is pressed then select/deselect the features in between

@@ -7,12 +7,12 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import MarxanTable from "./MarxanTable";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
-import FileUpload from "./FileUpload.js";
-import ToolbarButton from "./ToolbarButton";
-import TableRow from "./TableRow.js";
+import MarxanTable from "../MarxanTable";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTextField from "../MarxanTextField";
+import FileUpload from "../FileUpload.js";
+import ToolbarButton from "../ToolbarButton";
+import TableRow from "../TableRow.js";
 import Sync from "material-ui/svg-icons/notification/sync";
 
 let INITIAL_STATE = {
@@ -86,7 +86,7 @@ class ImportImpactsDialog extends React.Component {
         this.state.description
       )
       .then((response) => {
-        console.log("response ", response);
+        console.log("response from impact ", response);
         this.setMessage(response);
         this.closeDialog();
       });

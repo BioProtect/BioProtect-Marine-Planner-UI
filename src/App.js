@@ -36,7 +36,7 @@ import RemoveFromMap from "material-ui/svg-icons/action/visibility-off";
 import ZoomIn from "material-ui/svg-icons/action/zoom-in";
 import Preprocess from "material-ui/svg-icons/action/autorenew";
 //project components
-import AppBar from "./AppBar";
+import AppBar from "./AppBar/AppBar";
 import LoadingDialog from "./LoadingDialog";
 import LoginDialog from "./LoginDialog";
 import RegisterDialog from "./RegisterDialog.js";
@@ -85,8 +85,8 @@ import ResetDialog from "./ResetDialog";
 import UpdateWDPADialog from "./UpdateWDPADialog";
 import ImportGBIFDialog from "./ImportGBIFDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
-import ImportImpactsDialog from "./ImportImpactsDialog";
-import CumulativeImpactDialog from "./CumulativeImpactDialog";
+import ImportImpactsDialog from "./Impacts/ImportImpactsDialog";
+import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -224,9 +224,8 @@ class App extends React.Component {
       newFeaturePopoverOpen: false,
       allImpacts: [],
       cumulativeImpactDialogOpen: false,
-      closeCumulativeImpactDialog: false,
+      activitiesDialogOpen: false,
       atlasLayersDialogOpen: false,
-      closeAtlasLayersDialog: false,
       activities: [],
       newImpactPopoverOpen: false,
     };
@@ -3864,6 +3863,23 @@ class App extends React.Component {
     });
   }
 
+  getUploadedActivities() {
+    return new Promise((resolve, reject) => {
+      this._get("getUploadedActivities")
+        .then((response) => JSON.parse(response.data))
+        .then((data) => {
+          this.setState({
+            activities: data,
+            fetched: true,
+          });
+          resolve();
+        })
+        .catch((error) => {
+          //do something
+        });
+    });
+  }
+
   clearSelactedLayers() {
     let layers = [...this.state.selectedLayers];
     layers.forEach((layer) => {
@@ -3911,16 +3927,13 @@ class App extends React.Component {
   }
 
   //when a user clicks a impact in the ImpactsDialog
-  clickImpact(impact) {
+  clickImpact(impact, event, previousRow) {
+    console.log("impact ", impact);
     let ids = this.state.selectedImpactIds;
-    if (ids.includes(impact.id)) {
-      //remove the impact if it is already selected
-      this.removeImpact(impact);
-    } else {
-      //add the impact to the selected impact array
-      this.addImpact(impact);
-      this.toggleImpactLayer(impact);
-    }
+    ids.includes(impact.id)
+      ? this.removeImpact(impact)
+      : this.addImpact(impact);
+    this.toggleImpactLayer(impact);
   }
 
   //adds a impact to the selectedImpactIds array
@@ -3957,7 +3970,6 @@ class App extends React.Component {
     }
     // this.closeImpactMenu();
     let layerName = impact.tilesetid.split(".")[1];
-    console.log("layerName ", layerName);
     let layerId = "marxan_impact_layer_" + layerName;
     if (this.map.getLayer(layerId)) {
       this.removeMapLayer(layerId);
@@ -3970,14 +3982,6 @@ class App extends React.Component {
       ]);
       //get the before layer
       let beforeLayer = layers.length > 0 ? layers[0].id : "";
-      console.log(
-        "mapbox:// + impact.tilesetid ",
-        "mapbox://" + impact.tilesetid
-      );
-      //   type: "raster",
-      //   source: {
-      //     type: "raster",
-      //     url: "mapbox://" + impact.tilesetid + ".png",
       let rasterLayer = {
         id: layerId,
         metadata: {
@@ -3999,8 +4003,6 @@ class App extends React.Component {
         "source-layer": layerName,
         paint: { "raster-opacity": 0.85 },
       };
-      // console.log(rasterLayer);
-
       this.addMapLayer(rasterLayer, beforeLayer);
       this.updateImpact(impact, { impact_layer_loaded: true });
     }
@@ -4069,16 +4071,7 @@ class App extends React.Component {
       //get the message and pass it to the msgCallback function
       this._ws(url, this.wsMessageCallback.bind(this))
         .then((message) => {
-          //get the uploadIds
-          let uploadIds = message.uploadIds;
-          //get a promise array to see when all of the uploads are done
-          let promiseArray = [];
-          //iterate through the uploadIds to see when they are done
-          for (var i = 0; i < uploadIds.length; ++i) {
-            promiseArray.push(this.pollMapbox(uploadIds[i]));
-          }
-          //see when they're done
-          Promise.all(promiseArray).then((response) => {
+          this.pollMapbox(message.uploadId).then((response) => {
             this.setState({ loading: false });
             resolve("Cumulative Impact Layer uploaded");
           });
@@ -4097,6 +4090,11 @@ class App extends React.Component {
     console.log("data ", data);
     return new Promise((resolve, reject) => {
       this.setState({ loading: true });
+      this.log({
+        method: "uploadRaster",
+        status: "In Progress",
+        info: "Uploading Raster...",
+      });
       const formData = new FormData();
       Object.keys(data).forEach((key) => {
         formData.append(key, data[key]);
@@ -4115,13 +4113,6 @@ class App extends React.Component {
     this.hideImportImpactPopover();
   }
 
-  openCumulativeImpactDialog() {
-    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
-    // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
-    this.getImpacts();
-    this.setState({ cumulativeImpactDialogOpen: true });
-  }
-
   showImportImpactPopover() {
     this.setState({ importImpactPopoverOpen: true });
   }
@@ -4134,6 +4125,24 @@ class App extends React.Component {
   hideNewImpactPopover() {
     this.setState({ newImpactPopoverOpen: false });
   }
+
+  // ------------------------------------ activities
+  closeActivitiesDialog() {
+    this.setState({ activitiesDialogOpen: false });
+    // this.hideImportImpactPopover();
+  }
+
+  openActivitiesDialog() {
+    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
+    // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
+    this.getActivities();
+    this.setState({ activitiesDialogOpen: true });
+  }
+
+  openDialog(obj) {
+    this.setState(obj);
+  }
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // MANAGING INTEREST FEATURES SECTION
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6119,6 +6128,7 @@ class App extends React.Component {
             open={this.state.planningGridDialogOpen}
             onOk={this.closePlanningGridDialog.bind(this)}
             onCancel={this.closePlanningGridDialog.bind(this)}
+            FeaturesDialog
             loading={this.state.loading}
             planning_grid_metadata={this.state.planning_grid_metadata}
             getTilesetMetadata={this.getMetadata.bind(this)}
@@ -6468,7 +6478,6 @@ class App extends React.Component {
             userRole={this.state.userData.ROLE}
             infoPanelOpen={this.state.infoPanelOpen}
             resultsPanelOpen={this.state.resultsPanelOpen}
-            openProjectsDialog={this.openProjectsDialog.bind(this)}
             openFeaturesDialog={this.openFeaturesDialog.bind(this)}
             openPlanningGridsDialog={this.openPlanningGridsDialog.bind(this)}
             toggleInfoPanel={this.toggleInfoPanel.bind(this)}

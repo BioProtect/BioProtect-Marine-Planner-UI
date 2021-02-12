@@ -7,7 +7,6 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBookOpen,
   faGlobeEurope,
@@ -20,8 +19,10 @@ import {
   faArrowAltCircleRight as b,
   faQuestionCircle,
   faLayerGroup,
+  faFingerprint,
 } from "@fortawesome/free-solid-svg-icons";
 import { Toolbar, ToolbarGroup } from "material-ui/Toolbar";
+import AppBarIcon from "./AppBarIcon";
 
 class AppBar extends React.Component {
   constructor(props) {
@@ -61,44 +62,38 @@ class AppBar extends React.Component {
             </div>
           </div>
           <ToolbarGroup>
-            <FontAwesomeIcon
+            <AppBarIcon
               icon={faBookOpen}
               onClick={this.props.openProjectsDialog}
               title="Projects"
-              className={"appBarIcon"}
-              style={{ fontSize: "20px" }}
             />
-            <FontAwesomeIcon
+            <AppBarIcon
               icon={faStar}
               onClick={this.openFeaturesDialog.bind(this)}
               title="Features"
-              className={"appBarIcon"}
-              style={{ fontSize: "20px" }}
             />
-            <FontAwesomeIcon
+            <AppBarIcon
               icon={faThLarge}
               onClick={this.props.openPlanningGridsDialog.bind(this)}
               title="Planning grids"
-              className={"appBarIcon"}
-              style={{ fontSize: "20px" }}
             />
-            <FontAwesomeIcon
+            <AppBarIcon
               icon={faGlobeEurope}
               onClick={this.props.openAtlasLayersDialog}
               title="Atlas Layers"
-              className={"appBarIcon"}
-              style={{ fontSize: "20px" }}
             />
-            <FontAwesomeIcon
+            <AppBarIcon
+              icon={faFingerprint}
+              // onClick={this.props.openActivitesDialog}
+              title="Impact"
+            />
+            <AppBarIcon
               icon={faLayerGroup}
               onClick={this.props.openCumulativeImpactDialog}
               title="Impact"
-              className={"appBarIcon"}
-              style={{ fontSize: "20px" }}
             />
             <span style={{ width: "16px" }} />
-            <FontAwesomeIcon
-              style={{ fontSize: "20px" }}
+            <AppBarIcon
               icon={this.props.infoPanelOpen ? faArrowAltCircleLeft : a}
               onClick={this.props.toggleInfoPanel}
               title={
@@ -106,10 +101,8 @@ class AppBar extends React.Component {
                   ? "Hide the project window"
                   : "Show the project window"
               }
-              className={"appBarIcon"}
             />
-            <FontAwesomeIcon
-              style={{ fontSize: "20px" }}
+            <AppBarIcon
               icon={this.props.resultsPanelOpen ? faArrowAltCircleRight : b}
               onClick={this.props.toggleResultsPanel}
               title={
@@ -117,22 +110,17 @@ class AppBar extends React.Component {
                   ? "Hide the results window"
                   : "Show the results window"
               }
-              className={"appBarIcon"}
             />
             <span style={{ width: "16px" }} />
-            <FontAwesomeIcon
+            <AppBarIcon
               icon={faWrench}
               onClick={this.props.showToolsMenu}
               title={"Tools and analysis"}
-              className={"appBarIcon"}
-              style={{ fontSize: "19px" }}
             />
-            <FontAwesomeIcon
+            <AppBarIcon
               icon={faQuestionCircle}
               onClick={this.props.showHelpMenu}
               title={"Help and support"}
-              className={"appBarIcon"}
-              style={{ fontSize: "19px" }}
             />
           </ToolbarGroup>
         </Toolbar>
