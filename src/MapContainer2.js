@@ -20,11 +20,6 @@ class MapContainer2 extends React.Component {
       attributionControl: false,
     });
     this.map.on("load", (evt) => {
-      console.log("evt ", evt);
-      console.log(
-        "this.props.planning_grid_metadata.tilesetid; ",
-        this.props.planning_grid_metadata.tilesetid
-      );
       let color = this.props.color ? this.props.color : "rgba(255, 0, 0, 0.4)";
       let outlineColor = this.props.outlineColor
         ? this.props.outlineColor
