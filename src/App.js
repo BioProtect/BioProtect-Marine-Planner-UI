@@ -36,7 +36,7 @@ import RemoveFromMap from "material-ui/svg-icons/action/visibility-off";
 import ZoomIn from "material-ui/svg-icons/action/zoom-in";
 import Preprocess from "material-ui/svg-icons/action/autorenew";
 //project components
-import AppBar from "./AppBar";
+import AppBar from "./AppBar/AppBar";
 import LoadingDialog from "./LoadingDialog";
 import LoginDialog from "./LoginDialog";
 import RegisterDialog from "./RegisterDialog.js";
@@ -85,8 +85,8 @@ import ResetDialog from "./ResetDialog";
 import UpdateWDPADialog from "./UpdateWDPADialog";
 import ImportGBIFDialog from "./ImportGBIFDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
-import ImportImpactsDialog from "./ImportImpactsDialog";
-import CumulativeImpactDialog from "./CumulativeImpactDialog";
+import ImportImpactsDialog from "./Impacts/ImportImpactsDialog";
+import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -224,9 +224,8 @@ class App extends React.Component {
       newFeaturePopoverOpen: false,
       allImpacts: [],
       cumulativeImpactDialogOpen: false,
-      closeCumulativeImpactDialog: false,
+      activitiesDialogOpen: false,
       atlasLayersDialogOpen: false,
-      closeAtlasLayersDialog: false,
       activities: [],
       newImpactPopoverOpen: false,
     };
@@ -926,7 +925,7 @@ class App extends React.Component {
         //ui feedback
         this.setSnackBar(response.info);
         //close the resend password dialog
-        this.closeResendPasswordDialog();
+        this.updateState({ resendPasswordDialogOpen: false });
       })
       .catch((error) => {
         //do something
@@ -1442,9 +1441,12 @@ class App extends React.Component {
       //ui feedback
       this.setSnackBar(response.info);
       //close the register dialog
-      this.closeRegisterDialog();
       //enter the new users name in the username box and a blank password
-      this.setState({ user: user, password: "" });
+      this.updateState({
+        registerDialogOpen: false,
+        user: user,
+        password: "",
+      });
     });
   }
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3409,8 +3411,10 @@ class App extends React.Component {
 
   //previews the planning grid
   previewPlanningGrid(planning_grid_metadata) {
-    this.setState({ planning_grid_metadata: planning_grid_metadata });
-    this.openPlanningGridDialog();
+    this.setState({
+      planning_grid_metadata: planning_grid_metadata,
+      planningGridDialogOpen: true,
+    });
   }
 
   //creates a new planning grid unit
@@ -3430,7 +3434,7 @@ class App extends React.Component {
       )
         .then((message) => {
           this.newPlanningGridCreated(message).then(() => {
-            this.closeNewPlanningGridDialog();
+            this.updateState({ NewPlanningGridDialogOpen: false });
             //websocket has finished
             resolve(message);
           });
@@ -3459,7 +3463,7 @@ class App extends React.Component {
             info: response.info,
           });
           this.newPlanningGridCreated(response).then(() => {
-            this.closeImportPlanningGridDialog();
+            this.updateState({ importPlanningGridDialogOpen: false });
           });
         })
         .catch((error) => {
@@ -3646,9 +3650,7 @@ class App extends React.Component {
     //reset state
     if (timers.length === 0) this.setState({ uploading: false });
   }
-  closeWelcomeDialog() {
-    this.setState({ welcomeDialogOpen: false });
-  }
+
   openWelcomeDialog() {
     this.parseNotifications();
     this.setState({ welcomeDialogOpen: true });
@@ -3666,98 +3668,21 @@ class App extends React.Component {
     });
     if (showClearSelectAll) this.getSelectedFeatureIds();
   }
-  closeFeaturesDialog() {
-    this.setState({
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-    });
+
+  updateState(state_obj) {
+    this.setState(state_obj);
   }
-  openNewFeatureDialog() {
-    this.setState({ NewFeatureDialogOpen: true });
-  }
+
   closeNewFeatureDialog() {
     this.setState({ NewFeatureDialogOpen: false });
     //finalise digitising
     this.finaliseDigitising();
-  }
-  openImportFromWebDialog() {
-    this.setState({ importFromWebDialogOpen: true });
-  }
-  closeImportFromWebDialog() {
-    this.setState({ importFromWebDialogOpen: false });
-  }
-  openImportFeaturesDialog() {
-    this.setState({ importFeaturesDialogOpen: true });
-  }
-  closeImportFeaturesDialog() {
-    this.setState({ importFeaturesDialogOpen: false });
-  }
-  openImportGBIFDialog() {
-    this.setState({ importGBIFDialogOpen: true });
-  }
-  closeImportGBIFDialog() {
-    this.setState({ importGBIFDialogOpen: false });
   }
   openPlanningGridsDialog() {
     //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
     if (this.state.marxanServer.system !== "Windows")
       this.getPlanningUnitGrids();
     this.setState({ planningGridsDialogOpen: true });
-  }
-  closePlanningGridsDialog() {
-    this.setState({ planningGridsDialogOpen: false });
-  }
-  openPlanningGridDialog() {
-    this.setState({ planningGridDialogOpen: true });
-  }
-  closePlanningGridDialog() {
-    this.setState({ planningGridDialogOpen: false });
-  }
-  openFeatureDialog() {
-    this.setState({ featureDialogOpen: true });
-  }
-  closeFeatureDialog() {
-    this.setState({ featureDialogOpen: false });
-  }
-  showNewFeaturePopover() {
-    this.setState({ newFeaturePopoverOpen: true });
-  }
-  hideNewFeaturePopover() {
-    this.setState({ newFeaturePopoverOpen: false });
-  }
-  showImportFeaturePopover() {
-    this.setState({ importFeaturePopoverOpen: true });
-  }
-  hideImportFeaturePopover() {
-    this.setState({ importFeaturePopoverOpen: false });
-  }
-  showImportProjectPopover() {
-    this.setState({ importProjectPopoverOpen: true });
-  }
-  hideImportProjectPopover() {
-    this.setState({ importProjectPopoverOpen: false });
-  }
-  openCostsDialog() {
-    this.setState({ costsDialogOpen: true });
-  }
-  closeCostsDialog() {
-    this.setState({ costsDialogOpen: false });
-  }
-  openImportCostsDialog() {
-    this.setState({ importCostsDialogOpen: true });
-  }
-  closeImportCostsDialog() {
-    this.setState({ importCostsDialogOpen: false });
-  }
-  openWDPAUpdateDialog() {
-    this.setState({ updateWDPADialogOpen: true });
-  }
-  closeWDPAUpdateDialog() {
-    this.setState({ updateWDPADialogOpen: false });
-  }
-  setNewFeatureDatasetFilename(filename) {
-    this.setState({ featureDatasetFilename: filename });
   }
 
   //used by the import wizard to import a users zipped shapefile as the planning units
@@ -3864,6 +3789,23 @@ class App extends React.Component {
     });
   }
 
+  getUploadedActivities() {
+    return new Promise((resolve, reject) => {
+      this._get("getUploadedActivities")
+        .then((response) => JSON.parse(response.data))
+        .then((data) => {
+          this.setState({
+            activities: data,
+            fetched: true,
+          });
+          resolve();
+        })
+        .catch((error) => {
+          //do something
+        });
+    });
+  }
+
   clearSelactedLayers() {
     let layers = [...this.state.selectedLayers];
     layers.forEach((layer) => {
@@ -3911,16 +3853,13 @@ class App extends React.Component {
   }
 
   //when a user clicks a impact in the ImpactsDialog
-  clickImpact(impact) {
+  clickImpact(impact, event, previousRow) {
+    console.log("impact ", impact);
     let ids = this.state.selectedImpactIds;
-    if (ids.includes(impact.id)) {
-      //remove the impact if it is already selected
-      this.removeImpact(impact);
-    } else {
-      //add the impact to the selected impact array
-      this.addImpact(impact);
-      this.toggleImpactLayer(impact);
-    }
+    ids.includes(impact.id)
+      ? this.removeImpact(impact)
+      : this.addImpact(impact);
+    this.toggleImpactLayer(impact);
   }
 
   //adds a impact to the selectedImpactIds array
@@ -3957,7 +3896,6 @@ class App extends React.Component {
     }
     // this.closeImpactMenu();
     let layerName = impact.tilesetid.split(".")[1];
-    console.log("layerName ", layerName);
     let layerId = "marxan_impact_layer_" + layerName;
     if (this.map.getLayer(layerId)) {
       this.removeMapLayer(layerId);
@@ -3970,14 +3908,6 @@ class App extends React.Component {
       ]);
       //get the before layer
       let beforeLayer = layers.length > 0 ? layers[0].id : "";
-      console.log(
-        "mapbox:// + impact.tilesetid ",
-        "mapbox://" + impact.tilesetid
-      );
-      //   type: "raster",
-      //   source: {
-      //     type: "raster",
-      //     url: "mapbox://" + impact.tilesetid + ".png",
       let rasterLayer = {
         id: layerId,
         metadata: {
@@ -3999,8 +3929,6 @@ class App extends React.Component {
         "source-layer": layerName,
         paint: { "raster-opacity": 0.85 },
       };
-      // console.log(rasterLayer);
-
       this.addMapLayer(rasterLayer, beforeLayer);
       this.updateImpact(impact, { impact_layer_loaded: true });
     }
@@ -4069,16 +3997,7 @@ class App extends React.Component {
       //get the message and pass it to the msgCallback function
       this._ws(url, this.wsMessageCallback.bind(this))
         .then((message) => {
-          //get the uploadIds
-          let uploadIds = message.uploadIds;
-          //get a promise array to see when all of the uploads are done
-          let promiseArray = [];
-          //iterate through the uploadIds to see when they are done
-          for (var i = 0; i < uploadIds.length; ++i) {
-            promiseArray.push(this.pollMapbox(uploadIds[i]));
-          }
-          //see when they're done
-          Promise.all(promiseArray).then((response) => {
+          this.pollMapbox(message.uploadId).then((response) => {
             this.setState({ loading: false });
             resolve("Cumulative Impact Layer uploaded");
           });
@@ -4097,6 +4016,11 @@ class App extends React.Component {
     console.log("data ", data);
     return new Promise((resolve, reject) => {
       this.setState({ loading: true });
+      this.log({
+        method: "uploadRaster",
+        status: "In Progress",
+        info: "Uploading Raster...",
+      });
       const formData = new FormData();
       Object.keys(data).forEach((key) => {
         formData.append(key, data[key]);
@@ -4115,13 +4039,6 @@ class App extends React.Component {
     this.hideImportImpactPopover();
   }
 
-  openCumulativeImpactDialog() {
-    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
-    // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
-    this.getImpacts();
-    this.setState({ cumulativeImpactDialogOpen: true });
-  }
-
   showImportImpactPopover() {
     this.setState({ importImpactPopoverOpen: true });
   }
@@ -4134,6 +4051,24 @@ class App extends React.Component {
   hideNewImpactPopover() {
     this.setState({ newImpactPopoverOpen: false });
   }
+
+  // ------------------------------------ activities
+  closeActivitiesDialog() {
+    this.setState({ activitiesDialogOpen: false });
+    // this.hideImportImpactPopover();
+  }
+
+  openActivitiesDialog() {
+    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
+    // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
+    this.getActivities();
+    this.setState({ activitiesDialogOpen: true });
+  }
+
+  openDialog(obj) {
+    this.setState(obj);
+  }
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // MANAGING INTEREST FEATURES SECTION
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4210,7 +4145,7 @@ class App extends React.Component {
   //called when the user has drawn a polygon on screen
   polygonDrawn(evt) {
     //open the new feature dialog for the metadata
-    this.openNewFeatureDialog();
+    this.updateState({ NewFeatureDialogOpen: true });
     //save the feature in a local variable
     this.digitisedFeatures = evt.features;
   }
@@ -4221,17 +4156,7 @@ class App extends React.Component {
     this.state.allFeatures.forEach((feature) => {
       ids.push(feature.id);
     });
-    this.selectFeatures(ids);
-  }
-
-  //clears all the Conservation features
-  clearAllFeatures() {
-    this.setState({ selectedFeatureIds: [] });
-  }
-
-  //selects features
-  selectFeatures(ids) {
-    this.setState({ selectedFeatureIds: ids });
+    this.updateState({ selectedFeatureIds: ids });
   }
 
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
@@ -4269,7 +4194,11 @@ class App extends React.Component {
       //persist the changes to the server
       if (this.state.userData.ROLE !== "ReadOnly") this.updateSpecFile();
       //close the dialog
-      this.closeFeaturesDialog();
+      this.updateState({
+        featuresDialogOpen: false,
+        newFeaturePopoverOpen: false,
+        importFeaturePopoverOpen: false,
+      });
     });
   }
 
@@ -4312,8 +4241,10 @@ class App extends React.Component {
 
   //previews the feature
   previewFeature(feature_metadata) {
-    this.setState({ feature_metadata: feature_metadata });
-    this.openFeatureDialog();
+    this.setState({
+      feature_metadata: feature_metadata,
+      featureDialogOpen: true,
+    });
   }
 
   //unzips a shapefile on the server
@@ -4877,59 +4808,20 @@ class App extends React.Component {
   hideToolsMenu(e) {
     this.setState({ toolsMenuOpen: false });
   }
-  openRegisterDialog() {
-    this.setState({ registerDialogOpen: true });
-  }
-  closeRegisterDialog() {
-    this.setState({ registerDialogOpen: false });
-  }
-  openResendPasswordDialog() {
-    this.setState({ resendPasswordDialogOpen: true });
-  }
-  closeResendPasswordDialog() {
-    this.setState({ resendPasswordDialogOpen: false });
-  }
+
   openProjectsDialog() {
     this.setState({ projectsDialogOpen: true });
     this.getProjects();
   }
-  closeProjectsDialog() {
-    this.setState({
-      projectsDialogOpen: false,
-      importProjectPopoverOpen: false,
-    });
-  }
-  openNewProjectDialog() {
-    this.setState({ newProjectDialogOpen: true });
-  }
-  closeNewProjectDialog() {
-    this.setState({ newProjectDialogOpen: false });
-  }
+
   openNewProjectWizardDialog() {
     this.getCountries();
     this.setState({ newProjectWizardDialogOpen: true });
   }
-  closeNewProjectWizardDialog() {
-    this.setState({ newProjectWizardDialogOpen: false });
-  }
+
   openNewPlanningGridDialog() {
     this.getCountries();
     this.setState({ NewPlanningGridDialogOpen: true });
-  }
-  closeNewPlanningGridDialog() {
-    this.setState({ NewPlanningGridDialogOpen: false });
-  }
-  openImportPlanningGridDialog() {
-    this.setState({ importPlanningGridDialogOpen: true });
-  }
-  closeImportPlanningGridDialog() {
-    this.setState({ importPlanningGridDialogOpen: false });
-  }
-  openInfoDialog() {
-    this.setState({ openInfoDialogOpen: true, featureMenuOpen: false });
-  }
-  closeInfoDialog() {
-    this.setState({ openInfoDialogOpen: false });
   }
 
   openUserSettingsDialog() {
@@ -4937,33 +4829,14 @@ class App extends React.Component {
     this.hideUserMenu();
   }
 
-  closeUserSettingsDialog() {
-    this.setState({ UserSettingsDialogOpen: false });
-  }
-
   openProfileDialog() {
     this.setState({ profileDialogOpen: true });
     this.hideUserMenu();
-  }
-  closeProfileDialog() {
-    this.setState({ profileDialogOpen: false });
   }
 
   openAboutDialog() {
     this.setState({ aboutDialogOpen: true });
     this.hideHelpMenu();
-  }
-
-  closeAboutDialog() {
-    this.setState({ aboutDialogOpen: false });
-  }
-
-  showRunSettingsDialog() {
-    this.setState({ settingsDialogOpen: true });
-  }
-
-  closeRunSettingsDialog() {
-    this.setState({ settingsDialogOpen: false });
   }
 
   openClassificationDialog() {
@@ -4973,33 +4846,9 @@ class App extends React.Component {
     this.setState({ classificationDialogOpen: false });
   }
 
-  openImportProjectDialog() {
-    this.setState({ importProjectDialogOpen: true });
-  }
-  closeImportDialog() {
-    this.setState({ importProjectDialogOpen: false });
-  }
-  openImportMXWDialog() {
-    this.setState({ importMXWDialogOpen: true });
-  }
-  closeImportMXWDialog() {
-    this.setState({ importMXWDialogOpen: false });
-  }
   openUsersDialog() {
     this.getUsers();
     this.setState({ usersDialogOpen: true });
-  }
-  closeUsersDialog() {
-    this.setState({ usersDialogOpen: false });
-  }
-  closeAlertDialog() {
-    this.setState({ alertDialogOpen: false });
-  }
-  hideResults() {
-    this.setState({ resultsPanelOpen: false });
-  }
-  showResults() {
-    this.setState({ resultsPanelOpen: true });
   }
 
   toggleInfoPanel() {
@@ -5017,12 +4866,6 @@ class App extends React.Component {
   closeRunLogDialog() {
     this.stopPollingRunLogs();
     this.setState({ runLogDialogOpen: false });
-  }
-  openResetDialog() {
-    this.setState({ resetDialogOpen: true });
-  }
-  closeResetDialog() {
-    this.setState({ resetDialogOpen: false });
   }
   openGapAnalysisDialog() {
     this.setState({ gapAnalysisDialogOpen: true, gapAnalysis: [] });
@@ -5058,27 +4901,15 @@ class App extends React.Component {
         projectListDialogHeading: projectListDialogHeading,
       },
       () => {
-        this.openProjectsListDialog();
+        this.updateState({ ProjectsListDialogOpen: true });
       }
     );
-  }
-  openProjectsListDialog() {
-    this.setState({ ProjectsListDialogOpen: true });
-  }
-  closeProjectsListDialog() {
-    this.setState({ ProjectsListDialogOpen: false });
   }
   openTargetDialog() {
     this.setState({ targetDialogOpen: true });
   }
   closeTargetDialog() {
     this.setState({ targetDialogOpen: false });
-  }
-  openShareableLinkDialog() {
-    this.setState({ shareableLinkDialogOpen: true });
-  }
-  closeShareableLinkDialog() {
-    this.setState({ shareableLinkDialogOpen: false });
   }
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////// PROTECTED AREAS LAYERS STUFF
@@ -5106,7 +4937,8 @@ class App extends React.Component {
     let filterExpr = ["all", ["in", "iucn_cat"].concat(iucnCategories)]; // no longer filter by ISO code
     this.map.setFilter(CONSTANTS.WDPA_LAYER_NAME, filterExpr);
     //turn on/off the protected areas legend
-    iucnCategory === "None" ? this.hidePALegend() : this.showPALegend();
+    let layer = iucnCategory === "None" ? false : true;
+    this.setState({ pa_layer_visible: layer });
   }
 
   getIndividualIucnCategories(iucnCategory) {
@@ -5222,15 +5054,6 @@ class App extends React.Component {
     });
   }
 
-  //turns on the legend for the protected areas
-  showPALegend() {
-    this.setState({ pa_layer_visible: true });
-  }
-
-  //hides the protected area legend
-  hidePALegend() {
-    this.setState({ pa_layer_visible: false });
-  }
   preprocessProtectedAreas(iucnCategory) {
     //have the intersections already been calculated
     if (this.state.protected_area_intersections.length > 0) {
@@ -5313,7 +5136,7 @@ class App extends React.Component {
             //recalculate the protected area intersections and refilter the vector tiles
             this.changeIucnCategory(this.state.metadata.IUCN_CATEGORY);
             //close the dialog
-            this.closeWDPAUpdateDialog();
+            this.updateState({ updateWDPADialogOpen: false });
           });
           resolve(message);
         })
@@ -5534,7 +5357,7 @@ class App extends React.Component {
   }
 
   getShareableLink() {
-    this.openShareableLinkDialog();
+    this.updateState({ shareableLinkDialogOpen: true });
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5650,7 +5473,7 @@ class App extends React.Component {
         //delete the cost file
         this.deleteCost(costname).then((_) => {
           //close the import costs dialog
-          this.closeImportCostsDialog();
+          this.updateState({ importCostsDialogOpen: false });
           resolve();
         });
       } else {
@@ -5700,11 +5523,11 @@ class App extends React.Component {
         .then((message) => {
           //websocket has finished
           resolve(message);
-          this.closeResetDialog();
+          this.updateState({ resetDialogOpen: false });
         })
         .catch((error) => {
           reject(error);
-          this.closeResetDialog();
+          this.updateState({ resetDialogOpen: false });
         });
     });
   }
@@ -5740,13 +5563,13 @@ class App extends React.Component {
           <LoginDialog
             open={!this.state.loggedIn}
             onOk={this.validateUser.bind(this)}
-            onCancel={this.openRegisterDialog.bind(this)}
+            onCancel={() => this.updateState({ registerDialogOpen: true })}
             loading={this.state.loading}
             user={this.state.user}
             password={this.state.password}
             changeUserName={this.changeUserName.bind(this)}
             changePassword={this.changePassword.bind(this)}
-            openResendPasswordDialog={this.openResendPasswordDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             marxanServers={this.state.marxanServers}
             selectServer={this.selectServer.bind(this)}
             marxanServer={this.state.marxanServer}
@@ -5755,13 +5578,15 @@ class App extends React.Component {
           <RegisterDialog
             open={this.state.registerDialogOpen}
             onOk={this.createNewUser.bind(this)}
-            onCancel={this.closeRegisterDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             loading={this.state.loading}
           />
           <ResendPasswordDialog
             open={this.state.resendPasswordDialogOpen}
             onOk={this.resendPassword.bind(this)}
-            onCancel={this.closeResendPasswordDialog.bind(this)}
+            onCancel={() =>
+              this.updateState({ resendPasswordDialogOpen: false })
+            }
             loading={this.state.loading}
             changeEmail={this.changeEmail.bind(this)}
             email={this.state.resendEmail}
@@ -5771,8 +5596,8 @@ class App extends React.Component {
               this.state.userData.SHOWWELCOMESCREEN &&
               this.state.welcomeDialogOpen
             }
-            onOk={this.closeWelcomeDialog.bind(this)}
-            onCancel={this.closeWelcomeDialog.bind(this)}
+            onOk={this.updateState.bind(this)}
+            onCancel={() => this.updateState({ welcomeDialogOpen: false })}
             userData={this.state.userData}
             saveOptions={this.saveOptions.bind(this)}
             notifications={this.state.notifications}
@@ -5787,7 +5612,7 @@ class App extends React.Component {
             openUsersDialog={this.openUsersDialog.bind(this)}
             openRunLogDialog={this.openRunLogDialog.bind(this)}
             openGapAnalysisDialog={this.openGapAnalysisDialog.bind(this)}
-            openResetDialog={this.openResetDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             userRole={this.state.userData.ROLE}
             marxanServer={this.state.marxanServer}
             metadata={this.state.metadata}
@@ -5813,8 +5638,8 @@ class App extends React.Component {
           />
           <UserSettingsDialog
             open={this.state.UserSettingsDialogOpen}
-            onOk={this.closeUserSettingsDialog.bind(this)}
-            onCancel={this.closeUserSettingsDialog.bind(this)}
+            onOk={() => this.updateState({ UserSettingsDialogOpen: false })}
+            onCancel={() => this.updateState({ UserSettingsDialogOpen: false })}
             loading={this.state.loading}
             userData={this.state.userData}
             saveOptions={this.saveOptions.bind(this)}
@@ -5824,8 +5649,8 @@ class App extends React.Component {
           />
           <UsersDialog
             open={this.state.usersDialogOpen}
-            onOk={this.closeUsersDialog.bind(this)}
-            onCancel={this.closeUsersDialog.bind(this)}
+            onOk={() => this.updateState({ usersDialogOpen: false })}
+            onCancel={() => this.updateState({ usersDialogOpen: false })}
             loading={this.state.loading}
             user={this.state.user}
             users={this.state.users}
@@ -5836,15 +5661,15 @@ class App extends React.Component {
           />
           <ProfileDialog
             open={this.state.profileDialogOpen}
-            onOk={this.closeProfileDialog.bind(this)}
-            onCancel={this.closeProfileDialog.bind(this)}
+            onOk={() => this.updateState({ profileDialogOpen: false })}
+            onCancel={() => this.updateState({ profileDialogOpen: false })}
             loading={this.state.loading}
             userData={this.state.userData}
             updateUser={this.updateUser.bind(this)}
           />
           <AboutDialog
             open={this.state.aboutDialogOpen}
-            onOk={this.closeAboutDialog.bind(this)}
+            onOk={() => this.updateState({ aboutDialogOpen: false })}
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
             wdpaAttribution={this.state.wdpaAttribution}
           />
@@ -5868,7 +5693,6 @@ class App extends React.Component {
             stopPuEditSession={this.stopPuEditSession.bind(this)}
             puEditing={this.state.puEditing}
             clearManualEdits={this.clearManualEdits.bind(this)}
-            showRunSettingsDialog={this.showRunSettingsDialog.bind(this)}
             openFeatureMenu={this.openFeatureMenu.bind(this)}
             preprocessing={this.state.preprocessing}
             openFeaturesDialog={this.openFeaturesDialog.bind(this)}
@@ -5888,7 +5712,7 @@ class App extends React.Component {
             changeCostname={this.changeCostname.bind(this)}
             loadCostsLayer={this.loadCostsLayer.bind(this)}
             loading={this.state.loading}
-            openCostsDialog={this.openCostsDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             protected_area_intersections={
               this.state.protected_area_intersections
             }
@@ -5899,7 +5723,6 @@ class App extends React.Component {
             solutions={this.state.solutions}
             loadSolution={this.loadSolution.bind(this)}
             openClassificationDialog={this.openClassificationDialog.bind(this)}
-            hideResults={this.hideResults.bind(this)}
             brew={this.state.brew}
             messages={this.state.logMessages}
             activeResultsTab={this.state.activeResultsTab}
@@ -5917,8 +5740,8 @@ class App extends React.Component {
           />
           <FeatureInfoDialog
             open={this.state.openInfoDialogOpen}
-            onOk={this.closeInfoDialog.bind(this)}
-            onCancel={this.closeInfoDialog.bind(this)}
+            onOk={() => this.updateState({ openInfoDialogOpen: false })}
+            onCancel={() => this.updateState({ openInfoDialogOpen: false })}
             loading={this.state.loading}
             feature={this.state.currentFeature}
             updateFeature={this.updateFeature.bind(this)}
@@ -5938,54 +5761,52 @@ class App extends React.Component {
           />
           <ProjectsDialog
             open={this.state.projectsDialogOpen}
-            onOk={this.closeProjectsDialog.bind(this)}
-            onCancel={this.closeProjectsDialog.bind(this)}
+            onCancel={() =>
+              this.updateState({
+                projectsDialogOpen: false,
+                importProjectPopoverOpen: false,
+              })
+            }
             loading={this.state.loading}
             projects={this.state.projects}
             oldVersion={this.state.metadata.OLDVERSION}
+            updateState={this.updateState.bind(this)}
             deleteProject={this.deleteProject.bind(this)}
             loadProject={this.loadProject.bind(this)}
             exportProject={this.exportProject.bind(this)}
             cloneProject={this.cloneProject.bind(this)}
-            openNewProjectDialog={this.openNewProjectDialog.bind(this)}
-            openImportProjectDialog={this.openImportProjectDialog.bind(this)}
             unauthorisedMethods={this.state.unauthorisedMethods}
             userRole={this.state.userData.ROLE}
             getAllFeatures={this.getAllFeatures.bind(this)}
             importProjectPopoverOpen={this.state.importProjectPopoverOpen}
-            showImportProjectPopover={this.showImportProjectPopover.bind(this)}
-            hideImportProjectPopover={this.hideImportProjectPopover.bind(this)}
-            openImportMXWDialog={this.openImportMXWDialog.bind(this)}
-            closeImportMXWDialog={this.closeImportMXWDialog.bind(this)}
             importMXWDialogOpen={this.state.importMXWDialogOpen}
           />
           <NewProjectDialog
             open={this.state.newProjectDialogOpen}
             registry={this.state.registry}
-            onOk={this.closeNewProjectDialog.bind(this)}
             loading={this.state.loading}
             getPlanningUnitGrids={this.getPlanningUnitGrids.bind(this)}
             planning_unit_grids={this.state.planning_unit_grids}
             openFeaturesDialog={this.openFeaturesDialog.bind(this)}
             features={this.state.allFeatures}
-            openCostsDialog={this.openCostsDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             selectedCosts={this.state.selectedCosts}
             createNewProject={this.createNewProject.bind(this)}
             previewFeature={this.previewFeature.bind(this)}
           />
           <NewProjectWizardDialog
             open={this.state.newProjectWizardDialogOpen}
-            onOk={this.closeNewProjectWizardDialog.bind(this)}
+            onOk={() => this.updateState({ newProjectWizardDialogOpen: false })}
             okDisabled={true}
             countries={this.state.countries}
-            closeNewProjectWizardDialog={this.closeNewProjectWizardDialog.bind(
-              this
-            )}
+            updateState={this.updateState.bind(this)}
             createNewNationalProject={this.createNewNationalProject.bind(this)}
           />
           <NewPlanningGridDialog
             open={this.state.NewPlanningGridDialogOpen}
-            onCancel={this.closeNewPlanningGridDialog.bind(this)}
+            onCancel={() =>
+              this.updateState({ NewPlanningGridDialogOpen: false })
+            }
             loading={
               this.state.loading ||
               this.state.preprocessing ||
@@ -6000,43 +5821,35 @@ class App extends React.Component {
           <ImportPlanningGridDialog
             open={this.state.importPlanningGridDialogOpen}
             onOk={this.importPlanningUnitGrid.bind(this)}
-            onCancel={this.closeImportPlanningGridDialog.bind(this)}
+            onCancel={() =>
+              this.updateState({ importPlanningGridDialogOpen: false })
+            }
             loading={this.state.loading || this.state.uploading}
             fileUpload={this.uploadFileToFolder.bind(this)}
           />
           <FeaturesDialog
             open={this.state.featuresDialogOpen}
             onOk={this.updateSelectedFeatures.bind(this)}
-            onCancel={this.closeFeaturesDialog.bind(this)}
             loading={this.state.loading || this.state.uploading}
             metadata={this.state.metadata}
             allFeatures={this.state.allFeatures}
             deleteFeature={this.deleteFeature.bind(this)}
-            openImportFeaturesDialog={this.openImportFeaturesDialog.bind(this)}
-            openImportFromWebDialog={this.openImportFromWebDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             selectAllFeatures={this.selectAllFeatures.bind(this)}
-            clearAllFeatures={this.clearAllFeatures.bind(this)}
-            selectFeatures={this.selectFeatures.bind(this)}
             userRole={this.state.userData.ROLE}
             clickFeature={this.clickFeature.bind(this)}
             addingRemovingFeatures={this.state.addingRemovingFeatures}
             selectedFeatureIds={this.state.selectedFeatureIds}
             initialiseDigitising={this.initialiseDigitising.bind(this)}
             newFeaturePopoverOpen={this.state.newFeaturePopoverOpen}
-            hideNewFeaturePopover={this.hideNewFeaturePopover.bind(this)}
-            showNewFeaturePopover={this.showNewFeaturePopover.bind(this)}
             importFeaturePopoverOpen={this.state.importFeaturePopoverOpen}
-            hideImportFeaturePopover={this.hideImportFeaturePopover.bind(this)}
-            showImportFeaturePopover={this.showImportFeaturePopover.bind(this)}
             previewFeature={this.previewFeature.bind(this)}
-            openImportGBIFDialog={this.openImportGBIFDialog.bind(this)}
             marxanServer={this.state.marxanServer}
             refreshFeatures={this.refreshFeatures.bind(this)}
           />
           <FeatureDialog
             open={this.state.featureDialogOpen}
-            onOk={this.closeFeatureDialog.bind(this)}
-            onCancel={this.closeFeatureDialog.bind(this)}
+            onOk={() => this.updateState({ featureDialogOpen: false })}
             loading={this.state.loading}
             feature_metadata={this.state.feature_metadata}
             getTilesetMetadata={this.getMetadata.bind(this)}
@@ -6056,13 +5869,12 @@ class App extends React.Component {
           <ImportFeaturesDialog
             open={this.state.importFeaturesDialogOpen}
             importFeatures={this.importFeatures.bind(this)}
-            onCancel={this.closeImportFeaturesDialog.bind(this)}
             loading={
               this.state.loading ||
               this.state.preprocessing ||
               this.state.uploading
             }
-            setFilename={this.setNewFeatureDatasetFilename.bind(this)}
+            updateState={this.updateState.bind(this)}
             filename={this.state.featureDatasetFilename}
             fileUpload={this.uploadFileToFolder.bind(this)}
             unzipShapefile={this.unzipShapefile.bind(this)}
@@ -6073,7 +5885,7 @@ class App extends React.Component {
           />
           <ImportFromWebDialog
             open={this.state.importFromWebDialogOpen}
-            onCancel={this.closeImportFromWebDialog.bind(this)}
+            onCancel={this.updateState.bind(this)}
             loading={
               this.state.loading ||
               this.state.preprocessing ||
@@ -6085,7 +5897,7 @@ class App extends React.Component {
           />
           <ImportGBIFDialog
             open={this.state.importGBIFDialogOpen}
-            onCancel={this.closeImportGBIFDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             loading={
               this.state.loading ||
               this.state.preprocessing ||
@@ -6098,16 +5910,12 @@ class App extends React.Component {
           />
           <PlanningGridsDialog
             open={this.state.planningGridsDialogOpen}
-            onOk={this.closePlanningGridsDialog.bind(this)}
-            onCancel={this.closePlanningGridsDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             loading={this.state.loading}
             getPlanningUnitGrids={this.getPlanningUnitGrids.bind(this)}
             unauthorisedMethods={this.state.unauthorisedMethods}
             planningGrids={this.state.planning_unit_grids}
             openNewPlanningGridDialog={this.openNewPlanningGridDialog.bind(
-              this
-            )}
-            openImportPlanningGridDialog={this.openImportPlanningGridDialog.bind(
               this
             )}
             exportPlanningGrid={this.exportPlanningGrid.bind(this)}
@@ -6117,8 +5925,8 @@ class App extends React.Component {
           />
           <PlanningGridDialog
             open={this.state.planningGridDialogOpen}
-            onOk={this.closePlanningGridDialog.bind(this)}
-            onCancel={this.closePlanningGridDialog.bind(this)}
+            onOk={() => this.updateState({ planningGridDialogOpen: false })}
+            updateState={this.updateState.bind(this)}
             loading={this.state.loading}
             planning_grid_metadata={this.state.planning_grid_metadata}
             getTilesetMetadata={this.getMetadata.bind(this)}
@@ -6129,32 +5937,32 @@ class App extends React.Component {
             open={this.state.ProjectsListDialogOpen}
             projects={this.state.projectList}
             userRole={this.state.userData.ROLE}
-            onOk={this.closeProjectsListDialog.bind(this)}
+            onOk={() => this.updateState({ ProjectsListDialogOpen: false })}
             title={this.state.projectListDialogTitle}
             heading={this.state.projectListDialogHeading}
           />
           <CostsDialog
             open={this.state.costsDialogOpen}
-            onOk={this.closeCostsDialog.bind(this)}
-            onCancel={this.closeCostsDialog.bind(this)}
+            onOk={() => this.updateState({ costsDialogOpen: false })}
+            onCancel={() => this.updateState({ costsDialogOpen: false })}
+            updateState={this.updateState.bind(this)}
             unauthorisedMethods={this.state.unauthorisedMethods}
             costname={this.state.metadata.COSTS}
-            openImportCostsDialog={this.openImportCostsDialog.bind(this)}
             deleteCost={this.deleteCost.bind(this)}
             data={this.state.costnames}
           />
           <ImportCostsDialog
             open={this.state.importCostsDialogOpen}
             addCost={this.addCost.bind(this)}
-            closeImportCostsDialog={this.closeImportCostsDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             deleteCostFileThenClose={this.deleteCostFileThenClose.bind(this)}
             loading={this.state.loading}
             fileUpload={this.uploadFileToProject.bind(this)}
           />
           <RunSettingsDialog
             open={this.state.settingsDialogOpen}
-            onOk={this.closeRunSettingsDialog.bind(this)}
-            onCancel={this.closeRunSettingsDialog.bind(this)}
+            onOk={() => this.updateState({ settingsDialogOpen: false })}
+            onCancel={() => this.updateState({ settingsDialogOpen: false })}
             loading={this.state.loading || this.state.preprocessing}
             updateRunParams={this.updateRunParams.bind(this)}
             runParams={this.state.runParams}
@@ -6194,7 +6002,7 @@ class App extends React.Component {
           />
           <ImportProjectDialog
             open={this.state.importProjectDialogOpen}
-            onOk={this.closeImportDialog.bind(this)}
+            onOk={() => this.updateState({ importProjectDialogOpen: false })}
             loading={this.state.loading || this.state.uploading}
             importProject={this.importProject.bind(this)}
             fileUpload={this.uploadFileToFolder.bind(this)}
@@ -6203,7 +6011,7 @@ class App extends React.Component {
           />
           <ImportMXWDialog
             open={this.state.importMXWDialogOpen}
-            onOk={this.closeImportMXWDialog.bind(this)}
+            onOk={() => this.updateState({ importMXWDialogOpen: false })}
             loading={this.state.loading || this.state.preprocessing}
             importMXWProject={this.importMXWProject.bind(this)}
             fileUpload={this.uploadFileToFolder.bind(this)}
@@ -6213,8 +6021,8 @@ class App extends React.Component {
           <ResetDialog
             open={this.state.resetDialogOpen}
             onOk={this.resetServer.bind(this)}
-            onCancel={this.closeResetDialog.bind(this)}
-            onRequestClose={this.closeResetDialog.bind(this)}
+            onCancel={() => this.updateState({ resetDialogOpen: false })}
+            onRequestClose={() => this.updateState({ resetDialogOpen: false })}
             loading={this.state.loading}
           />
           <RunLogDialog
@@ -6235,15 +6043,15 @@ class App extends React.Component {
             onOk={this.closeServerDetailsDialog.bind(this)}
             onCancel={this.closeServerDetailsDialog.bind(this)}
             onRequestClose={this.closeServerDetailsDialog.bind(this)}
+            updateState={this.updateState.bind(this)}
             marxanServer={this.state.marxanServer}
             newWDPAVersion={this.state.newWDPAVersion}
-            showUpdateWDPADialog={this.openWDPAUpdateDialog.bind(this)}
             registry={this.state.registry}
           />
           <UpdateWDPADialog
             open={this.state.updateWDPADialogOpen}
-            onOk={this.closeWDPAUpdateDialog.bind(this)}
-            onCancel={this.closeWDPAUpdateDialog.bind(this)}
+            onOk={() => this.updateState({ updateWDPADialogOpen: false })}
+            onCancel={() => this.updateState({ updateWDPADialogOpen: false })}
             newWDPAVersion={this.state.newWDPAVersion}
             updateWDPA={this.updateWDPA.bind(this)}
             loading={this.state.preprocessing}
@@ -6260,7 +6068,7 @@ class App extends React.Component {
           />
           <AlertDialog
             open={this.state.alertDialogOpen}
-            onOk={this.closeAlertDialog.bind(this)}
+            onOk={() => this.updateState({ alertDialogOpen: false })}
           />
           <Snackbar
             open={this.state.snackbarOpen}
@@ -6282,7 +6090,12 @@ class App extends React.Component {
             >
               <MenuItemWithButton
                 leftIcon={<Properties style={{ margin: "1px" }} />}
-                onClick={this.openInfoDialog.bind(this)}
+                onClick={() =>
+                  this.updateState({
+                    openInfoDialogOpen: true,
+                    featureMenuOpen: false,
+                  })
+                }
               >
                 Properties
               </MenuItemWithButton>
@@ -6405,7 +6218,7 @@ class App extends React.Component {
           />
           <ShareableLinkDialog
             open={this.state.shareableLinkDialogOpen}
-            onOk={this.closeShareableLinkDialog.bind(this)}
+            onOk={() => this.updateState({ shareableLinkDialogOpen: false })}
             shareableLinkUrl={
               window.location +
               "?server=" +
@@ -6468,7 +6281,6 @@ class App extends React.Component {
             userRole={this.state.userData.ROLE}
             infoPanelOpen={this.state.infoPanelOpen}
             resultsPanelOpen={this.state.resultsPanelOpen}
-            openProjectsDialog={this.openProjectsDialog.bind(this)}
             openFeaturesDialog={this.openFeaturesDialog.bind(this)}
             openPlanningGridsDialog={this.openPlanningGridsDialog.bind(this)}
             toggleInfoPanel={this.toggleInfoPanel.bind(this)}

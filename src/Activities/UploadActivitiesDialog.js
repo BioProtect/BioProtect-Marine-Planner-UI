@@ -13,45 +13,43 @@ import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faCircle } from "@fortawesome/free-regular-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
 import Import from "material-ui/svg-icons/action/get-app";
-import ToolbarButton from "./ToolbarButton";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTable from "./MarxanTable";
-import TableRow from "./TableRow.js";
+import ToolbarButton from "../ToolbarButton";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTable from "../MarxanTable";
+import TableRow from "../TableRow.js";
 
 import Popover from "material-ui/Popover";
 import Menu from "material-ui/Menu";
 import MenuItem from "material-ui/MenuItem";
 
-class CumulativeImpactDialog extends React.Component {
+class UploadedActivitiesDialog extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       searchText: "",
       selectedActivity: undefined,
-      planning_grid_name: "",
-      zipFilename: "",
       description: "",
       snackbarOpen: false,
       snackbarMessage: "",
     };
   }
   _delete() {
-    this.props.deleteImpact(this.state.selectedImpact);
-    this.setState({ selectedImpact: undefined });
+    this.props.deleteActivity(this.state.selectedActivity);
+    this.setState({ selectedActivity: undefined });
   }
-  showNewImpactPopover(event) {
-    this.setState({ newImpactAnchor: event.currentTarget });
-    this.props.showNewImpactPopover();
+  showNewActivityPopover(event) {
+    this.setState({ newActivityAnchor: event.currentTarget });
+    this.props.showNewActivityPopover();
   }
-  showImportImpactPopover(event) {
-    this.setState({ importImpactAnchor: event.currentTarget });
-    this.props.showImportImpactPopover();
+  showImportActivityPopover(event) {
+    this.setState({ importActivityAnchor: event.currentTarget });
+    this.props.showImportActivityPopover();
   }
-  _openImportImpactsDialog() {
+  _openImportActivityDialog() {
     //close the dialog
     this.props.onCancel();
     //show the new feature dialog
-    this.props.openImportImpactsDialog("import");
+    this.props.openImportActivityDialog("import");
   }
   _newByDigitising() {
     //hide this dialog
@@ -59,38 +57,18 @@ class CumulativeImpactDialog extends React.Component {
     //show the drawing controls
     this.props.initialiseDigitising();
   }
-  clickImpact(event, rowInfo) {
+  clickActivity(event, rowInfo) {
+    console.log("rowInfo ", rowInfo);
     //if adding or removing features from a project
-    if (this.props.addingRemovingImpacts) {
-      //if the shift key is pressed then select/deselect the features in between
-      if (event.shiftKey) {
-        //get the selected feature ids
-        let selectedIds = this.getImpactsBetweenRows(
-          this.state.previousRow,
-          rowInfo
-        );
-        //update the selected ids
-        this.props.selectImpacts(selectedIds);
-      } else {
-        //single feature has been clicked
-        this.props.clickImpact(
-          rowInfo.original,
-          event.shiftKey,
-          this.state.previousRow
-        );
-      }
-      this.setState({ previousRow: rowInfo });
-    } else {
-      this.props.clickImpact(
-        rowInfo.original,
-        event.shiftKey,
-        this.state.previousRow
-      );
-      this.setState({ selectedImpact: rowInfo.original });
-    }
+    this.props.clickActivity(
+      rowInfo.original,
+      event.shiftKey,
+      this.state.previousRow
+    );
+    this.setState({ selectedActivity: rowInfo.original });
   }
   //gets the features ids between the two passed rows and toggles their selection state
-  getImpactsBetweenRows(previousRow, thisRow) {
+  getActivitysBetweenRows(previousRow, thisRow) {
     let selectedIds;
     //get the index position of the previous row that was clicked
     let idx1 =
@@ -99,17 +77,17 @@ class CumulativeImpactDialog extends React.Component {
     let idx2 =
       previousRow.index < thisRow.index ? thisRow.index + 1 : previousRow.index;
     //toggle the selected features depending on if the current features are filtered
-    if (this.filteredRows.length < this.props.allImpacts.length) {
+    if (this.filteredRows.length < this.props.allActivitys.length) {
       selectedIds = this.toggleSelectionState(
-        this.props.selectedImpactIds,
+        this.props.selectedActivityIds,
         this.filteredRows,
         idx1,
         idx2
       );
     } else {
       selectedIds = this.toggleSelectionState(
-        this.props.selectedImpactIds,
-        this.props.allImpacts,
+        this.props.selectedActivityIds,
+        this.props.allActivitys,
         idx1,
         idx2
       );
@@ -120,9 +98,9 @@ class CumulativeImpactDialog extends React.Component {
   //toggles the selection state of the features between the first and last indices and returns an array of the selected featureIds
   toggleSelectionState(selectedIds, features, first, last) {
     //get the features between the first and last positions
-    let spannedImpacts = features.slice(first, last);
+    let spannedActivitys = features.slice(first, last);
     //iterate through them and toggle their selected state
-    spannedImpacts.forEach((feature) => {
+    spannedActivitys.forEach((feature) => {
       if (selectedIds.includes(feature.id)) {
         selectedIds.splice(selectedIds.indexOf(feature.id), 1);
       } else {
@@ -137,36 +115,12 @@ class CumulativeImpactDialog extends React.Component {
     this.props.onOk();
   }
 
-  setzipFilename(filename) {
-    this.setState({ zipFilename: filename });
-  }
-
   onOk(evt) {
     this.props.onOk();
   }
 
-  // onOk() {
-  //   let _description =
-  //     this.state.description === ""
-  //       ? "Imported using the cumulative impact dialog"
-  //       : this.state.description;
-  // this.props
-  //   .onOk(this.state.zipFilename, this.state.planning_grid_name, _description)
-  //   .then(function (response) {
-  //     //reset the state
-  //     this.setState({
-  //       planning_grid_name: "",
-  //       zipFilename: "",
-  //       description: "",
-  //     });
-  //   })
-  //   .catch(function (ex) {
-  //     //error uploading the shapefile
-  //   });
-  // }
-
   preview(impact_metadata) {
-    this.props.previewImpact(impact_metadata);
+    this.props.previewActivity(impact_metadata);
   }
 
   renderTitle(row) {
@@ -242,46 +196,50 @@ class CumulativeImpactDialog extends React.Component {
         {...this.props}
         autoDetectWindowHeight={false}
         bodyStyle={{ padding: "0px 24px 0px 24px" }}
-        title="Impacts"
+        title="Activitys"
         onOk={this.onOk.bind(this)}
-        showCancelButton={this.props.addingRemovingImpacts}
-        helpLink={
-          this.props.addingRemovingImpacts
-            ? "user.html#adding-and-removing-features"
-            : "user.html#the-features-window"
-        }
         showSearchBox={true}
         searchTextChanged={this.searchTextChanged.bind(this)}
         children={
           <React.Fragment key="k10">
             <div id="projectsTable">
               <MarxanTable
-                data={this.props.allImpacts}
+                data={this.props.allActivitys}
                 searchColumns={["alias", "description", "source", "created_by"]}
                 searchText={this.state.searchText}
                 dataFiltered={this.dataFiltered.bind(this)}
-                addingRemovingImpacts={this.props.addingRemovingImpacts}
-                selectedImpactIds={this.props.selectedImpactIds}
-                selectedImpact={this.state.selectedImpact}
-                clickImpact={this.clickImpact.bind(this)}
+                selectedActivityIds={this.props.selectedActivityIds}
+                clickActivity={this.clickActivity.bind(this)}
                 preview={this.preview.bind(this)}
                 columns={tableColumns}
                 getTrProps={(state, rowInfo, column) => {
+                  console.log("rowInfo ", rowInfo);
+                  console.log(
+                    "tate.selectedActivityIds.includes(rowInfo.original.id) ",
+                    state.selectedActivityIds.includes(rowInfo.original.id)
+                  );
+                  console.log(
+                    "state.selectedActivityIds ",
+                    state.selectedActivityIds
+                  );
+                  console.log(
+                    "state.selectedActivity ",
+                    state.selectedActivity
+                  );
+
                   return {
                     style: {
                       background:
-                        (state.addingRemovingImpacts &&
-                          state.selectedImpactIds.includes(
-                            rowInfo.original.id
-                          )) ||
-                        (!state.addingRemovingImpacts &&
-                          state.selectedImpact &&
-                          state.selectedImpact.id === rowInfo.original.id)
+                        state.selectedActivityIds.includes(
+                          rowInfo.original.id
+                        ) ||
+                        (state.selectedActivity &&
+                          state.selectedActivity.id === rowInfo.original.id)
                           ? "aliceblue"
                           : "",
                     },
                     onClick: (e) => {
-                      state.clickImpact(e, rowInfo);
+                      state.clickActivity(e, rowInfo);
                     },
                   };
                 }}
@@ -307,23 +265,22 @@ class CumulativeImpactDialog extends React.Component {
               <ToolbarButton
                 show={
                   this.props.userRole !== "ReadOnly" &&
-                  !this.props.metadata.OLDVERSION &&
-                  !this.props.addingRemovingImpacts
+                  !this.props.metadata.OLDVERSION
                     ? "true"
                     : "false"
                 }
                 icon={<FontAwesomeIcon icon={faPlusCircle} />}
                 title="New feature"
                 disabled={this.props.loading}
-                onClick={this.showNewImpactPopover.bind(this)}
+                onClick={this.showNewActivityPopover.bind(this)}
                 label={"New"}
               />
               <Popover
-                open={this.props.newImpactPopoverOpen}
-                anchorEl={this.state.newImpactAnchor}
+                open={this.props.newActivityPopoverOpen}
+                anchorEl={this.state.newActivityAnchor}
                 anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
                 targetOrigin={{ horizontal: "left", vertical: "top" }}
-                onRequestClose={this.props.hideNewImpactPopover}
+                onRequestClose={this.props.hideNewActivityPopover}
               >
                 <Menu desktop={true}>
                   <MenuItem
@@ -336,7 +293,6 @@ class CumulativeImpactDialog extends React.Component {
               <ToolbarButton
                 show={
                   !this.props.metadata.OLDVERSION &&
-                  !this.props.addingRemovingImpacts &&
                   this.props.userRole !== "ReadOnly"
                     ? "true"
                     : "false"
@@ -344,21 +300,21 @@ class CumulativeImpactDialog extends React.Component {
                 icon={<Import style={{ height: "20px", width: "20px" }} />}
                 title="Create a new cumulative impact layer"
                 disabled={this.props.loading}
-                onClick={this.showImportImpactPopover.bind(this)}
+                onClick={this.showImportActivityPopover.bind(this)}
                 label={"Import"}
               />
               <Popover
-                open={this.props.importImpactPopoverOpen}
-                anchorEl={this.state.importImpactAnchor}
+                open={this.props.importActivityPopoverOpen}
+                anchorEl={this.state.importActivityAnchor}
                 anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
                 targetOrigin={{ horizontal: "left", vertical: "top" }}
-                onRequestClose={this.props.hideImportImpactPopover}
+                onRequestClose={this.props.hideImportActivityPopover}
               >
                 <Menu desktop={true}>
                   <MenuItem
                     primaryText="From a raster"
                     title="Load an activity raster"
-                    onClick={this._openImportImpactsDialog.bind(this)}
+                    onClick={this._openImportActivityDialog.bind(this)}
                   />
                 </Menu>
               </Popover>
@@ -372,19 +328,19 @@ class CumulativeImpactDialog extends React.Component {
                 }
                 title="Delete feature"
                 disabled={
-                  this.state.selectedImpact === undefined ||
+                  this.state.selectedActivity === undefined ||
                   this.props.loading ||
-                  (this.state.selectedImpact &&
-                    this.state.selectedImpact.created_by === "global admin")
+                  (this.state.selectedActivity &&
+                    this.state.selectedActivity.created_by === "global admin")
                 }
                 onClick={this._delete.bind(this)}
                 label={"Delete"}
               />
               <ToolbarButton
-                show={this.props.addingRemovingImpacts ? "true" : "false"}
+                show={"true"}
                 icon={<FontAwesomeIcon icon={faCircle} />}
-                title="Clear all Impact layers"
-                onClick={this.props.clearAllImpacts}
+                title="Clear all Activity layers"
+                onClick={this.props.clearAllActivitys}
                 label={"Clear all"}
               />
             </div>
@@ -395,4 +351,4 @@ class CumulativeImpactDialog extends React.Component {
   }
 }
 
-export default CumulativeImpactDialog;
+export default UploadedActivitiesDialog;

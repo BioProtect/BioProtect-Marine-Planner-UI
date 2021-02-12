@@ -42,23 +42,30 @@ class FeaturesDialog extends React.Component {
   }
   showNewFeaturePopover(event) {
     this.setState({ newFeatureAnchor: event.currentTarget });
-    this.props.showNewFeaturePopover();
+    this.props.updateState({ newFeaturePopoverOpen: true });
   }
   showImportFeaturePopover(event) {
     this.setState({ importFeatureAnchor: event.currentTarget });
-    this.props.showImportFeaturePopover();
+    this.props.updateState({ importFeaturePopoverOpen: true });
   }
   _openImportFeaturesDialog() {
-    //close the dialog
-    this.props.onCancel();
-    //show the new feature dialog
-    this.props.openImportFeaturesDialog("import");
+    // close the dialog
+    // and show the new feature dialog
+    this.props.updateState({
+      featuresDialogOpen: false,
+      newFeaturePopoverOpen: false,
+      importFeaturePopoverOpen: false,
+      importFeaturesDialogOpen: true,
+    });
   }
   _openImportFromWebDialog() {
-    //close the dialog
-    this.props.onCancel();
-    //show the new feature dialog
-    this.props.openImportFromWebDialog();
+    //close the dialog & show new dialog
+    this.props.updateState({
+      featuresDialogOpen: false,
+      newFeaturePopoverOpen: false,
+      importFeaturePopoverOpen: false,
+      importFromWebDialogOpen: true,
+    });
   }
   _newByDigitising() {
     //hide this dialog
@@ -67,10 +74,15 @@ class FeaturesDialog extends React.Component {
     this.props.initialiseDigitising();
   }
   openImportGBIFDialog() {
-    this.props.openImportGBIFDialog();
-    this.props.onCancel();
+    this.props.updateState({
+      importGBIFDialogOpen: true,
+      featuresDialogOpen: false,
+      newFeaturePopoverOpen: false,
+      importFeaturePopoverOpen: false,
+    });
   }
   clickFeature(event, rowInfo) {
+    console.log("rowInfo ", rowInfo);
     //if adding or removing features from a project
     if (this.props.addingRemovingFeatures) {
       //if the shift key is pressed then select/deselect the features in between
@@ -81,7 +93,7 @@ class FeaturesDialog extends React.Component {
           rowInfo
         );
         //update the selected ids
-        this.props.selectFeatures(selectedIds);
+        this.props.update(selectedIds);
       } else {
         //single feature has been clicked
         this.props.clickFeature(
@@ -145,7 +157,7 @@ class FeaturesDialog extends React.Component {
       this.filteredRows.forEach((feature) => {
         selectedIds.push(feature.id);
       });
-      this.props.selectFeatures(selectedIds);
+      this.props.updateState({ selectedFeatureIds: selectedIds });
     } else {
       //select all features
       this.props.selectAllFeatures();
@@ -162,7 +174,11 @@ class FeaturesDialog extends React.Component {
     this.setState({
       selectedFeature: undefined,
     });
-    this.props.onCancel();
+    this.props.updateState({
+      featuresDialogOpen: false,
+      newFeaturePopoverOpen: false,
+      importFeaturePopoverOpen: false,
+    });
   }
   sortDate(a, b, desc) {
     return new Date(
@@ -350,7 +366,9 @@ class FeaturesDialog extends React.Component {
                   anchorEl={this.state.newFeatureAnchor}
                   anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
                   targetOrigin={{ horizontal: "left", vertical: "top" }}
-                  onRequestClose={this.props.hideNewFeaturePopover}
+                  onRequestClose={() =>
+                    this.props.updateState({ newFeaturePopoverOpen: false })
+                  }
                 >
                   <Menu desktop={true}>
                     <MenuItem
@@ -377,7 +395,9 @@ class FeaturesDialog extends React.Component {
                   anchorEl={this.state.importFeatureAnchor}
                   anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
                   targetOrigin={{ horizontal: "left", vertical: "top" }}
-                  onRequestClose={this.props.hideImportFeaturePopover}
+                  onRequestClose={() =>
+                    this.props.updateState({ importFeaturePopoverOpen: false })
+                  }
                 >
                   <Menu desktop={true}>
                     <MenuItem
@@ -435,7 +455,9 @@ class FeaturesDialog extends React.Component {
                   show={this.props.addingRemovingFeatures}
                   icon={<FontAwesomeIcon icon={faCircle} />}
                   title="Clear all features"
-                  onClick={this.props.clearAllFeatures}
+                  onClick={() =>
+                    this.props.updateState({ selectedFeatureIds: [] })
+                  }
                   label={"Clear all"}
                 />
                 <ToolbarButton
