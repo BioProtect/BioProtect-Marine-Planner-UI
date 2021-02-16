@@ -83,11 +83,6 @@ class AppBar extends React.Component {
               title="Atlas Layers"
             />
             <AppBarIcon
-              icon={faFingerprint}
-              onClick={this.props.openActivitiesDialog}
-              title="Activities"
-            />
-            <AppBarIcon
               icon={faLayerGroup}
               onClick={this.props.openCumulativeImpactDialog}
               title="Impact"

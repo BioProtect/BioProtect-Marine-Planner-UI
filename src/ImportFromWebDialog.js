@@ -140,7 +140,7 @@ class ImportFromWebDialog extends React.Component {
       });
   }
   closeDialog() {
-    this.setState(INITIAL_STATE);
+    this.setState({ ...INITIAL_STATE });
     this.props.onCancel({ importFromWebDialogOpen: false });
   }
   render() {

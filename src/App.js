@@ -85,10 +85,9 @@ import ResetDialog from "./ResetDialog";
 import UpdateWDPADialog from "./UpdateWDPADialog";
 import ImportGBIFDialog from "./ImportGBIFDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
-import ImportImpactsDialog from "./Impacts/ImportImpactsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
-import ActivitiesDialog from "./Activities/ActivitiesDialog";
-import ImportActivityDialog from "./Activities/ImportActivityDialog";
+import ImportedActivitiesDialog from "./Impacts/ImportedActivitiesDialog";
+import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -219,9 +218,7 @@ class App extends React.Component {
       selectedLayers: [],
       selectedImpactIds: [],
       impact_metadata: {},
-      importImpactsDialogOpen: false,
       impactDatasetFilename: "",
-      importImpactPopoverOpen: false,
       runningImpactMessage: "Import Activity",
       newFeaturePopoverOpen: false,
       allImpacts: [],
@@ -229,9 +226,9 @@ class App extends React.Component {
       activitiesDialogOpen: false,
       atlasLayersDialogOpen: false,
       activities: [],
-      newImpactPopoverOpen: false,
       uploadedActivities: [],
-      importActivityDialogOpen: false,
+      humanActivitiesDialogOpen: false,
+      importedActivitiesDialogOpen: false,
     };
   }
 
@@ -3793,13 +3790,18 @@ class App extends React.Component {
     });
   }
 
+  openImportedActivitesDialog() {
+    this.getUploadedActivities();
+    this.setState({ importedActivitiesDialogOpen: true });
+  }
+
   getUploadedActivities() {
     return new Promise((resolve, reject) => {
       this._get("getUploadedActivities")
-        .then((response) => JSON.parse(response.data))
-        .then((data) => {
+        .then((response) => {
+          console.log("response ", response);
           this.setState({
-            uploadedActivities: data,
+            uploadedActivities: response.data,
             fetched: true,
           });
           resolve();
@@ -3841,26 +3843,10 @@ class App extends React.Component {
     this.setState({ atlasLayersDialogOpen: false });
   }
 
-  getImpacts() {
-    return new Promise((resolve, reject) => {
-      this._get("getAllImpacts")
-        .then((response) => {
-          this.setState({
-            allImpacts: response.data,
-          });
-          resolve();
-        })
-        .catch((error) => {
-          //do something
-        });
-    });
-  }
-
   //when a user clicks a impact in the ImpactsDialog
   clickImpact(impact, event, previousRow) {
     console.log("impact ", impact);
-    let ids = this.state.selectedImpactIds;
-    ids.includes(impact.id)
+    this.state.selectedImpactIds.includes(impact.id)
       ? this.removeImpact(impact)
       : this.addImpact(impact);
     this.toggleImpactLayer(impact);
@@ -3868,24 +3854,18 @@ class App extends React.Component {
 
   //adds a impact to the selectedImpactIds array
   addImpact(impact, callback) {
-    let ids = this.state.selectedImpactIds;
-    //add the feautre to the selected impact array
-    ids.push(impact.id);
-    this.setState({ selectedImpactIds: ids }, callback);
+    this.setState((prevState) => ({
+      selectedImpactIds: [...prevState.selectedImpactIds, impact.id],
+    }));
   }
 
   //removes a impact from the selectedImpactIds array
   removeImpact(impact) {
-    let ids = this.state.selectedImpactIds;
-    //remove the impact  - this requires a callback on setState otherwise the state is not updated before updateSelectedImpacts is called
-    ids = ids.filter((value, index, arr) => {
-      return value !== impact.id;
-    });
-    return new Promise((resolve, reject) => {
-      this.setState({ selectedImpactIds: ids }, () => {
-        resolve("Impact removed");
-      });
-    });
+    this.setState((prevState) => ({
+      selectedImpactIds: prevState.selectedImpactIds.filter(
+        (imp) => imp !== impact.id
+      ),
+    }));
   }
 
   //toggles the impact layer on the map
@@ -3975,15 +3955,15 @@ class App extends React.Component {
     );
   }
 
-  openImportImpactsDialog() {
+  openHumanActivitiesDialog() {
     if (this.state.activities.length < 1) {
       this.getActivities();
     }
-    this.setState({ importImpactsDialogOpen: true });
+    this.setState({ humanActivitiesDialogOpen: true });
   }
 
-  closeImportImpactsDialog() {
-    this.setState({ importImpactsDialogOpen: false });
+  closeHumanActivitiesDialog() {
+    this.setState({ humanActivitiesDialogOpen: false });
   }
 
   //create new impact from the created pressures
@@ -4014,12 +3994,7 @@ class App extends React.Component {
     }); //return
   }
 
-  setNewImpactDatasetFilename(filename) {
-    this.setState({ impactDatasetFilename: filename });
-  }
-
   uploadRaster(data) {
-    console.log("data ", data);
     return new Promise((resolve, reject) => {
       this.setState({ loading: true });
       this.log({
@@ -4043,26 +4018,46 @@ class App extends React.Component {
   openActivitiesDialog() {
     //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
     // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
-    console.log("click....");
-    if (this.state.uploadedActivities.length < 1) {
-      this.getUploadedActivities();
-    }
+    this.getUploadedActivities();
     this.setState({ activitiesDialogOpen: true });
   }
 
-  openImportActivityDialog() {
+  openHumanActivitiesDialog() {
     if (this.state.activities.length < 1) {
       this.getActivities();
     }
-    this.setState({ importActivityDialogOpen: true });
+    this.setState({ humanActivitiesDialogOpen: true });
   }
 
-  closeImportActivityDialog() {
-    this.setState({ importActivityDialogOpen: false });
+  closeHumanActivitiesDialog() {
+    this.setState({ humanActivitiesDialogOpen: false });
   }
 
-  updateState(state_obj) {
-    this.setState(state_obj);
+  //create new impact from the created pressures
+  saveActivityToDb(filename, selectedActivity, description) {
+    //start the logging
+    this.setState({ loading: true });
+    this.startLogging();
+    return new Promise((resolve, reject) => {
+      //get the request url
+      let url =
+        "saveRaster?filename=" +
+        filename +
+        "&activity=" +
+        selectedActivity +
+        "&description=" +
+        description;
+      //get the message and pass it to the msgCallback function
+      this._ws(url, this.wsMessageCallback.bind(this))
+        .then((message) => {
+          console.log("message ", message);
+          this.setState({ loading: false });
+          resolve("Raster saved to db");
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    }); //return
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6236,73 +6231,61 @@ class App extends React.Component {
             selectedLayers={this.state.selectedLayers}
             setselectedLayers={this.setselectedLayers.bind(this)}
           />
-          <ImportImpactsDialog
-            open={this.state.importImpactsDialogOpen}
-            importImpacts={this.importImpacts.bind(this)}
-            activities={this.state.activities}
-            setSnackBar={this.setSnackBar.bind(this)}
-            onCancel={this.closeImportImpactsDialog.bind(this)}
-            loading={
-              this.state.loading ||
-              this.state.preprocessing ||
-              this.state.uploading
-            }
-            runningImpactMessage={this.state.runningImpactMessage}
-            fileUpload={this.uploadRaster.bind(this)}
-          />
           <CumulativeImpactDialog
             loading={this.state.loading || this.state.uploading}
             open={this.state.cumulativeImpactDialogOpen}
-            onOk={() =>
-              this.updateState({
-                cumulativeImpactDialogOpen: false,
-                importImpactPopoverOpen: false,
-              })
-            }
+            onOk={() => this.updateState({ cumulativeImpactDialogOpen: false })}
             onCancel={() =>
-              this.updateState({
-                cumulativeImpactDialogOpen: false,
-                importImpactPopoverOpen: false,
-              })
+              this.updateState({ cumulativeImpactDialogOpen: false })
             }
-            openImportImpactsDialog={this.openImportImpactsDialog.bind(this)}
+            openHumanActivitiesDialog={this.openHumanActivitiesDialog.bind(
+              this
+            )}
             metadata={this.state.metadata}
             allImpacts={this.state.allImpacts}
             clickImpact={this.clickImpact.bind(this)}
-            newImpactPopoverOpen={this.state.newImpactPopoverOpen}
-            importImpactPopoverOpen={this.state.importImpactPopoverOpen}
             initialiseDigitising={this.initialiseDigitising.bind(this)}
             updateState={this.updateState.bind(this)}
             selectedImpactIds={this.state.selectedImpactIds}
+            openImportedActivitesDialog={this.openImportedActivitesDialog.bind(
+              this
+            )}
             setSnackBar={this.setSnackBar.bind(this)}
             userRole={this.state.userData.ROLE}
           />
-          <ActivitiesDialog
+          <HumanActivitiesDialog
             loading={this.state.loading || this.state.uploading}
-            open={this.state.activitiesDialogOpen}
-            onOk={() => this.updateState({ activitiesDialogOpen: false })}
-            onCancel={() => this.updateState({ activitiesDialogOpen: false })}
+            open={this.state.humanActivitiesDialogOpen}
+            onOk={() => this.updateState({ humanActivitiesDialogOpen: false })}
+            onCancel={() =>
+              this.updateState({ humanActivitiesDialogOpen: false })
+            }
+            updateState={this.updateState.bind(this)}
+            metadata={this.state.metadata}
+            activities={this.state.activities}
+            initialiseDigitising={this.initialiseDigitising.bind(this)}
+            setSnackBar={this.setSnackBar.bind(this)}
+            userRole={this.state.userData.ROLE}
+            fileUpload={this.uploadRaster.bind(this)}
+            saveActivityToDb={this.saveActivityToDb.bind(this)}
+            openImportedActivitesDialog={this.openImportedActivitesDialog.bind(
+              this
+            )}
+          />
+          <ImportedActivitiesDialog
+            loading={this.state.loading || this.state.uploading}
+            open={this.state.importedActivitiesDialogOpen}
+            onOk={() =>
+              this.updateState({ importedActivitiesDialogOpen: false })
+            }
+            onCancel={() =>
+              this.updateState({ importedActivitiesDialogOpen: false })
+            }
             updateState={this.updateState.bind(this)}
             metadata={this.state.metadata}
             uploadedActivities={this.state.uploadedActivities}
-            openImportActivityDialog={this.openImportActivityDialog.bind(this)}
-            clickImpact={this.clickImpact.bind(this)}
-            initialiseDigitising={this.initialiseDigitising.bind(this)}
-            selectedImpactIds={this.state.selectedImpactIds}
             setSnackBar={this.setSnackBar.bind(this)}
             userRole={this.state.userData.ROLE}
-          />
-          <ImportActivityDialog
-            open={this.state.importActivityDialogOpen}
-            activities={this.state.activities}
-            setSnackBar={this.setSnackBar.bind(this)}
-            onCancel={this.closeImportImpactsDialog.bind(this)}
-            loading={
-              this.state.loading ||
-              this.state.preprocessing ||
-              this.state.uploading
-            }
-            fileUpload={this.uploadRaster.bind(this)}
           />
           <AppBar
             open={this.state.loggedIn}

@@ -18,26 +18,16 @@ import MarxanDialog from "../MarxanDialog";
 import MarxanTable from "../MarxanTable";
 import TableRow from "../TableRow.js";
 
-import Popover from "material-ui/Popover";
-import Menu from "material-ui/Menu";
-import MenuItem from "material-ui/MenuItem";
-
-class ActivitiesDialog extends React.Component {
+class ImportedActivitiesDialog extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       searchText: "",
-      selectedActivity: undefined,
       description: "",
       snackbarOpen: false,
       snackbarMessage: "",
-      selectedActivities: "",
-      selectedActivitiesIds: [],
+      selectedUploadedActivityIds: [],
     };
-  }
-  _delete() {
-    this.props.deleteActivity(this.state.selectedActivities);
-    this.setState({ selectedActivities: undefined });
   }
   showNewActivityPopover(event) {
     this.setState({ newActivityAnchor: event.currentTarget });
@@ -59,42 +49,27 @@ class ActivitiesDialog extends React.Component {
     //show the drawing controls
     this.props.initialiseDigitising();
   }
+
+  //when a user clicks a impact in the ImpactsDialog
   clickActivity(event, rowInfo) {
-    console.log("rowInfo ", rowInfo);
-    //if adding or removing features from a project
-    this.props.clickActivity(
-      rowInfo.original,
-      event.shiftKey,
-      this.state.previousRow
-    );
-    this.setState({ selectedActivities: rowInfo.original });
-  }
-  //gets the features ids between the two passed rows and toggles their selection state
-  getActivitysBetweenRows(previousRow, thisRow) {
-    let selectedIds;
-    //get the index position of the previous row that was clicked
-    let idx1 =
-      previousRow.index < thisRow.index ? previousRow.index + 1 : thisRow.index;
-    //get the index position of this row that was clicked
-    let idx2 =
-      previousRow.index < thisRow.index ? thisRow.index + 1 : previousRow.index;
-    //toggle the selected features depending on if the current features are filtered
-    if (this.filteredRows.length < this.props.allActivitys.length) {
-      selectedIds = this.toggleSelectionState(
-        this.props.selectedActivitiesIds,
-        this.filteredRows,
-        idx1,
-        idx2
-      );
+    console.log("rowInfo.original ", rowInfo.original);
+    if (this.state.selectedUploadedActivityIds.includes(rowInfo.original.id)) {
+      // remove the rowInfo.original
+      this.setState((prevState) => ({
+        selectedUploadedActivityIds: prevState.selectedUploadedActivityIds.filter(
+          (act) => act !== rowInfo.original.id
+        ),
+      }));
     } else {
-      selectedIds = this.toggleSelectionState(
-        this.props.selectedActivitiesIds,
-        this.props.allActivitys,
-        idx1,
-        idx2
-      );
+      // add the rowInfo.original id
+      this.setState((prevState) => ({
+        selectedUploadedActivityIds: [
+          ...prevState.selectedUploadedActivityIds,
+          rowInfo.original.id,
+        ],
+      }));
     }
-    return selectedIds;
+    console.log(this.state.selectedUploadedActivityIds);
   }
 
   //toggles the selection state of the features between the first and last indices and returns an array of the selected featureIds
@@ -113,7 +88,6 @@ class ActivitiesDialog extends React.Component {
   }
 
   closeDialog() {
-    this.setState({ selectedActivity: undefined });
     this.props.onOk();
   }
 
@@ -121,21 +95,14 @@ class ActivitiesDialog extends React.Component {
     this.props.onOk();
   }
 
-  preview(impact_metadata) {
-    this.props.previewActivity(impact_metadata);
-  }
-
-  renderTitle(row) {
-    return <TableRow title={row.original.description} />;
-  }
   renderActivity(row) {
-    return <TableRow title={row.original.acttivity} />;
+    return <TableRow title={row.original.activity} />;
   }
   renderSource(row) {
     return <TableRow title={row.original.source} />;
   }
-  renderCategory(row) {
-    return <TableRow title={row.original.category} />;
+  renderFilename(row) {
+    return <TableRow title={row.original.filename} />;
   }
   renderCreatedBy(row) {
     return <TableRow title={row.original.created_by} />;
@@ -149,7 +116,7 @@ class ActivitiesDialog extends React.Component {
     );
   }
   searchTextChanged(value) {
-    this.setState({ searchText: value });
+    this.setState({ searchText: value.toLowerCase() });
   }
   //called when the data in the marxantable is filtered
   dataFiltered(filteredRows) {
@@ -159,17 +126,18 @@ class ActivitiesDialog extends React.Component {
   render() {
     let tableColumns = [
       {
-        Header: "Name",
-        accessor: "alias",
+        Header: "Activity",
+        accessor: "activity",
         width: 193,
         headerStyle: { textAlign: "left" },
+        Cell: this.renderActivity.bind(this),
       },
       {
-        Header: "Description",
-        accessor: "description",
-        width: 246,
+        Header: "Filename",
+        accessor: "filename",
+        width: 200,
         headerStyle: { textAlign: "left" },
-        Cell: this.renderTitle.bind(this),
+        Cell: this.renderFilename.bind(this),
       },
       {
         Header: "Source",
@@ -198,7 +166,7 @@ class ActivitiesDialog extends React.Component {
         {...this.props}
         autoDetectWindowHeight={false}
         bodyStyle={{ padding: "0px 24px 0px 24px" }}
-        title="Activitys"
+        title="Uploaded Activities"
         onOk={this.onOk.bind(this)}
         showSearchBox={true}
         searchTextChanged={this.searchTextChanged.bind(this)}
@@ -210,35 +178,19 @@ class ActivitiesDialog extends React.Component {
                 searchColumns={["alias", "description", "source", "created_by"]}
                 searchText={this.state.searchText}
                 dataFiltered={this.dataFiltered.bind(this)}
-                selectedActivitiesIds={this.props.selectedActivitiesIds}
+                selectedUploadedActivityIds={
+                  this.state.selectedUploadedActivityIds
+                }
                 clickActivity={this.clickActivity.bind(this)}
-                preview={this.preview.bind(this)}
                 columns={tableColumns}
                 getTrProps={(state, rowInfo, column) => {
-                  console.log("rowInfo ", rowInfo);
-                  console.log(
-                    "tate.selectedActivitiesIds.includes(rowInfo.original.id) ",
-                    state.selectedActivitiesIds.includes(rowInfo.original.id)
-                  );
-                  console.log(
-                    "state.selectedActivitiesIds ",
-                    state.selectedActivitiesIds
-                  );
-                  console.log(
-                    "state.selectedActivities ",
-                    state.selectedActivities
-                  );
-
                   return {
                     style: {
-                      background:
-                        state.selectedActivitiesIds.includes(
-                          rowInfo.original.id
-                        ) ||
-                        (state.selectedActivities &&
-                          state.selectedActivities.id === rowInfo.original.id)
-                          ? "aliceblue"
-                          : "",
+                      background: state.selectedUploadedActivityIds.includes(
+                        rowInfo.original.id
+                      )
+                        ? "aliceblue"
+                        : "",
                     },
                     onClick: (e) => {
                       state.clickActivity(e, rowInfo);
@@ -272,48 +224,14 @@ class ActivitiesDialog extends React.Component {
                     : "false"
                 }
                 icon={<FontAwesomeIcon icon={faPlusCircle} />}
-                title="Create a new activity by digitsing it on screen"
-                disabled={this.props.loading}
-                onClick={this._newByDigitising.bind(this)}
-                label={"Draw"}
-              />
-              <ToolbarButton
-                show={
-                  !this.props.metadata.OLDVERSION &&
-                  this.props.userRole !== "ReadOnly"
-                    ? "true"
-                    : "false"
-                }
-                icon={<Import style={{ height: "20px", width: "20px" }} />}
-                title="Upload a new activity raster"
-                disabled={this.props.loading}
-                onClick={this._openImportActivityDialog.bind(this)}
-                label={"Import"}
-              />
-              <ToolbarButton
-                show="true"
-                icon={
-                  <FontAwesomeIcon
-                    icon={faTrashAlt}
-                    color="rgb(255, 64, 129)"
-                  />
-                }
-                title="Delete feature"
+                title="Run Cumulative Impact Function"
+                primary={true}
                 disabled={
-                  this.state.selectedActivities === undefined ||
                   this.props.loading ||
-                  (this.state.selectedActivities &&
-                    this.state.selectedActivities.created_by === "global admin")
+                  this.state.selectedUploadedActivityIds.length < 1
                 }
-                onClick={this._delete.bind(this)}
-                label={"Delete"}
-              />
-              <ToolbarButton
-                show={"true"}
-                icon={<FontAwesomeIcon icon={faCircle} />}
-                title="Clear all Activity layers"
-                onClick={this.props.clearAllActivitys}
-                label={"Clear all"}
+                onClick={this._newByDigitising.bind(this)}
+                label={"Run Cumulative Impact Function"}
               />
             </div>
           </React.Fragment>
@@ -323,4 +241,4 @@ class ActivitiesDialog extends React.Component {
   }
 }
 
-export default ActivitiesDialog;
+export default ImportedActivitiesDialog;

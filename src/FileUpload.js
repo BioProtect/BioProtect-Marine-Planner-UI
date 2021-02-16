@@ -33,7 +33,6 @@ class FileUpload extends React.Component {
     this.setState({ active: true });
   }
   onChange(e) {
-    console.log(this.props.fileUpload);
     if (e.target.files.length) {
       //set the loading state
       this.setState({ loading: true });

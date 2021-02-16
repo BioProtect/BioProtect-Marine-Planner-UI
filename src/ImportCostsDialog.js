@@ -17,7 +17,7 @@ class ImportCostsDialog extends React.Component {
     this.state = INITIAL_STATE;
   }
   resetState() {
-    this.setState(INITIAL_STATE);
+    this.setState({ ...INITIAL_STATE });
   }
   onOk() {
     //add the cost to the application state

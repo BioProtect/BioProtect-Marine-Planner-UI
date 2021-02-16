@@ -23,7 +23,9 @@ class MarxanTable extends React.Component {
             (key) =>
               this.props.searchColumns.includes(key) &&
               item[key] &&
-              item[key].includes(this.props.searchText.substring(1))
+              item[key]
+                .toLowerCase()
+                .includes(this.props.searchText.toLowerCase().substring(1))
           );
         } else {
           //contains search - this will exit the some loop (and return true) if there are any matching items
@@ -31,7 +33,9 @@ class MarxanTable extends React.Component {
             (key) =>
               this.props.searchColumns.includes(key) &&
               item[key] &&
-              item[key].includes(this.props.searchText)
+              item[key]
+                .toLowerCase()
+                .includes(this.props.searchText.toLowerCase())
           );
         }
       });

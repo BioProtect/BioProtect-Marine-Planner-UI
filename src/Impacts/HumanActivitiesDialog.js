@@ -14,9 +14,12 @@ import FileUpload from "../FileUpload.js";
 import ToolbarButton from "../ToolbarButton";
 import TableRow from "../TableRow.js";
 import Sync from "material-ui/svg-icons/notification/sync";
+import "react-table/react-table.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 
 let INITIAL_STATE = {
-  steps: ["Select Activity", "Raster Upload"],
+  steps: ["Select Activity", "Import or Draw", "Upload Data"],
   stepIndex: 0,
   filename: "",
   description: "",
@@ -25,9 +28,9 @@ let INITIAL_STATE = {
   message: "",
 };
 
-const title = ["Import Activity", "Upload Raster File"];
+const title = ["Select Activity", "Import or Draw", "Upload Data"];
 
-class ImportActivityDialog extends React.Component {
+class ImportImpactsDialog extends React.Component {
   constructor(props) {
     super(props);
     this.state = INITIAL_STATE;
@@ -57,10 +60,6 @@ class ImportActivityDialog extends React.Component {
     this.setState({ filename: newValue });
   }
 
-  changeFileName(event, newValue) {
-    this.setState({ filename: newValue });
-  }
-
   changeDescription(event, newValue) {
     this.setState({ description: newValue });
   }
@@ -73,6 +72,13 @@ class ImportActivityDialog extends React.Component {
     this.setState({ message: newValue });
   }
 
+  _newByDigitising() {
+    //hide this dialog
+    this.onOk();
+    //show the drawing controls
+    this.props.initialiseDigitising();
+  }
+
   saveActivityToDb() {
     this.props
       .saveActivityToDb(
@@ -83,6 +89,7 @@ class ImportActivityDialog extends React.Component {
       .then((response) => {
         this.setMessage(response);
         this.closeDialog();
+        this.props.openImportedActivitesDialog();
       });
   }
 
@@ -95,15 +102,7 @@ class ImportActivityDialog extends React.Component {
 
   closeDialog() {
     //delete the zip file and shapefile
-    this.setState({
-      steps: ["Select Activity", "Raster Upload"],
-      stepIndex: 0,
-      filename: "",
-      description: "",
-      searchText: "",
-      selectedActivity: "",
-      message: "",
-    });
+    this.setState({ ...INITIAL_STATE });
     this.props.onCancel();
   }
 
@@ -148,28 +147,31 @@ class ImportActivityDialog extends React.Component {
         }}
       >
         <div style={contentStyle}>
-          <div style={{ marginTop: 12 }}>
-            <ToolbarButton
-              label="Back"
-              disabled={stepIndex === 0 || this.props.loading}
-              onClick={this.handlePrev.bind(this)}
-            />
-            <ToolbarButton
-              label={
-                stepIndex === this.state.steps.length - 1
-                  ? "Save Activity"
-                  : "Next"
-              }
-              onClick={this.handleNext.bind(this)}
-              disabled={
-                _disabled ||
-                this.props.loading ||
-                (stepIndex === 2 &&
-                  (this.state.filename === "" || this.state.description === ""))
-              }
-              primary={true}
-            />
-          </div>
+          {stepIndex !== 1 ? (
+            <div style={{ marginTop: 12 }}>
+              <ToolbarButton
+                label="Back"
+                disabled={stepIndex === 0 || this.props.loading}
+                onClick={this.handlePrev.bind(this)}
+              />
+              <ToolbarButton
+                label={
+                  stepIndex === this.state.steps.length - 1
+                    ? "Save to Database"
+                    : "Next"
+                }
+                onClick={this.handleNext.bind(this)}
+                disabled={
+                  _disabled ||
+                  this.props.loading ||
+                  (stepIndex === 2 &&
+                    (this.state.filename === "" ||
+                      this.state.description === ""))
+                }
+                primary={true}
+              />
+            </div>
+          ) : null}
         </div>
       </div>,
     ];
@@ -198,6 +200,7 @@ class ImportActivityDialog extends React.Component {
                   },
 
                   onClick: (e) => {
+                    console.log("e ", e);
                     this.setSelectedActivity(rowInfo.original.activity);
                   },
                 };
@@ -205,6 +208,7 @@ class ImportActivityDialog extends React.Component {
               getTdProps={(state, rowInfo, column) => {
                 return {
                   onClick: (e) => {
+                    console.log("e in TD ", e);
                     this.setSelectedActivity(rowInfo.original.activity);
                   },
                 };
@@ -214,23 +218,74 @@ class ImportActivityDialog extends React.Component {
         ) : null}
         {stepIndex === 1 ? (
           <div>
+            <ToolbarButton
+              show={
+                this.props.userRole !== "ReadOnly" &&
+                !this.props.metadata.OLDVERSION
+                  ? "true"
+                  : "false"
+              }
+              icon={<FontAwesomeIcon icon={faPlusCircle} />}
+              title="Import"
+              disabled={this.props.loading}
+              onClick={this.handleNext.bind(this)}
+              label={"Import from Raster"}
+            />
+            <ToolbarButton
+              show={
+                this.props.userRole !== "ReadOnly" &&
+                !this.props.metadata.OLDVERSION
+                  ? "true"
+                  : "false"
+              }
+              icon={<FontAwesomeIcon icon={faPlusCircle} />}
+              title="Draw on screen"
+              // disabled={this.props.loading}
+              disabled={true}
+              onClick={this._newByDigitising.bind(this)}
+              label={"Draw on Screen"}
+            />
+          </div>
+        ) : null}
+        {stepIndex === 2 ? (
+          <div>
+            <div>
+              {this.props.runningImpactMessage}
+              <Sync
+                className="spin"
+                style={{
+                  display:
+                    this.props.loading || this.props.showSpinner
+                      ? "inline-block"
+                      : "none",
+                  color: "rgb(255, 64, 129)",
+                  top: "15px",
+                  right: "41px",
+                  height: "22px",
+                  width: "22px",
+                }}
+                key={"spinner"}
+              />
+            </div>
+            <div>
+              <FileUpload
+                {...this.props}
+                selectedActivity={this.state.selectedActivity}
+                fileMatch={".tif"}
+                mandatory={true}
+                filename={this.state.filename}
+                setFilename={this.setFilename.bind(this)}
+                destFolder={"imports"}
+                label="Raster"
+                style={{ paddingTop: "10px" }}
+              />
+            </div>
             <MarxanTextField
               value={this.state.description}
               onChange={this.changeDescription.bind(this)}
               multiLine={true}
               rows={2}
-              floatingLabelText="Enter activity description..."
-            />
-            <FileUpload
-              {...this.props}
-              selectedActivity={this.state.selectedActivity}
-              fileMatch={".tif"}
-              mandatory={true}
-              filename={this.state.filename}
-              setFilename={this.setFilename.bind(this)}
-              destFolder={"imports"}
-              label="Select raster to upload..."
-              style={{ paddingTop: "10px" }}
+              floatingLabelText="Enter a description"
             />
           </div>
         ) : null}
@@ -254,4 +309,4 @@ class ImportActivityDialog extends React.Component {
   }
 }
 
-export default ImportActivityDialog;
+export default ImportImpactsDialog;

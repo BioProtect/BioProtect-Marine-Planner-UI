@@ -91,7 +91,7 @@ class ImportFeaturesDialog extends React.Component {
   closeDialog() {
     //delete the zip file and shapefile
     this.props.deleteShapefile(this.props.filename, this.shapefile);
-    this.setState(INITIAL_STATE);
+    this.setState({ ...INITIAL_STATE });
     this.shapefile = "";
     this.props.updateState({
       featureDatasetFilename: "",

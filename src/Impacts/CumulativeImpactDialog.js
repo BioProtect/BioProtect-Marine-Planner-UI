@@ -12,6 +12,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faCircle } from "@fortawesome/free-regular-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
+import { faFolderOpen } from "@fortawesome/free-regular-svg-icons";
 import Import from "material-ui/svg-icons/action/get-app";
 import ToolbarButton from "../ToolbarButton";
 import MarxanDialog from "../MarxanDialog";
@@ -39,14 +40,13 @@ class CumulativeImpactDialog extends React.Component {
     this.props.deleteImpact(this.state.selectedImpact);
     this.setState({ selectedImpact: undefined });
   }
-  showNewImpactPopover(event) {
-    this.setState({ newImpactAnchor: event.currentTarget });
-    this.props.updateState({ newImpactPopoverOpen: true });
+  openHumanActivitiesDialog() {
+    //close the dialog
+    this.props.onCancel();
+    //show the new feature dialog
+    this.props.openHumanActivitiesDialog();
   }
-  showImportImpactPopover(event) {
-    this.setState({ importImpactAnchor: event.currentTarget });
-    this.props.updateState({ importImpactPopoverOpen: true });
-  }
+
   _openImportImpactsDialog() {
     //close the dialog
     this.props.updateState({
@@ -132,7 +132,7 @@ class CumulativeImpactDialog extends React.Component {
     return <TableRow title={row.original.description} />;
   }
   renderActivity(row) {
-    return <TableRow title={row.original.acttivity} />;
+    return <TableRow title={row.original.activity} />;
   }
   renderSource(row) {
     return <TableRow title={row.original.source} />;
@@ -218,17 +218,6 @@ class CumulativeImpactDialog extends React.Component {
                 preview={this.preview.bind(this)}
                 columns={tableColumns}
                 getTrProps={(state, rowInfo, column) => {
-                  console.log("rowInfo ", rowInfo);
-                  console.log(
-                    "tate.selectedImpactIds.includes(rowInfo.original.id) ",
-                    state.selectedImpactIds.includes(rowInfo.original.id)
-                  );
-                  console.log(
-                    "state.selectedImpactIds ",
-                    state.selectedImpactIds
-                  );
-                  console.log("state.selectedImpact ", state.selectedImpact);
-
                   return {
                     style: {
                       background:
@@ -270,28 +259,11 @@ class CumulativeImpactDialog extends React.Component {
                     : "false"
                 }
                 icon={<FontAwesomeIcon icon={faPlusCircle} />}
-                title="New feature"
+                title="New CI function"
                 disabled={this.props.loading}
-                onClick={this.showNewImpactPopover.bind(this)}
-                label={"New"}
+                onClick={this.openHumanActivitiesDialog.bind(this)}
+                label={"Add Activity"}
               />
-              <Popover
-                open={this.props.newImpactPopoverOpen}
-                anchorEl={this.state.newImpactAnchor}
-                anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-                targetOrigin={{ horizontal: "left", vertical: "top" }}
-                onRequestClose={() =>
-                  this.props.updateState({ newImpactPopoverOpen: false })
-                }
-              >
-                <Menu desktop={true}>
-                  <MenuItem
-                    primaryText="Draw on screen"
-                    title="Create a new feature by digitising it on the screen"
-                    onClick={this._newByDigitising.bind(this)}
-                  />
-                </Menu>
-              </Popover>
               <ToolbarButton
                 show={
                   !this.props.metadata.OLDVERSION &&
@@ -299,29 +271,12 @@ class CumulativeImpactDialog extends React.Component {
                     ? "true"
                     : "false"
                 }
-                icon={<Import style={{ height: "20px", width: "20px" }} />}
-                title="Create a new cumulative impact layer"
+                icon={<FontAwesomeIcon icon={faFolderOpen} />}
+                title="View uploaded activities"
                 disabled={this.props.loading}
-                onClick={this.showImportImpactPopover.bind(this)}
-                label={"Import"}
+                onClick={this.props.openImportedActivitesDialog}
+                label={"Uploaded Activities"}
               />
-              <Popover
-                open={this.props.importImpactPopoverOpen}
-                anchorEl={this.state.importImpactAnchor}
-                anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-                targetOrigin={{ horizontal: "left", vertical: "top" }}
-                onRequestClose={() =>
-                  this.props.updateState({ importImpactPopoverOpen: false })
-                }
-              >
-                <Menu desktop={true}>
-                  <MenuItem
-                    primaryText="From a raster"
-                    title="Load an activity raster"
-                    onClick={this._openImportImpactsDialog.bind(this)}
-                  />
-                </Menu>
-              </Popover>
               <ToolbarButton
                 show="true"
                 icon={
