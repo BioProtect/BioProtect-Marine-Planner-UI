@@ -12,7 +12,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faCircle } from "@fortawesome/free-regular-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import { faFolderOpen } from "@fortawesome/free-regular-svg-icons";
+import { faPlayCircle } from "@fortawesome/free-regular-svg-icons";
 import Import from "material-ui/svg-icons/action/get-app";
 import ToolbarButton from "../ToolbarButton";
 import MarxanDialog from "../MarxanDialog";
@@ -271,11 +271,11 @@ class CumulativeImpactDialog extends React.Component {
                     ? "true"
                     : "false"
                 }
-                icon={<FontAwesomeIcon icon={faFolderOpen} />}
+                icon={<FontAwesomeIcon icon={faPlayCircle} />}
                 title="View uploaded activities"
                 disabled={this.props.loading}
                 onClick={this.props.openImportedActivitesDialog}
-                label={"Uploaded Activities"}
+                label={"Run Cumulative Impact"}
               />
               <ToolbarButton
                 show="true"

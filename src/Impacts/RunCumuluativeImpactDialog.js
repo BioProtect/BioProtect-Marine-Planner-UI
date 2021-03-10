@@ -50,9 +50,17 @@ class ImportedActivitiesDialog extends React.Component {
     this.props.initialiseDigitising();
   }
 
+  runCumulativeImpact() {
+    console.log(
+      "this.state.selectedUploadedActivityIds ",
+      this.state.selectedUploadedActivityIds
+    );
+
+    this.props.runCumulativeImpact(this.state.selectedUploadedActivityIds);
+  }
+
   //when a user clicks a impact in the ImpactsDialog
   clickActivity(event, rowInfo) {
-    console.log("rowInfo.original ", rowInfo.original);
     if (this.state.selectedUploadedActivityIds.includes(rowInfo.original.id)) {
       // remove the rowInfo.original
       this.setState((prevState) => ({
@@ -69,7 +77,6 @@ class ImportedActivitiesDialog extends React.Component {
         ],
       }));
     }
-    console.log(this.state.selectedUploadedActivityIds);
   }
 
   //toggles the selection state of the features between the first and last indices and returns an array of the selected featureIds
@@ -113,6 +120,14 @@ class ImportedActivitiesDialog extends React.Component {
         title={row.original.creation_date}
         htmlContent={row.original.creation_date.substr(0, 8)}
       />
+    );
+  }
+  title(title, subtitle) {
+    return (
+      <div>
+        <div>{title}</div>
+        <h6>{subtitle}</h6>
+      </div>
     );
   }
   searchTextChanged(value) {
@@ -166,7 +181,10 @@ class ImportedActivitiesDialog extends React.Component {
         {...this.props}
         autoDetectWindowHeight={false}
         bodyStyle={{ padding: "0px 24px 0px 24px" }}
-        title="Uploaded Activities"
+        title={this.title(
+          "Uploaded Activities",
+          "Select an uploaded activity and then run"
+        )}
         onOk={this.onOk.bind(this)}
         showSearchBox={true}
         searchTextChanged={this.searchTextChanged.bind(this)}
@@ -230,7 +248,7 @@ class ImportedActivitiesDialog extends React.Component {
                   this.props.loading ||
                   this.state.selectedUploadedActivityIds.length < 1
                 }
-                onClick={this._newByDigitising.bind(this)}
+                onClick={this.runCumulativeImpact.bind(this)}
                 label={"Run Cumulative Impact Function"}
               />
             </div>

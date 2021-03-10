@@ -86,7 +86,7 @@ import UpdateWDPADialog from "./UpdateWDPADialog";
 import ImportGBIFDialog from "./ImportGBIFDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
-import ImportedActivitiesDialog from "./Impacts/ImportedActivitiesDialog";
+import RunCumuluativeImpactDialog from "./Impacts/RunCumuluativeImpactDialog";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 
 //GLOBAL VARIABLES
@@ -3994,6 +3994,26 @@ class App extends React.Component {
     }); //return
   }
 
+  runCumulativeImpact(selectedUploadedActivityIds) {
+    this.setState({ loading: true });
+    this.startLogging();
+    return new Promise((resolve, reject) => {
+      this._ws(
+        "runCumumlativeImpact?selectedIds=" + selectedUploadedActivityIds,
+        this.wsMessageCallback.bind(this)
+      )
+        .then((message) => {
+          this.pollMapbox(message.uploadId).then((response) => {
+            this.setState({ loading: false });
+            resolve("Cumulative Impact Layer uploaded");
+          });
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
+  }
+
   uploadRaster(data) {
     return new Promise((resolve, reject) => {
       this.setState({ loading: true });
@@ -6272,7 +6292,7 @@ class App extends React.Component {
               this
             )}
           />
-          <ImportedActivitiesDialog
+          <RunCumuluativeImpactDialog
             loading={this.state.loading || this.state.uploading}
             open={this.state.importedActivitiesDialogOpen}
             onOk={() =>
@@ -6286,6 +6306,7 @@ class App extends React.Component {
             uploadedActivities={this.state.uploadedActivities}
             setSnackBar={this.setSnackBar.bind(this)}
             userRole={this.state.userData.ROLE}
+            runCumulativeImpact={this.runCumulativeImpact.bind(this)}
           />
           <AppBar
             open={this.state.loggedIn}
