@@ -88,6 +88,7 @@ import AtlasLayersDialog from "./AtlasLayersDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
 import RunCumuluativeImpactDialog from "./Impacts/RunCumuluativeImpactDialog";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
+import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog.js";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -229,6 +230,7 @@ class App extends React.Component {
       uploadedActivities: [],
       humanActivitiesDialogOpen: false,
       importedActivitiesDialogOpen: false,
+      NewMarinePlanningGridDialogOpen: false,
     };
   }
 
@@ -252,11 +254,14 @@ class App extends React.Component {
 
   //gets various global variables from the marxan registry
   getGlobalVariables() {
+    console.log("getGlobalVariables ");
     return new Promise((resolve, reject) => {
       fetch(CONSTANTS.MARXAN_REGISTRY).then((response) => {
         response.json().then((registryData) => {
           this.setState({ registry: registryData });
           mapboxgl.accessToken = registryData.MBAT_PUBLIC; //this is my public access token
+          // mapboxgl.accessToken =
+          //   "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg"; //this is my public access token
           //initialise the basemaps
           this.setState({ basemaps: registryData.MAPBOX_BASEMAPS });
           //get all the information for the marxan servers by polling them
@@ -2746,6 +2751,7 @@ class App extends React.Component {
 
   //sets the basemap either on project load, or if the user changes it
   setBasemap(basemap) {
+    console.log("setBasemap ");
     return new Promise((resolve, reject) => {
       //change the state
       this.setState({ basemap: basemap.name });
@@ -2857,12 +2863,13 @@ class App extends React.Component {
 
   //gets all of the metadata for the tileset
   getMetadata(tilesetId) {
+    console.log("getMetadata ");
     return new Promise((resolve, reject) => {
       fetch(
         "https://api.mapbox.com/v4/" +
           tilesetId +
-          ".json?secure&access_token=" +
-          this.state.registry.MBAT_PUBLIC
+          ".json?secure&access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg" // +
+        // this.state.registry.MBAT_PUBLIC
       )
         .then((response) => response.json())
         .then((response2) => {
@@ -3447,6 +3454,33 @@ class App extends React.Component {
     });
   }
 
+  //creates a new planning grid unit
+  createNewMarinePlanningUnitGrid(filename, areakm2, shape) {
+    return new Promise((resolve, reject) => {
+      this.startLogging();
+      this._ws(
+        "createPlanningUnitGrid?iso3=" +
+          filename +
+          "&areakm2=" +
+          areakm2 +
+          "&shape=" +
+          shape,
+        this.wsMessageCallback.bind(this)
+      )
+        .then((message) => {
+          this.newMarinePlanningGridCreated(message).then(() => {
+            this.updateState({ NewMarinePlanningGridDialogOpen: false });
+            //websocket has finished
+            resolve(message);
+          });
+        })
+        .catch((error) => {
+          //do something
+          reject(error);
+        });
+    });
+  }
+
   //imports a zipped shapefile as a new planning grid
   importPlanningUnitGrid(zipFilename, alias, description) {
     return new Promise((resolve, reject) => {
@@ -3604,8 +3638,7 @@ class App extends React.Component {
               CONSTANTS.MAPBOX_USER +
               "/" +
               uploadid +
-              "?access_token=" +
-              this.state.registry.MBAT
+              "?access_token=sk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2tlOGdiampuMXc0bzJzb2JxMzdzOTRybCJ9.vfiGr6JQ83_ncJVpVZcMbQ" //+this.state.registry.MBAT
           )
             .then((response) => response.json())
             .then((response) => {
@@ -3738,6 +3771,26 @@ class App extends React.Component {
           //do something
         });
     });
+  }
+
+  getOceanBaseMap() {
+    this.map.addSource("Ocean Base", {
+      type: "raster",
+      tiles: [
+        "http://atlas.marine.ie/mapserver/?map=C:/MapServer/apps/miatlas/AdministrativeUnits_wms.map&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}",
+      ],
+      tileSize: 256,
+    });
+    this.map.addLayer({
+      id: "Ocean Base",
+      type: "raster",
+      source: "Ocean Base",
+      layout: {
+        // make layer visible by default
+        visibility: "none",
+      },
+    });
+    // this.setState({ map: map });
   }
 
   getAtlasLayers() {
@@ -4015,6 +4068,7 @@ class App extends React.Component {
   }
 
   uploadRaster(data) {
+    console.log("upload raster ata ", data);
     return new Promise((resolve, reject) => {
       this.setState({ loading: true });
       this.log({
@@ -4026,10 +4080,12 @@ class App extends React.Component {
       Object.keys(data).forEach((key) => {
         formData.append(key, data[key]);
       });
+      console.log("formData ", formData);
 
       //the binary data for the file
       //the filename
       this._post("uploadRaster", formData).then(function (response) {
+        console.log("response ", response);
         resolve(response);
       });
     });
@@ -4040,17 +4096,6 @@ class App extends React.Component {
     // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
     this.getUploadedActivities();
     this.setState({ activitiesDialogOpen: true });
-  }
-
-  openHumanActivitiesDialog() {
-    if (this.state.activities.length < 1) {
-      this.getActivities();
-    }
-    this.setState({ humanActivitiesDialogOpen: true });
-  }
-
-  closeHumanActivitiesDialog() {
-    this.setState({ humanActivitiesDialogOpen: false });
   }
 
   //create new impact from the created pressures
@@ -5827,6 +5872,22 @@ class App extends React.Component {
               this
             )}
             countries={this.state.countries}
+            setSnackBar={this.setSnackBar.bind(this)}
+          />
+          <NewMarinePlanningGridDialog
+            open={this.state.NewMarinePlanningGridDialogOpen}
+            onCancel={() =>
+              this.updateState({ NewMarinePlanningGridDialogOpen: false })
+            }
+            loading={
+              this.state.loading ||
+              this.state.preprocessing ||
+              this.state.uploading
+            }
+            createNewPlanningUnitGrid={this.createNewPlanningUnitGrid.bind(
+              this
+            )}
+            fileUpload={this.uploadFileToFolder.bind(this)}
             setSnackBar={this.setSnackBar.bind(this)}
           />
           <ImportPlanningGridDialog

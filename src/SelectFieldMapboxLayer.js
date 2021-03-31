@@ -67,6 +67,7 @@ class SelectFieldMapboxLayer extends React.Component {
 
   //check the layer exists
   addLayerToMap(mapboxlayername) {
+    console.log("addLayerToMap ");
     this.mapboxlayername = mapboxlayername;
     var request = require("request");
     request(
@@ -74,8 +75,8 @@ class SelectFieldMapboxLayer extends React.Component {
         this.props.mapboxUser +
         "." +
         mapboxlayername +
-        ".json?access_token=" +
-        this.props.registry.MBAT_PUBLIC +
+        ".json?access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg" +
+        // this.props.registry.MBAT_PUBLIC +
         "&secure",
       this.parseUrlExists.bind(this)
     );

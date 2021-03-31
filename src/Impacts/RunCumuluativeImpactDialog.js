@@ -10,9 +10,6 @@ import React from "react";
 import "react-table/react-table.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { faCircle } from "@fortawesome/free-regular-svg-icons";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import Import from "material-ui/svg-icons/action/get-app";
 import ToolbarButton from "../ToolbarButton";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTable from "../MarxanTable";
@@ -55,7 +52,6 @@ class ImportedActivitiesDialog extends React.Component {
       "this.state.selectedUploadedActivityIds ",
       this.state.selectedUploadedActivityIds
     );
-
     this.props.runCumulativeImpact(this.state.selectedUploadedActivityIds);
   }
 
@@ -105,8 +101,8 @@ class ImportedActivitiesDialog extends React.Component {
   renderActivity(row) {
     return <TableRow title={row.original.activity} />;
   }
-  renderSource(row) {
-    return <TableRow title={row.original.source} />;
+  renderDescription(row) {
+    return <TableRow title={row.original.description} />;
   }
   renderFilename(row) {
     return <TableRow title={row.original.filename} />;
@@ -159,7 +155,7 @@ class ImportedActivitiesDialog extends React.Component {
         accessor: "source",
         width: 120,
         headerStyle: { textAlign: "left" },
-        Cell: this.renderSource.bind(this),
+        Cell: this.renderDescription.bind(this),
       },
       {
         Header: "Created by",

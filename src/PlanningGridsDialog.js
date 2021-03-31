@@ -11,6 +11,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
+import { faFileCode } from "@fortawesome/free-regular-svg-icons";
 // import { faSync } from '@fortawesome/free-solid-svg-icons';
 import Import from "material-ui/svg-icons/action/get-app";
 import Export from "material-ui/svg-icons/editor/publish";
@@ -33,6 +34,12 @@ class PlanningGridsDialog extends React.Component {
     this.props.openNewPlanningGridDialog();
     this.closeDialog();
   }
+
+  _new_marine() {
+    this.props.updateState({ NewMarinePlanningGridDialogOpen: true });
+    this.closeDialog();
+  }
+
   openImportDialog() {
     this.props.updateState({ importPlanningGridDialogOpen: true });
     this.closeDialog();
@@ -77,7 +84,9 @@ class PlanningGridsDialog extends React.Component {
       ? 1
       : -1;
   }
-  renderName(row) {
+
+  renderRow(alias, name) {
+    let title = name ? alias + " (" + name + ")" : alias;
     return (
       <div
         style={{
@@ -86,28 +95,18 @@ class PlanningGridsDialog extends React.Component {
           backgroundColor: "#dadada",
           borderRadius: "2px",
         }}
-        title={
-          row.original.alias + " (" + row.original.feature_class_name + ")"
-        }
+        title={title}
       >
-        {row.original.alias}
+        {alias}
       </div>
     );
   }
+
+  renderName(row) {
+    return this.renderRow(row.original.alias, row.original.feature_class_name);
+  }
   renderTitle(row) {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={row.original.description}
-      >
-        {row.original.description}
-      </div>
-    );
+    return this.renderRow(row.original.description, null);
   }
   renderDate(row) {
     return (
@@ -125,34 +124,10 @@ class PlanningGridsDialog extends React.Component {
     );
   }
   renderCreatedBy(row) {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={row.original.created_by}
-      >
-        {row.original.created_by}
-      </div>
-    );
+    return this.renderRow(row.original.created_by, null);
   }
   renderCountry(row) {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={row.original.country}
-      >
-        {row.original.country}
-      </div>
-    );
+    return this.renderRow(row.original.country, null);
   }
   renderArea(row) {
     return (
@@ -192,7 +167,7 @@ class PlanningGridsDialog extends React.Component {
       {
         Header: "Name",
         accessor: "alias",
-        width: 290,
+        width: 274,
         headerStyle: { textAlign: "left" },
         Cell: this.renderName.bind(this),
       },
@@ -203,9 +178,6 @@ class PlanningGridsDialog extends React.Component {
         headerStyle: { textAlign: "left" },
         Cell: this.renderTitle.bind(this),
       },
-      // { Header: 'Country', accessor: 'country', width: 70, headerStyle: { 'textAlign': 'left' }, Cell: this.renderCountry.bind(this)},
-      // { Header: 'Domain', accessor: 'domain', width: 70, headerStyle: { 'textAlign': 'left' }},
-      // { Header: 'Area (Km2)', accessor: '_area', width: 73, headerStyle: { 'textAlign': 'left' }, Cell: this.renderArea.bind(this) },
       {
         Header: "Created",
         accessor: "creation_date",
@@ -300,6 +272,17 @@ class PlanningGridsDialog extends React.Component {
               <ToolbarButton
                 show={
                   !this.props.unauthorisedMethods.includes(
+                    "createMarinePlanningUnitGrid"
+                  )
+                }
+                icon={<FontAwesomeIcon icon={faFileCode} />}
+                title="Import from simple Shapefile"
+                onClick={this._new_marine.bind(this)}
+                label={"New"}
+              />
+              <ToolbarButton
+                show={
+                  !this.props.unauthorisedMethods.includes(
                     "importPlanningUnitGrid"
                   )
                 }
@@ -345,14 +328,6 @@ class PlanningGridsDialog extends React.Component {
                 onClick={this._delete.bind(this)}
                 label={"Delete"}
               />
-              {/*<ToolbarButton  
-								show={(this.props.marxanServer.system !== "Windows")}
-								icon={<FontAwesomeIcon icon={faSync} color='rgb(51, 153, 51)'/>} 
-								title="Refresh planning grids" 
-								disabled={this.props.loading}
-								onClick={this.props.getPlanningUnitGrids} 
-								label={"Refresh"}
-							/>*/}
             </div>
           </React.Fragment>
         }

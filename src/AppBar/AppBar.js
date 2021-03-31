@@ -19,7 +19,6 @@ import {
   faArrowAltCircleRight as b,
   faQuestionCircle,
   faLayerGroup,
-  faFingerprint,
 } from "@fortawesome/free-solid-svg-icons";
 import { Toolbar, ToolbarGroup } from "material-ui/Toolbar";
 import AppBarIcon from "./AppBarIcon";

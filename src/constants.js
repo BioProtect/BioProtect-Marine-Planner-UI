@@ -90,6 +90,7 @@ module.exports = Object.freeze({
   TORNADO_PATH: "/marxan-server/",
   TIMEOUT: 0, //disable timeout setting
   MAPBOX_USER: "blishten",
+  // MAPBOX_USER: "craicerjack",
   MAPBOX_STYLE_PREFIX: "mapbox://styles/",
   PLANNING_UNIT_STATUSES: [1, 2, 3],
   IUCN_CATEGORIES: [
