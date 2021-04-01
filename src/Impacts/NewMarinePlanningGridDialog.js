@@ -19,8 +19,7 @@ class NewPlanningGridDialog extends React.Component {
     super(props);
     this.state = {
       filename: "",
-      planning_grid_name: "",
-      description: "",
+      planningGridName: "",
       shape: "",
       areakm2: undefined,
       domainEnabled: true,
@@ -33,10 +32,7 @@ class NewPlanningGridDialog extends React.Component {
     this.setState({ areakm2: CONSTANTS.AREAKM2S[value] });
   }
   changeName(event, newValue) {
-    this.setState({ planning_grid_name: newValue });
-  }
-  changeDescription(event, newValue) {
-    this.setState({ description: newValue });
+    this.setState({ planningGridName: newValue });
   }
   setFilename(filename) {
     this.setState({ filename: filename });
@@ -46,6 +42,7 @@ class NewPlanningGridDialog extends React.Component {
     this.props
       .createNewPlanningUnitGrid(
         this.state.filename,
+        this.state.planningGridName,
         this.state.areakm2,
         this.state.shape
       )
@@ -73,8 +70,8 @@ class NewPlanningGridDialog extends React.Component {
           <React.Fragment key="k13">
             <FileUpload
               {...this.props}
-              fileMatch={".shp"}
-              destFolder="imports"
+              fileMatch={".zip"}
+              destFolder="data/tmp/"
               mandatory={true}
               filename={this.state.filename}
               setFilename={this.setFilename.bind(this)}
@@ -82,17 +79,9 @@ class NewPlanningGridDialog extends React.Component {
             />
             <MarxanTextField
               style={{ width: "310px" }}
-              value={this.state.planning_grid_name}
+              value={this.state.planningGridName}
               onChange={this.changeName.bind(this)}
               floatingLabelText="Name"
-            />
-            <MarxanTextField
-              style={{ width: "310px" }}
-              value={this.state.description}
-              onChange={this.changeDescription.bind(this)}
-              multiLine={true}
-              rows={2}
-              floatingLabelText="Enter a description"
             />
             <div>
               <SelectField

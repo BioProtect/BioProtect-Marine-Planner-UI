@@ -3455,12 +3455,14 @@ class App extends React.Component {
   }
 
   //creates a new planning grid unit
-  createNewMarinePlanningUnitGrid(filename, areakm2, shape) {
+  createNewMarinePlanningUnitGrid(filename, planningGridName, areakm2, shape) {
     return new Promise((resolve, reject) => {
       this.startLogging();
       this._ws(
-        "createPlanningUnitGrid?iso3=" +
+        "createMarinePlanningUnitGrid?filename=" +
           filename +
+          "&planningGridName=" +
+          planningGridName +
           "&areakm2=" +
           areakm2 +
           "&shape=" +
@@ -5884,7 +5886,7 @@ class App extends React.Component {
               this.state.preprocessing ||
               this.state.uploading
             }
-            createNewPlanningUnitGrid={this.createNewPlanningUnitGrid.bind(
+            createNewPlanningUnitGrid={this.createNewMarinePlanningUnitGrid.bind(
               this
             )}
             fileUpload={this.uploadFileToFolder.bind(this)}
