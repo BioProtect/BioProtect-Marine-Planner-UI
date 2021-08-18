@@ -1,6 +1,5 @@
 # marxan-client
-See also [marxan-server](https://github.com/marxanweb/marxan-server).  
-Hosted version at [https://app.marxanweb.org](https://app.marxanweb.org)
+See also [marxan-server](https://gitlab.insight-centre.org/caltig/marxan-server).  
 
 ## Architecture
 ![marxan-client architecture](architecture_client.png)
@@ -8,7 +7,7 @@ Hosted version at [https://app.marxanweb.org](https://app.marxanweb.org)
 ## Deployment
 Git clone into the web root directory (e.g. for Apache2 on Ubuntu - /var/www/html).  
 ```
-git clone https://github.com/marxanweb/marxan-client.git
+git clone https://gitlab.insight-centre.org/caltig/marxan-client.git
 ```
 The Marxan Client will be available at the following address:  
 https://\<host>:8080/index.html  
