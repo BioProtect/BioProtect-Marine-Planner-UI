@@ -1,3 +1,7 @@
+import CONSTANTS from "./constants";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Import from "material-ui/svg-icons/action/get-app";
+import MarxanDialog from "./MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,13 +11,10 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import CONSTANTS from "./constants";
-import MarxanDialog from "./MarxanDialog";
 import ReactTable from "react-table";
+import TableRow from "./TableRow";
 import ToolbarButton from "./ToolbarButton";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import Import from "material-ui/svg-icons/action/get-app";
 
 class CostsDialog extends React.Component {
   constructor(props) {
@@ -23,9 +24,22 @@ class CostsDialog extends React.Component {
   changeCost(event, cost) {
     this.setState({ selectedCost: cost });
   }
+  costFromImpact(e, data) {
+    console.log("data ", data);
+    this.props.createCostsFromImpact(data);
+  }
   _delete() {
     this.props.deleteCost(this.state.selectedCost.name);
     this.setState({ selectedCost: undefined });
+  }
+
+  renderDate(row) {
+    return (
+      <TableRow
+        title={row.original.creation_date}
+        htmlContent={row.original.creation_date.substr(0, 8)}
+      />
+    );
   }
   render() {
     let _data = this.props.data.map((item) => {
@@ -110,6 +124,47 @@ class CostsDialog extends React.Component {
                 }
                 onClick={this._delete.bind(this)}
                 label={"Delete"}
+              />
+            </div>
+            <div id="projectsTable">
+              <h3 className="dialogTitleStyle">Use Cumulative Impact</h3>
+              <ReactTable
+                {...this.props}
+                data={this.props.allImpacts}
+                columns={[
+                  {
+                    Header: "Name",
+                    accessor: "alias",
+                    width: 193,
+                    headerStyle: { textAlign: "left" },
+                  },
+                  {
+                    Header: "Creation Date",
+                    accessor: "created_date",
+                    width: 70,
+                    headerStyle: { textAlign: "left" },
+                    Cell: this.renderDate.bind(this),
+                  },
+                ]}
+                className={"projectsReactTable noselect"}
+                showPagination={false}
+                minRows={0}
+                // selectedCost={this.state.selectedCost}
+                // changeCost={this.changeCost.bind(this)}
+                getTrProps={(state, rowInfo) => {
+                  return {
+                    style: {
+                      background:
+                        rowInfo.original.name ===
+                        (state.selectedCost && state.selectedCost.name)
+                          ? "aliceblue"
+                          : "",
+                    },
+                    onClick: (e) => {
+                      this.costFromImpact(e, rowInfo.original);
+                    },
+                  };
+                }}
               />
             </div>
           </React.Fragment>

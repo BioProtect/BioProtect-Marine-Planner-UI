@@ -1,3 +1,12 @@
+import "react-table/react-table.css";
+
+import { Tab, Tabs } from "material-ui/Tabs";
+
+import CONSTANTS from "./constants";
+import Checkbox from "material-ui/Checkbox";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MenuItem from "material-ui/MenuItem";
+import Paper from "material-ui/Paper";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,22 +16,16 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import CONSTANTS from "./constants";
-import "react-table/react-table.css";
-import Paper from "material-ui/Paper";
-import { Tabs, Tab } from "material-ui/Tabs";
-import SelectField from "material-ui/SelectField";
 import SelectFeatures from "./SelectFeatures";
-import MenuItem from "material-ui/MenuItem";
+import SelectField from "material-ui/SelectField";
 import Settings from "material-ui/svg-icons/action/settings";
-import ToolbarButton from "./ToolbarButton";
-import Checkbox from "material-ui/Checkbox";
 import Textarea from "react-textarea-autosize";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLock } from "@fortawesome/free-solid-svg-icons";
+import ToolbarButton from "./ToolbarButton";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";
-import { faShareAlt } from "@fortawesome/free-solid-svg-icons";
+import { faLock } from "@fortawesome/free-solid-svg-icons";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
+import { faShareAlt } from "@fortawesome/free-solid-svg-icons";
+
 // import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
 class InfoPanel extends React.Component {
@@ -51,9 +54,8 @@ class InfoPanel extends React.Component {
       prevState.editingDescription === false &&
       this.state.editingDescription
     ) {
-      document.getElementById(
-        "descriptionEdit"
-      ).value = this.props.metadata.DESCRIPTION;
+      document.getElementById("descriptionEdit").value =
+        this.props.metadata.DESCRIPTION;
       document.getElementById("descriptionEdit").focus();
     }
   }
@@ -108,7 +110,7 @@ class InfoPanel extends React.Component {
     //get the costname
     let costname = this.costnames[key];
     if (costname === "Custom..") {
-      this.props.updateState({ costsDialogOpen: true });
+      this.props.openCostsDialog();
     } else {
       //update the cost profile on the server
       this.props.changeCostname(costname).then((_) => {

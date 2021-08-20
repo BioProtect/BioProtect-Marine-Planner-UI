@@ -1,3 +1,60 @@
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
+import "mapbox-gl/dist/mapbox-gl.css";
+
+/*eslint-disable no-unused-vars*/
+import axios, { post } from "axios";
+import { getMaxNumberOfClasses, zoomToBounds } from "./Helpers.js";
+
+import AboutDialog from "./AboutDialog";
+import AddToMap from "material-ui/svg-icons/action/visibility";
+import AlertDialog from "./AlertDialog";
+//project components
+import AppBar from "./AppBar/AppBar";
+import AtlasLayersDialog from "./AtlasLayersDialog";
+import CONSTANTS from "./constants";
+import ChangePasswordDialog from "./ChangePasswordDialog";
+import ClassificationDialog from "./ClassificationDialog";
+import ClumpingDialog from "./ClumpingDialog";
+import CostsDialog from "./CostsDialog";
+import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
+import FeatureDialog from "./FeatureDialog";
+import FeatureInfoDialog from "./FeatureInfoDialog";
+import FeaturesDialog from "./FeaturesDialog";
+import GapAnalysisDialog from "./GapAnalysisDialog";
+import HelpMenu from "./HelpMenu";
+import HomeButton from "./HomeButton.js";
+import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
+import IdentifyPopup from "./IdentifyPopup";
+import ImportCostsDialog from "./ImportCostsDialog";
+import ImportFeaturesDialog from "./ImportFeaturesDialog";
+import ImportFromWebDialog from "./ImportFromWebDialog";
+import ImportGBIFDialog from "./ImportGBIFDialog";
+import ImportMXWDialog from "./ImportMXWDialog";
+import ImportPlanningGridDialog from "./ImportPlanningGridDialog";
+import ImportProjectDialog from "./ImportProjectDialog";
+import InfoPanel from "./InfoPanel";
+import LoadingDialog from "./LoadingDialog";
+import LoginDialog from "./LoginDialog";
+//mapbox imports
+import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js";
+import Menu from "material-ui/Menu";
+import MenuItemWithButton from "./MenuItemWithButton";
+/*eslint-enable no-unused-vars*/
+import MuiThemeProvider from "material-ui/styles/MuiThemeProvider";
+import NewFeatureDialog from "./NewFeatureDialog";
+import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog.js";
+import NewPlanningGridDialog from "./NewPlanningGridDialog";
+import NewProjectDialog from "./NewProjectDialog";
+import NewProjectWizardDialog from "./NewProjectWizardDialog";
+import PlanningGridDialog from "./PlanningGridDialog";
+import PlanningGridsDialog from "./PlanningGridsDialog";
+//material-ui components and icons
+import Popover from "material-ui/Popover";
+import Preprocess from "material-ui/svg-icons/action/autorenew";
+import ProfileDialog from "./ProfileDialog";
+import ProjectsDialog from "./ProjectsDialog";
+import ProjectsListDialog from "./ProjectsListDialog";
+import Properties from "material-ui/svg-icons/alert/error-outline";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -10,85 +67,30 @@
 /*global URLSearchParams*/
 /*global AbortController*/
 import React from "react";
-import packageJson from "../package.json";
-import CONSTANTS from "./constants";
-/*eslint-disable no-unused-vars*/
-import axios, { post } from "axios";
-/*eslint-enable no-unused-vars*/
-import MuiThemeProvider from "material-ui/styles/MuiThemeProvider";
-//mapbox imports
-import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js";
-import mapboxgl from "mapbox-gl";
-import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
-import "mapbox-gl/dist/mapbox-gl.css";
-import HomeButton from "./HomeButton.js";
-import jsonp from "jsonp-promise";
-import classyBrew from "classybrew";
-import { getMaxNumberOfClasses, zoomToBounds } from "./Helpers.js";
-//material-ui components and icons
-import Popover from "material-ui/Popover";
-import Menu from "material-ui/Menu";
-import Snackbar from "material-ui/Snackbar";
-import Properties from "material-ui/svg-icons/alert/error-outline";
-import RemoveFromProject from "material-ui/svg-icons/content/remove";
-import AddToMap from "material-ui/svg-icons/action/visibility";
-import RemoveFromMap from "material-ui/svg-icons/action/visibility-off";
-import ZoomIn from "material-ui/svg-icons/action/zoom-in";
-import Preprocess from "material-ui/svg-icons/action/autorenew";
-//project components
-import AppBar from "./AppBar/AppBar";
-import LoadingDialog from "./LoadingDialog";
-import LoginDialog from "./LoginDialog";
 import RegisterDialog from "./RegisterDialog.js";
+import RemoveFromMap from "material-ui/svg-icons/action/visibility-off";
+import RemoveFromProject from "material-ui/svg-icons/content/remove";
 import ResendPasswordDialog from "./ResendPasswordDialog.js";
-import Welcome from "./Welcome.js";
-import ToolsMenu from "./ToolsMenu";
-import UserMenu from "./UserMenu";
-import HelpMenu from "./HelpMenu";
-import UserSettingsDialog from "./UserSettingsDialog";
-import ProfileDialog from "./ProfileDialog";
-import UsersDialog from "./UsersDialog";
-import AboutDialog from "./AboutDialog";
-import MenuItemWithButton from "./MenuItemWithButton";
-import InfoPanel from "./InfoPanel";
-import ResultsPanel from "./ResultsPanel";
-import FeatureInfoDialog from "./FeatureInfoDialog";
-import ProjectsDialog from "./ProjectsDialog";
-import NewProjectDialog from "./NewProjectDialog";
-import NewProjectWizardDialog from "./NewProjectWizardDialog";
-import ProjectsListDialog from "./ProjectsListDialog";
-import PlanningGridDialog from "./PlanningGridDialog";
-import PlanningGridsDialog from "./PlanningGridsDialog";
-import NewPlanningGridDialog from "./NewPlanningGridDialog";
-import ImportPlanningGridDialog from "./ImportPlanningGridDialog";
-import FeatureDialog from "./FeatureDialog";
-import FeaturesDialog from "./FeaturesDialog";
-import NewFeatureDialog from "./NewFeatureDialog";
-import ImportFeaturesDialog from "./ImportFeaturesDialog";
-import ImportFromWebDialog from "./ImportFromWebDialog";
-import CostsDialog from "./CostsDialog";
-import ImportCostsDialog from "./ImportCostsDialog";
-import RunSettingsDialog from "./RunSettingsDialog";
-import ClassificationDialog from "./ClassificationDialog";
-import ClumpingDialog from "./ClumpingDialog";
-import ImportProjectDialog from "./ImportProjectDialog";
-import ImportMXWDialog from "./ImportMXWDialog";
-import RunLogDialog from "./RunLogDialog";
-import ServerDetailsDialog from "./ServerDetailsDialog";
-import AlertDialog from "./AlertDialog";
-import ChangePasswordDialog from "./ChangePasswordDialog";
-import IdentifyPopup from "./IdentifyPopup";
-import TargetDialog from "./TargetDialog";
-import ShareableLinkDialog from "./ShareableLinkDialog";
-import GapAnalysisDialog from "./GapAnalysisDialog";
 import ResetDialog from "./ResetDialog";
-import UpdateWDPADialog from "./UpdateWDPADialog";
-import ImportGBIFDialog from "./ImportGBIFDialog";
-import AtlasLayersDialog from "./AtlasLayersDialog";
-import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
+import ResultsPanel from "./ResultsPanel";
 import RunCumuluativeImpactDialog from "./Impacts/RunCumuluativeImpactDialog";
-import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
-import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog.js";
+import RunLogDialog from "./RunLogDialog";
+import RunSettingsDialog from "./RunSettingsDialog";
+import ServerDetailsDialog from "./ServerDetailsDialog";
+import ShareableLinkDialog from "./ShareableLinkDialog";
+import Snackbar from "material-ui/Snackbar";
+import TargetDialog from "./TargetDialog";
+import ToolsMenu from "./ToolsMenu";
+import UpdateWDPADialog from "./UpdateWDPADialog";
+import UserMenu from "./UserMenu";
+import UserSettingsDialog from "./UserSettingsDialog";
+import UsersDialog from "./UsersDialog";
+import Welcome from "./Welcome.js";
+import ZoomIn from "material-ui/svg-icons/action/zoom-in";
+import classyBrew from "classybrew";
+import jsonp from "jsonp-promise";
+import mapboxgl from "mapbox-gl";
+import packageJson from "../package.json";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -847,6 +849,7 @@ class App extends React.Component {
     return new Promise((resolve, reject) => {
       this._get("getUser?user=" + this.state.user)
         .then((response) => {
+          console.log("response ", response);
           this.setState(
             {
               userData: response.userData,
@@ -1041,8 +1044,7 @@ class App extends React.Component {
       this.addNotifications([
         {
           id: "wdpa_update_" + this.state.registry.WDPA.latest_version,
-          html:
-            "A new version of the WDPA is available. Go to Help | Server Details for more information.",
+          html: "A new version of the WDPA is available. Go to Help | Server Details for more information.",
           type: "Data Update",
           showForRoles: ["Admin"],
         },
@@ -1289,6 +1291,7 @@ class App extends React.Component {
       this.resetResults();
       this._get("getProject?user=" + user + "&project=" + project)
         .then((response) => {
+          console.log("response ", response);
           //set the state for the app based on the data that is returned from the server
           this.setState({
             loggedIn: true,
@@ -2239,9 +2242,8 @@ class App extends React.Component {
         //add the new color scheme
         if (brewCopy.colorSchemes.opacity === undefined)
           brewCopy.colorSchemes.opacity = [];
-        brewCopy.colorSchemes.opacity[
-          this.state.renderer.NUMCLASSES
-        ] = newBrewColorScheme;
+        brewCopy.colorSchemes.opacity[this.state.renderer.NUMCLASSES] =
+          newBrewColorScheme;
         //set the state
         this.setState({ brew: brewCopy });
       }
@@ -2353,9 +2355,8 @@ class App extends React.Component {
   getPaintProperties(data, sum, setRenderer) {
     //build an expression to get the matching puids with different numbers of 'numbers' in the marxan results
     var fill_color_expression = this.initialiseFillColorExpression("puid");
-    var fill_outline_color_expression = this.initialiseFillColorExpression(
-      "puid"
-    );
+    var fill_outline_color_expression =
+      this.initialiseFillColorExpression("puid");
     if (data.length > 0) {
       var color, visibleValue, value;
       //create the renderer using Joshua Tanners excellent library classybrew - available here https://github.com/tannerjt/classybrew
@@ -3761,9 +3762,12 @@ class App extends React.Component {
   }
   //makes a call to get the impacts from the server and returns them
   getImpacts() {
+    console.log("getting impacts...");
     return new Promise((resolve, reject) => {
       this._get("getAllImpacts")
         .then((response) => {
+          console.log("response ", response);
+
           this.setState({
             allImpacts: response.data,
           });
@@ -3848,6 +3852,11 @@ class App extends React.Component {
   openImportedActivitesDialog() {
     this.getUploadedActivities();
     this.setState({ importedActivitiesDialogOpen: true });
+  }
+
+  openCostsDialog() {
+    this.getImpacts();
+    this.setState({ costsDialogOpen: true });
   }
 
   getUploadedActivities() {
@@ -4058,10 +4067,10 @@ class App extends React.Component {
         this.wsMessageCallback.bind(this)
       )
         .then((message) => {
-          this.pollMapbox(message.uploadId).then((response) => {
-            this.setState({ loading: false });
-            resolve("Cumulative Impact Layer uploaded");
-          });
+          // this.pollMapbox(message.uploadId).then((response) => {
+          this.setState({ loading: false });
+          resolve("Cumulative Impact Layer uploaded");
+          // });
         })
         .catch((error) => {
           reject(error);
@@ -4125,6 +4134,39 @@ class App extends React.Component {
           reject(error);
         });
     }); //return
+  }
+
+  createCostsFromImpact(data) {
+    console.log("data ", data);
+    console.log(
+      "this.state.metadata.PLANNING_UNIT_NAME ",
+      this.state.metadata.PLANNING_UNIT_NAME
+    );
+    this.setState({ loading: true });
+    this.startLogging();
+    return new Promise((resolve, reject) => {
+      let url =
+        "createCostsFromImpact?user=" +
+        this.state.owner +
+        "&project=" +
+        this.state.project +
+        "&pu_filename=" +
+        this.state.metadata.PLANNING_UNIT_NAME +
+        "&impact_filename=" +
+        data.feature_class_name +
+        "&impact_type=" +
+        data.alias;
+      this._ws(url, this.wsMessageCallback.bind(this))
+        .then((message) => {
+          console.log("message ", message);
+          this.setState({ loading: false });
+          this.addCost(data.alias);
+          resolve("Costs created from Cumulative impact");
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5765,6 +5807,7 @@ class App extends React.Component {
             toggleFeaturePUIDLayer={this.toggleFeaturePUIDLayer.bind(this)}
             useFeatureColors={this.state.userData.USEFEATURECOLORS}
             smallLinearGauge={this.state.smallLinearGauge}
+            openCostsDialog={this.openCostsDialog.bind(this)}
             costname={this.state.metadata.COSTS}
             costnames={this.state.costnames}
             changeCostname={this.changeCostname.bind(this)}
@@ -6024,6 +6067,9 @@ class App extends React.Component {
             costname={this.state.metadata.COSTS}
             deleteCost={this.deleteCost.bind(this)}
             data={this.state.costnames}
+            allImpacts={this.state.allImpacts}
+            planningUnitName={this.state.metadata.PLANNING_UNIT_NAME}
+            createCostsFromImpact={this.createCostsFromImpact.bind(this)}
           />
           <ImportCostsDialog
             open={this.state.importCostsDialogOpen}
