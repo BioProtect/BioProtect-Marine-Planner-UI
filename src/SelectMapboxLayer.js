@@ -7,8 +7,10 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import MenuItem from "material-ui/MenuItem";
-import SelectField from "material-ui/SelectField";
+
+import MenuItem from "@material-ui/core/MenuItem";
+import Select from "@material-ui/core/Select";
+import axios from "axios";
 
 //this is a generic component for selecting and dynamically displaying a layer from mapbox on a mapbox map
 //the following are property requirements:
@@ -22,7 +24,7 @@ import SelectField from "material-ui/SelectField";
 //prerequisitives:
 // request library
 
-class SelectFieldMapboxLayer extends React.Component {
+class SelectMapboxLayer extends React.Component {
   changeItem(event, newValue) {
     //get the selected item
     let item = this.props.items[newValue];
@@ -69,8 +71,7 @@ class SelectFieldMapboxLayer extends React.Component {
   addLayerToMap(mapboxlayername) {
     console.log("addLayerToMap ");
     this.mapboxlayername = mapboxlayername;
-    var request = require("request");
-    request(
+    axios.request(
       "https://api.mapbox.com/v4/" +
         this.props.mapboxUser +
         "." +
@@ -86,9 +87,10 @@ class SelectFieldMapboxLayer extends React.Component {
     let exists = res && res.statusCode === 200 ? true : false;
     if (exists) {
       //remove the previous planning unit layer
-      let previousLayerId = this.props.map.getStyle().layers[
-        this.props.map.getStyle().layers.length - 1
-      ].id;
+      let previousLayerId =
+        this.props.map.getStyle().layers[
+          this.props.map.getStyle().layers.length - 1
+        ].id;
       //check it is a planning unit layer
       if (previousLayerId.substr(0, 3) === "pu_") {
         this.props.map.removeLayer(
@@ -125,7 +127,7 @@ class SelectFieldMapboxLayer extends React.Component {
   render() {
     return (
       <React.Fragment>
-        <SelectField
+        <Select
           onChange={this.changeItem.bind(this)}
           value={this.props.selectedValue}
           menuItemStyle={{ fontSize: "12px" }}
@@ -146,10 +148,10 @@ class SelectFieldMapboxLayer extends React.Component {
               />
             );
           })}
-        </SelectField>
+        </Select>
       </React.Fragment>
     );
   }
 }
 
-export default SelectFieldMapboxLayer;
+export default SelectMapboxLayer;

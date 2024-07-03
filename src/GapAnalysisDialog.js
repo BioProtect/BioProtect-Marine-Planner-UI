@@ -7,21 +7,23 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import MarxanDialog from "./MarxanDialog";
-import MetChart from "./MetChart";
+
 import {
-  Cell,
-  ReferenceLine,
-  ComposedChart,
   Bar,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Label,
+  ReferenceLine,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Label,
 } from "recharts";
-import Toggle from "material-ui/Toggle";
+
 import CustomTooltip from "./CustomTooltip.js";
+import MarxanDialog from "./MarxanDialog";
+import MetChart from "./MetChart";
+import Switch from "@material-ui/core/Switch";
 
 class GapAnalysisDialog extends React.PureComponent {
   constructor(props) {
@@ -199,7 +201,7 @@ class GapAnalysisDialog extends React.PureComponent {
                       </tbody>
                     </table>
                   </div>
-                  <Toggle
+                  <Switch
                     label="Show as a chart"
                     onToggle={this.toggleView.bind(this)}
                     style={{

@@ -1,3 +1,7 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MarxanDialog from "./MarxanDialog";
+import MarxanTextField from "./MarxanTextField";
+import MenuItem from "@material-ui/core/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,13 +11,9 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUnlink } from "@fortawesome/free-solid-svg-icons";
+import Select from "@material-ui/core/Select";
 import { faLock } from "@fortawesome/free-solid-svg-icons";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
+import { faUnlink } from "@fortawesome/free-solid-svg-icons";
 
 class LoginDialog extends React.Component {
   handleKeyPress(e) {
@@ -58,7 +58,7 @@ class LoginDialog extends React.Component {
           offsetY={200}
           children={[
             <div key="21">
-              <SelectField
+              <Select
                 id="SelectMarxanServer"
                 floatingLabelText={"Marxan Server"}
                 floatingLabelFixed={true}

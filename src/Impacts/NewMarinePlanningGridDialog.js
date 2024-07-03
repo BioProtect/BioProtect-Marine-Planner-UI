@@ -7,12 +7,13 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import CONSTANTS from "../constants";
-import MarxanDialog from "../MarxanDialog";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
-import MarxanTextField from "../MarxanTextField";
 import FileUpload from "../FileUpload";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTextField from "../MarxanTextField";
+import MenuItem from "@material-ui/core/MenuItem";
+import Select from "@material-ui/core/Select";
 
 class NewPlanningGridDialog extends React.Component {
   constructor(props) {
@@ -84,7 +85,7 @@ class NewPlanningGridDialog extends React.Component {
               floatingLabelText="Name"
             />
             <div>
-              <SelectField
+              <Select
                 menuItemStyle={{ fontSize: "12px" }}
                 labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeShape.bind(this)}
@@ -103,10 +104,10 @@ class NewPlanningGridDialog extends React.Component {
                     />
                   );
                 })}
-              </SelectField>
+              </Select>
             </div>
             <div>
-              <SelectField
+              <Select
                 menuItemStyle={{ fontSize: "12px" }}
                 labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeAreaKm2.bind(this)}
@@ -125,7 +126,7 @@ class NewPlanningGridDialog extends React.Component {
                     />
                   );
                 })}
-              </SelectField>
+              </Select>
             </div>
           </React.Fragment>
         }

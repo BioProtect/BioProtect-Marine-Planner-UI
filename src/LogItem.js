@@ -7,11 +7,12 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
-import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import Sync from "@material-ui/icons/Sync";
 import { faArrowAltCircleRight } from "@fortawesome/free-solid-svg-icons";
-import Sync from "material-ui/svg-icons/notification/sync";
+import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 
 class Log extends React.Component {
   render() {

@@ -1,3 +1,4 @@
+import MenuItem from "@material-ui/core/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,8 +8,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
+import Select from "@material-ui/core/Select";
 
 class SpatialDataSelector extends React.Component {
   changeTileset = (event, index, value) => {
@@ -28,7 +28,7 @@ class SpatialDataSelector extends React.Component {
     });
     return (
       <div>
-        <SelectField
+        <Select
           floatingLabelText="Mapbox layer"
           floatingLabelFixed={true}
           children={c}
@@ -38,7 +38,7 @@ class SpatialDataSelector extends React.Component {
           labelStyle={{ fontSize: "13px" }}
           value={this.props.value}
           onChange={this.changeTileset.bind(this)}
-        ></SelectField>
+        ></Select>
       </div>
     );
   }

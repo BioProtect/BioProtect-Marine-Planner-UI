@@ -7,14 +7,16 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
+import Checkbox from "@material-ui/core/Checkbox";
+import FileUpload from "./FileUpload.js";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
-import FileUpload from "./FileUpload.js";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
+import MenuItem from "@material-ui/core/MenuItem";
+import Radio from "@material-ui/core/Radio";
+import RadioGroup from "@material-ui/core/RadioGroup";
+import Select from "@material-ui/core/Select";
 import ToolbarButton from "./ToolbarButton";
-import { RadioButton, RadioButtonGroup } from "material-ui/RadioButton";
-import Checkbox from "material-ui/Checkbox";
 
 let INITIAL_STATE = {
   steps: ["shapefile", "single_or_multiple", "metadata"],
@@ -168,22 +170,22 @@ class ImportFeaturesDialog extends React.Component {
         ) : null}
         {stepIndex === 1 ? (
           <div>
-            <RadioButtonGroup name="createFeatureType" defaultSelected="single">
-              <RadioButton
+            <RadioGroup name="createFeatureType" defaultSelected="single">
+              <Radio
                 className={"radioButton"}
                 value="single"
                 label="Create single feature"
                 style={{ padding: "10px" }}
                 onClick={this.resetFieldnames.bind(this)}
               />
-              <RadioButton
+              <Radio
                 className={"radioButton"}
                 value="multiple"
                 label="Split into multiple features"
                 style={{ padding: "10px" }}
                 onClick={this.getShapefileFieldnames.bind(this)}
               />
-            </RadioButtonGroup>
+            </RadioGroup>
           </div>
         ) : null}
         {stepIndex === 2 ? (
@@ -215,7 +217,7 @@ class ImportFeaturesDialog extends React.Component {
             </div>
           ) : (
             <div>
-              <SelectField
+              <Select
                 menuItemStyle={{ fontSize: "12px" }}
                 labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeSplitField.bind(this)}
@@ -233,7 +235,7 @@ class ImportFeaturesDialog extends React.Component {
                     />
                   );
                 })}
-              </SelectField>
+              </Select>
               <Checkbox
                 label="Add to project"
                 style={{

@@ -1,3 +1,5 @@
+import Dialog from "@material-ui/core/Dialog";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,10 +9,8 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import Dialog from "material-ui/Dialog";
+import Sync from "@material-ui/icons/Sync";
 import ToolbarButton from "./ToolbarButton";
-import Sync from "material-ui/svg-icons/notification/sync";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 

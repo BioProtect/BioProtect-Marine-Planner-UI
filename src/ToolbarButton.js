@@ -1,3 +1,4 @@
+import Button from "@material-ui/core/Button";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,7 +8,6 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import RaisedButton from "material-ui/RaisedButton";
 
 class ToolbarButton extends React.Component {
   render() {
@@ -24,8 +24,9 @@ class ToolbarButton extends React.Component {
     };
     Object.assign(_style1, _style2);
     return (
-      <RaisedButton
+      <Button
         {...this.props}
+        variant="contained"
         style={_style1}
         overlayStyle={{ lineHeight: "24px", height: "24px" }}
         buttonStyle={{ lineHeight: "24px", height: "24px" }}

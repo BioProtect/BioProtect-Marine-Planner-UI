@@ -1,3 +1,4 @@
+import CONSTANTS from "./constants";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,11 +8,11 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import CONSTANTS from "./constants";
 import ReactTable from "react-table";
-import Sync from "material-ui/svg-icons/notification/sync";
 import Swatch from "./Swatch";
-import { Tabs, Tab } from "material-ui/Tabs";
+import Sync from "@material-ui/icons/Sync";
+import Tab from "@material-ui/core/Tab";
+import Tabs from "@material-ui/core/Tabs";
 import { getArea } from "./Helpers.js";
 
 const TITLE_LINK = "Click to open in the Protected Planet website";

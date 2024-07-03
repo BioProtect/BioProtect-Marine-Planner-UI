@@ -1,3 +1,4 @@
+import MenuItem from "@material-ui/core/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,8 +8,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
+import Select from "@material-ui/core/Select";
 import { getMaxNumberOfClasses } from "./Helpers.js";
 
 class ColorSelector extends React.Component {
@@ -83,7 +83,7 @@ class ColorSelector extends React.Component {
       );
     }, this);
     return (
-      <SelectField
+      <Select
         selectionRenderer={this.selectionRenderer.bind(this)}
         menuItemStyle={{ fontSize: "12px" }}
         labelStyle={{ fontSize: "12px" }}

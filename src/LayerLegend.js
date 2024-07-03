@@ -7,11 +7,12 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import TransparencyControl from "./TransparencyControl";
-import Swatch from "./Swatch";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Swatch from "./Swatch";
+import Sync from "@material-ui/icons/Sync";
+import TransparencyControl from "./TransparencyControl";
 import { faCog } from "@fortawesome/free-solid-svg-icons";
-import Sync from "material-ui/svg-icons/notification/sync";
 
 class LayerLegend extends React.Component {
   constructor(props) {

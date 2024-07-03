@@ -7,10 +7,12 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import CONSTANTS from "./constants";
 import MarxanDialog from "./MarxanDialog";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
+import MenuItem from "@material-ui/core/MenuItem";
+import Select from "@material-ui/core/Select";
+
 // import ToolbarButton from "./ToolbarButton";
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 // import { faArrowAltCircleUp } from '@fortawesome/free-regular-svg-icons';
@@ -90,7 +92,7 @@ class NewPlanningGridDialog extends React.Component {
         children={
           <React.Fragment key="k13">
             <div>
-              <SelectField
+              <Select
                 menuItemStyle={{ fontSize: "12px" }}
                 labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeIso3.bind(this)}
@@ -108,11 +110,11 @@ class NewPlanningGridDialog extends React.Component {
                     />
                   );
                 })}
-              </SelectField>
+              </Select>
               {/*<ToolbarButton icon={<FontAwesomeIcon icon={faArrowAltCircleUp} />} title="Load a custom area of interest from a shapefile (not currently implemented)" style={{position: 'absolute', top: '83px', right: '32px'}}/>*/}
             </div>
             <div>
-              <SelectField
+              <Select
                 menuItemStyle={{ fontSize: "12px" }}
                 labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeDomain.bind(this)}
@@ -132,10 +134,10 @@ class NewPlanningGridDialog extends React.Component {
                     />
                   );
                 })}
-              </SelectField>
+              </Select>
             </div>
             <div>
-              <SelectField
+              <Select
                 menuItemStyle={{ fontSize: "12px" }}
                 labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeShape.bind(this)}
@@ -154,10 +156,10 @@ class NewPlanningGridDialog extends React.Component {
                     />
                   );
                 })}
-              </SelectField>
+              </Select>
             </div>
             <div>
-              <SelectField
+              <Select
                 menuItemStyle={{ fontSize: "12px" }}
                 labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeAreaKm2.bind(this)}
@@ -176,7 +178,7 @@ class NewPlanningGridDialog extends React.Component {
                     />
                   );
                 })}
-              </SelectField>
+              </Select>
             </div>
           </React.Fragment>
         }

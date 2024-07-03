@@ -1,6 +1,6 @@
 import CONSTANTS from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Import from "material-ui/svg-icons/action/get-app";
+import Import from "@material-ui/icons/GetApp";
 import MarxanDialog from "./MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.

@@ -1,3 +1,10 @@
+import Icon from "@material-ui/core/Icon";
+import IconButton from "@material-ui/core/IconButton";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import MenuItem from "@material-ui/core/MenuItem";
+import MenuList from "@material-ui/core/MenuList";
+import MoreVertIcon from "@material-ui/icons/MoreVert";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,13 +14,8 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import { List, ListItem } from "material-ui/List";
-import IconMenu from "material-ui/IconMenu";
-import MenuItem from "material-ui/MenuItem";
-import { grey400 } from "material-ui/styles/colors";
-import IconButton from "material-ui/IconButton";
-import MoreVertIcon from "material-ui/svg-icons/navigation/more-vert";
 import ToolbarButton from "./ToolbarButton";
+import grey from "@material-ui/core/colors/grey";
 
 class SelectCostFeatures extends React.Component {
   constructor(props) {
@@ -31,16 +33,16 @@ class SelectCostFeatures extends React.Component {
   render() {
     const iconButtonElement = (
       <IconButton touch={true} tooltipPosition="bottom-left">
-        <MoreVertIcon color={grey400} />
+        <MoreVertIcon color={grey[400]} />
       </IconButton>
     );
 
     const rightIconMenu = (
-      <IconMenu iconButtonElement={iconButtonElement}>
+      <MenuList iconButtonElement={iconButtonElement}>
         <MenuItem>Info</MenuItem>
         <MenuItem title="Not implemented">View</MenuItem>
         <MenuItem title="Not implemented">Prioritise</MenuItem>
-      </IconMenu>
+      </MenuList>
     );
 
     return (

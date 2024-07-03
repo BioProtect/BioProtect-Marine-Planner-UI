@@ -1,3 +1,12 @@
+import Clone from "@material-ui/icons/ContentCopy";
+import Export from "@material-ui/icons/Publish";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Import from "@material-ui/icons/GetApp";
+import MarxanDialog from "./MarxanDialog";
+import MarxanTable from "./MarxanTable";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
+import Popover from "@material-ui/core/Popover";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,19 +16,10 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import ToolbarButton from "./ToolbarButton";
 // import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import Import from "material-ui/svg-icons/action/get-app";
-import Export from "material-ui/svg-icons/editor/publish";
-import Clone from "material-ui/svg-icons/content/content-copy";
-import ToolbarButton from "./ToolbarButton";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTable from "./MarxanTable";
-import Popover from "material-ui/Popover";
-import Menu from "material-ui/Menu";
-import MenuItem from "material-ui/MenuItem";
 
 class ProjectsDialog extends React.Component {
   constructor(props) {

@@ -1,3 +1,5 @@
+import "react-table/react-table.css";
+
 /*
  * Copyright (c) 2021 Carlos Tighe.
  *
@@ -7,15 +9,15 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import MarxanTable from "../MarxanTable";
-import MarxanDialog from "../MarxanDialog";
-import MarxanTextField from "../MarxanTextField";
+
 import FileUpload from "../FileUpload.js";
-import ToolbarButton from "../ToolbarButton";
-import TableRow from "../TableRow.js";
-import Sync from "material-ui/svg-icons/notification/sync";
-import "react-table/react-table.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTable from "../MarxanTable";
+import MarxanTextField from "../MarxanTextField";
+import Sync from "@material-ui/icons/Sync";
+import TableRow from "../TableRow.js";
+import ToolbarButton from "../ToolbarButton";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 
 let INITIAL_STATE = {

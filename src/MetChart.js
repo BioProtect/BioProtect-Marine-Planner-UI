@@ -7,9 +7,12 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import { PieChart, Pie, Cell } from "recharts";
-import Divider from "material-ui/Divider";
+
+import { Cell, Pie, PieChart } from "recharts";
+
+import Divider from "@material-ui/core/Divider";
 import { getArea } from "./Helpers.js";
+
 // import star from './images/star.png';
 
 class MetChart extends React.Component {

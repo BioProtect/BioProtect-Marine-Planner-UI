@@ -7,12 +7,13 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import CONSTANTS from "./constants";
+import Checkbox from "@material-ui/core/Checkbox";
 import MarxanDialog from "./MarxanDialog";
+import MenuItem from "@material-ui/core/MenuItem";
+import Select from "@material-ui/core/Select";
 import ToolbarButton from "./ToolbarButton";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
-import Checkbox from "material-ui/Checkbox";
 
 class NewProjectWizardDialog extends React.Component {
   constructor(props) {
@@ -156,7 +157,7 @@ class NewProjectWizardDialog extends React.Component {
         {this.state.stepIndex === 0 ? (
           <React.Fragment key={"_wiz01"}>
             <div>Choose a country and domain</div>
-            <SelectField
+            <Select
               menuItemStyle={{ fontSize: "12px" }}
               labelStyle={{ fontSize: "12px" }}
               onChange={this.changeCountry.bind(this)}
@@ -174,9 +175,9 @@ class NewProjectWizardDialog extends React.Component {
                   />
                 );
               })}
-            </SelectField>
+            </Select>
             <br />
-            <SelectField
+            <Select
               menuItemStyle={{ fontSize: "12px" }}
               labelStyle={{ fontSize: "12px" }}
               onChange={this.changeDomain.bind(this)}
@@ -196,13 +197,13 @@ class NewProjectWizardDialog extends React.Component {
                   />
                 );
               })}
-            </SelectField>
+            </Select>
           </React.Fragment>
         ) : null}
         {this.state.stepIndex === 1 ? (
           <React.Fragment key={"_wiz02"}>
             <div>Choose the shape and size of the planning units</div>
-            <SelectField
+            <Select
               menuItemStyle={{ fontSize: "12px" }}
               labelStyle={{ fontSize: "12px" }}
               onChange={this.changeShape.bind(this)}
@@ -221,9 +222,9 @@ class NewProjectWizardDialog extends React.Component {
                   />
                 );
               })}
-            </SelectField>
+            </Select>
             <br />
-            <SelectField
+            <Select
               menuItemStyle={{ fontSize: "12px" }}
               labelStyle={{ fontSize: "12px" }}
               onChange={this.changeAreaKm2.bind(this)}
@@ -242,7 +243,7 @@ class NewProjectWizardDialog extends React.Component {
                   />
                 );
               })}
-            </SelectField>
+            </Select>
           </React.Fragment>
         ) : null}
         {this.state.stepIndex === 2 ? (
@@ -290,7 +291,7 @@ class NewProjectWizardDialog extends React.Component {
                 style={{ fontSize: "12px" }}
                 onCheck={this.toggleIncludeExistingPAs.bind(this)}
               />
-              <SelectField
+              <Select
                 menuItemStyle={{ fontSize: "12px" }}
                 labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeIucnCategory.bind(this)}
@@ -310,7 +311,7 @@ class NewProjectWizardDialog extends React.Component {
                     />
                   );
                 })}
-              </SelectField>
+              </Select>
             </div>
           </React.Fragment>
         ) : null}

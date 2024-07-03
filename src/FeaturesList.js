@@ -7,12 +7,14 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import { List, ListItem } from "material-ui/List";
-import TargetIcon from "./TargetIcon";
-import { grey400 } from "material-ui/styles/colors";
-import IconButton from "material-ui/IconButton";
-import MoreVertIcon from "material-ui/svg-icons/navigation/more-vert";
+
+import IconButton from "@material-ui/core/IconButton";
 import LinearGauge from "./LinearGauge";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import MoreVertIcon from "@material-ui/icons/MoreVert";
+import TargetIcon from "./TargetIcon";
+import grey from "@material-ui/core/colors/grey";
 
 class FeaturesList extends React.Component {
   iconClick(feature, evt) {
@@ -128,7 +130,7 @@ class FeaturesList extends React.Component {
                       }}
                       iconStyle={{ width: "18", height: "18" }}
                     >
-                      <MoreVertIcon color={grey400} />
+                      <MoreVertIcon color={grey[400]} />
                     </IconButton>
                   )
                 }

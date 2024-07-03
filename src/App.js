@@ -1,12 +1,10 @@
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-/*eslint-disable no-unused-vars*/
-import axios, { post } from "axios";
 import { getMaxNumberOfClasses, zoomToBounds } from "./Helpers.js";
 
 import AboutDialog from "./AboutDialog";
-import AddToMap from "material-ui/svg-icons/action/visibility";
+import AddToMap from "@material-ui/icons/Visibility";
 import AlertDialog from "./AlertDialog";
 //project components
 import AppBar from "./AppBar/AppBar";
@@ -37,10 +35,10 @@ import LoadingDialog from "./LoadingDialog";
 import LoginDialog from "./LoginDialog";
 //mapbox imports
 import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js";
-import Menu from "material-ui/Menu";
+import Menu from "@material-ui/core/Menu";
 import MenuItemWithButton from "./MenuItemWithButton";
 /*eslint-enable no-unused-vars*/
-import MuiThemeProvider from "material-ui/styles/MuiThemeProvider";
+import MuiThemeProvider from "@material-ui/core/styles/MuiThemeProvider";
 import NewFeatureDialog from "./NewFeatureDialog";
 import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog.js";
 import NewPlanningGridDialog from "./NewPlanningGridDialog";
@@ -48,13 +46,13 @@ import NewProjectDialog from "./NewProjectDialog";
 import NewProjectWizardDialog from "./NewProjectWizardDialog";
 import PlanningGridDialog from "./PlanningGridDialog";
 import PlanningGridsDialog from "./PlanningGridsDialog";
-//material-ui components and icons
-import Popover from "material-ui/Popover";
-import Preprocess from "material-ui/svg-icons/action/autorenew";
+//@material-ui/core components and icons
+import Popover from "@material-ui/core/Popover";
+import Preprocess from "@material-ui/icons/Autorenew";
 import ProfileDialog from "./ProfileDialog";
 import ProjectsDialog from "./ProjectsDialog";
 import ProjectsListDialog from "./ProjectsListDialog";
-import Properties from "material-ui/svg-icons/alert/error-outline";
+import Properties from "@material-ui/icons/ErrorOutline";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -68,8 +66,8 @@ import Properties from "material-ui/svg-icons/alert/error-outline";
 /*global AbortController*/
 import React from "react";
 import RegisterDialog from "./RegisterDialog.js";
-import RemoveFromMap from "material-ui/svg-icons/action/visibility-off";
-import RemoveFromProject from "material-ui/svg-icons/content/remove";
+import RemoveFromMap from "@material-ui/icons/VisibilityOff";
+import RemoveFromProject from "@material-ui/icons/Remove";
 import ResendPasswordDialog from "./ResendPasswordDialog.js";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./ResultsPanel";
@@ -78,7 +76,7 @@ import RunLogDialog from "./RunLogDialog";
 import RunSettingsDialog from "./RunSettingsDialog";
 import ServerDetailsDialog from "./ServerDetailsDialog";
 import ShareableLinkDialog from "./ShareableLinkDialog";
-import Snackbar from "material-ui/Snackbar";
+import Snackbar from "@material-ui/core/Snackbar";
 import TargetDialog from "./TargetDialog";
 import ToolsMenu from "./ToolsMenu";
 import UpdateWDPADialog from "./UpdateWDPADialog";
@@ -86,7 +84,9 @@ import UserMenu from "./UserMenu";
 import UserSettingsDialog from "./UserSettingsDialog";
 import UsersDialog from "./UsersDialog";
 import Welcome from "./Welcome.js";
-import ZoomIn from "material-ui/svg-icons/action/zoom-in";
+import ZoomIn from "@material-ui/icons/ZoomIn";
+/*eslint-disable no-unused-vars*/
+import axios from "axios";
 import classyBrew from "classybrew";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
@@ -361,25 +361,27 @@ class App extends React.Component {
     return new Promise((resolve, reject) => {
       //set the global loading flag
       this.setState({ loading: true });
-      post(this.state.marxanServer.endpoint + method, formData, {
-        withCredentials: withCredentials,
-      }).then(
-        (response) => {
-          if (!this.checkForErrors(response.data)) {
+      axios
+        .post(this.state.marxanServer.endpoint + method, formData, {
+          withCredentials: withCredentials,
+        })
+        .then(
+          (response) => {
+            if (!this.checkForErrors(response.data)) {
+              this.setState({ loading: false });
+              resolve(response.data);
+            } else {
+              this.setState({ loading: false });
+              reject(response.data.error);
+            }
+          },
+          (err) => {
+            //TODO - If the request is unauthorised it returns the Status Code of 200 with the error: "HTTP 403: Forbidden (The 'ReadOnly' role does not have permission to access the 'updateSpecFile' service)" - but for some reason this error handling is used
             this.setState({ loading: false });
-            resolve(response.data);
-          } else {
-            this.setState({ loading: false });
-            reject(response.data.error);
+            if (err.message !== "Network Error") this.setSnackBar(err.message);
+            reject(err);
           }
-        },
-        (err) => {
-          //TODO - If the request is unauthorised it returns the Status Code of 200 with the error: "HTTP 403: Forbidden (The 'ReadOnly' role does not have permission to access the 'updateSpecFile' service)" - but for some reason this error handling is used
-          this.setState({ loading: false });
-          if (err.message !== "Network Error") this.setSnackBar(err.message);
-          reject(err);
-        }
-      );
+        );
     });
   }
 
@@ -3636,12 +3638,19 @@ class App extends React.Component {
         resolve("Uploaded to Mapbox");
       } else {
         let timer = setInterval(() => {
+          console.log(
+            "sk.eyJ1IjoiYmxpc2h0ZW4iLCJhIjoiY2piNm1tOGwxMG9lajMzcXBlZDR4aWVjdiJ9.Z1Jq4UAgGpXukvnUReLO1g ",
+            this.state.registry.MBAT ===
+              "sk.eyJ1IjoiYmxpc2h0ZW4iLCJhIjoiY2piNm1tOGwxMG9lajMzcXBlZDR4aWVjdiJ9.Z1Jq4UAgGpXukvnUReLO1g"
+          );
           fetch(
             "https://api.mapbox.com/uploads/v1/" +
               CONSTANTS.MAPBOX_USER +
               "/" +
               uploadid +
-              "?access_token=sk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2tlOGdiampuMXc0bzJzb2JxMzdzOTRybCJ9.vfiGr6JQ83_ncJVpVZcMbQ" //+this.state.registry.MBAT
+              "?access_token=" +
+              this.state.registry.MBAT
+            // should be this - sk.eyJ1IjoiYmxpc2h0ZW4iLCJhIjoiY2piNm1tOGwxMG9lajMzcXBlZDR4aWVjdiJ9.Z1Jq4UAgGpXukvnUReLO1g
           )
             .then((response) => response.json())
             .then((response) => {

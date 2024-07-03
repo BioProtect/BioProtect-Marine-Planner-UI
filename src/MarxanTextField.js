@@ -7,7 +7,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import TextField from "material-ui/TextField";
+import TextField from "@material-ui/core/TextField";
 
 class MarxanTextField extends React.Component {
   render() {

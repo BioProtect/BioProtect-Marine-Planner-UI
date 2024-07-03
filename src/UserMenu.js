@@ -1,3 +1,8 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import LogOut from "@material-ui/icons/ExitToApp";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
+import Popover from "@material-ui/core/Popover";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,15 +12,10 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import Menu from "material-ui/Menu";
-import MenuItem from "material-ui/MenuItem";
-import Popover from "material-ui/Popover";
-import LogOut from "material-ui/svg-icons/action/exit-to-app";
-import { white } from "material-ui/styles/colors";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCog } from "@fortawesome/free-solid-svg-icons";
 import { faEdit } from "@fortawesome/free-solid-svg-icons";
 import { faUserLock } from "@fortawesome/free-solid-svg-icons";
+import { white } from "@material-ui/core/styles/colors";
 
 class UserMenu extends React.Component {
   render() {

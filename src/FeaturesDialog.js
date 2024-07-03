@@ -1,3 +1,11 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faSync } from '@fortawesome/free-solid-svg-icons';
+import Import from "@material-ui/icons/GetApp";
+import MarxanDialog from "./MarxanDialog";
+import MarxanTable from "./MarxanTable";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
+import Popover from "@material-ui/core/Popover";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,22 +15,14 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { faCircle } from "@fortawesome/free-regular-svg-icons";
-import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-// import { faSync } from '@fortawesome/free-solid-svg-icons';
-import Import from "material-ui/svg-icons/action/get-app";
-import ToolbarButton from "./ToolbarButton";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTable from "./MarxanTable";
-import Popover from "material-ui/Popover";
-import Menu from "material-ui/Menu";
-import MenuItem from "material-ui/MenuItem";
 import TableRow from "./TableRow.js";
+import ToolbarButton from "./ToolbarButton";
+import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
+import { faCircle } from "@fortawesome/free-regular-svg-icons";
+import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
+import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
 //import gbif_logo from './gbif.jpg';
-//import FontIcon from 'material-ui/FontIcon';
+//import FontIcon from '@material-ui/core/FontIcon';
 // add this to the gbif item: leftIcon={<FontIcon className="gbifLogo"/>
 
 class FeaturesDialog extends React.Component {

@@ -1,3 +1,5 @@
+/*eslint-enable no-unused-vars*/
+import FontAwesome from "react-fontawesome";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,11 +9,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-/*eslint-disable no-unused-vars*/
-import axios, { post } from "axios";
-/*eslint-enable no-unused-vars*/
-import FontAwesome from "react-fontawesome";
-import Sync from "material-ui/svg-icons/notification/sync";
+import Sync from "@material-ui/icons/Sync";
 
 //From AshikNesin https://gist.github.com/AshikNesin/e44b1950f6a24cfcd85330ffc1713513
 

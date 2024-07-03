@@ -1,3 +1,4 @@
+import MenuItem from "@material-ui/core/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,8 +8,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
+import Select from "@material-ui/core/Select";
 
 class RendererSelector extends React.Component {
   handleChange(event, index, value) {
@@ -28,7 +28,7 @@ class RendererSelector extends React.Component {
       return <MenuItem value={item} key={item} primaryText={primaryText} />;
     });
     return (
-      <SelectField
+      <Select
         selectionRenderer={this.props.selectionRenderer}
         menuItemStyle={{ fontSize: "12px" }}
         labelStyle={{ fontSize: "12px" }}

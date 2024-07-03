@@ -7,8 +7,9 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
+import SelectMapboxLayer from "./SelectMapboxLayer";
 import mapboxgl from "mapbox-gl";
-import SelectFieldMapboxLayer from "./SelectFieldMapboxLayer";
 
 class PlanningUnitsDialog extends React.Component {
   constructor(props) {
@@ -47,7 +48,7 @@ class PlanningUnitsDialog extends React.Component {
                 verticalAlign: "middle",
               }}
             >
-              <SelectFieldMapboxLayer
+              <SelectMapboxLayer
                 {...this.props}
                 menuItemStyle={{ fontSize: "12px" }}
                 labelStyle={{ fontSize: "12px" }}

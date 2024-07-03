@@ -9,12 +9,13 @@
 /*global fetch*/
 /*global DOMParser*/
 import * as React from "react";
+
+import Checkbox from "@material-ui/core/Checkbox";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
+import MenuItem from "@material-ui/core/MenuItem";
+import Select from "@material-ui/core/Select";
 import ToolbarButton from "./ToolbarButton";
-import Checkbox from "material-ui/Checkbox";
 
 let INITIAL_STATE = {
   steps: ["type", "endpoint", "layer", "metadata"],
@@ -199,7 +200,7 @@ class ImportFromWebDialog extends React.Component {
       <div key="k28">
         {stepIndex === 0 ? (
           <div>
-            <SelectField
+            <Select
               menuItemStyle={{ fontSize: "12px" }}
               labelStyle={{ fontSize: "12px" }}
               onChange={this.changeSourceType.bind(this)}
@@ -217,7 +218,7 @@ class ImportFromWebDialog extends React.Component {
                   />
                 );
               })}
-            </SelectField>
+            </Select>
           </div>
         ) : null}
         {stepIndex === 1 ? (
@@ -233,7 +234,7 @@ class ImportFromWebDialog extends React.Component {
         ) : null}
         {stepIndex === 2 ? (
           <div>
-            <SelectField
+            <Select
               menuItemStyle={{ fontSize: "12px" }}
               autoWidth={true}
               labelStyle={{ fontSize: "12px" }}
@@ -252,7 +253,7 @@ class ImportFromWebDialog extends React.Component {
                   />
                 );
               })}
-            </SelectField>
+            </Select>
           </div>
         ) : null}
         {stepIndex === 3 ? (

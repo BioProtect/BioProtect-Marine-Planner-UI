@@ -1,3 +1,8 @@
+import Clipboard from "@material-ui/icons/Assignment";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Log from "./Log";
+import MapLegend from "./MapLegend";
+import Paper from "@material-ui/core/Paper";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,16 +12,12 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ToolbarButton from "./ToolbarButton";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEraser } from "@fortawesome/free-solid-svg-icons";
 import ReactTable from "react-table";
-import Paper from "material-ui/Paper";
-import { Tabs, Tab } from "material-ui/Tabs";
-import MapLegend from "./MapLegend";
-import Log from "./Log";
-import Clipboard from "material-ui/svg-icons/action/assignment";
-import Sync from "material-ui/svg-icons/notification/sync";
+import Sync from "@material-ui/icons/Sync";
+import Tab from "@material-ui/core/Tab";
+import Tabs from "@material-ui/core/Tabs";
+import ToolbarButton from "./ToolbarButton";
+import { faEraser } from "@fortawesome/free-solid-svg-icons";
 
 let runtime = 0;
 

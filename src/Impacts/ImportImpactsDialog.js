@@ -7,13 +7,14 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import MarxanTable from "../MarxanTable";
-import MarxanDialog from "../MarxanDialog";
-import MarxanTextField from "../MarxanTextField";
+
 import FileUpload from "../FileUpload.js";
-import ToolbarButton from "../ToolbarButton";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTable from "../MarxanTable";
+import MarxanTextField from "../MarxanTextField";
+import Sync from "@material-ui/icons/Sync";
 import TableRow from "../TableRow.js";
-import Sync from "material-ui/svg-icons/notification/sync";
+import ToolbarButton from "../ToolbarButton";
 
 let INITIAL_STATE = {
   steps: ["Select Activity", "raster", "metadata"],

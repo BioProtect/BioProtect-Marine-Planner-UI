@@ -1,3 +1,6 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MarxanDialog from "./MarxanDialog";
+import MarxanTable from "./MarxanTable";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,16 +10,13 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
+import Sync from "@material-ui/icons/Sync";
 import ToolbarButton from "./ToolbarButton";
-import MarxanDialog from "./MarxanDialog";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
-import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
-import { faRedoAlt } from "@fortawesome/free-solid-svg-icons";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";
-import Sync from "material-ui/svg-icons/notification/sync";
-import MarxanTable from "./MarxanTable";
+import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { faRedoAlt } from "@fortawesome/free-solid-svg-icons";
+import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 
 class RunLogDialog extends React.Component {
   constructor(props) {

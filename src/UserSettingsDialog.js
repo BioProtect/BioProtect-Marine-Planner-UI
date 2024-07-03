@@ -1,3 +1,7 @@
+import { RadioButton, RadioButtonGroup } from "@material-ui/core/RadioButton";
+
+import MarxanDialog from "./MarxanDialog";
+import MenuItem from "@material-ui/core/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,10 +11,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
-import { RadioButton, RadioButtonGroup } from "material-ui/RadioButton";
+import Select from "@material-ui/core/Select";
 
 class UserSettingsDialog extends React.Component {
   constructor(props) {
@@ -52,7 +53,7 @@ class UserSettingsDialog extends React.Component {
         title="Settings"
         children={
           <div key="k14">
-            <SelectField
+            <Select
               floatingLabelText={"Basemap style"}
               floatingLabelFixed={true}
               underlineShow={false}

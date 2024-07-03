@@ -7,7 +7,8 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import Checkbox from "material-ui/Checkbox";
+
+import Checkbox from "@material-ui/core/Checkbox";
 
 class CheckBoxField extends React.PureComponent {
   //pass all of the Conservation features properties in the click event of the checkbox so we can store an array of checked Conservation features

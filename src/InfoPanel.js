@@ -1,12 +1,10 @@
 import "react-table/react-table.css";
 
-import { Tab, Tabs } from "material-ui/Tabs";
-
 import CONSTANTS from "./constants";
-import Checkbox from "material-ui/Checkbox";
+import Checkbox from "@material-ui/core/Checkbox";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import MenuItem from "material-ui/MenuItem";
-import Paper from "material-ui/Paper";
+import MenuItem from "@material-ui/core/MenuItem";
+import Paper from "@material-ui/core/Paper";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -16,9 +14,11 @@ import Paper from "material-ui/Paper";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
+import Select from "@material-ui/core/Select";
 import SelectFeatures from "./SelectFeatures";
-import SelectField from "material-ui/SelectField";
-import Settings from "material-ui/svg-icons/action/settings";
+import Settings from "@material-ui/icons/Settings";
+import Tab from "@material-ui/core/Tab";
+import Tabs from "@material-ui/core/Tabs";
 import Textarea from "react-textarea-autosize";
 import ToolbarButton from "./ToolbarButton";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";
@@ -383,7 +383,7 @@ class InfoPanel extends React.Component {
                       </div>
                     </div>
                   </div>
-                  <SelectField
+                  <Select
                     floatingLabelText={"Lock in protected areas"}
                     floatingLabelFixed={true}
                     underlineShow={false}
@@ -411,7 +411,7 @@ class InfoPanel extends React.Component {
                   <div>
                     <div className={"tabTitle"}>Costs</div>
                   </div>
-                  <SelectField
+                  <Select
                     floatingLabelText={"Use cost surface"}
                     floatingLabelFixed={true}
                     underlineShow={false}

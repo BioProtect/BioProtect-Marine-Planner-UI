@@ -1,3 +1,9 @@
+import Export from "@material-ui/icons/Publish";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faSync } from '@fortawesome/free-solid-svg-icons';
+import Import from "@material-ui/icons/GetApp";
+import MarxanDialog from "./MarxanDialog";
+import MarxanTable from "./MarxanTable";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,17 +13,11 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import ToolbarButton from "./ToolbarButton";
+import { faFileCode } from "@fortawesome/free-regular-svg-icons";
 // import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import { faFileCode } from "@fortawesome/free-regular-svg-icons";
-// import { faSync } from '@fortawesome/free-solid-svg-icons';
-import Import from "material-ui/svg-icons/action/get-app";
-import Export from "material-ui/svg-icons/editor/publish";
-import ToolbarButton from "./ToolbarButton";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTable from "./MarxanTable";
 
 class PlanningGridsDialog extends React.Component {
   constructor(props) {

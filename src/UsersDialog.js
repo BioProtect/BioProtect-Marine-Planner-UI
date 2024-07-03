@@ -1,3 +1,8 @@
+import Checkbox from "@material-ui/core/Checkbox";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MarxanDialog from "./MarxanDialog";
+import MarxanTable from "./MarxanTable";
+import MenuItem from "@material-ui/core/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -8,14 +13,9 @@
  */
 import React from "react";
 // import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
-import SelectField from "material-ui/SelectField";
-import MenuItem from "material-ui/MenuItem";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
+import Select from "@material-ui/core/Select";
 import ToolbarButton from "./ToolbarButton";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTable from "./MarxanTable";
-import Checkbox from "material-ui/Checkbox";
+import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
 
 let USER_ROLES = ["User", "ReadOnly", "Admin"];
 class UsersDialog extends React.Component {
@@ -112,7 +112,7 @@ class UsersDialog extends React.Component {
                           row.original.user === "guest" ? (
                             <div>ReadOnly</div>
                           ) : (
-                            <SelectField
+                            <Select
                               style={{
                                 width: 130,
                                 height: 15,
@@ -140,7 +140,7 @@ class UsersDialog extends React.Component {
                                   />
                                 );
                               })}
-                            </SelectField>
+                            </Select>
                           ),
                       },
                       {

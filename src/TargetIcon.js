@@ -7,7 +7,8 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import { blue300 } from "material-ui/styles/colors";
+
+import blue from "@material-ui/core/colors/blue";
 
 class TargetIcon extends React.PureComponent {
   constructor(props) {
@@ -54,9 +55,9 @@ class TargetIcon extends React.PureComponent {
       this.props.targetStatus === "Does not occur in planning area"
         ? "white"
         : this.props.targetStatus === "Unknown"
-        ? blue300
+        ? blue[300]
         : this.props.targetStatus === "Target achieved"
-        ? blue300
+        ? blue[300]
         : "white";
     return (
       <div
@@ -117,7 +118,7 @@ class TargetIcon extends React.PureComponent {
               fontSize: "13px",
               display: "inline-flex",
               textAlign: "center",
-              color: blue300,
+              color: blue[300],
             }}
             value={this.state.localTargetValue}
           />

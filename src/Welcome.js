@@ -1,3 +1,8 @@
+import Checkbox from "@material-ui/core/Checkbox";
+import FlatButton from "@material-ui/core/FlatButton";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MarxanDialog from "./MarxanDialog";
+import Notification from "./Notification.js";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,14 +12,9 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import Notification from "./Notification.js";
-import FlatButton from "material-ui/FlatButton";
 import ToolbarButton from "./ToolbarButton";
-import Checkbox from "material-ui/Checkbox";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { faDraftingCompass } from "@fortawesome/free-solid-svg-icons";
+import { faSync } from "@fortawesome/free-solid-svg-icons";
 class Welcome extends React.Component {
   constructor(props) {
     super(props);
