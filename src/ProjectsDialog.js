@@ -1,5 +1,5 @@
-import Clone from "@material-ui/icons/ContentCopy";
 import Export from "@material-ui/icons/Publish";
+import FileCopyIcon from "@material-ui/icons/FileCopy";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Import from "@material-ui/icons/GetApp";
 import MarxanDialog from "./MarxanDialog";
@@ -20,7 +20,6 @@ import ToolbarButton from "./ToolbarButton";
 // import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-
 class ProjectsDialog extends React.Component {
   constructor(props) {
     super(props);
@@ -357,7 +356,9 @@ class ProjectsDialog extends React.Component {
                   show={
                     !this.props.unauthorisedMethods.includes("cloneProject")
                   }
-                  icon={<Clone style={{ height: "20px", width: "20px" }} />}
+                  icon={
+                    <FileCopyIcon style={{ height: "20px", width: "20px" }} />
+                  }
                   title="Clone project"
                   onClick={this.cloneProject.bind(this)}
                   disabled={!this.state.selectedProject || this.props.loading}
