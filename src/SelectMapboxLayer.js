@@ -8,8 +8,8 @@
  */
 import * as React from "react";
 
-import MenuItem from "@material-ui/core/MenuItem";
-import Select from "@material-ui/core/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import axios from "axios";
 
 //this is a generic component for selecting and dynamically displaying a layer from mapbox on a mapbox map

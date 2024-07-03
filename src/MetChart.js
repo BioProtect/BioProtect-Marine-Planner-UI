@@ -10,7 +10,7 @@ import * as React from "react";
 
 import { Cell, Pie, PieChart } from "recharts";
 
-import Divider from "@material-ui/core/Divider";
+import Divider from "@mui/material/Divider";
 import { getArea } from "./Helpers.js";
 
 // import star from './images/star.png';

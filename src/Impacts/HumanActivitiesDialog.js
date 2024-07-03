@@ -1,5 +1,3 @@
-import "react-table/react-table.css";
-
 /*
  * Copyright (c) 2021 Carlos Tighe.
  *
@@ -15,7 +13,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTable from "../MarxanTable";
 import MarxanTextField from "../MarxanTextField";
-import Sync from "@material-ui/icons/Sync";
+import Sync from "@mui/icons-material/Sync";
 import TableRow from "../TableRow.js";
 import ToolbarButton from "../ToolbarButton";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";

@@ -1,8 +1,8 @@
-import Clipboard from "@material-ui/icons/Assignment";
+import Clipboard from "@mui/icons-material/Assignment";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Log from "./Log";
 import MapLegend from "./MapLegend";
-import Paper from "@material-ui/core/Paper";
+import Paper from "@mui/material/Paper";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -13,9 +13,9 @@ import Paper from "@material-ui/core/Paper";
  */
 import React from "react";
 import ReactTable from "react-table";
-import Sync from "@material-ui/icons/Sync";
-import Tab from "@material-ui/core/Tab";
-import Tabs from "@material-ui/core/Tabs";
+import Sync from "@mui/icons-material/Sync";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
 import ToolbarButton from "./ToolbarButton";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";
 

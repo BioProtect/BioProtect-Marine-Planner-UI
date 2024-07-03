@@ -8,13 +8,13 @@
  */
 import * as React from "react";
 
-import IconButton from "@material-ui/core/IconButton";
+import IconButton from "@mui/material/IconButton";
 import LinearGauge from "./LinearGauge";
-import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import MoreVertIcon from "@material-ui/icons/MoreVert";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TargetIcon from "./TargetIcon";
-import grey from "@material-ui/core/colors/grey";
+import grey from "@mui/material/colors/grey";
 
 class FeaturesList extends React.Component {
   iconClick(feature, evt) {

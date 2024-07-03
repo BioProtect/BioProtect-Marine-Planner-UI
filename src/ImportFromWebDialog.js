@@ -10,11 +10,11 @@
 /*global DOMParser*/
 import * as React from "react";
 
-import Checkbox from "@material-ui/core/Checkbox";
+import Checkbox from "@mui/material/Checkbox";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
-import MenuItem from "@material-ui/core/MenuItem";
-import Select from "@material-ui/core/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import ToolbarButton from "./ToolbarButton";
 
 let INITIAL_STATE = {

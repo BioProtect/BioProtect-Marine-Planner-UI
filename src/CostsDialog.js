@@ -1,6 +1,6 @@
 import CONSTANTS from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Import from "@material-ui/icons/GetApp";
+import Import from "@mui/icons-material/GetApp";
 import MarxanDialog from "./MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
@@ -14,7 +14,7 @@ import React from "react";
 import ReactTable from "react-table";
 import TableRow from "./TableRow";
 import ToolbarButton from "./ToolbarButton";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 
 class CostsDialog extends React.Component {
   constructor(props) {

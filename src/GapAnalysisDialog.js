@@ -23,7 +23,7 @@ import {
 import CustomTooltip from "./CustomTooltip.js";
 import MarxanDialog from "./MarxanDialog";
 import MetChart from "./MetChart";
-import Switch from "@material-ui/core/Switch";
+import Switch from "@mui/material/Switch";
 
 class GapAnalysisDialog extends React.PureComponent {
   constructor(props) {

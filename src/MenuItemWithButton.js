@@ -1,4 +1,4 @@
-import MenuItem from "@material-ui/core/MenuItem";
+import MenuItem from "@mui/material/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *

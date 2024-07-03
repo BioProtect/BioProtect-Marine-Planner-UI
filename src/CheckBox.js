@@ -8,7 +8,7 @@
  */
 import * as React from "react";
 
-import Checkbox from "@material-ui/core/Checkbox";
+import Checkbox from "@mui/material/Checkbox";
 
 class CheckBoxField extends React.PureComponent {
   //pass all of the Conservation features properties in the click event of the checkbox so we can store an array of checked Conservation features

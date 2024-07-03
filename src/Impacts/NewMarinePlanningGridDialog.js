@@ -12,8 +12,8 @@ import CONSTANTS from "../constants";
 import FileUpload from "../FileUpload";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTextField from "../MarxanTextField";
-import MenuItem from "@material-ui/core/MenuItem";
-import Select from "@material-ui/core/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 
 class NewPlanningGridDialog extends React.Component {
   constructor(props) {

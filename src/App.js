@@ -4,7 +4,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { getMaxNumberOfClasses, zoomToBounds } from "./Helpers.js";
 
 import AboutDialog from "./AboutDialog";
-import AddToMap from "@material-ui/icons/Visibility";
+import AddToMap from "@mui/icons-material/Visibility";
 import AlertDialog from "./AlertDialog";
 //project components
 import AppBar from "./AppBar/AppBar";
@@ -35,10 +35,8 @@ import LoadingDialog from "./LoadingDialog";
 import LoginDialog from "./LoginDialog";
 //mapbox imports
 import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js";
-import Menu from "@material-ui/core/Menu";
+import Menu from "@mui/material/Menu";
 import MenuItemWithButton from "./MenuItemWithButton";
-/*eslint-enable no-unused-vars*/
-import MuiThemeProvider from "@material-ui/core/styles/MuiThemeProvider";
 import NewFeatureDialog from "./NewFeatureDialog";
 import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog.js";
 import NewPlanningGridDialog from "./NewPlanningGridDialog";
@@ -46,13 +44,13 @@ import NewProjectDialog from "./NewProjectDialog";
 import NewProjectWizardDialog from "./NewProjectWizardDialog";
 import PlanningGridDialog from "./PlanningGridDialog";
 import PlanningGridsDialog from "./PlanningGridsDialog";
-//@material-ui/core components and icons
-import Popover from "@material-ui/core/Popover";
-import Preprocess from "@material-ui/icons/Autorenew";
+//@mui/material components and icons
+import Popover from "@mui/material/Popover";
+import Preprocess from "@mui/icons-material/Autorenew";
 import ProfileDialog from "./ProfileDialog";
 import ProjectsDialog from "./ProjectsDialog";
 import ProjectsListDialog from "./ProjectsListDialog";
-import Properties from "@material-ui/icons/ErrorOutline";
+import Properties from "@mui/icons-material/ErrorOutline";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -66,8 +64,8 @@ import Properties from "@material-ui/icons/ErrorOutline";
 /*global AbortController*/
 import React from "react";
 import RegisterDialog from "./RegisterDialog.js";
-import RemoveFromMap from "@material-ui/icons/VisibilityOff";
-import RemoveFromProject from "@material-ui/icons/Remove";
+import RemoveFromMap from "@mui/icons-material/VisibilityOff";
+import RemoveFromProject from "@mui/icons-material/Remove";
 import ResendPasswordDialog from "./ResendPasswordDialog.js";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./ResultsPanel";
@@ -76,15 +74,17 @@ import RunLogDialog from "./RunLogDialog";
 import RunSettingsDialog from "./RunSettingsDialog";
 import ServerDetailsDialog from "./ServerDetailsDialog";
 import ShareableLinkDialog from "./ShareableLinkDialog";
-import Snackbar from "@material-ui/core/Snackbar";
+import Snackbar from "@mui/material/Snackbar";
 import TargetDialog from "./TargetDialog";
+/*eslint-enable no-unused-vars*/
+import { ThemeProvider } from "@mui/material/styles";
 import ToolsMenu from "./ToolsMenu";
 import UpdateWDPADialog from "./UpdateWDPADialog";
 import UserMenu from "./UserMenu";
 import UserSettingsDialog from "./UserSettingsDialog";
 import UsersDialog from "./UsersDialog";
 import Welcome from "./Welcome.js";
-import ZoomIn from "@material-ui/icons/ZoomIn";
+import ZoomIn from "@mui/icons-material/ZoomIn";
 /*eslint-disable no-unused-vars*/
 import axios from "axios";
 import classyBrew from "classybrew";
@@ -5662,7 +5662,7 @@ class App extends React.Component {
       />
     );
     return (
-      <MuiThemeProvider>
+      <ThemeProvider>
         <React.Fragment>
           <div
             ref={(el) => (this.mapContainer = el)}
@@ -6449,7 +6449,7 @@ class App extends React.Component {
             openAtlasLayersDialog={this.openAtlasLayersDialog.bind(this)}
           />
         </React.Fragment>
-      </MuiThemeProvider>
+      </ThemeProvider>
     );
   }
 }

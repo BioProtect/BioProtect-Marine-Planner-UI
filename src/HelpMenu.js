@@ -1,8 +1,8 @@
 import CONSTANTS from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Menu from "@material-ui/core/Menu";
-import MenuItem from "@material-ui/core/MenuItem";
-import Popover from "@material-ui/core/Popover";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Popover from "@mui/material/Popover";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *

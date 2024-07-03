@@ -7,10 +7,11 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
 import ToolbarButton from "./ToolbarButton";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClipboard } from "@fortawesome/free-solid-svg-icons";
 
 class ShareableLinkDialog extends React.PureComponent {

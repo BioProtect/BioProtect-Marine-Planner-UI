@@ -1,10 +1,8 @@
-import "react-table/react-table.css";
-
 import CONSTANTS from "./constants";
-import Checkbox from "@material-ui/core/Checkbox";
+import Checkbox from "@mui/material/Checkbox";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import MenuItem from "@material-ui/core/MenuItem";
-import Paper from "@material-ui/core/Paper";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -14,12 +12,12 @@ import Paper from "@material-ui/core/Paper";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import Select from "@material-ui/core/Select";
+import Select from "@mui/material/Select";
 import SelectFeatures from "./SelectFeatures";
-import Settings from "@material-ui/icons/Settings";
-import Tab from "@material-ui/core/Tab";
-import Tabs from "@material-ui/core/Tabs";
-import Textarea from "react-textarea-autosize";
+import Settings from "@mui/icons-material/Settings";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import { TextareaAutosize } from "@mui/base/TextareaAutosize";
 import ToolbarButton from "./ToolbarButton";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";
 import { faLock } from "@fortawesome/free-solid-svg-icons";
@@ -221,7 +219,7 @@ class InfoPanel extends React.Component {
                 <div>
                   <div className={"tabTitle"}>Description</div>
                   {this.props.userRole === "ReadOnly" ? null : (
-                    <Textarea
+                    <TextareaAutosize
                       minRows={5}
                       id="descriptionEdit"
                       style={{

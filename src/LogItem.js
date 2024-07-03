@@ -9,7 +9,7 @@
 import * as React from "react";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Sync from "@material-ui/icons/Sync";
+import Sync from "@mui/icons-material/Sync";
 import { faArrowAltCircleRight } from "@fortawesome/free-solid-svg-icons";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";

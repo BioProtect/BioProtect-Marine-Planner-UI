@@ -10,7 +10,7 @@ import MarxanTable from "./MarxanTable";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import Sync from "@material-ui/icons/Sync";
+import Sync from "@mui/icons-material/Sync";
 import ToolbarButton from "./ToolbarButton";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";

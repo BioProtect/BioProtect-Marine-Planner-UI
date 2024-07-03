@@ -1,7 +1,7 @@
 import MarxanDialog from "./MarxanDialog";
-import MenuItem from "@material-ui/core/MenuItem";
-import Radio from "@material-ui/core/Radio";
-import RadioGroup from "@material-ui/core/RadioGroup";
+import MenuItem from "@mui/material/MenuItem";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -11,7 +11,7 @@ import RadioGroup from "@material-ui/core/RadioGroup";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import Select from "@material-ui/core/Select";
+import Select from "@mui/material/Select";
 
 class UserSettingsDialog extends React.Component {
   constructor(props) {

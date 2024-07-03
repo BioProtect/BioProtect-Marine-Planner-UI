@@ -1,4 +1,4 @@
-import MenuItem from "@material-ui/core/MenuItem";
+import MenuItem from "@mui/material/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -8,7 +8,7 @@ import MenuItem from "@material-ui/core/MenuItem";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import Select from "@material-ui/core/Select";
+import Select from "@mui/material/Select";
 import { getMaxNumberOfClasses } from "./Helpers.js";
 
 class ColorSelector extends React.Component {

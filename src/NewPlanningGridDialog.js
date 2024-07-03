@@ -10,12 +10,12 @@ import * as React from "react";
 
 import CONSTANTS from "./constants";
 import MarxanDialog from "./MarxanDialog";
-import MenuItem from "@material-ui/core/MenuItem";
-import Select from "@material-ui/core/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 
 // import ToolbarButton from "./ToolbarButton";
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// import { faArrowAltCircleUp } from '@fortawesome/free-regular-svg-icons';
+// import { faArrowAltCircleUp } from '@fortawesome/free-solid-svg-icons';
 
 class NewPlanningGridDialog extends React.Component {
   constructor(props) {

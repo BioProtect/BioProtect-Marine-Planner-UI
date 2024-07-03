@@ -1,3 +1,6 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MapContainer2 from "./MapContainer2";
+import MarxanDialog from "./MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,10 +10,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import MapContainer2 from "./MapContainer2";
 import { getArea } from "./Helpers.js";
-import FontAwesome from "react-fontawesome";
 
 class FeatureDialog extends React.Component {
   constructor(props) {
@@ -128,7 +128,7 @@ class FeatureDialog extends React.Component {
                   >
                     <td className="metadataItemTitle">Projects:</td>
                     <td className="metadataItemValue">
-                      <FontAwesome
+                      <FontAwesomeIcon
                         name="external-link-alt"
                         onClick={this.getProjectList.bind(this)}
                         title="View a list of projects that this feature is used in"

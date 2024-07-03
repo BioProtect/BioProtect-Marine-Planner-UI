@@ -1,7 +1,7 @@
-import Export from "@material-ui/icons/Publish";
+import Export from "@mui/icons-material/Publish";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { faSync } from '@fortawesome/free-solid-svg-icons';
-import Import from "@material-ui/icons/GetApp";
+import Import from "@mui/icons-material/GetApp";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTable from "./MarxanTable";
 /*
@@ -14,10 +14,10 @@ import MarxanTable from "./MarxanTable";
  */
 import React from "react";
 import ToolbarButton from "./ToolbarButton";
-import { faFileCode } from "@fortawesome/free-regular-svg-icons";
+import { faFileCode } from "@fortawesome/free-solid-svg-icons";
 // import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 
 class PlanningGridsDialog extends React.Component {
   constructor(props) {

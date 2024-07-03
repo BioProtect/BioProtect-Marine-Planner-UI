@@ -8,14 +8,14 @@
  */
 import * as React from "react";
 
-import Checkbox from "@material-ui/core/Checkbox";
+import Checkbox from "@mui/material/Checkbox";
 import FileUpload from "./FileUpload.js";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
-import MenuItem from "@material-ui/core/MenuItem";
-import Radio from "@material-ui/core/Radio";
-import RadioGroup from "@material-ui/core/RadioGroup";
-import Select from "@material-ui/core/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Select from "@mui/material/Select";
 import ToolbarButton from "./ToolbarButton";
 
 let INITIAL_STATE = {

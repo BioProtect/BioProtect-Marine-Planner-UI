@@ -8,7 +8,7 @@
  */
 import * as React from "react";
 
-import blue from "@material-ui/core/colors/blue";
+import blue from "@mui/material/colors/blue";
 
 class TargetIcon extends React.PureComponent {
   constructor(props) {

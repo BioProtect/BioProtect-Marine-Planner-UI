@@ -10,7 +10,7 @@ import * as React from "react";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Swatch from "./Swatch";
-import Sync from "@material-ui/icons/Sync";
+import Sync from "@mui/icons-material/Sync";
 import TransparencyControl from "./TransparencyControl";
 import { faCog } from "@fortawesome/free-solid-svg-icons";
 

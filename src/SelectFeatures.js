@@ -1,3 +1,5 @@
+import FeaturesList from "./FeaturesList";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -8,8 +10,6 @@
  */
 import React from "react";
 import ToolbarButton from "./ToolbarButton";
-import FeaturesList from "./FeaturesList";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
 
 class SelectFeatures extends React.Component {

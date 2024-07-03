@@ -22,7 +22,7 @@ import AppBarIcon from "./AppBarIcon";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import Toolbar from "@material-ui/core/Toolbar";
+import Toolbar from "@mui/material/Toolbar";
 
 class AppBar extends React.Component {
   constructor(props) {

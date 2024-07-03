@@ -10,9 +10,9 @@ import CONSTANTS from "./constants";
 import React from "react";
 import ReactTable from "react-table";
 import Swatch from "./Swatch";
-import Sync from "@material-ui/icons/Sync";
-import Tab from "@material-ui/core/Tab";
-import Tabs from "@material-ui/core/Tabs";
+import Sync from "@mui/icons-material/Sync";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
 import { getArea } from "./Helpers.js";
 
 const TITLE_LINK = "Click to open in the Protected Planet website";

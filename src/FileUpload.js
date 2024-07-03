@@ -1,5 +1,5 @@
 /*eslint-enable no-unused-vars*/
-import FontAwesome from "react-fontawesome";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -9,7 +9,7 @@ import FontAwesome from "react-fontawesome";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import Sync from "@material-ui/icons/Sync";
+import Sync from "@mui/icons-material/Sync";
 
 //From AshikNesin https://gist.github.com/AshikNesin/e44b1950f6a24cfcd85330ffc1713513
 

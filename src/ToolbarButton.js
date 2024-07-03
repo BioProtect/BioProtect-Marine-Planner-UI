@@ -1,4 +1,4 @@
-import Button from "@material-ui/core/Button";
+import Button from "@mui/material/Button";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *

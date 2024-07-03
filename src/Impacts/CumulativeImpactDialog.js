@@ -1,3 +1,6 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTable from "../MarxanTable";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,16 +10,12 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import "react-table/react-table.css";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { faCircle } from "@fortawesome/free-regular-svg-icons";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import { faPlayCircle } from "@fortawesome/free-regular-svg-icons";
-import ToolbarButton from "../ToolbarButton";
-import MarxanDialog from "../MarxanDialog";
-import MarxanTable from "../MarxanTable";
 import TableRow from "../TableRow.js";
+import ToolbarButton from "../ToolbarButton";
+import { faCircle } from "@fortawesome/free-solid-svg-icons";
+import { faPlayCircle } from "@fortawesome/free-solid-svg-icons";
+import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 
 class CumulativeImpactDialog extends React.Component {
   constructor(props) {

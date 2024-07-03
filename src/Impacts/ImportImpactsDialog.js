@@ -12,7 +12,7 @@ import FileUpload from "../FileUpload.js";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTable from "../MarxanTable";
 import MarxanTextField from "../MarxanTextField";
-import Sync from "@material-ui/icons/Sync";
+import Sync from "@mui/icons-material/Sync";
 import TableRow from "../TableRow.js";
 import ToolbarButton from "../ToolbarButton";
 

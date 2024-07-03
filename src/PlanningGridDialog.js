@@ -1,3 +1,6 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MapContainer2 from "./MapContainer2";
+import MarxanDialog from "./MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,9 +10,6 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import MapContainer2 from "./MapContainer2";
-import FontAwesome from "react-fontawesome";
 
 class PlanningGridDialog extends React.Component {
   constructor(props) {

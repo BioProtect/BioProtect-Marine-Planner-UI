@@ -1,8 +1,8 @@
-import Checkbox from "@material-ui/core/Checkbox";
+import Checkbox from "@mui/material/Checkbox";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTable from "./MarxanTable";
-import MenuItem from "@material-ui/core/MenuItem";
+import MenuItem from "@mui/material/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -13,9 +13,9 @@ import MenuItem from "@material-ui/core/MenuItem";
  */
 import React from "react";
 // import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
-import Select from "@material-ui/core/Select";
+import Select from "@mui/material/Select";
 import ToolbarButton from "./ToolbarButton";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 
 let USER_ROLES = ["User", "ReadOnly", "Admin"];
 class UsersDialog extends React.Component {
