@@ -1,5 +1,5 @@
+import Button from "@material-ui/core/Button";
 import Checkbox from "@material-ui/core/Checkbox";
-import FlatButton from "@material-ui/core/FlatButton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "./MarxanDialog";
 import Notification from "./Notification.js";
@@ -100,7 +100,7 @@ class Welcome extends React.Component {
                 </div>
               </div>
               <div style={{ verticalAlign: "middle" }}>
-                <FlatButton
+                <Button
                   icon={<FontAwesomeIcon icon={faSync} />}
                   title={"Reset notifications"}
                   onClick={this.props.resetNotifications}

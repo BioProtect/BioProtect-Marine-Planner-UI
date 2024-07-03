@@ -15,7 +15,8 @@ import React from "react";
 import { faCog } from "@fortawesome/free-solid-svg-icons";
 import { faEdit } from "@fortawesome/free-solid-svg-icons";
 import { faUserLock } from "@fortawesome/free-solid-svg-icons";
-import { white } from "@material-ui/core/styles/colors";
+// import white from "@material-ui/core/colors/white";
+import white from "@material-ui/core/colors/common";
 
 class UserMenu extends React.Component {
   render() {

@@ -1,7 +1,7 @@
-import { RadioButton, RadioButtonGroup } from "@material-ui/core/RadioButton";
-
 import MarxanDialog from "./MarxanDialog";
 import MenuItem from "@material-ui/core/MenuItem";
+import Radio from "@material-ui/core/Radio";
+import RadioGroup from "@material-ui/core/RadioGroup";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -76,12 +76,12 @@ class UserSettingsDialog extends React.Component {
             />
             <div style={{ paddingBottom: "10px" }}>
               <div className={"userSetting"}>Area units</div>
-              <RadioButtonGroup
+              <RadioGroup
                 name="reportUnitType"
                 defaultSelected={this.props.userData.REPORTUNITS}
                 onChange={this.setReportUnit.bind(this)}
               >
-                <RadioButton
+                <Radio
                   value="m2"
                   label="m2"
                   className={"radioButton"}
@@ -90,7 +90,7 @@ class UserSettingsDialog extends React.Component {
                   labelStyle={{ width: "40px" }}
                   iconStyle={{ marginRight: "3px" }}
                 />
-                <RadioButton
+                <Radio
                   value="Ha"
                   label="Ha"
                   className={"radioButton"}
@@ -99,7 +99,7 @@ class UserSettingsDialog extends React.Component {
                   labelStyle={{ width: "40px" }}
                   iconStyle={{ marginRight: "3px" }}
                 />
-                <RadioButton
+                <Radio
                   value="Km2"
                   label="Km2"
                   className={"radioButton"}
@@ -108,7 +108,7 @@ class UserSettingsDialog extends React.Component {
                   labelStyle={{ width: "40px" }}
                   iconStyle={{ marginRight: "3px" }}
                 />
-              </RadioButtonGroup>
+              </RadioGroup>
             </div>
             {/*	<Checkbox label="Use feature colours" style={{fontSize:'12px'}} checked={this.props.userData.USEFEATURECOLORS} onCheck={this.toggleUseFeatureColors.bind(this)} />
 						<Checkbox label="Show welcome screen at startup" style={{fontSize:'12px'}} checked={this.props.userData.SHOWWELCOMESCREEN} onCheck={this.toggleShowWelcomeScreen.bind(this)} />*/}
