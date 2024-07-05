@@ -32,7 +32,7 @@ import ImportPlanningGridDialog from "./ImportPlanningGridDialog";
 import ImportProjectDialog from "./ImportProjectDialog";
 import InfoPanel from "./InfoPanel";
 import LoadingDialog from "./LoadingDialog";
-import LoginDialog from "./LoginDialogFunc.js";
+import LoginDialog from "./LoginDialog.js";
 //mapbox imports
 import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js";
 import Menu from "@mui/material/Menu";
@@ -679,13 +679,6 @@ class App extends React.Component {
       guestUserEnabled: false,
       corsEnabled: false,
     });
-    console.log("*" * 100);
-
-    console.log("endpoint ", endpoint);
-    console.log("websocketEndpoint ", websocketEndpoint);
-    console.log("server ", server);
-    console.log("*" * 100);
-
     //poll the server to make sure tornado is running
     try {
       const controller = new AbortController();
@@ -711,6 +704,8 @@ class App extends React.Component {
             ? true
             : false;
         //set the flags for the server capabilities
+        console.log("corsEnabled ", corsEnabled);
+
         server = Object.assign(server, {
           guestUserEnabled: json.serverData.ENABLE_GUEST_USER,
           corsEnabled: corsEnabled,
@@ -769,6 +764,7 @@ class App extends React.Component {
   }
   //called when the user selects a server
   selectServer(value) {
+    console.log("value ", value);
     this.setState({ marxanServer: value });
     //see if there is a new version of the wdpa
     value.wdpa_version !== this.state.registry.WDPA.latest_version
@@ -780,6 +776,8 @@ class App extends React.Component {
     if (!value.offline && !value.corsEnabled && value.guestUserEnabled) {
       this.switchToGuestUser();
     }
+
+    console.log("this.state.marxanServer ", this.state.marxanServer);
   }
 
   closeSnackbar() {
