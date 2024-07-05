@@ -293,11 +293,12 @@ class ImportFromWebDialog extends React.Component {
         loading={this.props.loading || this.state.loading}
         contentWidth={390}
         title={"Import from web"}
-        children={children}
         actions={actions}
         onRequestClose={this.closeDialog.bind(this)}
         helpLink={"user.html#importing-from-the-web"}
-      />
+      >
+        {children}
+      </MarxanDialog>
     );
   }
 }

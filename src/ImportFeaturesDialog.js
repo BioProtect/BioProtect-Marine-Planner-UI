@@ -259,11 +259,12 @@ class ImportFeaturesDialog extends React.Component {
         okLabel={"Cancel"}
         contentWidth={390}
         title={"Import features"}
-        children={children}
         actions={actions}
         onRequestClose={this.closeDialog.bind(this)}
         helpLink={"user.html#importing-from-a-shapefile"}
-      />
+      >
+        {children}
+      </MarxanDialog>
     );
   }
 }

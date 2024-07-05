@@ -89,7 +89,8 @@ class NewPlanningGridDialog extends React.Component {
         helpLink={"user.html#creating-new-planning-grids-using-marxan-web"}
         title="New planning grid"
         contentWidth={358}
-        children={
+      >
+        {
           <React.Fragment key="k13">
             <div>
               <Select
@@ -182,7 +183,7 @@ class NewPlanningGridDialog extends React.Component {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

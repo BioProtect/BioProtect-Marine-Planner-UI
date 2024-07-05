@@ -7,6 +7,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
 import { isValidTargetValue } from "./Helpers.js";
@@ -39,7 +40,8 @@ class TargetDialog extends React.PureComponent {
         offsetY={260}
         title="Target for all features"
         onOk={this.onOk.bind(this)}
-        children={
+      >
+        {
           <React.Fragment>
             <MarxanTextField
               style={{ fontSize: "13px", width: "70px" }}
@@ -55,7 +57,7 @@ class TargetDialog extends React.PureComponent {
             />
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

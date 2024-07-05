@@ -89,7 +89,8 @@ class RunSettingsDialog extends React.Component {
         onOk={this.updateRunParams.bind(this)}
         helpLink={"user.html#run-settings"}
         title="Run settings"
-        children={
+      >
+        {
           <div style={{ height: "275px" }} key="k16">
             <ReactTable
               showPagination={false}
@@ -116,7 +117,7 @@ class RunSettingsDialog extends React.Component {
             />
           </div>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

@@ -199,7 +199,8 @@ class CumulativeImpactDialog extends React.Component {
         onOk={this.onOk.bind(this)}
         showSearchBox={true}
         searchTextChanged={this.searchTextChanged.bind(this)}
-        children={
+      >
+        {
           <React.Fragment key="k10">
             <div id="projectsTable">
               <MarxanTable
@@ -299,7 +300,7 @@ class CumulativeImpactDialog extends React.Component {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

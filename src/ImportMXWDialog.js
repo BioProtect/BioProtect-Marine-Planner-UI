@@ -1,3 +1,6 @@
+import FileUpload from "./FileUpload";
+import MarxanDialog from "./MarxanDialog";
+import Metadata from "./Metadata";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,10 +10,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
 import ToolbarButton from "./ToolbarButton";
-import Metadata from "./Metadata";
-import FileUpload from "./FileUpload";
 
 //some of the code in this component should be moved up to app.js like the POSTs but I have limited time
 
@@ -138,13 +138,14 @@ class ImportMXWDialog extends React.Component {
         {...this.props}
         title={"Import Marxan Web project"}
         contentWidth={390}
-        children={c}
         okLabel={"Cancel"}
         actions={actions}
         onOk={this.onOk.bind(this)}
         onRequestClose={this.onOk.bind(this)}
         helpLink={"user.html#importing-marxan-web-projects"}
-      />
+      >
+        {c}
+      </MarxanDialog>
     );
   }
 }

@@ -1,3 +1,7 @@
+import FeaturesDialog from "./FeaturesDialog";
+import MarxanDialog from "./MarxanDialog";
+import Metadata from "./Metadata";
+import PlanningUnitsDialog from "./PlanningUnitsDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,12 +11,8 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import Metadata from "./Metadata";
-import PlanningUnitsDialog from "./PlanningUnitsDialog";
-import SelectFeatures from "./SelectFeatures";
 import SelectCostFeatures from "./SelectCostFeatures";
-import MarxanDialog from "./MarxanDialog";
-import FeaturesDialog from "./FeaturesDialog";
+import SelectFeatures from "./SelectFeatures";
 import ToolbarButton from "./ToolbarButton";
 
 class NewProjectDialog extends React.Component {
@@ -252,14 +252,15 @@ class NewProjectDialog extends React.Component {
           {...this.props}
           title={"New project"}
           contentWidth={400}
-          children={c}
           actions={actions}
           okLabel={"Cancel"}
           onOk={this.onOk.bind(this)}
           onCancel={this.onOk.bind(this)}
           onRequestClose={this.onOk.bind(this)}
           helpLink={"user.html#creating-new-projects"}
-        />
+        >
+          {c}
+        </MarxanDialog>{" "}
         <FeaturesDialog
           open={this.state.featuresDialogOpen}
           onOk={this.updateSelectedFeatures.bind(this)}

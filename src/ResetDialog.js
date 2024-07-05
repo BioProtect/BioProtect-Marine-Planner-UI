@@ -7,6 +7,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import MarxanDialog from "./MarxanDialog";
 
 class ResetDialog extends React.PureComponent {
@@ -19,8 +20,9 @@ class ResetDialog extends React.PureComponent {
         okLabel="Yes"
         cancelLabel="No"
         showCancelButton={true}
-        children={<div>Are you sure you want to reset?</div>}
-      />
+      >
+        {<div>Are you sure you want to reset?</div>}
+      </MarxanDialog>
     );
   }
 }

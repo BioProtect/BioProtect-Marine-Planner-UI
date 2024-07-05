@@ -300,11 +300,12 @@ class ImportImpactsDialog extends React.Component {
         title={title[this.state.stepIndex]}
         showSearchBox={true}
         searchTextChanged={this.searchTextChanged.bind(this)}
-        children={children}
         actions={actions}
         onRequestClose={this.closeDialog.bind(this)}
         helpLink={"user.html#importing-from-a-shapefile"}
-      />
+      >
+        {children}
+      </MarxanDialog>
     );
   }
 }

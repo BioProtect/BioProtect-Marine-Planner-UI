@@ -7,9 +7,10 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import MarxanTextField from "./MarxanTextField";
-import MarxanDialog from "./MarxanDialog";
+
 import FileUpload from "./FileUpload";
+import MarxanDialog from "./MarxanDialog";
+import MarxanTextField from "./MarxanTextField";
 
 class ImportPlanningGridDialog extends React.Component {
   constructor(props) {
@@ -50,7 +51,18 @@ class ImportPlanningGridDialog extends React.Component {
         {...this.props}
         title={"Import planning grid"}
         contentWidth={390}
-        children={
+        showCancelButton={true}
+        onOk={this.onOk.bind(this)}
+        okDisabled={
+          this.props.loading ||
+          this.state.planning_grid_name === "" ||
+          this.state.zipFilename === "" ||
+          this.state.description === ""
+        }
+        onRequestClose={this.props.onCancel.bind(this)}
+        helpLink={"user.html#importing-existing-planning-grids"}
+      >
+        {
           <React.Fragment key="22">
             <FileUpload
               {...this.props}
@@ -77,17 +89,7 @@ class ImportPlanningGridDialog extends React.Component {
             />
           </React.Fragment>
         }
-        showCancelButton={true}
-        onOk={this.onOk.bind(this)}
-        okDisabled={
-          this.props.loading ||
-          this.state.planning_grid_name === "" ||
-          this.state.zipFilename === "" ||
-          this.state.description === ""
-        }
-        onRequestClose={this.props.onCancel.bind(this)}
-        helpLink={"user.html#importing-existing-planning-grids"}
-      />
+      </MarxanDialog>
     );
   }
 }

@@ -74,7 +74,8 @@ class UsersDialog extends React.Component {
           title="Users"
           showSearchBox={true}
           searchTextChanged={this.searchTextChanged.bind(this)}
-          children={
+        >
+          {
             <React.Fragment key="k2">
               <div id="usersTable">
                 {this.props.users && this.props.users.length > 0 ? (
@@ -202,7 +203,7 @@ class UsersDialog extends React.Component {
               </div>
             </React.Fragment>
           }
-        />
+        </MarxanDialog>
       );
     } else {
       return null;

@@ -31,14 +31,15 @@ class SpatialDataSelector extends React.Component {
         <Select
           floatingLabelText="Mapbox layer"
           floatingLabelFixed={true}
-          children={c}
           maxHeight={200}
           style={{ width: "345px" }}
           menuItemStyle={{ fontSize: "13px" }}
           labelStyle={{ fontSize: "13px" }}
           value={this.props.value}
           onChange={this.changeTileset.bind(this)}
-        ></Select>
+        >
+          {c}
+        </Select>
       </div>
     );
   }

@@ -331,8 +331,9 @@ class NewProjectWizardDialog extends React.Component {
         }
         helpLink={"user.html#creating-new-projects"}
         actions={actions}
-        children={children}
-      />
+      >
+        {children}
+      </MarxanDialog>
     );
   }
 }

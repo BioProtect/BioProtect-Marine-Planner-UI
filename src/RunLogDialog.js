@@ -258,7 +258,8 @@ class RunLogDialog extends React.Component {
         title="Runs"
         showSearchBox={true}
         searchTextChanged={this.searchTextChanged.bind(this)}
-        children={
+      >
+        {
           <React.Fragment key="k2">
             <div id="projectsTable">
               <MarxanTable
@@ -319,7 +320,7 @@ class RunLogDialog extends React.Component {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     ); //return
   }
 }

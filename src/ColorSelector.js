@@ -77,9 +77,10 @@ class ColorSelector extends React.Component {
           value={colorCode}
           primaryText={primaryText}
           key={colorCode}
-          children={_c}
           title={colorCode}
-        />
+        >
+          {_c}
+        </MenuItem>
       );
     }, this);
     return (
@@ -92,10 +93,11 @@ class ColorSelector extends React.Component {
         autoWidth={true}
         floatingLabelText={this.props.floatingLabelText}
         floatingLabelFixed={true}
-        children={c}
         onChange={this.handleChange.bind(this)}
         value={this.props.property}
-      />
+      >
+        {c}
+      </Select>
     );
   }
 }

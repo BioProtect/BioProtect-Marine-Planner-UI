@@ -51,7 +51,8 @@ class UserSettingsDialog extends React.Component {
         onOk={this.updateOptions.bind(this)}
         helpLink={"user.html#user-settings"}
         title="Settings"
-        children={
+      >
+        {
           <div key="k14">
             <Select
               floatingLabelText={"Basemap style"}
@@ -62,7 +63,8 @@ class UserSettingsDialog extends React.Component {
               style={{ width: "260px" }}
               value={this.props.basemap}
               onChange={this.changeBasemap.bind(this)}
-              children={this.props.basemaps.map((item) => {
+            >
+              {this.props.basemaps.map((item) => {
                 return (
                   <MenuItem
                     value={item.name}
@@ -73,7 +75,8 @@ class UserSettingsDialog extends React.Component {
                   />
                 );
               })}
-            />
+            </Select>
+
             <div style={{ paddingBottom: "10px" }}>
               <div className={"userSetting"}>Area units</div>
               <RadioGroup
@@ -114,7 +117,7 @@ class UserSettingsDialog extends React.Component {
 						<Checkbox label="Show welcome screen at startup" style={{fontSize:'12px'}} checked={this.props.userData.SHOWWELCOMESCREEN} onCheck={this.toggleShowWelcomeScreen.bind(this)} />*/}
           </div>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

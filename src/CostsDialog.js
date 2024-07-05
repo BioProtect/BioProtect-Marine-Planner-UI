@@ -11,8 +11,12 @@ import MarxanDialog from "./MarxanDialog";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ReactTable from "react-table";
-import TableRow from "./TableRow";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 import ToolbarButton from "./ToolbarButton";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 
@@ -57,9 +61,10 @@ class CostsDialog extends React.Component {
           this.props.updateState({ costsDialogOpen: false })
         }
         helpLink={"user.html#importing-a-cost-surface"}
-        children={
-          <React.Fragment key="k8">
-            <ReactTable
+      >
+        {
+          <div>
+            <Table
               {...this.props}
               pageSize={_data.length}
               columns={[
@@ -128,7 +133,7 @@ class CostsDialog extends React.Component {
             </div>
             <div id="projectsTable">
               <h3 className="dialogTitleStyle">Use Cumulative Impact</h3>
-              <ReactTable
+              <Table
                 {...this.props}
                 data={this.props.allImpacts}
                 columns={[
@@ -167,9 +172,9 @@ class CostsDialog extends React.Component {
                 }}
               />
             </div>
-          </React.Fragment>
+          </div>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

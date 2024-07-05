@@ -67,7 +67,8 @@ class NewPlanningGridDialog extends React.Component {
         helpLink={"user.html#creating-new-planning-grids-using-marxan-web"}
         title="New planning grid"
         contentWidth={358}
-        children={
+      >
+        {
           <React.Fragment key="k13">
             <FileUpload
               {...this.props}
@@ -130,7 +131,7 @@ class NewPlanningGridDialog extends React.Component {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

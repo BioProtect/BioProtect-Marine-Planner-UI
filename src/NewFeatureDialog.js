@@ -70,10 +70,11 @@ class NewFeatureDialog extends React.Component {
         showCancelButton={true}
         contentWidth={390}
         title="Create new feature"
-        children={c}
         onRequestClose={this.props.onOk}
         helpLink={"user.html#drawing-features-on-screen"}
-      />
+      >
+        {c}
+      </MarxanDialog>
     );
   }
 }

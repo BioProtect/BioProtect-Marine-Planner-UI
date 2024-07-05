@@ -1,3 +1,7 @@
+import CONSTANTS from "./constants";
+import MapContainer from "./MapContainer.js";
+import MarxanDialog from "./MarxanDialog";
+import MarxanTextField from "./MarxanTextField";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,11 +11,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import CONSTANTS from "./constants";
-import MarxanDialog from "./MarxanDialog";
 import ToolbarButton from "./ToolbarButton";
-import MapContainer from "./MapContainer.js";
-import MarxanTextField from "./MarxanTextField";
 
 let CLUMP_COUNT = 5;
 
@@ -105,7 +105,8 @@ class ClumpingDialog extends React.Component {
           />,
         ]}
         title="Clumping"
-        children={
+      >
+        {
           <div key="k7">
             <MapContainer
               key={0}
@@ -198,7 +199,7 @@ class ClumpingDialog extends React.Component {
             </div>
           </div>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

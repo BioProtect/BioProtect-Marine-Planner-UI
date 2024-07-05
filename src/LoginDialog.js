@@ -1,6 +1,10 @@
+import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
+
+import DialogContent from "@mui/material/DialogContent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
 import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
 import MenuItem from "@mui/material/MenuItem";
 /*
  * Copyright (c) 2020 Andrew Cottam.
@@ -12,8 +16,7 @@ import MenuItem from "@mui/material/MenuItem";
  */
 import React from "react";
 import Select from "@mui/material/Select";
-import { faLock } from "@fortawesome/free-solid-svg-icons";
-import { faUnlink } from "@fortawesome/free-solid-svg-icons";
+import TextField from "@mui/material/TextField";
 
 class LoginDialog extends React.Component {
   handleKeyPress(e) {
@@ -22,144 +25,144 @@ class LoginDialog extends React.Component {
   selectServer(evt, key, value) {
     this.props.selectServer(this.props.marxanServers[key]);
   }
+
   render() {
+    const {
+      open,
+      onOk,
+      onCancel,
+      loading,
+      user,
+      password,
+      changeUserName,
+      changePassword,
+      updateState,
+      marxanServers,
+      selectServer,
+      marxanServer,
+      marxanClientReleaseVersion,
+    } = this.props;
+
+    const okDisabled =
+      !user || !password || !marxanServer || marxanServer.offline;
+
+    const okLabel =
+      marxanServer &&
+      !marxanServer.offline &&
+      !marxanServer.corsEnabled &&
+      marxanServer.guestUserEnabled
+        ? "Login (Read-Only)"
+        : "Login";
+
+    const cancelDisabled =
+      !marxanServer || marxanServer.offline || !marxanServer.corsEnabled;
+
     return (
       <React.Fragment>
         <MarxanDialog
           {...this.props}
           showOverlay={true}
-          okDisabled={
-            !this.props.user ||
-            !this.props.password ||
-            !this.props.marxanServer ||
-            (this.props.marxanServer && this.props.marxanServer.offline)
-              ? true
-              : false
-          }
-          okLabel={
-            this.props.marxanServer &&
-            !this.props.marxanServer.offline &&
-            !this.props.marxanServer.corsEnabled &&
-            this.props.marxanServer.guestUserEnabled
-              ? "Login (Read-Only)"
-              : "Login"
-          }
+          okDisabled={okDisabled}
+          okLabel={okLabel}
           showCancelButton={true}
           cancelLabel={"Register"}
-          cancelDisabled={
-            this.props.marxanServer === undefined ||
-            (this.props.marxanServer && this.props.marxanServer.offline) ||
-            (this.props.marxanServer && !this.props.marxanServer.corsEnabled)
-              ? true
-              : false
-          }
+          cancelDisabled={cancelDisabled}
           helpLink={"user.html#log-in-window"}
-          contentWidth={358}
-          offsetY={200}
-          children={[
+          // contentWidth={500}
+          // offsetY={200}
+        >
+          {[
             <div key="21">
-              <Select
-                id="SelectMarxanServer"
-                floatingLabelText={"Marxan Server"}
-                floatingLabelFixed={true}
-                underlineShow={false}
-                menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
-                style={{ width: "320px" }}
-                value={this.props.marxanServer && this.props.marxanServer.name}
-                onChange={this.selectServer.bind(this)}
-                children={this.props.marxanServers.map((item) => {
-                  //if the server is offline - just put that otherwise: if CORS is enabled for this domain then it is read/write otherwise: if the guest user is enabled then put the domain and read only otherwise: put the domain and guest user disabled
-                  let text = item.offline
-                    ? item.name
-                    : item.corsEnabled
-                    ? item.name
-                    : item.guestUserEnabled
-                    ? item.name
-                    : item.name + " (Guest user disabled)";
-                  return (
-                    <MenuItem
-                      value={item.name}
-                      key={item.name}
-                      primaryText={text}
-                      style={{ fontSize: "12px" }}
-                      innerDivStyle={{ padding: "0px 10px 0px 52px" }}
-                      leftIcon={
-                        item.offline ? (
-                          <FontAwesomeIcon
-                            style={{ height: "12px", marginTop: "5px" }}
-                            icon={faUnlink}
-                          />
-                        ) : item.corsEnabled ? null : (
-                          <FontAwesomeIcon
-                            style={{ height: "12px", marginTop: "5px" }}
-                            icon={faLock}
-                          />
-                        )
-                      }
-                      title={
-                        item.offline
-                          ? item.host + " (offline)\n" + item.description
-                          : item.corsEnabled
-                          ? item.host + "\n" + item.description
-                          : item.guestUserEnabled
-                          ? item.host + " (read-only)\n" + item.description
-                          : item.host +
-                            " (guest user disabled)\n" +
-                            item.description
-                      }
-                    />
-                  );
-                })}
-              />
-              <div style={{ height: "124px" }} id="logindiv" key="logindiv">
-                <MarxanTextField
+              <DialogContent dividers>
+                <FormControl fullWidth variant="outlined" margin="normal">
+                  <InputLabel id="select-marxan-server-label">
+                    Marxan Server
+                  </InputLabel>
+                  <Select
+                    labelId="select-marxan-server-label"
+                    id="select-marxan-server"
+                    value={marxanServer ? marxanServer.name : ""}
+                    onChange={this.selectServer.bind(this)}
+                    label="Marxan Server"
+                  >
+                    {marxanServers.map((item) => {
+                      //if the server is offline - just put that otherwise: if CORS is enabled for this domain then it is read/write otherwise: if the guest user is enabled then put the domain and read only otherwise: put the domain and guest user disabled
+                      let text = item.offline
+                        ? item.name
+                        : item.corsEnabled
+                        ? item.name
+                        : item.guestUserEnabled
+                        ? item.name
+                        : item.name + " (Guest user disabled)";
+                      return (
+                        <MenuItem
+                          value={item.name}
+                          key={item.name}
+                          style={{ fontSize: "12px" }}
+                        >
+                          <span
+                            style={{ display: "flex", alignItems: "center" }}
+                          >
+                            {item.offline ? (
+                              <FontAwesomeIcon
+                                style={{ height: "12px", marginRight: "8px" }}
+                                icon={faUnlink}
+                              />
+                            ) : item.corsEnabled ? null : (
+                              <FontAwesomeIcon
+                                style={{ height: "12px", marginRight: "8px" }}
+                                icon={faLock}
+                              />
+                            )}
+                            {text}
+                          </span>
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
+                <TextField
                   id="TextUsername"
-                  style={{ marginTop: "-14px" }}
-                  floatingLabelText="Username"
-                  onChange={(event, value) => this.props.changeUserName(value)}
-                  value={this.props.user}
+                  label="Username"
+                  fullWidth
+                  variant="outlined"
+                  margin="normal"
+                  onChange={(event, value) => changeUserName(value)}
+                  value={user}
                   disabled={
-                    this.props.loading ||
-                    (this.props.marxanServer &&
-                      !this.props.marxanServer.corsEnabled)
-                      ? true
-                      : false
+                    loading || (marxanServer && !marxanServer.corsEnabled)
                   }
                   onKeyPress={this.handleKeyPress.bind(this)}
                 />
-                <MarxanTextField
+                <TextField
                   id="TextPassword"
-                  floatingLabelText="Password"
+                  label="Password"
                   type="password"
-                  onChange={(event, value) => this.props.changePassword(value)}
-                  value={this.props.password}
+                  fullWidth
+                  variant="outlined"
+                  margin="normal"
+                  onChange={(event, value) => changePassword(value)}
+                  value={password}
                   disabled={
-                    this.props.loading ||
-                    (this.props.marxanServer &&
-                      !this.props.marxanServer.corsEnabled)
-                      ? true
-                      : false
+                    loading || (marxanServer && !marxanServer.corsEnabled)
                   }
                   onKeyPress={this.handleKeyPress.bind(this)}
                 />
-                {/*<span onClick={() => this.props.updateState({ resendPasswordDialogOpen: true })} className="forgotLink" title="Click to resend password">Forgot</span>*/}
-              </div>
+              </DialogContent>
+
               <div
                 style={{
                   position: "absolute",
                   bottom: "4px",
+                  right: "10px",
                   fontSize: "11px",
                 }}
               >
-                {this.props.marxanClientReleaseVersion}
+                {marxanClientReleaseVersion}
               </div>
             </div>,
           ]}
-          onRequestClose={this.props.onOk}
-          title="Login"
-          modal={true}
-        />
+        </MarxanDialog>
       </React.Fragment>
     );
   }

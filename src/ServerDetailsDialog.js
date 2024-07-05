@@ -108,7 +108,8 @@ class ServerDetailsDialog extends React.Component {
         offsetY={80}
         title="Server Details"
         helpLink={"user.html#server-details"}
-        children={[
+      >
+        {[
           <ReactTable
             showPagination={false}
             className={"server_details_infoTable"}
@@ -134,7 +135,7 @@ class ServerDetailsDialog extends React.Component {
             ]}
           />,
         ]}
-      />
+      </MarxanDialog>
     );
   }
 }

@@ -1,3 +1,5 @@
+import MarxanDialog from "./MarxanDialog";
+import MarxanTextField from "./MarxanTextField";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,8 +9,6 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
 
 class ChangePasswordDialog extends React.Component {
   constructor(props) {
@@ -60,7 +60,8 @@ class ChangePasswordDialog extends React.Component {
         contentWidth={358}
         offsetY={80}
         title="Change Password"
-        children={
+      >
+        {
           <div key="k5">
             <MarxanTextField
               floatingLabelText="Current password"
@@ -85,7 +86,7 @@ class ChangePasswordDialog extends React.Component {
             />
           </div>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

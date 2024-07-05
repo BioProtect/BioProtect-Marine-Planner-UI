@@ -32,7 +32,7 @@ import ImportPlanningGridDialog from "./ImportPlanningGridDialog";
 import ImportProjectDialog from "./ImportProjectDialog";
 import InfoPanel from "./InfoPanel";
 import LoadingDialog from "./LoadingDialog";
-import LoginDialog from "./LoginDialog";
+import LoginDialog from "./LoginDialogFunc.js";
 //mapbox imports
 import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js";
 import Menu from "@mui/material/Menu";
@@ -77,7 +77,7 @@ import ShareableLinkDialog from "./ShareableLinkDialog";
 import Snackbar from "@mui/material/Snackbar";
 import TargetDialog from "./TargetDialog";
 /*eslint-enable no-unused-vars*/
-import { ThemeProvider } from "@mui/material/styles";
+// import { ThemeProvider } from "@mui/material/styles";
 import ToolsMenu from "./ToolsMenu";
 import UpdateWDPADialog from "./UpdateWDPADialog";
 import UserMenu from "./UserMenu";
@@ -679,6 +679,13 @@ class App extends React.Component {
       guestUserEnabled: false,
       corsEnabled: false,
     });
+    console.log("*" * 100);
+
+    console.log("endpoint ", endpoint);
+    console.log("websocketEndpoint ", websocketEndpoint);
+    console.log("server ", server);
+    console.log("*" * 100);
+
     //poll the server to make sure tornado is running
     try {
       const controller = new AbortController();
@@ -695,6 +702,7 @@ class App extends React.Component {
         );
       }
       const json = await response.json();
+      console.log("json ", json);
       if (json.hasOwnProperty("info")) {
         //see if CORS is enabled from this domain - either the domain has been added as an allowable domain on the server, or the client and server are on the same machine
         let corsEnabled =
@@ -5662,794 +5670,777 @@ class App extends React.Component {
       />
     );
     return (
-      <ThemeProvider>
-        <React.Fragment>
-          <div
-            ref={(el) => (this.mapContainer = el)}
-            className="absolute top right left bottom"
-          />
-          <LoadingDialog open={this.state.shareableLink} />
-          <LoginDialog
-            open={!this.state.loggedIn}
-            onOk={this.validateUser.bind(this)}
-            onCancel={() => this.updateState({ registerDialogOpen: true })}
-            loading={this.state.loading}
-            user={this.state.user}
-            password={this.state.password}
-            changeUserName={this.changeUserName.bind(this)}
-            changePassword={this.changePassword.bind(this)}
-            updateState={this.updateState.bind(this)}
-            marxanServers={this.state.marxanServers}
-            selectServer={this.selectServer.bind(this)}
-            marxanServer={this.state.marxanServer}
-            marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
-          />
-          <RegisterDialog
-            open={this.state.registerDialogOpen}
-            onOk={this.createNewUser.bind(this)}
-            updateState={this.updateState.bind(this)}
-            loading={this.state.loading}
-          />
-          <ResendPasswordDialog
-            open={this.state.resendPasswordDialogOpen}
-            onOk={this.resendPassword.bind(this)}
-            onCancel={() =>
-              this.updateState({ resendPasswordDialogOpen: false })
-            }
-            loading={this.state.loading}
-            changeEmail={this.changeEmail.bind(this)}
-            email={this.state.resendEmail}
-          />
-          <Welcome
-            open={
-              this.state.userData.SHOWWELCOMESCREEN &&
-              this.state.welcomeDialogOpen
-            }
-            onOk={this.updateState.bind(this)}
-            onCancel={() => this.updateState({ welcomeDialogOpen: false })}
-            userData={this.state.userData}
-            saveOptions={this.saveOptions.bind(this)}
-            notifications={this.state.notifications}
-            resetNotifications={this.resetNotifications.bind(this)}
-            removeNotification={this.removeNotification.bind(this)}
-            openNewProjectDialog={this.openNewProjectWizardDialog.bind(this)}
-          />
-          <ToolsMenu
-            open={this.state.toolsMenuOpen}
-            menuAnchor={this.state.menuAnchor}
-            hideToolsMenu={this.hideToolsMenu.bind(this)}
-            openUsersDialog={this.openUsersDialog.bind(this)}
-            openRunLogDialog={this.openRunLogDialog.bind(this)}
-            openGapAnalysisDialog={this.openGapAnalysisDialog.bind(this)}
-            updateState={this.updateState.bind(this)}
-            userRole={this.state.userData.ROLE}
-            marxanServer={this.state.marxanServer}
-            metadata={this.state.metadata}
-            cleanup={this.cleanup.bind(this)}
-          />
-          <UserMenu
-            open={this.state.userMenuOpen}
-            menuAnchor={this.state.menuAnchor}
-            user={this.state.user}
-            userRole={this.state.userData.ROLE}
-            hideUserMenu={this.hideUserMenu.bind(this)}
-            openUserSettingsDialog={this.openUserSettingsDialog.bind(this)}
-            openProfileDialog={this.openProfileDialog.bind(this)}
-            logout={this.logout.bind(this)}
-            marxanServer={this.state.marxanServer}
-            openChangePasswordDialog={this.openChangePasswordDialog.bind(this)}
-          />
-          <HelpMenu
-            open={this.state.helpMenuOpen}
-            menuAnchor={this.state.menuAnchor}
-            hideHelpMenu={this.hideHelpMenu.bind(this)}
-            openAboutDialog={this.openAboutDialog.bind(this)}
-          />
-          <UserSettingsDialog
-            open={this.state.UserSettingsDialogOpen}
-            onOk={() => this.updateState({ UserSettingsDialogOpen: false })}
-            onCancel={() => this.updateState({ UserSettingsDialogOpen: false })}
-            loading={this.state.loading}
-            userData={this.state.userData}
-            saveOptions={this.saveOptions.bind(this)}
-            changeBasemap={this.setBasemap.bind(this)}
-            basemaps={this.state.basemaps}
-            basemap={this.state.basemap}
-          />
-          <UsersDialog
-            open={this.state.usersDialogOpen}
-            onOk={() => this.updateState({ usersDialogOpen: false })}
-            onCancel={() => this.updateState({ usersDialogOpen: false })}
-            loading={this.state.loading}
-            user={this.state.user}
-            users={this.state.users}
-            deleteUser={this.deleteUser.bind(this)}
-            changeRole={this.changeRole.bind(this)}
-            guestUserEnabled={this.state.marxanServer.guestUserEnabled}
-            toggleEnableGuestUser={this.toggleEnableGuestUser.bind(this)}
-          />
-          <ProfileDialog
-            open={this.state.profileDialogOpen}
-            onOk={() => this.updateState({ profileDialogOpen: false })}
-            onCancel={() => this.updateState({ profileDialogOpen: false })}
-            loading={this.state.loading}
-            userData={this.state.userData}
-            updateUser={this.updateUser.bind(this)}
-          />
-          <AboutDialog
-            open={this.state.aboutDialogOpen}
-            onOk={() => this.updateState({ aboutDialogOpen: false })}
-            marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
-            wdpaAttribution={this.state.wdpaAttribution}
-          />
-          <InfoPanel
-            open={this.state.infoPanelOpen}
-            activeTab={this.state.activeTab}
-            user={this.state.user}
-            owner={this.state.owner}
-            project={this.state.project}
-            metadata={this.state.metadata}
-            runMarxan={this.runMarxan.bind(this)}
-            stopProcess={this.stopProcess.bind(this)}
-            pid={this.state.pid}
-            renameProject={this.renameProject.bind(this)}
-            renameDescription={this.renameDescription.bind(this)}
-            features={this.state.projectFeatures}
-            project_tab_active={this.project_tab_active.bind(this)}
-            features_tab_active={this.features_tab_active.bind(this)}
-            pu_tab_active={this.pu_tab_active.bind(this)}
-            startPuEditSession={this.startPuEditSession.bind(this)}
-            stopPuEditSession={this.stopPuEditSession.bind(this)}
-            puEditing={this.state.puEditing}
-            clearManualEdits={this.clearManualEdits.bind(this)}
-            openFeatureMenu={this.openFeatureMenu.bind(this)}
-            preprocessing={this.state.preprocessing}
-            openFeaturesDialog={this.openFeaturesDialog.bind(this)}
-            changeIucnCategory={this.changeIucnCategory.bind(this)}
-            updateFeature={this.updateFeature.bind(this)}
-            userRole={this.state.userData.ROLE}
-            toggleProjectPrivacy={this.toggleProjectPrivacy.bind(this)}
-            openTargetDialog={this.openTargetDialog.bind(this)}
-            getShareableLink={this.getShareableLink.bind(this)}
-            marxanServer={this.state.marxanServer}
-            toggleFeatureLayer={this.toggleFeatureLayer.bind(this)}
-            toggleFeaturePUIDLayer={this.toggleFeaturePUIDLayer.bind(this)}
-            useFeatureColors={this.state.userData.USEFEATURECOLORS}
-            smallLinearGauge={this.state.smallLinearGauge}
-            openCostsDialog={this.openCostsDialog.bind(this)}
-            costname={this.state.metadata.COSTS}
-            costnames={this.state.costnames}
-            changeCostname={this.changeCostname.bind(this)}
-            loadCostsLayer={this.loadCostsLayer.bind(this)}
-            loading={this.state.loading}
-            updateState={this.updateState.bind(this)}
-            protected_area_intersections={
-              this.state.protected_area_intersections
-            }
-          />
-          <ResultsPanel
-            open={this.state.resultsPanelOpen}
-            preprocessing={this.state.preprocessing}
-            solutions={this.state.solutions}
-            loadSolution={this.loadSolution.bind(this)}
-            openClassificationDialog={this.openClassificationDialog.bind(this)}
-            brew={this.state.brew}
-            messages={this.state.logMessages}
-            activeResultsTab={this.state.activeResultsTab}
-            setActiveTab={this.setActiveTab.bind(this)}
-            clearLog={this.clearLog.bind(this)}
-            owner={this.state.owner}
-            resultsLayer={this.state.resultsLayer}
-            wdpaLayer={this.state.wdpaLayer}
-            pa_layer_visible={this.state.pa_layer_visible}
-            changeOpacity={this.changeOpacity.bind(this)}
-            userRole={this.state.userData.ROLE}
-            visibleLayers={this.state.visibleLayers}
-            metadata={this.state.metadata}
-            costsLoading={this.state.costsLoading}
-          />
-          <FeatureInfoDialog
-            open={this.state.openInfoDialogOpen}
-            onOk={() => this.updateState({ openInfoDialogOpen: false })}
-            onCancel={() => this.updateState({ openInfoDialogOpen: false })}
-            loading={this.state.loading}
-            feature={this.state.currentFeature}
-            updateFeature={this.updateFeature.bind(this)}
-            userRole={this.state.userData.ROLE}
-            reportUnits={this.state.userData.REPORTUNITS}
-          />
-          <IdentifyPopup
-            visible={this.state.identifyVisible}
-            xy={this.state.popup_point}
-            identifyPlanningUnits={this.state.identifyPlanningUnits}
-            identifyProtectedAreas={this.state.identifyProtectedAreas}
-            identifyFeatures={this.state.identifyFeatures}
-            loading={this.state.loading}
-            hideIdentifyPopup={this.hideIdentifyPopup.bind(this)}
-            reportUnits={this.state.userData.REPORTUNITS}
-            metadata={this.state.metadata}
-          />
-          <ProjectsDialog
-            open={this.state.projectsDialogOpen}
-            onCancel={() =>
-              this.updateState({
-                projectsDialogOpen: false,
-                importProjectPopoverOpen: false,
-              })
-            }
-            loading={this.state.loading}
-            projects={this.state.projects}
-            oldVersion={this.state.metadata.OLDVERSION}
-            updateState={this.updateState.bind(this)}
-            deleteProject={this.deleteProject.bind(this)}
-            loadProject={this.loadProject.bind(this)}
-            exportProject={this.exportProject.bind(this)}
-            cloneProject={this.cloneProject.bind(this)}
-            unauthorisedMethods={this.state.unauthorisedMethods}
-            userRole={this.state.userData.ROLE}
-            getAllFeatures={this.getAllFeatures.bind(this)}
-            importProjectPopoverOpen={this.state.importProjectPopoverOpen}
-            importMXWDialogOpen={this.state.importMXWDialogOpen}
-          />
-          <NewProjectDialog
-            open={this.state.newProjectDialogOpen}
-            registry={this.state.registry}
-            loading={this.state.loading}
-            getPlanningUnitGrids={this.getPlanningUnitGrids.bind(this)}
-            planning_unit_grids={this.state.planning_unit_grids}
-            openFeaturesDialog={this.openFeaturesDialog.bind(this)}
-            features={this.state.allFeatures}
-            updateState={this.updateState.bind(this)}
-            selectedCosts={this.state.selectedCosts}
-            createNewProject={this.createNewProject.bind(this)}
-            previewFeature={this.previewFeature.bind(this)}
-          />
-          <NewProjectWizardDialog
-            open={this.state.newProjectWizardDialogOpen}
-            onOk={() => this.updateState({ newProjectWizardDialogOpen: false })}
-            okDisabled={true}
-            countries={this.state.countries}
-            updateState={this.updateState.bind(this)}
-            createNewNationalProject={this.createNewNationalProject.bind(this)}
-          />
-          <NewPlanningGridDialog
-            open={this.state.NewPlanningGridDialogOpen}
-            onCancel={() =>
-              this.updateState({ NewPlanningGridDialogOpen: false })
-            }
-            loading={
-              this.state.loading ||
-              this.state.preprocessing ||
-              this.state.uploading
-            }
-            createNewPlanningUnitGrid={this.createNewPlanningUnitGrid.bind(
-              this
-            )}
-            countries={this.state.countries}
-            setSnackBar={this.setSnackBar.bind(this)}
-          />
-          <NewMarinePlanningGridDialog
-            open={this.state.NewMarinePlanningGridDialogOpen}
-            onCancel={() =>
-              this.updateState({ NewMarinePlanningGridDialogOpen: false })
-            }
-            loading={
-              this.state.loading ||
-              this.state.preprocessing ||
-              this.state.uploading
-            }
-            createNewPlanningUnitGrid={this.createNewMarinePlanningUnitGrid.bind(
-              this
-            )}
-            fileUpload={this.uploadFileToFolder.bind(this)}
-            setSnackBar={this.setSnackBar.bind(this)}
-          />
-          <ImportPlanningGridDialog
-            open={this.state.importPlanningGridDialogOpen}
-            onOk={this.importPlanningUnitGrid.bind(this)}
-            onCancel={() =>
-              this.updateState({ importPlanningGridDialogOpen: false })
-            }
-            loading={this.state.loading || this.state.uploading}
-            fileUpload={this.uploadFileToFolder.bind(this)}
-          />
-          <FeaturesDialog
-            open={this.state.featuresDialogOpen}
-            onOk={this.updateSelectedFeatures.bind(this)}
-            loading={this.state.loading || this.state.uploading}
-            metadata={this.state.metadata}
-            allFeatures={this.state.allFeatures}
-            deleteFeature={this.deleteFeature.bind(this)}
-            updateState={this.updateState.bind(this)}
-            selectAllFeatures={this.selectAllFeatures.bind(this)}
-            userRole={this.state.userData.ROLE}
-            clickFeature={this.clickFeature.bind(this)}
-            addingRemovingFeatures={this.state.addingRemovingFeatures}
-            selectedFeatureIds={this.state.selectedFeatureIds}
-            initialiseDigitising={this.initialiseDigitising.bind(this)}
-            newFeaturePopoverOpen={this.state.newFeaturePopoverOpen}
-            importFeaturePopoverOpen={this.state.importFeaturePopoverOpen}
-            previewFeature={this.previewFeature.bind(this)}
-            marxanServer={this.state.marxanServer}
-            refreshFeatures={this.refreshFeatures.bind(this)}
-          />
-          <FeatureDialog
-            open={this.state.featureDialogOpen}
-            onOk={() => this.updateState({ featureDialogOpen: false })}
-            loading={this.state.loading}
-            feature_metadata={this.state.feature_metadata}
-            getTilesetMetadata={this.getMetadata.bind(this)}
-            setSnackBar={this.setSnackBar.bind(this)}
-            reportUnits={this.state.userData.REPORTUNITS}
-            getProjectList={this.getProjectList.bind(this)}
-          />
-          <NewFeatureDialog
-            open={this.state.NewFeatureDialogOpen}
-            onOk={this.closeNewFeatureDialog.bind(this)}
-            onCancel={this.closeNewFeatureDialog.bind(this)}
-            loading={this.state.loading || this.state.uploading}
-            createNewFeature={this.createNewFeature.bind(this)}
-            addToProject={this.state.addToProject}
-            setAddToProject={this.setAddToProject.bind(this)}
-          />
-          <ImportFeaturesDialog
-            open={this.state.importFeaturesDialogOpen}
-            importFeatures={this.importFeatures.bind(this)}
-            loading={
-              this.state.loading ||
-              this.state.preprocessing ||
-              this.state.uploading
-            }
-            updateState={this.updateState.bind(this)}
-            filename={this.state.featureDatasetFilename}
-            fileUpload={this.uploadFileToFolder.bind(this)}
-            unzipShapefile={this.unzipShapefile.bind(this)}
-            getShapefileFieldnames={this.getShapefileFieldnames.bind(this)}
-            deleteShapefile={this.deleteShapefile.bind(this)}
-            addToProject={this.state.addToProject}
-            setAddToProject={this.setAddToProject.bind(this)}
-          />
-          <ImportFromWebDialog
-            open={this.state.importFromWebDialogOpen}
-            onCancel={this.updateState.bind(this)}
-            loading={
-              this.state.loading ||
-              this.state.preprocessing ||
-              this.state.uploading
-            }
-            importFeatures={this.importFeaturesFromWeb.bind(this)}
-            addToProject={this.state.addToProject}
-            setAddToProject={this.setAddToProject.bind(this)}
-          />
-          <ImportGBIFDialog
-            open={this.state.importGBIFDialogOpen}
-            updateState={this.updateState.bind(this)}
-            loading={
-              this.state.loading ||
-              this.state.preprocessing ||
-              this.state.uploading
-            }
-            importGBIFData={this.importGBIFData.bind(this)}
-            gbifSpeciesSuggest={this.gbifSpeciesSuggest.bind(this)}
-            addToProject={this.state.addToProject}
-            setAddToProject={this.setAddToProject.bind(this)}
-          />
-          <PlanningGridsDialog
-            open={this.state.planningGridsDialogOpen}
-            updateState={this.updateState.bind(this)}
-            loading={this.state.loading}
-            getPlanningUnitGrids={this.getPlanningUnitGrids.bind(this)}
-            unauthorisedMethods={this.state.unauthorisedMethods}
-            planningGrids={this.state.planning_unit_grids}
-            openNewPlanningGridDialog={this.openNewPlanningGridDialog.bind(
-              this
-            )}
-            exportPlanningGrid={this.exportPlanningGrid.bind(this)}
-            deletePlanningGrid={this.deletePlanningUnitGrid.bind(this)}
-            previewPlanningGrid={this.previewPlanningGrid.bind(this)}
-            marxanServer={this.state.marxanServer}
-          />
-          <PlanningGridDialog
-            open={this.state.planningGridDialogOpen}
-            onOk={() => this.updateState({ planningGridDialogOpen: false })}
-            updateState={this.updateState.bind(this)}
-            loading={this.state.loading}
-            planning_grid_metadata={this.state.planning_grid_metadata}
-            getTilesetMetadata={this.getMetadata.bind(this)}
-            setSnackBar={this.setSnackBar.bind(this)}
-            getProjectList={this.getProjectList.bind(this)}
-          />
-          <ProjectsListDialog
-            open={this.state.ProjectsListDialogOpen}
-            projects={this.state.projectList}
-            userRole={this.state.userData.ROLE}
-            onOk={() => this.updateState({ ProjectsListDialogOpen: false })}
-            title={this.state.projectListDialogTitle}
-            heading={this.state.projectListDialogHeading}
-          />
-          <CostsDialog
-            open={this.state.costsDialogOpen}
-            onOk={() => this.updateState({ costsDialogOpen: false })}
-            onCancel={() => this.updateState({ costsDialogOpen: false })}
-            updateState={this.updateState.bind(this)}
-            unauthorisedMethods={this.state.unauthorisedMethods}
-            costname={this.state.metadata.COSTS}
-            deleteCost={this.deleteCost.bind(this)}
-            data={this.state.costnames}
-            allImpacts={this.state.allImpacts}
-            planningUnitName={this.state.metadata.PLANNING_UNIT_NAME}
-            createCostsFromImpact={this.createCostsFromImpact.bind(this)}
-          />
-          <ImportCostsDialog
-            open={this.state.importCostsDialogOpen}
-            addCost={this.addCost.bind(this)}
-            updateState={this.updateState.bind(this)}
-            deleteCostFileThenClose={this.deleteCostFileThenClose.bind(this)}
-            loading={this.state.loading}
-            fileUpload={this.uploadFileToProject.bind(this)}
-          />
-          <RunSettingsDialog
-            open={this.state.settingsDialogOpen}
-            onOk={() => this.updateState({ settingsDialogOpen: false })}
-            onCancel={() => this.updateState({ settingsDialogOpen: false })}
-            loading={this.state.loading || this.state.preprocessing}
-            updateRunParams={this.updateRunParams.bind(this)}
-            runParams={this.state.runParams}
-            showClumpingDialog={this.showClumpingDialog.bind(this)}
-            userRole={this.state.userData.ROLE}
-          />
-          <ClassificationDialog
-            open={this.state.classificationDialogOpen}
-            onOk={this.closeClassificationDialog.bind(this)}
-            onCancel={this.closeClassificationDialog.bind(this)}
-            loading={this.state.loading}
-            renderer={this.state.renderer}
-            changeColorCode={this.changeColorCode.bind(this)}
-            changeRenderer={this.changeRenderer.bind(this)}
-            changeNumClasses={this.changeNumClasses.bind(this)}
-            changeShowTopClasses={this.changeShowTopClasses.bind(this)}
-            summaryStats={this.state.summaryStats}
-            brew={this.state.brew}
-            dataBreaks={this.state.dataBreaks}
-          />
-          <ClumpingDialog
-            open={this.state.clumpingDialogOpen}
-            onOk={this.hideClumpingDialog.bind(this)}
-            onCancel={this.hideClumpingDialog.bind(this)}
-            tileset={this.state.tileset}
-            map0_paintProperty={this.state.map0_paintProperty}
-            map1_paintProperty={this.state.map1_paintProperty}
-            map2_paintProperty={this.state.map2_paintProperty}
-            map3_paintProperty={this.state.map3_paintProperty}
-            map4_paintProperty={this.state.map4_paintProperty}
-            mapCentre={this.state.mapCentre}
-            mapZoom={this.state.mapZoom}
-            createProjectGroupAndRun={this.createProjectGroupAndRun.bind(this)}
-            rerunProjects={this.rerunProjects.bind(this)}
-            setBlmValue={this.setBlmValue.bind(this)}
-            clumpingRunning={this.state.clumpingRunning}
-          />
-          <ImportProjectDialog
-            open={this.state.importProjectDialogOpen}
-            onOk={() => this.updateState({ importProjectDialogOpen: false })}
-            loading={this.state.loading || this.state.uploading}
-            importProject={this.importProject.bind(this)}
-            fileUpload={this.uploadFileToFolder.bind(this)}
-            log={this.log.bind(this)}
-            setSnackBar={this.setSnackBar.bind(this)}
-          />
-          <ImportMXWDialog
-            open={this.state.importMXWDialogOpen}
-            onOk={() => this.updateState({ importMXWDialogOpen: false })}
-            loading={this.state.loading || this.state.preprocessing}
-            importMXWProject={this.importMXWProject.bind(this)}
-            fileUpload={this.uploadFileToFolder.bind(this)}
-            log={this.log.bind(this)}
-            setSnackBar={this.setSnackBar.bind(this)}
-          />
-          <ResetDialog
-            open={this.state.resetDialogOpen}
-            onOk={this.resetServer.bind(this)}
-            onCancel={() => this.updateState({ resetDialogOpen: false })}
-            onRequestClose={() => this.updateState({ resetDialogOpen: false })}
-            loading={this.state.loading}
-          />
-          <RunLogDialog
-            open={this.state.runLogDialogOpen}
-            onOk={this.closeRunLogDialog.bind(this)}
-            onRequestClose={this.closeRunLogDialog.bind(this)}
-            loading={this.state.loading}
-            preprocessing={this.state.preprocessing}
-            unauthorisedMethods={this.state.unauthorisedMethods}
-            runLogs={this.state.runLogs}
-            getRunLogs={this.getRunLogs.bind(this)}
-            clearRunLogs={this.clearRunLogs.bind(this)}
-            stopMarxan={this.stopProcess.bind(this)}
-            userRole={this.state.userData.ROLE}
-          />
-          <ServerDetailsDialog
-            open={this.state.serverDetailsDialogOpen}
-            onOk={this.closeServerDetailsDialog.bind(this)}
-            onCancel={this.closeServerDetailsDialog.bind(this)}
-            onRequestClose={this.closeServerDetailsDialog.bind(this)}
-            updateState={this.updateState.bind(this)}
-            marxanServer={this.state.marxanServer}
-            newWDPAVersion={this.state.newWDPAVersion}
-            registry={this.state.registry}
-          />
-          <UpdateWDPADialog
-            open={this.state.updateWDPADialogOpen}
-            onOk={() => this.updateState({ updateWDPADialogOpen: false })}
-            onCancel={() => this.updateState({ updateWDPADialogOpen: false })}
-            newWDPAVersion={this.state.newWDPAVersion}
-            updateWDPA={this.updateWDPA.bind(this)}
-            loading={this.state.preprocessing}
-            registry={this.state.registry}
-          />
-          <ChangePasswordDialog
-            open={this.state.changePasswordDialogOpen}
-            onOk={this.closeChangePasswordDialog.bind(this)}
-            user={this.state.user}
-            onRequestClose={this.closeChangePasswordDialog.bind(this)}
-            checkPassword={this.checkPassword.bind(this)}
-            setSnackBar={this.setSnackBar.bind(this)}
-            updateUser={this.updateUser.bind(this)}
-          />
-          <AlertDialog
-            open={this.state.alertDialogOpen}
-            onOk={() => this.updateState({ alertDialogOpen: false })}
-          />
-          <Snackbar
-            open={this.state.snackbarOpen}
-            message={message}
-            onRequestClose={this.closeSnackbar.bind(this)}
-            style={{ maxWidth: "800px !important" }}
-            contentStyle={{ maxWidth: "800px !important" }}
-            bodyStyle={{ maxWidth: "800px !important" }}
-          />
-          <Popover
-            open={this.state.featureMenuOpen}
-            anchorEl={this.state.menuAnchor}
-            onRequestClose={this.closeFeatureMenu.bind(this)}
-            style={{ width: "307px" }}
+      // <ThemeProvider>
+      <React.Fragment>
+        <div
+          ref={(el) => (this.mapContainer = el)}
+          className="absolute top right left bottom"
+        />
+        <LoadingDialog open={this.state.shareableLink} />
+        <LoginDialog
+          open={!this.state.loggedIn}
+          onOk={this.validateUser.bind(this)}
+          onCancel={() => this.updateState({ registerDialogOpen: true })}
+          loading={this.state.loading}
+          user={this.state.user}
+          password={this.state.password}
+          changeUserName={this.changeUserName.bind(this)}
+          changePassword={this.changePassword.bind(this)}
+          updateState={this.updateState.bind(this)}
+          marxanServers={this.state.marxanServers}
+          selectServer={this.selectServer.bind(this)}
+          marxanServer={this.state.marxanServer}
+          marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
+        />
+        <RegisterDialog
+          open={this.state.registerDialogOpen}
+          onOk={this.createNewUser.bind(this)}
+          updateState={this.updateState.bind(this)}
+          loading={this.state.loading}
+        />
+        <ResendPasswordDialog
+          open={this.state.resendPasswordDialogOpen}
+          onOk={this.resendPassword.bind(this)}
+          onCancel={() => this.updateState({ resendPasswordDialogOpen: false })}
+          loading={this.state.loading}
+          changeEmail={this.changeEmail.bind(this)}
+          email={this.state.resendEmail}
+        />
+        <Welcome
+          open={
+            this.state.userData.SHOWWELCOMESCREEN &&
+            this.state.welcomeDialogOpen
+          }
+          onOk={this.updateState.bind(this)}
+          onCancel={() => this.updateState({ welcomeDialogOpen: false })}
+          userData={this.state.userData}
+          saveOptions={this.saveOptions.bind(this)}
+          notifications={this.state.notifications}
+          resetNotifications={this.resetNotifications.bind(this)}
+          removeNotification={this.removeNotification.bind(this)}
+          openNewProjectDialog={this.openNewProjectWizardDialog.bind(this)}
+        />
+        <ToolsMenu
+          open={this.state.toolsMenuOpen}
+          menuAnchor={this.state.menuAnchor}
+          hideToolsMenu={this.hideToolsMenu.bind(this)}
+          openUsersDialog={this.openUsersDialog.bind(this)}
+          openRunLogDialog={this.openRunLogDialog.bind(this)}
+          openGapAnalysisDialog={this.openGapAnalysisDialog.bind(this)}
+          updateState={this.updateState.bind(this)}
+          userRole={this.state.userData.ROLE}
+          marxanServer={this.state.marxanServer}
+          metadata={this.state.metadata}
+          cleanup={this.cleanup.bind(this)}
+        />
+        <UserMenu
+          open={this.state.userMenuOpen}
+          menuAnchor={this.state.menuAnchor}
+          user={this.state.user}
+          userRole={this.state.userData.ROLE}
+          hideUserMenu={this.hideUserMenu.bind(this)}
+          openUserSettingsDialog={this.openUserSettingsDialog.bind(this)}
+          openProfileDialog={this.openProfileDialog.bind(this)}
+          logout={this.logout.bind(this)}
+          marxanServer={this.state.marxanServer}
+          openChangePasswordDialog={this.openChangePasswordDialog.bind(this)}
+        />
+        <HelpMenu
+          open={this.state.helpMenuOpen}
+          menuAnchor={this.state.menuAnchor}
+          hideHelpMenu={this.hideHelpMenu.bind(this)}
+          openAboutDialog={this.openAboutDialog.bind(this)}
+        />
+        <UserSettingsDialog
+          open={this.state.UserSettingsDialogOpen}
+          onOk={() => this.updateState({ UserSettingsDialogOpen: false })}
+          onCancel={() => this.updateState({ UserSettingsDialogOpen: false })}
+          loading={this.state.loading}
+          userData={this.state.userData}
+          saveOptions={this.saveOptions.bind(this)}
+          changeBasemap={this.setBasemap.bind(this)}
+          basemaps={this.state.basemaps}
+          basemap={this.state.basemap}
+        />
+        <UsersDialog
+          open={this.state.usersDialogOpen}
+          onOk={() => this.updateState({ usersDialogOpen: false })}
+          onCancel={() => this.updateState({ usersDialogOpen: false })}
+          loading={this.state.loading}
+          user={this.state.user}
+          users={this.state.users}
+          deleteUser={this.deleteUser.bind(this)}
+          changeRole={this.changeRole.bind(this)}
+          guestUserEnabled={this.state.marxanServer.guestUserEnabled}
+          toggleEnableGuestUser={this.toggleEnableGuestUser.bind(this)}
+        />
+        <ProfileDialog
+          open={this.state.profileDialogOpen}
+          onOk={() => this.updateState({ profileDialogOpen: false })}
+          onCancel={() => this.updateState({ profileDialogOpen: false })}
+          loading={this.state.loading}
+          userData={this.state.userData}
+          updateUser={this.updateUser.bind(this)}
+        />
+        <AboutDialog
+          open={this.state.aboutDialogOpen}
+          onOk={() => this.updateState({ aboutDialogOpen: false })}
+          marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
+          wdpaAttribution={this.state.wdpaAttribution}
+        />
+        <InfoPanel
+          open={this.state.infoPanelOpen}
+          activeTab={this.state.activeTab}
+          user={this.state.user}
+          owner={this.state.owner}
+          project={this.state.project}
+          metadata={this.state.metadata}
+          runMarxan={this.runMarxan.bind(this)}
+          stopProcess={this.stopProcess.bind(this)}
+          pid={this.state.pid}
+          renameProject={this.renameProject.bind(this)}
+          renameDescription={this.renameDescription.bind(this)}
+          features={this.state.projectFeatures}
+          project_tab_active={this.project_tab_active.bind(this)}
+          features_tab_active={this.features_tab_active.bind(this)}
+          pu_tab_active={this.pu_tab_active.bind(this)}
+          startPuEditSession={this.startPuEditSession.bind(this)}
+          stopPuEditSession={this.stopPuEditSession.bind(this)}
+          puEditing={this.state.puEditing}
+          clearManualEdits={this.clearManualEdits.bind(this)}
+          openFeatureMenu={this.openFeatureMenu.bind(this)}
+          preprocessing={this.state.preprocessing}
+          openFeaturesDialog={this.openFeaturesDialog.bind(this)}
+          changeIucnCategory={this.changeIucnCategory.bind(this)}
+          updateFeature={this.updateFeature.bind(this)}
+          userRole={this.state.userData.ROLE}
+          toggleProjectPrivacy={this.toggleProjectPrivacy.bind(this)}
+          openTargetDialog={this.openTargetDialog.bind(this)}
+          getShareableLink={this.getShareableLink.bind(this)}
+          marxanServer={this.state.marxanServer}
+          toggleFeatureLayer={this.toggleFeatureLayer.bind(this)}
+          toggleFeaturePUIDLayer={this.toggleFeaturePUIDLayer.bind(this)}
+          useFeatureColors={this.state.userData.USEFEATURECOLORS}
+          smallLinearGauge={this.state.smallLinearGauge}
+          openCostsDialog={this.openCostsDialog.bind(this)}
+          costname={this.state.metadata.COSTS}
+          costnames={this.state.costnames}
+          changeCostname={this.changeCostname.bind(this)}
+          loadCostsLayer={this.loadCostsLayer.bind(this)}
+          loading={this.state.loading}
+          updateState={this.updateState.bind(this)}
+          protected_area_intersections={this.state.protected_area_intersections}
+        />
+        <ResultsPanel
+          open={this.state.resultsPanelOpen}
+          preprocessing={this.state.preprocessing}
+          solutions={this.state.solutions}
+          loadSolution={this.loadSolution.bind(this)}
+          openClassificationDialog={this.openClassificationDialog.bind(this)}
+          brew={this.state.brew}
+          messages={this.state.logMessages}
+          activeResultsTab={this.state.activeResultsTab}
+          setActiveTab={this.setActiveTab.bind(this)}
+          clearLog={this.clearLog.bind(this)}
+          owner={this.state.owner}
+          resultsLayer={this.state.resultsLayer}
+          wdpaLayer={this.state.wdpaLayer}
+          pa_layer_visible={this.state.pa_layer_visible}
+          changeOpacity={this.changeOpacity.bind(this)}
+          userRole={this.state.userData.ROLE}
+          visibleLayers={this.state.visibleLayers}
+          metadata={this.state.metadata}
+          costsLoading={this.state.costsLoading}
+        />
+        <FeatureInfoDialog
+          open={this.state.openInfoDialogOpen}
+          onOk={() => this.updateState({ openInfoDialogOpen: false })}
+          onCancel={() => this.updateState({ openInfoDialogOpen: false })}
+          loading={this.state.loading}
+          feature={this.state.currentFeature}
+          updateFeature={this.updateFeature.bind(this)}
+          userRole={this.state.userData.ROLE}
+          reportUnits={this.state.userData.REPORTUNITS}
+        />
+        <IdentifyPopup
+          visible={this.state.identifyVisible}
+          xy={this.state.popup_point}
+          identifyPlanningUnits={this.state.identifyPlanningUnits}
+          identifyProtectedAreas={this.state.identifyProtectedAreas}
+          identifyFeatures={this.state.identifyFeatures}
+          loading={this.state.loading}
+          hideIdentifyPopup={this.hideIdentifyPopup.bind(this)}
+          reportUnits={this.state.userData.REPORTUNITS}
+          metadata={this.state.metadata}
+        />
+        <ProjectsDialog
+          open={this.state.projectsDialogOpen}
+          onCancel={() =>
+            this.updateState({
+              projectsDialogOpen: false,
+              importProjectPopoverOpen: false,
+            })
+          }
+          loading={this.state.loading}
+          projects={this.state.projects}
+          oldVersion={this.state.metadata.OLDVERSION}
+          updateState={this.updateState.bind(this)}
+          deleteProject={this.deleteProject.bind(this)}
+          loadProject={this.loadProject.bind(this)}
+          exportProject={this.exportProject.bind(this)}
+          cloneProject={this.cloneProject.bind(this)}
+          unauthorisedMethods={this.state.unauthorisedMethods}
+          userRole={this.state.userData.ROLE}
+          getAllFeatures={this.getAllFeatures.bind(this)}
+          importProjectPopoverOpen={this.state.importProjectPopoverOpen}
+          importMXWDialogOpen={this.state.importMXWDialogOpen}
+        />
+        <NewProjectDialog
+          open={this.state.newProjectDialogOpen}
+          registry={this.state.registry}
+          loading={this.state.loading}
+          getPlanningUnitGrids={this.getPlanningUnitGrids.bind(this)}
+          planning_unit_grids={this.state.planning_unit_grids}
+          openFeaturesDialog={this.openFeaturesDialog.bind(this)}
+          features={this.state.allFeatures}
+          updateState={this.updateState.bind(this)}
+          selectedCosts={this.state.selectedCosts}
+          createNewProject={this.createNewProject.bind(this)}
+          previewFeature={this.previewFeature.bind(this)}
+        />
+        <NewProjectWizardDialog
+          open={this.state.newProjectWizardDialogOpen}
+          onOk={() => this.updateState({ newProjectWizardDialogOpen: false })}
+          okDisabled={true}
+          countries={this.state.countries}
+          updateState={this.updateState.bind(this)}
+          createNewNationalProject={this.createNewNationalProject.bind(this)}
+        />
+        <NewPlanningGridDialog
+          open={this.state.NewPlanningGridDialogOpen}
+          onCancel={() =>
+            this.updateState({ NewPlanningGridDialogOpen: false })
+          }
+          loading={
+            this.state.loading ||
+            this.state.preprocessing ||
+            this.state.uploading
+          }
+          createNewPlanningUnitGrid={this.createNewPlanningUnitGrid.bind(this)}
+          countries={this.state.countries}
+          setSnackBar={this.setSnackBar.bind(this)}
+        />
+        <NewMarinePlanningGridDialog
+          open={this.state.NewMarinePlanningGridDialogOpen}
+          onCancel={() =>
+            this.updateState({ NewMarinePlanningGridDialogOpen: false })
+          }
+          loading={
+            this.state.loading ||
+            this.state.preprocessing ||
+            this.state.uploading
+          }
+          createNewPlanningUnitGrid={this.createNewMarinePlanningUnitGrid.bind(
+            this
+          )}
+          fileUpload={this.uploadFileToFolder.bind(this)}
+          setSnackBar={this.setSnackBar.bind(this)}
+        />
+        <ImportPlanningGridDialog
+          open={this.state.importPlanningGridDialogOpen}
+          onOk={this.importPlanningUnitGrid.bind(this)}
+          onCancel={() =>
+            this.updateState({ importPlanningGridDialogOpen: false })
+          }
+          loading={this.state.loading || this.state.uploading}
+          fileUpload={this.uploadFileToFolder.bind(this)}
+        />
+        <FeaturesDialog
+          open={this.state.featuresDialogOpen}
+          onOk={this.updateSelectedFeatures.bind(this)}
+          loading={this.state.loading || this.state.uploading}
+          metadata={this.state.metadata}
+          allFeatures={this.state.allFeatures}
+          deleteFeature={this.deleteFeature.bind(this)}
+          updateState={this.updateState.bind(this)}
+          selectAllFeatures={this.selectAllFeatures.bind(this)}
+          userRole={this.state.userData.ROLE}
+          clickFeature={this.clickFeature.bind(this)}
+          addingRemovingFeatures={this.state.addingRemovingFeatures}
+          selectedFeatureIds={this.state.selectedFeatureIds}
+          initialiseDigitising={this.initialiseDigitising.bind(this)}
+          newFeaturePopoverOpen={this.state.newFeaturePopoverOpen}
+          importFeaturePopoverOpen={this.state.importFeaturePopoverOpen}
+          previewFeature={this.previewFeature.bind(this)}
+          marxanServer={this.state.marxanServer}
+          refreshFeatures={this.refreshFeatures.bind(this)}
+        />
+        <FeatureDialog
+          open={this.state.featureDialogOpen}
+          onOk={() => this.updateState({ featureDialogOpen: false })}
+          loading={this.state.loading}
+          feature_metadata={this.state.feature_metadata}
+          getTilesetMetadata={this.getMetadata.bind(this)}
+          setSnackBar={this.setSnackBar.bind(this)}
+          reportUnits={this.state.userData.REPORTUNITS}
+          getProjectList={this.getProjectList.bind(this)}
+        />
+        <NewFeatureDialog
+          open={this.state.NewFeatureDialogOpen}
+          onOk={this.closeNewFeatureDialog.bind(this)}
+          onCancel={this.closeNewFeatureDialog.bind(this)}
+          loading={this.state.loading || this.state.uploading}
+          createNewFeature={this.createNewFeature.bind(this)}
+          addToProject={this.state.addToProject}
+          setAddToProject={this.setAddToProject.bind(this)}
+        />
+        <ImportFeaturesDialog
+          open={this.state.importFeaturesDialogOpen}
+          importFeatures={this.importFeatures.bind(this)}
+          loading={
+            this.state.loading ||
+            this.state.preprocessing ||
+            this.state.uploading
+          }
+          updateState={this.updateState.bind(this)}
+          filename={this.state.featureDatasetFilename}
+          fileUpload={this.uploadFileToFolder.bind(this)}
+          unzipShapefile={this.unzipShapefile.bind(this)}
+          getShapefileFieldnames={this.getShapefileFieldnames.bind(this)}
+          deleteShapefile={this.deleteShapefile.bind(this)}
+          addToProject={this.state.addToProject}
+          setAddToProject={this.setAddToProject.bind(this)}
+        />
+        <ImportFromWebDialog
+          open={this.state.importFromWebDialogOpen}
+          onCancel={this.updateState.bind(this)}
+          loading={
+            this.state.loading ||
+            this.state.preprocessing ||
+            this.state.uploading
+          }
+          importFeatures={this.importFeaturesFromWeb.bind(this)}
+          addToProject={this.state.addToProject}
+          setAddToProject={this.setAddToProject.bind(this)}
+        />
+        <ImportGBIFDialog
+          open={this.state.importGBIFDialogOpen}
+          updateState={this.updateState.bind(this)}
+          loading={
+            this.state.loading ||
+            this.state.preprocessing ||
+            this.state.uploading
+          }
+          importGBIFData={this.importGBIFData.bind(this)}
+          gbifSpeciesSuggest={this.gbifSpeciesSuggest.bind(this)}
+          addToProject={this.state.addToProject}
+          setAddToProject={this.setAddToProject.bind(this)}
+        />
+        <PlanningGridsDialog
+          open={this.state.planningGridsDialogOpen}
+          updateState={this.updateState.bind(this)}
+          loading={this.state.loading}
+          getPlanningUnitGrids={this.getPlanningUnitGrids.bind(this)}
+          unauthorisedMethods={this.state.unauthorisedMethods}
+          planningGrids={this.state.planning_unit_grids}
+          openNewPlanningGridDialog={this.openNewPlanningGridDialog.bind(this)}
+          exportPlanningGrid={this.exportPlanningGrid.bind(this)}
+          deletePlanningGrid={this.deletePlanningUnitGrid.bind(this)}
+          previewPlanningGrid={this.previewPlanningGrid.bind(this)}
+          marxanServer={this.state.marxanServer}
+        />
+        <PlanningGridDialog
+          open={this.state.planningGridDialogOpen}
+          onOk={() => this.updateState({ planningGridDialogOpen: false })}
+          updateState={this.updateState.bind(this)}
+          loading={this.state.loading}
+          planning_grid_metadata={this.state.planning_grid_metadata}
+          getTilesetMetadata={this.getMetadata.bind(this)}
+          setSnackBar={this.setSnackBar.bind(this)}
+          getProjectList={this.getProjectList.bind(this)}
+        />
+        <ProjectsListDialog
+          open={this.state.ProjectsListDialogOpen}
+          projects={this.state.projectList}
+          userRole={this.state.userData.ROLE}
+          onOk={() => this.updateState({ ProjectsListDialogOpen: false })}
+          title={this.state.projectListDialogTitle}
+          heading={this.state.projectListDialogHeading}
+        />
+        <CostsDialog
+          open={this.state.costsDialogOpen}
+          onOk={() => this.updateState({ costsDialogOpen: false })}
+          onCancel={() => this.updateState({ costsDialogOpen: false })}
+          updateState={this.updateState.bind(this)}
+          unauthorisedMethods={this.state.unauthorisedMethods}
+          costname={this.state.metadata.COSTS}
+          deleteCost={this.deleteCost.bind(this)}
+          data={this.state.costnames}
+          allImpacts={this.state.allImpacts}
+          planningUnitName={this.state.metadata.PLANNING_UNIT_NAME}
+          createCostsFromImpact={this.createCostsFromImpact.bind(this)}
+        />
+        <ImportCostsDialog
+          open={this.state.importCostsDialogOpen}
+          addCost={this.addCost.bind(this)}
+          updateState={this.updateState.bind(this)}
+          deleteCostFileThenClose={this.deleteCostFileThenClose.bind(this)}
+          loading={this.state.loading}
+          fileUpload={this.uploadFileToProject.bind(this)}
+        />
+        <RunSettingsDialog
+          open={this.state.settingsDialogOpen}
+          onOk={() => this.updateState({ settingsDialogOpen: false })}
+          onCancel={() => this.updateState({ settingsDialogOpen: false })}
+          loading={this.state.loading || this.state.preprocessing}
+          updateRunParams={this.updateRunParams.bind(this)}
+          runParams={this.state.runParams}
+          showClumpingDialog={this.showClumpingDialog.bind(this)}
+          userRole={this.state.userData.ROLE}
+        />
+        <ClassificationDialog
+          open={this.state.classificationDialogOpen}
+          onOk={this.closeClassificationDialog.bind(this)}
+          onCancel={this.closeClassificationDialog.bind(this)}
+          loading={this.state.loading}
+          renderer={this.state.renderer}
+          changeColorCode={this.changeColorCode.bind(this)}
+          changeRenderer={this.changeRenderer.bind(this)}
+          changeNumClasses={this.changeNumClasses.bind(this)}
+          changeShowTopClasses={this.changeShowTopClasses.bind(this)}
+          summaryStats={this.state.summaryStats}
+          brew={this.state.brew}
+          dataBreaks={this.state.dataBreaks}
+        />
+        <ClumpingDialog
+          open={this.state.clumpingDialogOpen}
+          onOk={this.hideClumpingDialog.bind(this)}
+          onCancel={this.hideClumpingDialog.bind(this)}
+          tileset={this.state.tileset}
+          map0_paintProperty={this.state.map0_paintProperty}
+          map1_paintProperty={this.state.map1_paintProperty}
+          map2_paintProperty={this.state.map2_paintProperty}
+          map3_paintProperty={this.state.map3_paintProperty}
+          map4_paintProperty={this.state.map4_paintProperty}
+          mapCentre={this.state.mapCentre}
+          mapZoom={this.state.mapZoom}
+          createProjectGroupAndRun={this.createProjectGroupAndRun.bind(this)}
+          rerunProjects={this.rerunProjects.bind(this)}
+          setBlmValue={this.setBlmValue.bind(this)}
+          clumpingRunning={this.state.clumpingRunning}
+        />
+        <ImportProjectDialog
+          open={this.state.importProjectDialogOpen}
+          onOk={() => this.updateState({ importProjectDialogOpen: false })}
+          loading={this.state.loading || this.state.uploading}
+          importProject={this.importProject.bind(this)}
+          fileUpload={this.uploadFileToFolder.bind(this)}
+          log={this.log.bind(this)}
+          setSnackBar={this.setSnackBar.bind(this)}
+        />
+        <ImportMXWDialog
+          open={this.state.importMXWDialogOpen}
+          onOk={() => this.updateState({ importMXWDialogOpen: false })}
+          loading={this.state.loading || this.state.preprocessing}
+          importMXWProject={this.importMXWProject.bind(this)}
+          fileUpload={this.uploadFileToFolder.bind(this)}
+          log={this.log.bind(this)}
+          setSnackBar={this.setSnackBar.bind(this)}
+        />
+        <ResetDialog
+          open={this.state.resetDialogOpen}
+          onOk={this.resetServer.bind(this)}
+          onCancel={() => this.updateState({ resetDialogOpen: false })}
+          onRequestClose={() => this.updateState({ resetDialogOpen: false })}
+          loading={this.state.loading}
+        />
+        <RunLogDialog
+          open={this.state.runLogDialogOpen}
+          onOk={this.closeRunLogDialog.bind(this)}
+          onRequestClose={this.closeRunLogDialog.bind(this)}
+          loading={this.state.loading}
+          preprocessing={this.state.preprocessing}
+          unauthorisedMethods={this.state.unauthorisedMethods}
+          runLogs={this.state.runLogs}
+          getRunLogs={this.getRunLogs.bind(this)}
+          clearRunLogs={this.clearRunLogs.bind(this)}
+          stopMarxan={this.stopProcess.bind(this)}
+          userRole={this.state.userData.ROLE}
+        />
+        <ServerDetailsDialog
+          open={this.state.serverDetailsDialogOpen}
+          onOk={this.closeServerDetailsDialog.bind(this)}
+          onCancel={this.closeServerDetailsDialog.bind(this)}
+          onRequestClose={this.closeServerDetailsDialog.bind(this)}
+          updateState={this.updateState.bind(this)}
+          marxanServer={this.state.marxanServer}
+          newWDPAVersion={this.state.newWDPAVersion}
+          registry={this.state.registry}
+        />
+        <UpdateWDPADialog
+          open={this.state.updateWDPADialogOpen}
+          onOk={() => this.updateState({ updateWDPADialogOpen: false })}
+          onCancel={() => this.updateState({ updateWDPADialogOpen: false })}
+          newWDPAVersion={this.state.newWDPAVersion}
+          updateWDPA={this.updateWDPA.bind(this)}
+          loading={this.state.preprocessing}
+          registry={this.state.registry}
+        />
+        <ChangePasswordDialog
+          open={this.state.changePasswordDialogOpen}
+          onOk={this.closeChangePasswordDialog.bind(this)}
+          user={this.state.user}
+          onRequestClose={this.closeChangePasswordDialog.bind(this)}
+          checkPassword={this.checkPassword.bind(this)}
+          setSnackBar={this.setSnackBar.bind(this)}
+          updateUser={this.updateUser.bind(this)}
+        />
+        <AlertDialog
+          open={this.state.alertDialogOpen}
+          onOk={() => this.updateState({ alertDialogOpen: false })}
+        />
+        <Snackbar
+          open={this.state.snackbarOpen}
+          message={message}
+          onRequestClose={this.closeSnackbar.bind(this)}
+          style={{ maxWidth: "800px !important" }}
+          contentStyle={{ maxWidth: "800px !important" }}
+          bodyStyle={{ maxWidth: "800px !important" }}
+        />
+        <Popover
+          open={this.state.featureMenuOpen}
+          anchorEl={this.state.menuAnchor}
+          onRequestClose={this.closeFeatureMenu.bind(this)}
+          style={{ width: "307px" }}
+        >
+          <Menu
+            style={{ width: "207px" }}
+            onMouseLeave={this.closeFeatureMenu.bind(this)}
           >
-            <Menu
-              style={{ width: "207px" }}
-              onMouseLeave={this.closeFeatureMenu.bind(this)}
+            <MenuItemWithButton
+              leftIcon={<Properties style={{ margin: "1px" }} />}
+              onClick={() =>
+                this.updateState({
+                  openInfoDialogOpen: true,
+                  featureMenuOpen: false,
+                })
+              }
             >
-              <MenuItemWithButton
-                leftIcon={<Properties style={{ margin: "1px" }} />}
-                onClick={() =>
-                  this.updateState({
-                    openInfoDialogOpen: true,
-                    featureMenuOpen: false,
-                  })
-                }
-              >
-                Properties
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
-                style={{
-                  display:
-                    this.state.currentFeature.old_version ||
-                    this.state.userData.ROLE === "ReadOnly"
-                      ? "none"
-                      : "block",
-                }}
-                onClick={this.removeFromProject.bind(
-                  this,
-                  this.state.currentFeature
-                )}
-              >
-                Remove from project
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={
-                  this.state.currentFeature.feature_layer_loaded ? (
-                    <RemoveFromMap style={{ margin: "1px" }} />
-                  ) : (
-                    <AddToMap style={{ margin: "1px" }} />
-                  )
-                }
-                style={{
-                  display: this.state.currentFeature.tilesetid
-                    ? "block"
-                    : "none",
-                }}
-                onClick={this.toggleFeatureLayer.bind(
-                  this,
-                  this.state.currentFeature
-                )}
-              >
-                {this.state.currentFeature.feature_layer_loaded
-                  ? "Remove from map"
-                  : "Add to map"}
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={
-                  this.state.currentFeature.feature_puid_layer_loaded ? (
-                    <RemoveFromMap style={{ margin: "1px" }} />
-                  ) : (
-                    <AddToMap style={{ margin: "1px" }} />
-                  )
-                }
-                onClick={this.toggleFeaturePUIDLayer.bind(
-                  this,
-                  this.state.currentFeature
-                )}
-                disabled={
-                  !(
-                    this.state.currentFeature.preprocessed &&
-                    this.state.currentFeature.occurs_in_planning_grid
-                  )
-                }
-              >
-                {this.state.currentFeature.feature_puid_layer_loaded
-                  ? "Remove planning unit outlines"
-                  : "Outline planning units where the feature occurs"}
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={<ZoomIn style={{ margin: "1px" }} />}
-                style={{
-                  display: this.state.currentFeature.extent ? "block" : "none",
-                }}
-                onClick={this.zoomToFeature.bind(
-                  this,
-                  this.state.currentFeature
-                )}
-              >
-                Zoom to feature extent
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={<Preprocess style={{ margin: "1px" }} />}
-                style={{
-                  display:
-                    this.state.currentFeature.old_version ||
-                    this.state.userData.ROLE === "ReadOnly"
-                      ? "none"
-                      : "block",
-                }}
-                onClick={this.preprocessSingleFeature.bind(
-                  this,
-                  this.state.currentFeature
-                )}
-                disabled={
-                  this.state.currentFeature.preprocessed ||
-                  this.state.preprocessing
-                }
-              >
-                Pre-process
-              </MenuItemWithButton>
-            </Menu>
-          </Popover>
-          <TargetDialog
-            open={this.state.targetDialogOpen}
-            onOk={this.closeTargetDialog.bind(this)}
-            showCancelButton={true}
-            onCancel={this.closeTargetDialog.bind(this)}
-            updateTargetValueForFeatures={this.updateTargetValueForFeatures.bind(
-              this
-            )}
-          />
-          <GapAnalysisDialog
-            open={this.state.gapAnalysisDialogOpen}
-            showCancelButton={true}
-            onOk={this.closeGapAnalysisDialog.bind(this)}
-            onCancel={this.closeGapAnalysisDialog.bind(this)}
-            closeGapAnalysisDialog={this.closeGapAnalysisDialog.bind(this)}
-            gapAnalysis={this.state.gapAnalysis}
-            preprocessing={this.state.preprocessing}
-            projectFeatures={this.state.projectFeatures}
-            metadata={this.state.metadata}
-            marxanServer={this.state.marxanServer}
-            reportUnits={this.state.userData.REPORTUNITS}
-          />
-          <ShareableLinkDialog
-            open={this.state.shareableLinkDialogOpen}
-            onOk={() => this.updateState({ shareableLinkDialogOpen: false })}
-            shareableLinkUrl={
-              window.location +
-              "?server=" +
-              this.state.marxanServer.name +
-              "&user=" +
-              this.state.user +
-              "&project=" +
-              this.state.project
-            }
-          />
-          <AtlasLayersDialog
-            open={this.state.atlasLayersDialogOpen}
-            onOk={this.closeAtlasLayersDialog.bind(this)}
-            onCancel={this.clearSelactedLayers.bind(this)}
-            loading={this.state.loading}
-            atlasLayers={this.state.atlasLayers}
-            marxanServer={this.state.marxanServer}
-            setSnackBar={this.setSnackBar.bind(this)}
-            selectedLayers={this.state.selectedLayers}
-            setselectedLayers={this.setselectedLayers.bind(this)}
-          />
-          <CumulativeImpactDialog
-            loading={this.state.loading || this.state.uploading}
-            open={this.state.cumulativeImpactDialogOpen}
-            onOk={() => this.updateState({ cumulativeImpactDialogOpen: false })}
-            onCancel={() =>
-              this.updateState({ cumulativeImpactDialogOpen: false })
-            }
-            openHumanActivitiesDialog={this.openHumanActivitiesDialog.bind(
-              this
-            )}
-            metadata={this.state.metadata}
-            allImpacts={this.state.allImpacts}
-            clickImpact={this.clickImpact.bind(this)}
-            initialiseDigitising={this.initialiseDigitising.bind(this)}
-            updateState={this.updateState.bind(this)}
-            selectedImpactIds={this.state.selectedImpactIds}
-            openImportedActivitesDialog={this.openImportedActivitesDialog.bind(
-              this
-            )}
-            setSnackBar={this.setSnackBar.bind(this)}
-            userRole={this.state.userData.ROLE}
-          />
-          <HumanActivitiesDialog
-            loading={this.state.loading || this.state.uploading}
-            open={this.state.humanActivitiesDialogOpen}
-            onOk={() => this.updateState({ humanActivitiesDialogOpen: false })}
-            onCancel={() =>
-              this.updateState({ humanActivitiesDialogOpen: false })
-            }
-            updateState={this.updateState.bind(this)}
-            metadata={this.state.metadata}
-            activities={this.state.activities}
-            initialiseDigitising={this.initialiseDigitising.bind(this)}
-            setSnackBar={this.setSnackBar.bind(this)}
-            userRole={this.state.userData.ROLE}
-            fileUpload={this.uploadRaster.bind(this)}
-            saveActivityToDb={this.saveActivityToDb.bind(this)}
-            openImportedActivitesDialog={this.openImportedActivitesDialog.bind(
-              this
-            )}
-          />
-          <RunCumuluativeImpactDialog
-            loading={this.state.loading || this.state.uploading}
-            open={this.state.importedActivitiesDialogOpen}
-            onOk={() =>
-              this.updateState({ importedActivitiesDialogOpen: false })
-            }
-            onCancel={() =>
-              this.updateState({ importedActivitiesDialogOpen: false })
-            }
-            updateState={this.updateState.bind(this)}
-            metadata={this.state.metadata}
-            uploadedActivities={this.state.uploadedActivities}
-            setSnackBar={this.setSnackBar.bind(this)}
-            userRole={this.state.userData.ROLE}
-            runCumulativeImpact={this.runCumulativeImpact.bind(this)}
-          />
-          <AppBar
-            open={this.state.loggedIn}
-            user={this.state.user}
-            userRole={this.state.userData.ROLE}
-            infoPanelOpen={this.state.infoPanelOpen}
-            resultsPanelOpen={this.state.resultsPanelOpen}
-            openFeaturesDialog={this.openFeaturesDialog.bind(this)}
-            openPlanningGridsDialog={this.openPlanningGridsDialog.bind(this)}
-            toggleInfoPanel={this.toggleInfoPanel.bind(this)}
-            toggleResultsPanel={this.toggleResultsPanel.bind(this)}
-            showToolsMenu={this.showToolsMenu.bind(this)}
-            showUserMenu={this.showUserMenu.bind(this)}
-            showHelpMenu={this.showHelpMenu.bind(this)}
-            marxanServer={this.state.marxanServer.name}
-            openProjectsDialog={this.openProjectsDialog.bind(this)}
-            openServerDetailsDialog={this.openServerDetailsDialog.bind(this)}
-            openActivitiesDialog={this.openActivitiesDialog.bind(this)}
-            openCumulativeImpactDialog={this.openCumulativeImpactDialog.bind(
-              this
-            )}
-            openAtlasLayersDialog={this.openAtlasLayersDialog.bind(this)}
-          />
-        </React.Fragment>
-      </ThemeProvider>
+              Properties
+            </MenuItemWithButton>
+            <MenuItemWithButton
+              leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
+              style={{
+                display:
+                  this.state.currentFeature.old_version ||
+                  this.state.userData.ROLE === "ReadOnly"
+                    ? "none"
+                    : "block",
+              }}
+              onClick={this.removeFromProject.bind(
+                this,
+                this.state.currentFeature
+              )}
+            >
+              Remove from project
+            </MenuItemWithButton>
+            <MenuItemWithButton
+              leftIcon={
+                this.state.currentFeature.feature_layer_loaded ? (
+                  <RemoveFromMap style={{ margin: "1px" }} />
+                ) : (
+                  <AddToMap style={{ margin: "1px" }} />
+                )
+              }
+              style={{
+                display: this.state.currentFeature.tilesetid ? "block" : "none",
+              }}
+              onClick={this.toggleFeatureLayer.bind(
+                this,
+                this.state.currentFeature
+              )}
+            >
+              {this.state.currentFeature.feature_layer_loaded
+                ? "Remove from map"
+                : "Add to map"}
+            </MenuItemWithButton>
+            <MenuItemWithButton
+              leftIcon={
+                this.state.currentFeature.feature_puid_layer_loaded ? (
+                  <RemoveFromMap style={{ margin: "1px" }} />
+                ) : (
+                  <AddToMap style={{ margin: "1px" }} />
+                )
+              }
+              onClick={this.toggleFeaturePUIDLayer.bind(
+                this,
+                this.state.currentFeature
+              )}
+              disabled={
+                !(
+                  this.state.currentFeature.preprocessed &&
+                  this.state.currentFeature.occurs_in_planning_grid
+                )
+              }
+            >
+              {this.state.currentFeature.feature_puid_layer_loaded
+                ? "Remove planning unit outlines"
+                : "Outline planning units where the feature occurs"}
+            </MenuItemWithButton>
+            <MenuItemWithButton
+              leftIcon={<ZoomIn style={{ margin: "1px" }} />}
+              style={{
+                display: this.state.currentFeature.extent ? "block" : "none",
+              }}
+              onClick={this.zoomToFeature.bind(this, this.state.currentFeature)}
+            >
+              Zoom to feature extent
+            </MenuItemWithButton>
+            <MenuItemWithButton
+              leftIcon={<Preprocess style={{ margin: "1px" }} />}
+              style={{
+                display:
+                  this.state.currentFeature.old_version ||
+                  this.state.userData.ROLE === "ReadOnly"
+                    ? "none"
+                    : "block",
+              }}
+              onClick={this.preprocessSingleFeature.bind(
+                this,
+                this.state.currentFeature
+              )}
+              disabled={
+                this.state.currentFeature.preprocessed ||
+                this.state.preprocessing
+              }
+            >
+              Pre-process
+            </MenuItemWithButton>
+          </Menu>
+        </Popover>
+        <TargetDialog
+          open={this.state.targetDialogOpen}
+          onOk={this.closeTargetDialog.bind(this)}
+          showCancelButton={true}
+          onCancel={this.closeTargetDialog.bind(this)}
+          updateTargetValueForFeatures={this.updateTargetValueForFeatures.bind(
+            this
+          )}
+        />
+        <GapAnalysisDialog
+          open={this.state.gapAnalysisDialogOpen}
+          showCancelButton={true}
+          onOk={this.closeGapAnalysisDialog.bind(this)}
+          onCancel={this.closeGapAnalysisDialog.bind(this)}
+          closeGapAnalysisDialog={this.closeGapAnalysisDialog.bind(this)}
+          gapAnalysis={this.state.gapAnalysis}
+          preprocessing={this.state.preprocessing}
+          projectFeatures={this.state.projectFeatures}
+          metadata={this.state.metadata}
+          marxanServer={this.state.marxanServer}
+          reportUnits={this.state.userData.REPORTUNITS}
+        />
+        <ShareableLinkDialog
+          open={this.state.shareableLinkDialogOpen}
+          onOk={() => this.updateState({ shareableLinkDialogOpen: false })}
+          shareableLinkUrl={
+            window.location +
+            "?server=" +
+            this.state.marxanServer.name +
+            "&user=" +
+            this.state.user +
+            "&project=" +
+            this.state.project
+          }
+        />
+        <AtlasLayersDialog
+          open={this.state.atlasLayersDialogOpen}
+          onOk={this.closeAtlasLayersDialog.bind(this)}
+          onCancel={this.clearSelactedLayers.bind(this)}
+          loading={this.state.loading}
+          atlasLayers={this.state.atlasLayers}
+          marxanServer={this.state.marxanServer}
+          setSnackBar={this.setSnackBar.bind(this)}
+          selectedLayers={this.state.selectedLayers}
+          setselectedLayers={this.setselectedLayers.bind(this)}
+        />
+        <CumulativeImpactDialog
+          loading={this.state.loading || this.state.uploading}
+          open={this.state.cumulativeImpactDialogOpen}
+          onOk={() => this.updateState({ cumulativeImpactDialogOpen: false })}
+          onCancel={() =>
+            this.updateState({ cumulativeImpactDialogOpen: false })
+          }
+          openHumanActivitiesDialog={this.openHumanActivitiesDialog.bind(this)}
+          metadata={this.state.metadata}
+          allImpacts={this.state.allImpacts}
+          clickImpact={this.clickImpact.bind(this)}
+          initialiseDigitising={this.initialiseDigitising.bind(this)}
+          updateState={this.updateState.bind(this)}
+          selectedImpactIds={this.state.selectedImpactIds}
+          openImportedActivitesDialog={this.openImportedActivitesDialog.bind(
+            this
+          )}
+          setSnackBar={this.setSnackBar.bind(this)}
+          userRole={this.state.userData.ROLE}
+        />
+        <HumanActivitiesDialog
+          loading={this.state.loading || this.state.uploading}
+          open={this.state.humanActivitiesDialogOpen}
+          onOk={() => this.updateState({ humanActivitiesDialogOpen: false })}
+          onCancel={() =>
+            this.updateState({ humanActivitiesDialogOpen: false })
+          }
+          updateState={this.updateState.bind(this)}
+          metadata={this.state.metadata}
+          activities={this.state.activities}
+          initialiseDigitising={this.initialiseDigitising.bind(this)}
+          setSnackBar={this.setSnackBar.bind(this)}
+          userRole={this.state.userData.ROLE}
+          fileUpload={this.uploadRaster.bind(this)}
+          saveActivityToDb={this.saveActivityToDb.bind(this)}
+          openImportedActivitesDialog={this.openImportedActivitesDialog.bind(
+            this
+          )}
+        />
+        <RunCumuluativeImpactDialog
+          loading={this.state.loading || this.state.uploading}
+          open={this.state.importedActivitiesDialogOpen}
+          onOk={() => this.updateState({ importedActivitiesDialogOpen: false })}
+          onCancel={() =>
+            this.updateState({ importedActivitiesDialogOpen: false })
+          }
+          updateState={this.updateState.bind(this)}
+          metadata={this.state.metadata}
+          uploadedActivities={this.state.uploadedActivities}
+          setSnackBar={this.setSnackBar.bind(this)}
+          userRole={this.state.userData.ROLE}
+          runCumulativeImpact={this.runCumulativeImpact.bind(this)}
+        />
+        <AppBar
+          open={this.state.loggedIn}
+          user={this.state.user}
+          userRole={this.state.userData.ROLE}
+          infoPanelOpen={this.state.infoPanelOpen}
+          resultsPanelOpen={this.state.resultsPanelOpen}
+          openFeaturesDialog={this.openFeaturesDialog.bind(this)}
+          openPlanningGridsDialog={this.openPlanningGridsDialog.bind(this)}
+          toggleInfoPanel={this.toggleInfoPanel.bind(this)}
+          toggleResultsPanel={this.toggleResultsPanel.bind(this)}
+          showToolsMenu={this.showToolsMenu.bind(this)}
+          showUserMenu={this.showUserMenu.bind(this)}
+          showHelpMenu={this.showHelpMenu.bind(this)}
+          marxanServer={this.state.marxanServer.name}
+          openProjectsDialog={this.openProjectsDialog.bind(this)}
+          openServerDetailsDialog={this.openServerDetailsDialog.bind(this)}
+          openActivitiesDialog={this.openActivitiesDialog.bind(this)}
+          openCumulativeImpactDialog={this.openCumulativeImpactDialog.bind(
+            this
+          )}
+          openAtlasLayersDialog={this.openAtlasLayersDialog.bind(this)}
+        />
+      </React.Fragment>
+      // </ThemeProvider>
     );
   }
 }

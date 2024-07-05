@@ -37,10 +37,11 @@ class RendererSelector extends React.Component {
         autoWidth={true}
         floatingLabelText={this.props.floatingLabelText}
         floatingLabelFixed={true}
-        children={c}
         onChange={this.handleChange.bind(this)}
         value={this.props.property}
-      />
+      >
+        {c}
+      </Select>
     );
   }
 }

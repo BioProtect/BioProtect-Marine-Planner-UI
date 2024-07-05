@@ -249,7 +249,8 @@ class FeaturesDialog extends React.Component {
           }
           showSearchBox={true}
           searchTextChanged={this.searchTextChanged.bind(this)}
-          children={
+        >
+          {
             <React.Fragment key="k10">
               <div id="projectsTable">
                 <MarxanTable
@@ -470,7 +471,7 @@ class FeaturesDialog extends React.Component {
               </div>
             </React.Fragment>
           }
-        />
+        </MarxanDialog>
       );
     } else {
       return null;

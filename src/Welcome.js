@@ -64,7 +64,8 @@ class Welcome extends React.Component {
         showCancelButton={false}
         autoDetectWindowHeight={false}
         bodyStyle={{ padding: "0px 24px 0px 24px" }}
-        children={
+      >
+        {
           <React.Fragment key={"welcomeKey"}>
             <div className={"welcomeContent"}>
               <div className={"tabTitle"}>What do you want to do?</div>
@@ -127,7 +128,7 @@ class Welcome extends React.Component {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

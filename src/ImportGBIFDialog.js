@@ -69,7 +69,8 @@ class ImportGBIFDialog extends React.Component {
         okDisabled={this.state.selectedItem === undefined || this.props.loading}
         showCancelButton={true}
         autoDetectWindowHeight={false}
-        children={
+      >
+        {
           <React.Fragment key={"importGBIFKey"}>
             <div className={"importGBIFContent"}>
               <MarxanTextField
@@ -103,7 +104,7 @@ class ImportGBIFDialog extends React.Component {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

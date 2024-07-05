@@ -1,3 +1,5 @@
+import FileUpload from "./FileUpload.js";
+import MarxanDialog from "./MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,8 +9,6 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import FileUpload from "./FileUpload.js";
 let INITIAL_STATE = { costs_filename: "", costname: "" };
 
 class ImportCostsDialog extends React.Component {
@@ -59,7 +59,8 @@ class ImportCostsDialog extends React.Component {
         onCancel={this.deleteCostFileThenClose.bind(this)}
         onRequestClose={this.deleteCostFileThenClose.bind(this)}
         helpLink={"user.html#importing-a-cost-surface"}
-        children={
+      >
+        {
           <React.Fragment key="k8">
             <FileUpload
               {...this.props}
@@ -72,7 +73,7 @@ class ImportCostsDialog extends React.Component {
             />
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

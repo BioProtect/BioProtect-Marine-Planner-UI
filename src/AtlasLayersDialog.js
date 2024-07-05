@@ -98,7 +98,8 @@ class AtlasLayersDialog extends React.Component {
         cancelLabel="Clear all Layers"
         showSearchBox="true"
         autoDetectWindowHeight={false}
-        children={
+      >
+        {
           <React.Fragment key="k2">
             <div id="atlasLayertable">
               <h4>Select a layer to view on map</h4>
@@ -137,7 +138,7 @@ class AtlasLayersDialog extends React.Component {
             ></div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     ); //return
   }
 }

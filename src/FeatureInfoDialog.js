@@ -1,3 +1,7 @@
+import { getArea, isNumber, isValidTargetValue } from "./Helpers.js";
+
+import CONSTANTS from "./constants";
+import MarxanDialog from "./MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,10 +11,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import CONSTANTS from "./constants";
-import MarxanDialog from "./MarxanDialog";
 import ReactTable from "react-table";
-import { getArea, isNumber, isValidTargetValue } from "./Helpers.js";
 
 class FeatureInfoDialog extends React.Component {
   onKeyPress(key, e) {
@@ -216,7 +217,8 @@ class FeatureInfoDialog extends React.Component {
           helpLink={"user.html#feature-properties-window"}
           offsetX={135}
           offsetY={250}
-          children={
+        >
+          {
             <ReactTable
               showPagination={false}
               className={
@@ -247,7 +249,7 @@ class FeatureInfoDialog extends React.Component {
               key="k9"
             />
           }
-        />
+        </MarxanDialog>
       );
     } else {
       return null;

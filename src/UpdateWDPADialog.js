@@ -7,6 +7,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import MarxanDialog from "./MarxanDialog";
 import ToolbarButton from "./ToolbarButton";
 
@@ -24,7 +25,8 @@ class UpdateWDPADialog extends React.PureComponent {
         contentWidth={380}
         offsetY={260}
         title="Update WDPA"
-        children={
+      >
+        {
           <React.Fragment>
             <div
               style={{ display: this.props.newWDPAVersion ? "block" : "none" }}
@@ -41,7 +43,7 @@ class UpdateWDPADialog extends React.PureComponent {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

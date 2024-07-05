@@ -394,7 +394,8 @@ class InfoPanel extends React.Component {
                     style={{ marginTop: "-14px", width: "180px" }}
                     value={this.props.metadata.IUCN_CATEGORY}
                     onChange={this.changeIucnCategory.bind(this)}
-                    children={CONSTANTS.IUCN_CATEGORIES.map((item) => {
+                  >
+                    {CONSTANTS.IUCN_CATEGORIES.map((item) => {
                       return (
                         <MenuItem
                           value={item}
@@ -404,7 +405,8 @@ class InfoPanel extends React.Component {
                         />
                       );
                     })}
-                  />
+                  </Select>
+
                   {/*<FontAwesomeIcon icon={faExclamationTriangle} style={{color:'red', display:(this.props.metadata.IUCN_CATEGORY!=='None' && this.props.protected_area_intersections && this.props.protected_area_intersections.length===0) ? 'inline' : 'none', position:'absolute'}} title={'Protected areas have been updated since you locked these ones in'}/>*/}
                   <div>
                     <div className={"tabTitle"}>Costs</div>
@@ -422,7 +424,8 @@ class InfoPanel extends React.Component {
                     style={{ marginTop: "-14px", width: "230px" }}
                     value={this.props.costname}
                     onChange={this.changeCostname.bind(this)}
-                    children={this.costnames.map((item) => {
+                  >
+                    {this.costnames.map((item) => {
                       return (
                         <MenuItem
                           value={item}
@@ -432,7 +435,7 @@ class InfoPanel extends React.Component {
                         />
                       );
                     })}
-                  />
+                  </Select>
                 </div>
               </Tab>
             </Tabs>

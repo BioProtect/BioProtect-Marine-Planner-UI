@@ -47,7 +47,8 @@ class FeatureDialog extends React.Component {
         title={this.props.feature_metadata.alias}
         helpLink={"user.html#the-feature-details-window"}
         contentWidth={768}
-        children={
+      >
+        {
           <React.Fragment key="k26">
             <MapContainer2
               planning_grid_metadata={this.props.feature_metadata}
@@ -152,7 +153,7 @@ class FeatureDialog extends React.Component {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     ); //return
   }
 }

@@ -33,7 +33,8 @@ class ShareableLinkDialog extends React.PureComponent {
         offsetX={80}
         offsetY={360}
         title="Shareable link"
-        children={
+      >
+        {
           <React.Fragment>
             <MarxanTextField
               style={{ fontSize: "13px", width: "550px" }}
@@ -53,7 +54,7 @@ class ShareableLinkDialog extends React.PureComponent {
             />
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

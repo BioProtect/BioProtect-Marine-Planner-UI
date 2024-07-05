@@ -89,7 +89,8 @@ class MarxanDialog extends React.Component {
         className={"dialogGeneric"}
         style={style}
         actions={[this.props.actions, cancelButton, okButton]}
-        children={[
+      >
+        {[
           this.props.titleBarIcon ? (
             <FontAwesomeIcon
               icon={this.props.titleBarIcon}
@@ -164,7 +165,7 @@ class MarxanDialog extends React.Component {
             />
           ) : null,
         ]}
-      />
+      </Dialog>
     );
   }
 }

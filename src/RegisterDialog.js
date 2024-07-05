@@ -1,3 +1,5 @@
+import MarxanDialog from "./MarxanDialog";
+import MarxanTextField from "./MarxanTextField";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,8 +9,6 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
 
 class RegisterDialog extends React.Component {
   constructor(props) {
@@ -44,7 +44,8 @@ class RegisterDialog extends React.Component {
   }
 
   validateEmail() {
-    var re = /^(([^<>()\]\\.,;:\s@"]+(\.[^<>()\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    var re =
+      /^(([^<>()\]\\.,;:\s@"]+(\.[^<>()\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     let valid = re.test(String(this.state.email).toLowerCase());
     this.setState({ validEmail: valid });
     if (!valid) {
@@ -92,11 +93,12 @@ class RegisterDialog extends React.Component {
         cancelDisabled={this.props.loading}
         helpLink={"user.html#new-user-registration"}
         title="Register"
-        children={c}
         onRequestClose={() =>
           this.props.updateState({ registerDialogOpen: false })
         }
-      />
+      >
+        {c}
+      </MarxanDialog>
     );
   }
 }

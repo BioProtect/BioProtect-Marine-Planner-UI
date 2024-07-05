@@ -121,7 +121,8 @@ class GapAnalysisDialog extends React.PureComponent {
         helpLink={"user.html#gap-analysis-window"}
         onRequestClose={this.props.closeGapAnalysisDialog}
         showCancelButton={false}
-        children={
+      >
+        {
           <React.Fragment key={"gapAnalysiskey"}>
             <div className="analysisReport">
               <div>
@@ -221,7 +222,7 @@ class GapAnalysisDialog extends React.PureComponent {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

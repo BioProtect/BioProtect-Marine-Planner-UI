@@ -47,7 +47,8 @@ class PlanningGridDialog extends React.Component {
         title={this.props.planning_grid_metadata.alias}
         helpLink={"user.html#the-planning-grid-details-window"}
         contentWidth={768}
-        children={
+      >
+        {
           <React.Fragment key="k27">
             <MapContainer2
               planning_grid_metadata={this.props.planning_grid_metadata}
@@ -142,7 +143,7 @@ class PlanningGridDialog extends React.Component {
                   >
                     <td className="metadataItemTitle">Projects:</td>
                     <td className="metadataItemValue">
-                      <FontAwesome
+                      <FontAwesomeIcon
                         name="external-link-alt"
                         onClick={this.getProjectList.bind(this)}
                         title="View a list of projects that this planning grid is used in"
@@ -167,7 +168,7 @@ class PlanningGridDialog extends React.Component {
             </div>
           </React.Fragment>
         }
-      />
+      </MarxanDialog>
     ); //return
   }
 }

@@ -79,7 +79,8 @@ class ClassificationDialog extends React.Component {
         showCancelButton={false}
         helpLink={"user.html#changing-how-the-results-are-displayed"}
         title="Classification"
-        children={
+      >
+        {
           <div style={{ height: "275px" }} key="k6">
             <BarChart width={250} height={150} data={this.props.summaryStats}>
               <CartesianGrid strokeDasharray="1" stroke="#f4f4f4" />
@@ -132,7 +133,7 @@ class ClassificationDialog extends React.Component {
             </div>
           </div>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

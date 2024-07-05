@@ -1,3 +1,4 @@
+import MarxanDialog from "./MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,12 +8,11 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import iucn from "./images/iucn.png";
-import wcmc from "./images/wcmc.png";
-import mapbox_small from "./images/mapbox_small.png";
 import biopama_small from "./images/biopama_small.png";
+import iucn from "./images/iucn.png";
 import jrc_logo_color_small from "./images/jrc_logo_color_small.png";
+import mapbox_small from "./images/mapbox_small.png";
+import wcmc from "./images/wcmc.png";
 
 class AboutDialog extends React.Component {
   render() {
@@ -23,7 +23,8 @@ class AboutDialog extends React.Component {
         offsetY={80}
         title="About"
         helpLink={"user.html#about-window"}
-        children={
+      >
+        {
           <div key="k5">
             <div className={"aboutTitle"}>Software development</div>
             <div className={"aboutText"}>
@@ -105,7 +106,7 @@ class AboutDialog extends React.Component {
             </div>
           </div>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

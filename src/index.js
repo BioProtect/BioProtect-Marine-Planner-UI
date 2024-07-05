@@ -1,3 +1,7 @@
+import "./index.css";
+import "typeface-roboto";
+
+import App from "./App";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,11 +11,10 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ReactDOM from "react-dom";
-import "./index.css";
-import App from "./App";
-import "typeface-roboto";
+import { createRoot } from "react-dom/client";
 import registerServiceWorker from "./registerServiceWorker";
 
-ReactDOM.render(<App />, document.getElementById("root"));
+const container = document.getElementById("root");
+const root = createRoot(container); // createRoot(container!) if you use TypeScript
+root.render(<App tab="home" />);
 registerServiceWorker();

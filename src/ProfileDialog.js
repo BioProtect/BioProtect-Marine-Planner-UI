@@ -1,3 +1,5 @@
+import MarxanDialog from "./MarxanDialog";
+import MarxanTextField from "./MarxanTextField";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,8 +9,6 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
 
 class ProfileDialog extends React.Component {
   constructor(props) {
@@ -25,7 +25,8 @@ class ProfileDialog extends React.Component {
     });
   }
   validateEmail() {
-    var re = /^(([^<>()\]\\.,;:\s@"]+(\.[^<>()\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    var re =
+      /^(([^<>()\]\\.,;:\s@"]+(\.[^<>()\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     let email = this.state.EMAIL ? this.state.EMAIL : this.props.userData.EMAIL;
     let valid = re.test(String(email).toLowerCase());
     this.setState({ validEmail: valid });
@@ -58,7 +59,8 @@ class ProfileDialog extends React.Component {
         onOk={this.updateUser.bind(this)}
         helpLink={"user.html#profile"}
         title="Profile"
-        children={
+      >
+        {
           <div key="k15">
             <MarxanTextField
               floatingLabelText="Full name"
@@ -86,7 +88,7 @@ class ProfileDialog extends React.Component {
             </div>
           </div>
         }
-      />
+      </MarxanDialog>
     );
   }
 }

@@ -1,3 +1,5 @@
+import MarxanDialog from "./MarxanDialog";
+import MarxanTextField from "./MarxanTextField";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -7,8 +9,6 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
 
 class ResendPasswordDialog extends React.Component {
   handleKeyPress(e) {
@@ -24,7 +24,9 @@ class ResendPasswordDialog extends React.Component {
           okDisabled={!this.props.email || this.props.loading}
           cancelDisabled={this.props.resending}
           title="Resend password"
-          children={[
+          onRequestClose={this.props.onCancel}
+        >
+          {[
             <div key="resendDiv">
               <MarxanTextField
                 floatingLabelText="email address"
@@ -36,8 +38,7 @@ class ResendPasswordDialog extends React.Component {
               />
             </div>,
           ]}
-          onRequestClose={this.props.onCancel}
-        />
+        </MarxanDialog>
       </React.Fragment>
     );
   }

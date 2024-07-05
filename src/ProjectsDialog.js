@@ -248,7 +248,8 @@ class ProjectsDialog extends React.Component {
           title="Projects"
           showSearchBox={true}
           searchTextChanged={this.searchTextChanged.bind(this)}
-          children={
+        >
+          {
             <React.Fragment key="k2">
               <div id="projectsTable">
                 <MarxanTable
@@ -382,7 +383,7 @@ class ProjectsDialog extends React.Component {
               </div>
             </React.Fragment>
           }
-        />
+        </MarxanDialog>
       );
     } else {
       return null;
