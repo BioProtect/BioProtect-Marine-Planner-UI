@@ -260,7 +260,7 @@ class ImportFeaturesDialog extends React.Component {
         contentWidth={390}
         title={"Import features"}
         actions={actions}
-        onRequestClose={this.closeDialog.bind(this)}
+        onClose={this.closeDialog.bind(this)}
         helpLink={"user.html#importing-from-a-shapefile"}
       >
         {children}

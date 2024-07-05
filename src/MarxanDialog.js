@@ -60,7 +60,7 @@ class MarxanDialog extends React.Component {
         label={this.props.cancelLabel ? this.props.cancelLabel : "Cancel"}
         primary={true}
         onClick={this.props.onCancel}
-        disabled={this.props.cancelDisabled}
+        // disabled={this.props.cancelDisabled}
       />
     ) : null;
     let okButton = this.props.hideOKButton ? null : (
@@ -71,21 +71,14 @@ class MarxanDialog extends React.Component {
         disabled={this.props.okDisabled}
       />
     );
-    let contentStyle = this.props.contentStyle
-      ? this.props.contentStyle
-      : this.props.contentWidth
-      ? { width: this.props.contentWidth + "px" }
-      : {};
     return (
       <Dialog
         {...this.props}
-        onRequestClose={this.props.onCancel}
+        onClose={this.props.onCancel}
         overlayStyle={
           this.props.showOverlay ? { display: "block" } : { display: "none" }
         }
         titleClassName={"dialogTitleStyle"}
-        contentStyle={contentStyle}
-        titleStyle={this.props.titleBarIcon ? { marginLeft: "27px" } : null}
         className={"dialogGeneric"}
         style={style}
         actions={[this.props.actions, cancelButton, okButton]}

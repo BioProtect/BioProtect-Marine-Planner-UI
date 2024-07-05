@@ -282,7 +282,7 @@ class ImportImpactsDialog extends React.Component {
         showSearchBox={true}
         searchTextChanged={this.searchTextChanged.bind(this)}
         actions={actions}
-        onRequestClose={this.closeDialog.bind(this)}
+        onClose={this.closeDialog.bind(this)}
         helpLink={"user.html#importing-from-a-shapefile"}
       >
         {children}

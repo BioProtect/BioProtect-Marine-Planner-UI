@@ -13,8 +13,8 @@ class MenuItemWithButton extends React.Component {
   render() {
     return (
       <MenuItem
-        className={"smallMenuItem"}
         {...this.props}
+        className={"smallMenuItem"}
         innerDivStyle={{ paddingLeft: "40px" }}
       />
     );

@@ -55,7 +55,7 @@ class SelectCostFeatures extends React.Component {
                 <ListItem
                   disableFocusRipple={true}
                   primaryText={item.alias}
-                  secondaryText={item.description}
+                  secondaryText={item.description.toString()}
                   key={item.id}
                   value={item.alias}
                   rightIconButton={rightIconMenu}

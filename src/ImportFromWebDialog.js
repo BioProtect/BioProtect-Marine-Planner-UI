@@ -294,7 +294,7 @@ class ImportFromWebDialog extends React.Component {
         contentWidth={390}
         title={"Import from web"}
         actions={actions}
-        onRequestClose={this.closeDialog.bind(this)}
+        onClose={this.closeDialog.bind(this)}
         helpLink={"user.html#importing-from-the-web"}
       >
         {children}

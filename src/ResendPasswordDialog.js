@@ -24,7 +24,7 @@ class ResendPasswordDialog extends React.Component {
           okDisabled={!this.props.email || this.props.loading}
           cancelDisabled={this.props.resending}
           title="Resend password"
-          onRequestClose={this.props.onCancel}
+          onClose={this.props.onCancel}
         >
           {[
             <div key="resendDiv">

@@ -59,7 +59,7 @@ class ImportPlanningGridDialog extends React.Component {
           this.state.zipFilename === "" ||
           this.state.description === ""
         }
-        onRequestClose={this.props.onCancel.bind(this)}
+        onClose={this.props.onCancel.bind(this)}
         helpLink={"user.html#importing-existing-planning-grids"}
       >
         {

@@ -28,7 +28,7 @@ class HelpMenu extends React.Component {
           anchorEl={this.props.menuAnchor}
           anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
           targetOrigin={{ horizontal: "left", vertical: "top" }}
-          onRequestClose={this.props.hideHelpMenu}
+          onClose={this.props.hideHelpMenu}
         >
           <Menu
             desktop={true}

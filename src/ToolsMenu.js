@@ -40,7 +40,7 @@ class ToolsMenu extends React.Component {
         <Popover
           open={this.props.open}
           anchorEl={this.props.menuAnchor}
-          onRequestClose={this.props.hideToolsMenu}
+          onClose={this.props.hideToolsMenu}
         >
           <Menu
             desktop={true}

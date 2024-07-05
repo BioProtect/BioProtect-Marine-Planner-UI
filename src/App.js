@@ -256,7 +256,6 @@ class App extends React.Component {
 
   //gets various global variables from the marxan registry
   getGlobalVariables() {
-    console.log("getGlobalVariables ");
     return new Promise((resolve, reject) => {
       fetch(CONSTANTS.MARXAN_REGISTRY).then((response) => {
         response.json().then((registryData) => {
@@ -695,7 +694,6 @@ class App extends React.Component {
         );
       }
       const json = await response.json();
-      console.log("json ", json);
       if (json.hasOwnProperty("info")) {
         //see if CORS is enabled from this domain - either the domain has been added as an allowable domain on the server, or the client and server are on the same machine
         let corsEnabled =
@@ -704,7 +702,6 @@ class App extends React.Component {
             ? true
             : false;
         //set the flags for the server capabilities
-        console.log("corsEnabled ", corsEnabled);
 
         server = Object.assign(server, {
           guestUserEnabled: json.serverData.ENABLE_GUEST_USER,
@@ -776,8 +773,6 @@ class App extends React.Component {
     if (!value.offline && !value.corsEnabled && value.guestUserEnabled) {
       this.switchToGuestUser();
     }
-
-    console.log("this.state.marxanServer ", this.state.marxanServer);
   }
 
   closeSnackbar() {
@@ -828,6 +823,7 @@ class App extends React.Component {
   checkPassword(user, password) {
     return new Promise((resolve, reject) => {
       this._get("validateUser?user=" + user + "&password=" + password, 10000)
+
         .then((response) => {
           resolve();
         })
@@ -837,9 +833,9 @@ class App extends React.Component {
     });
   }
   //validates the user and then logs in if successful
-  validateUser() {
+  validateUser(user, password) {
     return new Promise((resolve, reject) => {
-      this.checkPassword(this.state.user, this.state.password)
+      this.checkPassword(user, password)
         .then(() => {
           //user validated - log them in
           this.login().then((response) => {
@@ -857,7 +853,6 @@ class App extends React.Component {
     return new Promise((resolve, reject) => {
       this._get("getUser?user=" + this.state.user)
         .then((response) => {
-          console.log("response ", response);
           this.setState(
             {
               userData: response.userData,
@@ -1299,7 +1294,6 @@ class App extends React.Component {
       this.resetResults();
       this._get("getProject?user=" + user + "&project=" + project)
         .then((response) => {
-          console.log("response ", response);
           //set the state for the app based on the data that is returned from the server
           this.setState({
             loggedIn: true,
@@ -3924,7 +3918,6 @@ class App extends React.Component {
 
   //when a user clicks a impact in the ImpactsDialog
   clickImpact(impact, event, previousRow) {
-    console.log("impact ", impact);
     this.state.selectedImpactIds.includes(impact.id)
       ? this.removeImpact(impact)
       : this.addImpact(impact);
@@ -4152,7 +4145,6 @@ class App extends React.Component {
   }
 
   createCostsFromImpact(data) {
-    console.log("data ", data);
     console.log(
       "this.state.metadata.PLANNING_UNIT_NAME ",
       this.state.metadata.PLANNING_UNIT_NAME
@@ -5677,7 +5669,7 @@ class App extends React.Component {
         <LoadingDialog open={this.state.shareableLink} />
         <LoginDialog
           open={!this.state.loggedIn}
-          onOk={this.validateUser.bind(this)}
+          validateUser={this.validateUser.bind(this)}
           onCancel={() => this.updateState({ registerDialogOpen: true })}
           loading={this.state.loading}
           user={this.state.user}
@@ -6149,13 +6141,13 @@ class App extends React.Component {
           open={this.state.resetDialogOpen}
           onOk={this.resetServer.bind(this)}
           onCancel={() => this.updateState({ resetDialogOpen: false })}
-          onRequestClose={() => this.updateState({ resetDialogOpen: false })}
+          onClose={() => this.updateState({ resetDialogOpen: false })}
           loading={this.state.loading}
         />
         <RunLogDialog
           open={this.state.runLogDialogOpen}
           onOk={this.closeRunLogDialog.bind(this)}
-          onRequestClose={this.closeRunLogDialog.bind(this)}
+          onClose={this.closeRunLogDialog.bind(this)}
           loading={this.state.loading}
           preprocessing={this.state.preprocessing}
           unauthorisedMethods={this.state.unauthorisedMethods}
@@ -6169,7 +6161,7 @@ class App extends React.Component {
           open={this.state.serverDetailsDialogOpen}
           onOk={this.closeServerDetailsDialog.bind(this)}
           onCancel={this.closeServerDetailsDialog.bind(this)}
-          onRequestClose={this.closeServerDetailsDialog.bind(this)}
+          onClose={this.closeServerDetailsDialog.bind(this)}
           updateState={this.updateState.bind(this)}
           marxanServer={this.state.marxanServer}
           newWDPAVersion={this.state.newWDPAVersion}
@@ -6188,7 +6180,7 @@ class App extends React.Component {
           open={this.state.changePasswordDialogOpen}
           onOk={this.closeChangePasswordDialog.bind(this)}
           user={this.state.user}
-          onRequestClose={this.closeChangePasswordDialog.bind(this)}
+          onClose={this.closeChangePasswordDialog.bind(this)}
           checkPassword={this.checkPassword.bind(this)}
           setSnackBar={this.setSnackBar.bind(this)}
           updateUser={this.updateUser.bind(this)}
@@ -6200,15 +6192,14 @@ class App extends React.Component {
         <Snackbar
           open={this.state.snackbarOpen}
           message={message}
-          onRequestClose={this.closeSnackbar.bind(this)}
+          onClose={this.closeSnackbar.bind(this)}
           style={{ maxWidth: "800px !important" }}
-          contentStyle={{ maxWidth: "800px !important" }}
           bodyStyle={{ maxWidth: "800px !important" }}
         />
         <Popover
           open={this.state.featureMenuOpen}
           anchorEl={this.state.menuAnchor}
-          onRequestClose={this.closeFeatureMenu.bind(this)}
+          onClose={this.closeFeatureMenu.bind(this)}
           style={{ width: "307px" }}
         >
           <Menu

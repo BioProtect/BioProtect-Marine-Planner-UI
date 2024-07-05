@@ -9,7 +9,7 @@ import MarxanDialog from "./MarxanDialog";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ReactTable from "react-table";
+import { Table } from "@mui/material";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 
 class ServerDetailsDialog extends React.Component {
@@ -23,28 +23,10 @@ class ServerDetailsDialog extends React.Component {
         <div style={{ float: "left" }}>{cellInfo.row.value}</div>
         <FontAwesomeIcon
           icon={faExclamationTriangle}
-          style={{
-            color: "red",
-            display:
-              cellInfo.row.key === "Disk space" &&
-              cellInfo.row.value.substr(0, 1) === "0"
-                ? "inline"
-                : "none",
-            right: "5px",
-            position: "absolute",
-            marginTop: "5px",
-          }}
           title={"Disk space running low"}
         />
         <FontAwesomeIcon
           icon={faExclamationTriangle}
-          style={{
-            color: "red",
-            display: newServerSoftware ? "inline" : "none",
-            right: "5px",
-            position: "absolute",
-            marginTop: "5px",
-          }}
           title={
             "A new version of Marxan Server is available (" +
             this.props.registry.SERVER_VERSION +
@@ -53,16 +35,6 @@ class ServerDetailsDialog extends React.Component {
         />
         <FontAwesomeIcon
           icon={faExclamationTriangle}
-          style={{
-            color: "red",
-            display:
-              cellInfo.row.key === "WDPA version" && this.props.newWDPAVersion
-                ? "inline"
-                : "none",
-            position: "absolute",
-            right: "5px",
-            marginTop: "5px",
-          }}
           title={"A new version of the WDPA is available - click for details"}
           onClick={() => this.props.updateState({ updateWDPADialogOpen: true })}
         />
@@ -97,10 +69,6 @@ class ServerDetailsDialog extends React.Component {
           },
         ]
       : [];
-    // add the following if necessary
-    // <div className="tabTitle">Release: {this.props.marxanServer&&this.props.marxanServer.release}</div>
-    // <div className="tabTitle">Version: {this.props.marxanServer&&this.props.marxanServer.version}</div>
-    // <div className="tabTitle">Processor: {this.props.marxanServer&&this.props.marxanServer.processor}</div>
     return (
       <MarxanDialog
         {...this.props}
@@ -110,7 +78,7 @@ class ServerDetailsDialog extends React.Component {
         helpLink={"user.html#server-details"}
       >
         {[
-          <ReactTable
+          <Table
             showPagination={false}
             className={"server_details_infoTable"}
             minRows={0}

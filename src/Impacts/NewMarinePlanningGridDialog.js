@@ -60,7 +60,7 @@ class NewPlanningGridDialog extends React.Component {
       <MarxanDialog
         {...this.props}
         onOk={this.onOk.bind(this)}
-        onRequestClose={this.props.onCancel}
+        onClose={this.props.onCancel}
         okDisabled={!this.state.areakm2 || this.props.loading}
         cancelLabel={"Cancel"}
         showCancelButton={true}

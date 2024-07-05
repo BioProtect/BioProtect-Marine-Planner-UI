@@ -7,7 +7,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ReactTable from "react-table";
+import { Table } from "@mui/material";
 
 class MarxanTable extends React.Component {
   //filters the data in the table from the search text
@@ -49,7 +49,7 @@ class MarxanTable extends React.Component {
   render() {
     let filteredData = this.filterData();
     return (
-      <ReactTable
+      <Table
         {...this.props}
         pageSize={filteredData.length}
         className={"projectsReactTable noselect"}

@@ -27,7 +27,7 @@ class UserMenu extends React.Component {
           anchorEl={this.props.menuAnchor}
           anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
           targetOrigin={{ horizontal: "left", vertical: "top" }}
-          onRequestClose={this.props.hideUserMenu}
+          onClose={this.props.hideUserMenu}
         >
           <Menu
             desktop={true}

@@ -66,7 +66,7 @@ class UsersDialog extends React.Component {
         <MarxanDialog
           {...this.props}
           onOk={this.closeDialog.bind(this)}
-          onRequestClose={this.closeDialog.bind(this)}
+          onClose={this.closeDialog.bind(this)}
           showCancelButton={false}
           helpLink={"user.html#the-users-window-admin-users-only"}
           autoDetectWindowHeight={false}

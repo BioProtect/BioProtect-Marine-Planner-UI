@@ -11,7 +11,7 @@ import MarxanDialog from "./MarxanDialog";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ReactTable from "react-table";
+import { Table } from "@mui/material";
 
 class FeatureInfoDialog extends React.Component {
   onKeyPress(key, e) {
@@ -219,7 +219,7 @@ class FeatureInfoDialog extends React.Component {
           offsetY={250}
         >
           {
-            <ReactTable
+            <Table
               showPagination={false}
               className={
                 this.props.feature.old_version

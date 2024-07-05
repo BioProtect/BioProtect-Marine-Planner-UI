@@ -367,7 +367,7 @@ class FeaturesDialog extends React.Component {
                   anchorEl={this.state.newFeatureAnchor}
                   anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
                   targetOrigin={{ horizontal: "left", vertical: "top" }}
-                  onRequestClose={() =>
+                  onClose={() =>
                     this.props.updateState({ newFeaturePopoverOpen: false })
                   }
                 >
@@ -396,7 +396,7 @@ class FeaturesDialog extends React.Component {
                   anchorEl={this.state.importFeatureAnchor}
                   anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
                   targetOrigin={{ horizontal: "left", vertical: "top" }}
-                  onRequestClose={() =>
+                  onClose={() =>
                     this.props.updateState({ importFeaturePopoverOpen: false })
                   }
                 >

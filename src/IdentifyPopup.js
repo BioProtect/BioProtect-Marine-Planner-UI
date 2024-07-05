@@ -8,13 +8,12 @@ import CONSTANTS from "./constants";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ReactTable from "react-table";
 import Swatch from "./Swatch";
 import Sync from "@mui/icons-material/Sync";
 import Tab from "@mui/material/Tab";
+import { Table } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import { getArea } from "./Helpers.js";
-
 const TITLE_LINK = "Click to open in the Protected Planet website";
 const URL_PP = "https://www.protectedplanet.net/";
 const TAB_STYLE = {
@@ -210,7 +209,7 @@ class IdentifyPopup extends React.Component {
             }}
           >
             <div className={"featureList"}>{"Features in planning unit:"}</div>
-            <ReactTable
+            <Table
               showPagination={false}
               className={"identifyPUFeaturesInfoTable"}
               pageSize={
@@ -265,7 +264,7 @@ class IdentifyPopup extends React.Component {
           key="features"
           buttonStyle={TAB_STYLE}
         >
-          <ReactTable
+          <Table
             showPagination={false}
             className={"identifyFeaturesInfoTable"}
             pageSize={
@@ -302,7 +301,7 @@ class IdentifyPopup extends React.Component {
           key="pas"
           buttonStyle={TAB_STYLE}
         >
-          <ReactTable
+          <Table
             showPagination={false}
             className={"identifyProtectedAreasInfoTable"}
             pageSize={
@@ -359,8 +358,6 @@ class IdentifyPopup extends React.Component {
         onMouseEnter={this.mouseEnter.bind(this)}
       >
         <Tabs
-          tabItemContainerStyle={{ height: "34px" }}
-          contentContainerStyle={{ margin: "20px" }}
           className={"identifyPopup"}
           value={onlyPA ? "pas" : this.state.selectedValue}
           onChange={this.changeTab.bind(this)}

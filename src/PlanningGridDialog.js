@@ -38,7 +38,7 @@ class PlanningGridDialog extends React.Component {
     return (
       <MarxanDialog
         {...this.props}
-        onRequestClose={() =>
+        onClose={() =>
           this.props.updateState({
             planningGridDialogOpen: false,
           })

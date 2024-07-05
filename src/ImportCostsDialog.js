@@ -57,7 +57,7 @@ class ImportCostsDialog extends React.Component {
         showCancelButton={true}
         onOk={this.onOk.bind(this)}
         onCancel={this.deleteCostFileThenClose.bind(this)}
-        onRequestClose={this.deleteCostFileThenClose.bind(this)}
+        onClose={this.deleteCostFileThenClose.bind(this)}
         helpLink={"user.html#importing-a-cost-surface"}
       >
         {

@@ -12,13 +12,12 @@ import Paper from "@mui/material/Paper";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ReactTable from "react-table";
 import Sync from "@mui/icons-material/Sync";
 import Tab from "@mui/material/Tab";
+import { Table } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import ToolbarButton from "./ToolbarButton";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";
-
 let runtime = 0;
 
 class ResultsPanel extends React.Component {
@@ -137,10 +136,9 @@ class ResultsPanel extends React.Component {
             display: this.props.open ? "block" : "none",
           }}
         >
-          <Paper zDepth={2} className="ResultsPanelPaper">
+          <Paper elevation={2} className="ResultsPanelPaper">
             <div className="resultsTitle">Results</div>
             <Tabs
-              contentContainerStyle={{ margin: "20px" }}
               className={"resultsTabs"}
               value={this.props.activeResultsTab}
               id="resultsTabs"
@@ -148,7 +146,7 @@ class ResultsPanel extends React.Component {
               <Tab
                 label="Legend"
                 value="legend"
-                onActive={() => this.props.setActiveTab("legend")}
+                onChange={() => this.props.setActiveTab("legend")}
               >
                 <div className={"legendTab"}>
                   <MapLegend {...this.props} brew={this.props.brew} />
@@ -157,14 +155,14 @@ class ResultsPanel extends React.Component {
               <Tab
                 label="Solutions"
                 value="solutions"
-                onActive={() => this.props.setActiveTab("solutions")}
+                onChange={() => this.props.setActiveTab("solutions")}
               >
                 <div
                   id="solutionsPanel"
                   style={{ display: !this.props.processing ? "block" : "none" }}
                 >
                   {this.props.solutions && this.props.solutions.length > 0 ? (
-                    <ReactTable
+                    <Table
                       thisRef={this}
                       getTrProps={(state, rowInfo, column, instance) => {
                         return {
@@ -227,7 +225,7 @@ class ResultsPanel extends React.Component {
               <Tab
                 label="Log"
                 value="log"
-                onActive={() => this.props.setActiveTab("log")}
+                onChange={() => this.props.setActiveTab("log")}
                 style={{
                   display:
                     this.props.userRole === "ReadOnly" ? "none" : "block",
@@ -279,7 +277,7 @@ class ResultsPanel extends React.Component {
               style={{ display: this.props.preprocessing ? "block" : "none" }}
               title="Processing.."
             >
-              <Paper zDepth={2}>
+              <Paper elevation={2}>
                 <div className="processingText"></div>
                 <Sync
                   className="spin processingSpin"

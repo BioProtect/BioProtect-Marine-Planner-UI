@@ -151,7 +151,7 @@ class ImportProjectDialog extends React.Component {
         okLabel={"Cancel"}
         actions={actions}
         onOk={this.onOk.bind(this)}
-        onRequestClose={this.onOk.bind(this)}
+        onClose={this.onOk.bind(this)}
         helpLink={"user.html#importing-marxan-dos-projects"}
       >
         {c}

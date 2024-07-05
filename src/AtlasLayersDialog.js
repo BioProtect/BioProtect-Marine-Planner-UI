@@ -89,7 +89,7 @@ class AtlasLayersDialog extends React.Component {
         // titleBarIcon={faBookOpen}
         onOk={this.closeDialog.bind(this)}
         onCancel={this.props.onCancel}
-        onRequestClose={this.props.onCancel.bind(this)}
+        onClose={this.props.onCancel.bind(this)}
         helpLink={"user.html#the-planning-grids-window"}
         bodyStyle={{ padding: "0px 24px 0px 24px" }}
         title="Atlas Layers Selection"

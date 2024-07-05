@@ -256,7 +256,7 @@ class NewProjectDialog extends React.Component {
           okLabel={"Cancel"}
           onOk={this.onOk.bind(this)}
           onCancel={this.onOk.bind(this)}
-          onRequestClose={this.onOk.bind(this)}
+          onClose={this.onOk.bind(this)}
           helpLink={"user.html#creating-new-projects"}
         >
           {c}

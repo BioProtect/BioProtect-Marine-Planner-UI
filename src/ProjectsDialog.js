@@ -308,7 +308,7 @@ class ProjectsDialog extends React.Component {
                   anchorEl={this.state.importProjectAnchor}
                   anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
                   targetOrigin={{ horizontal: "left", vertical: "top" }}
-                  onRequestClose={() =>
+                  onClose={() =>
                     this.props.updateState({ importProjectPopoverOpen: false })
                   }
                 >

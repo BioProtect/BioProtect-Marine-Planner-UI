@@ -70,7 +70,7 @@ class NewFeatureDialog extends React.Component {
         showCancelButton={true}
         contentWidth={390}
         title="Create new feature"
-        onRequestClose={this.props.onOk}
+        onClose={this.props.onOk}
         helpLink={"user.html#drawing-features-on-screen"}
       >
         {c}

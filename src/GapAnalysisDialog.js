@@ -119,7 +119,7 @@ class GapAnalysisDialog extends React.PureComponent {
         contentWidth={680}
         title="Gap Analysis"
         helpLink={"user.html#gap-analysis-window"}
-        onRequestClose={this.props.closeGapAnalysisDialog}
+        onClose={this.props.closeGapAnalysisDialog}
         showCancelButton={false}
       >
         {

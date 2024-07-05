@@ -157,8 +157,8 @@ class InfoPanel extends React.Component {
           className={"infoPanel"}
           style={{ display: this.props.open ? "block" : "none" }}
         >
-          <Paper zDepth={2} className="InfoPanelPaper">
-            <Paper zDepth={2} className="titleBar">
+          <Paper elevation={2} className="InfoPanelPaper">
+            <Paper elevation={2} className="titleBar">
               {this.props.userRole === "ReadOnly" ? (
                 <span
                   className={"projectNameEditBox"}
@@ -203,7 +203,6 @@ class InfoPanel extends React.Component {
               )}
             </Paper>
             <Tabs
-              contentContainerStyle={{ margin: "20px" }}
               className={"tabs"}
               value={this.props.activeTab}
               style={{
@@ -212,7 +211,7 @@ class InfoPanel extends React.Component {
             >
               <Tab
                 label="Project"
-                onActive={this.props.project_tab_active}
+                onChange={this.props.project_tab_active}
                 value="project"
                 disabled={this.props.puEditing ? true : false}
               >
@@ -292,7 +291,7 @@ class InfoPanel extends React.Component {
               </Tab>
               <Tab
                 label="Features"
-                onActive={this.props.features_tab_active}
+                onChange={this.props.features_tab_active}
                 value="features"
                 disabled={this.props.puEditing ? true : false}
               >
@@ -316,7 +315,7 @@ class InfoPanel extends React.Component {
               </Tab>
               <Tab
                 label="Planning units"
-                onActive={this.props.pu_tab_active}
+                onChange={this.props.pu_tab_active}
                 value="planning_units"
               >
                 <div>
@@ -461,7 +460,7 @@ class InfoPanel extends React.Component {
                 style={{ marginLeft: "194px" }}
                 onClick={this.stopProcess.bind(this)}
                 disabled={this.props.pid === 0}
-                secondary={true}
+                secondary="true"
               />
               <ToolbarButton
                 label="Run"
@@ -473,7 +472,7 @@ class InfoPanel extends React.Component {
                   this.props.features.length === 0 ||
                   this.props.puEditing
                 }
-                secondary={true}
+                secondary="true"
               />
             </Paper>
           </Paper>

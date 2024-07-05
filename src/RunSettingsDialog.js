@@ -9,8 +9,7 @@ import MarxanDialog from "./MarxanDialog";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ReactTable from "react-table";
-
+import { Table } from "@mui/material";
 class RunSettingsDialog extends React.Component {
   constructor(props) {
     super(props);
@@ -92,7 +91,7 @@ class RunSettingsDialog extends React.Component {
       >
         {
           <div style={{ height: "275px" }} key="k16">
-            <ReactTable
+            <Table
               showPagination={false}
               className={"summary_infoTable"}
               minRows={0}

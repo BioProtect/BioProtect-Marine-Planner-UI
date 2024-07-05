@@ -80,7 +80,7 @@ class ClumpingDialog extends React.Component {
     this.props.rerunProjects(this.state.blmChanged, this.state.blmValues);
     this.setState({ blmChanged: false });
   }
-  onRequestClose() {
+  onClose() {
     if (!this.props.clumpingRunning) this.props.onOk();
   }
 
@@ -92,7 +92,7 @@ class ClumpingDialog extends React.Component {
         contentWidth={680}
         offsetX={80}
         offsetY={80}
-        onOk={this.onRequestClose.bind(this)}
+        onOk={this.onClose.bind(this)}
         okDisabled={this.props.clumpingRunning}
         showCancelButton={true}
         helpLink={"user.html#clumping-window"}

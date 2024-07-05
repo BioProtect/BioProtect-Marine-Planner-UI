@@ -8,8 +8,7 @@ import MarxanDialog from "./MarxanDialog";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ReactTable from "react-table";
-
+import { Table } from "@mui/material";
 class ProjectsListDialog extends React.Component {
   renderName(row) {
     return (
@@ -71,7 +70,7 @@ class ProjectsListDialog extends React.Component {
             <React.Fragment key="k24">
               <div style={{ marginBottom: "5px" }}>{this.props.heading}</div>
               <div id="failedProjectsTable">
-                <ReactTable
+                <Table
                   pageSize={this.props.projects.length}
                   className={"projectsReactTable"}
                   showPagination={false}

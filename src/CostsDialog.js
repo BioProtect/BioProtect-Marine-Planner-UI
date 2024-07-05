@@ -57,9 +57,7 @@ class CostsDialog extends React.Component {
         bodyStyle={{ padding: "0px 24px 0px 24px" }}
         offsetY={80}
         title="Costs"
-        onRequestClose={() =>
-          this.props.updateState({ costsDialogOpen: false })
-        }
+        onClose={() => this.props.updateState({ costsDialogOpen: false })}
         helpLink={"user.html#importing-a-cost-surface"}
       >
         {
@@ -97,7 +95,7 @@ class CostsDialog extends React.Component {
             />
             <div id="costsToolbar">
               <ToolbarButton
-                show={this.props.userRole !== "ReadOnly"}
+                show={(this.props.userRole !== "ReadOnly").toString()}
                 icon={<Import style={{ height: "20px", width: "20px" }} />}
                 title="Upload a new costs file"
                 disabled={this.props.loading}
@@ -107,11 +105,9 @@ class CostsDialog extends React.Component {
                 label={"Import"}
               />
               <ToolbarButton
-                show={
-                  !this.props.unauthorisedMethods.includes(
-                    "deletePlanningUnitGrid"
-                  )
-                }
+                show={(!this.props.unauthorisedMethods.includes(
+                  "deletePlanningUnitGrid"
+                )).toString()}
                 icon={
                   <FontAwesomeIcon
                     icon={faTrashAlt}
