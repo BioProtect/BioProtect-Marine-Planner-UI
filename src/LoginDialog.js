@@ -56,10 +56,6 @@ const LoginDialog = (props) => {
   const cancelDisabled =
     !marxanServer || marxanServer.offline || !marxanServer.corsEnabled;
 
-  // useEffect(() => {
-  //   onOk();
-  // }, [user, password]);
-
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -95,7 +91,7 @@ const LoginDialog = (props) => {
         onSubmit={handleSubmit}
         noValidate
         sx={{ mt: 1 }}
-        showOverlay={true}
+        // showOverlay={true}
         okDisabled={okDisabled}
         okLabel={okLabel}
         showCancelButton={true}

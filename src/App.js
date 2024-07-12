@@ -260,9 +260,9 @@ class App extends React.Component {
       fetch(CONSTANTS.MARXAN_REGISTRY).then((response) => {
         response.json().then((registryData) => {
           this.setState({ registry: registryData });
-          mapboxgl.accessToken = registryData.MBAT_PUBLIC; //this is my public access token
-          // mapboxgl.accessToken =
-          //   "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg"; //this is my public access token
+          // mapboxgl.accessToken = registryData.MBAT_PUBLIC; //this is my public access token
+          mapboxgl.accessToken =
+            "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg"; //this is my public access token
           //initialise the basemaps
           this.setState({ basemaps: registryData.MAPBOX_BASEMAPS });
           //get all the information for the marxan servers by polling them
@@ -875,6 +875,11 @@ class App extends React.Component {
             //get all features
             this.getAllFeatures().then(() => {
               //get the users last project and load it
+              console.log(
+                "response.userData.LASTPROJECT this.state.user ",
+                response.userData.LASTPROJECT,
+                this.state.user
+              );
               this.loadProject(
                 response.userData.LASTPROJECT,
                 this.state.user
@@ -1289,12 +1294,14 @@ class App extends React.Component {
 
   //loads a project
   loadProject(project, user) {
+    console.log("user ", user);
+    console.log("project ", project);
     return new Promise((resolve, reject) => {
       //reset the results from any previous projects
       this.resetResults();
       this._get("getProject?user=" + user + "&project=" + project)
         .then((response) => {
-          //set the state for the app based on the data that is returned from the server
+          // set the state for the app based on the data that is returned from the server
           this.setState({
             loggedIn: true,
             project: response.project,
@@ -1308,6 +1315,10 @@ class App extends React.Component {
             infoPanelOpen: true,
             resultsPanelOpen: true,
           });
+          // this.loadProjectUpdateState(response, user);
+          // *********
+          // - this function does exist. Was i trying to change state here?
+
           //if there is a PLANNING_UNIT_NAME passed then change to this planning grid and load the results if there are any available
           if (response.metadata.PLANNING_UNIT_NAME) {
             this.changePlanningGrid(
@@ -1338,11 +1349,15 @@ class App extends React.Component {
           this.project_tab_active();
         })
         .catch((error) => {
-          if (error.indexOf("Logged on as read-only guest user") > -1) {
+          console.log("error ", error);
+
+          if (
+            error.toString().indexOf("Logged on as read-only guest user") > -1
+          ) {
             this.setState({ loggedIn: true });
             resolve("No project loaded - logged on as read-only guest user'");
           }
-          if (error.indexOf("does not exist") > -1) {
+          if (error.toString().indexOf("does not exist") > -1) {
             //probably the last loaded project has been deleted - send some feedback and load another project
             this.setSnackBar("Loading first available project");
             //passing an empty project to loadProject will load the first project
@@ -2754,7 +2769,7 @@ class App extends React.Component {
 
   //sets the basemap either on project load, or if the user changes it
   setBasemap(basemap) {
-    console.log("setBasemap ");
+    console.log("setBasemap ", basemap);
     return new Promise((resolve, reject) => {
       //change the state
       this.setState({ basemap: basemap.name });
@@ -5550,14 +5565,21 @@ class App extends React.Component {
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
   getPlanningUnitsCostData(forceReload) {
+    let owner = this.state.owner === "" ? this.state.user : this.state.owner;
+    console.log("this.state.user ", this.state.user);
+    console.log("this.state.owner ", this.state.owner);
     return new Promise((resolve, reject) => {
       //if the cost data has already been loaded
       if (this.cost_data && !forceReload) {
         resolve(this.cost_data);
       } else {
+        console.log(
+          "getPlanningUnitsCostData --------------------------------------------------- line 5569"
+        );
+        console.log("this.state ", this.state);
         this._get(
           "getPlanningUnitsCostData?user=" +
-            this.state.owner +
+            owner +
             "&project=" +
             this.state.project
         )

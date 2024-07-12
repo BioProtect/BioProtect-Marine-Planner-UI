@@ -54,8 +54,8 @@ class PlanningUnitsDialog extends React.Component {
                 labelStyle={{ fontSize: "12px" }}
                 selectedValue={this.props.pu}
                 map={this.state.map}
-                mapboxUser={"blishten"}
-                // mapboxUser={"craicerjack"}
+                // mapboxUser={"blishten"}
+                mapboxUser={"craicerjack"}
                 items={this.props.planning_unit_grids}
                 changeItem={this.props.changeItem}
                 disabled={!this.state.planning_unit_grids_received}

@@ -59,24 +59,21 @@ var FEATURE_PROPERTIES_CORE = [
   {
     name: "spf",
     key: "Species Penalty Factor",
-    hint:
-      "The species penalty factor is used to weight the likelihood of getting a species in the results",
+    hint: "The species penalty factor is used to weight the likelihood of getting a species in the results",
     showForOld: true,
     showForNew: true,
   },
   {
     name: "preprocessed",
     key: "Preprocessed",
-    hint:
-      "Whether or not the feature has been intersected with the planning units",
+    hint: "Whether or not the feature has been intersected with the planning units",
     showForOld: false,
     showForNew: true,
   },
   {
     name: "pu_count",
     key: "Planning unit count",
-    hint:
-      "The number of planning units that intersect the feature (calculated during pre-processing)",
+    hint: "The number of planning units that intersect the feature (calculated during pre-processing)",
     showForOld: true,
     showForNew: true,
   },
@@ -89,8 +86,8 @@ module.exports = Object.freeze({
   SEND_CREDENTIALS: true, //if true all post requests will send credentials
   TORNADO_PATH: "/marxan-server/",
   TIMEOUT: 0, //disable timeout setting
-  MAPBOX_USER: "blishten",
-  // MAPBOX_USER: "craicerjack",
+  // MAPBOX_USER: "blishten",
+  MAPBOX_USER: "craicerjack",
   MAPBOX_STYLE_PREFIX: "mapbox://styles/",
   PLANNING_UNIT_STATUSES: [1, 2, 3],
   IUCN_CATEGORIES: [
@@ -169,24 +166,21 @@ module.exports = Object.freeze({
     {
       name: "pu_area",
       key: "Planning grid area",
-      hint:
-        "The area of the feature within the planning grid in Km2 (calculated during pre-processing)",
+      hint: "The area of the feature within the planning grid in Km2 (calculated during pre-processing)",
       showForOld: true,
       showForNew: true,
     },
     {
       name: "target_area",
       key: "Target area",
-      hint:
-        "The total area that needs to be protected to achieve the target percentage in Km2 (calculated during a Marxan Run)",
+      hint: "The total area that needs to be protected to achieve the target percentage in Km2 (calculated during a Marxan Run)",
       showForOld: true,
       showForNew: true,
     },
     {
       name: "protected_area",
       key: "Area protected",
-      hint:
-        "The total area protected in the current solution in Km2 (calculated during a Marxan Run)",
+      hint: "The total area protected in the current solution in Km2 (calculated during a Marxan Run)",
       showForOld: true,
       showForNew: true,
     },
@@ -202,24 +196,21 @@ module.exports = Object.freeze({
     {
       name: "pu_area",
       key: "Planning grid amount",
-      hint:
-        "The total amount of the feature within the planning grid (calculated during pre-processing)",
+      hint: "The total amount of the feature within the planning grid (calculated during pre-processing)",
       showForOld: true,
       showForNew: true,
     },
     {
       name: "target_area",
       key: "Target amount",
-      hint:
-        "The amount that needs to be protected to achieve the target percentage (calculated during a Marxan Run)",
+      hint: "The amount that needs to be protected to achieve the target percentage (calculated during a Marxan Run)",
       showForOld: true,
       showForNew: true,
     },
     {
       name: "protected_area",
       key: "Protected amount",
-      hint:
-        "The amount protected in the current solution (calculated during a Marxan Run)",
+      hint: "The amount protected in the current solution (calculated during a Marxan Run)",
       showForOld: true,
       showForNew: true,
     },
