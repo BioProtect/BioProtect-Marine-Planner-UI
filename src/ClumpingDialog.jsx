@@ -1,5 +1,5 @@
 import CONSTANTS from "./constants";
-import MapContainer from "./MapContainer.js";
+import MapContainer from "./MapContainer";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
 /*

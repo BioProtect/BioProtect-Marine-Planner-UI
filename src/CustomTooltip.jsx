@@ -7,7 +7,8 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
-import { getArea } from "./Helpers.js";
+
+import { getArea } from "./Helpers";
 
 class CustomTooltip extends React.PureComponent {
   render() {

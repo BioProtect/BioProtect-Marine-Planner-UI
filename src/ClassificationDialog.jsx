@@ -9,7 +9,7 @@ import {
   YAxis,
 } from "recharts";
 
-import ColorSelector from "./ColorSelector.js";
+import ColorSelector from "./ColorSelector";
 import MarxanDialog from "./MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
@@ -20,7 +20,7 @@ import MarxanDialog from "./MarxanDialog";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import RendererSelector from "./RendererSelector.js";
+import RendererSelector from "./RendererSelector";
 
 let RENDERERS = ["equal_interval", "jenks", "std_deviation", "quantile"];
 let COLORCODES = [

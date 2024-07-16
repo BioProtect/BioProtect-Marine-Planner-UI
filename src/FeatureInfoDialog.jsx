@@ -1,4 +1,4 @@
-import { getArea, isNumber, isValidTargetValue } from "./Helpers.js";
+import { getArea, isNumber, isValidTargetValue } from "./Helpers";
 
 import CONSTANTS from "./constants";
 import MarxanDialog from "./MarxanDialog";

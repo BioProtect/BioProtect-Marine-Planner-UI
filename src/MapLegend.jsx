@@ -7,9 +7,10 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import CONSTANTS from "./constants";
-import { getMaxNumberOfClasses } from "./Helpers.js";
 import LayerLegend from "./LayerLegend";
+import { getMaxNumberOfClasses } from "./Helpers";
 
 class MapLegend extends React.Component {
   //gets the summed solutions legend item

@@ -1,7 +1,7 @@
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-import { getMaxNumberOfClasses, zoomToBounds } from "./Helpers.js";
+import { getMaxNumberOfClasses, zoomToBounds } from "./Helpers";
 
 import AboutDialog from "./AboutDialog";
 import AddToMap from "@mui/icons-material/Visibility";
@@ -20,7 +20,7 @@ import FeatureInfoDialog from "./FeatureInfoDialog";
 import FeaturesDialog from "./FeaturesDialog";
 import GapAnalysisDialog from "./GapAnalysisDialog";
 import HelpMenu from "./HelpMenu";
-import HomeButton from "./HomeButton.js";
+import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import IdentifyPopup from "./IdentifyPopup";
 import ImportCostsDialog from "./ImportCostsDialog";
@@ -32,13 +32,13 @@ import ImportPlanningGridDialog from "./ImportPlanningGridDialog";
 import ImportProjectDialog from "./ImportProjectDialog";
 import InfoPanel from "./InfoPanel";
 import LoadingDialog from "./LoadingDialog";
-import LoginDialog from "./LoginDialog.js";
+import LoginDialog from "./LoginDialog";
 //mapbox imports
-import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js";
+import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw";
 import Menu from "@mui/material/Menu";
 import MenuItemWithButton from "./MenuItemWithButton";
 import NewFeatureDialog from "./NewFeatureDialog";
-import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog.js";
+import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog";
 import NewPlanningGridDialog from "./NewPlanningGridDialog";
 import NewProjectDialog from "./NewProjectDialog";
 import NewProjectWizardDialog from "./NewProjectWizardDialog";
@@ -63,10 +63,10 @@ import Properties from "@mui/icons-material/ErrorOutline";
 /*global URLSearchParams*/
 /*global AbortController*/
 import React from "react";
-import RegisterDialog from "./RegisterDialog.js";
+import RegisterDialog from "./RegisterDialog";
 import RemoveFromMap from "@mui/icons-material/VisibilityOff";
 import RemoveFromProject from "@mui/icons-material/Remove";
-import ResendPasswordDialog from "./ResendPasswordDialog.js";
+import ResendPasswordDialog from "./ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./ResultsPanel";
 import RunCumuluativeImpactDialog from "./Impacts/RunCumuluativeImpactDialog";
@@ -83,7 +83,7 @@ import UpdateWDPADialog from "./UpdateWDPADialog";
 import UserMenu from "./UserMenu";
 import UserSettingsDialog from "./UserSettingsDialog";
 import UsersDialog from "./UsersDialog";
-import Welcome from "./Welcome.js";
+import Welcome from "./Welcome";
 import ZoomIn from "@mui/icons-material/ZoomIn";
 /*eslint-disable no-unused-vars*/
 import axios from "axios";

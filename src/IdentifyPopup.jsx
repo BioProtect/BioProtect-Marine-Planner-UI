@@ -13,7 +13,7 @@ import Sync from "@mui/icons-material/Sync";
 import Tab from "@mui/material/Tab";
 import { Table } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
-import { getArea } from "./Helpers.js";
+import { getArea } from "./Helpers";
 const TITLE_LINK = "Click to open in the Protected Planet website";
 const URL_PP = "https://www.protectedplanet.net/";
 const TAB_STYLE = {

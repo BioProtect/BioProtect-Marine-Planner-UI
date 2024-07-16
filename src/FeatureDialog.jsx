@@ -10,7 +10,7 @@ import MarxanDialog from "./MarxanDialog";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import { getArea } from "./Helpers.js";
+import { getArea } from "./Helpers";
 
 class FeatureDialog extends React.Component {
   constructor(props) {

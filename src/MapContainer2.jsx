@@ -7,8 +7,9 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import mapboxgl from "mapbox-gl";
-import { zoomToBounds } from "./Helpers.js";
+import { zoomToBounds } from "./Helpers";
 //TODO: Combine this with MapContainer.js as they do similar things
 class MapContainer2 extends React.Component {
   componentDidMount() {

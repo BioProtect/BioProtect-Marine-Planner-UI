@@ -10,7 +10,7 @@ import * as React from "react";
 
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
-import { isValidTargetValue } from "./Helpers.js";
+import { isValidTargetValue } from "./Helpers";
 
 class TargetDialog extends React.PureComponent {
   constructor(props) {

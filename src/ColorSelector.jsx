@@ -9,7 +9,7 @@ import MenuItem from "@mui/material/MenuItem";
  */
 import React from "react";
 import Select from "@mui/material/Select";
-import { getMaxNumberOfClasses } from "./Helpers.js";
+import { getMaxNumberOfClasses } from "./Helpers";
 
 class ColorSelector extends React.Component {
   handleChange(event, index, value) {
