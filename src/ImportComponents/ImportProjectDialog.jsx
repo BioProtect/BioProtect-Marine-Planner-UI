@@ -1,5 +1,5 @@
-import MarxanDialog from "./MarxanDialog";
-import Metadata from "./Metadata";
+import MarxanDialog from "../MarxanDialog";
+import Metadata from "../Metadata";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -9,8 +9,8 @@ import Metadata from "./Metadata";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ToolbarButton from "./ToolbarButton";
-import UploadMarxanFiles from "./UploadMarxanFiles";
+import ToolbarButton from "../ToolbarButton";
+import UploadMarxanFiles from "../UploadMarxanFiles";
 
 //some of the code in this component should be moved up to app.js like the POSTs but I have limited time
 

@@ -1,5 +1,5 @@
-import FileUpload from "./FileUpload.js";
-import MarxanDialog from "./MarxanDialog";
+import FileUpload from "../FileUpload";
+import MarxanDialog from "../MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *

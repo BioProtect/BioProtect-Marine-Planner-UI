@@ -2,7 +2,7 @@ import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "./MarxanDialog";
-import Notification from "./Notification.js";
+import Notification from "./Notification";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *

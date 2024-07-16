@@ -79,7 +79,7 @@ var FEATURE_PROPERTIES_CORE = [
   },
 ];
 //application level global constants
-module.exports = Object.freeze({
+const CONSTANTS = {
   MARXAN_REGISTRY: "https://marxanweb.github.io/general/registry/marxan.json", //url to the marxan registry
   DOCS_ROOT: "https://docs.marxanweb.org/",
   ERRORS_PAGE: "https://docs.marxanweb.org/errors.html",
@@ -215,4 +215,6 @@ module.exports = Object.freeze({
       showForNew: true,
     },
   ]),
-});
+};
+Object.freeze(CONSTANTS);
+export default CONSTANTS;

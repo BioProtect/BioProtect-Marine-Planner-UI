@@ -11,11 +11,11 @@
 import * as React from "react";
 
 import Checkbox from "@mui/material/Checkbox";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTextField from "../MarxanTextField";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import ToolbarButton from "./ToolbarButton";
+import ToolbarButton from "../ToolbarButton";
 
 let INITIAL_STATE = {
   steps: ["type", "endpoint", "layer", "metadata"],

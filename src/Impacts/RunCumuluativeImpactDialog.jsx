@@ -10,7 +10,7 @@ import MarxanTable from "../MarxanTable";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import TableRow from "../TableRow.js";
+import TableRow from "../TableRow";
 import ToolbarButton from "../ToolbarButton";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 

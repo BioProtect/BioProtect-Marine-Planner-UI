@@ -1,8 +1,3 @@
-import CONSTANTS from "./constants";
-import Checkbox from "@mui/material/Checkbox";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import MenuItem from "@mui/material/MenuItem";
-import Paper from "@mui/material/Paper";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -11,475 +6,584 @@ import Paper from "@mui/material/Paper";
  *
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+
+import Button from "@mui/material/Button";
+import CONSTANTS from "./constants";
+import Checkbox from "@mui/material/Checkbox";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
 import SelectFeatures from "./SelectFeatures";
 import Settings from "@mui/icons-material/Settings";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { TextareaAutosize } from "@mui/base/TextareaAutosize";
-import ToolbarButton from "./ToolbarButton";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";
 import { faLock } from "@fortawesome/free-solid-svg-icons";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { faShareAlt } from "@fortawesome/free-solid-svg-icons";
 
-// import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+const activeTabArr = ["project", "features", "planning_units"];
 
-class InfoPanel extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      editingProjectName: false,
-      editingDescription: false,
-      showPlanningGrid: true,
-      showProtectedAreas: false,
-      showCosts: false,
-      showStatuses: true,
-    };
-  }
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    //if the input box for renaming the project has been made visible and it has no value, then initialise it with the project name and focus it
-    if (
-      prevState.editingProjectName === false &&
-      this.state.editingProjectName
-    ) {
-      document.getElementById("projectName").value = this.props.project;
-      document.getElementById("projectName").focus();
-    }
-    //if the input box for renaming the description has been made visible and it has no value, then initialise it with the description and focus it
-    if (
-      prevState.editingDescription === false &&
-      this.state.editingDescription
-    ) {
-      document.getElementById("descriptionEdit").value =
-        this.props.metadata.DESCRIPTION;
-      document.getElementById("descriptionEdit").focus();
-    }
-  }
+const InfoPanel = (props) => {
+  const [editingProjectName, setEditingProjectName] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [showPlanningGrid, setShowPlanningGrid] = useState(true);
+  const [showProtectedAreas, setShowProtectedAreas] = useState(false);
+  const [showCosts, setShowCosts] = useState(false);
+  const [showStatuses, setShowStatuses] = useState(true);
+  const [currentTabIndex, setCurrentTabIndex] = useState(
+    activeTabArr.indexOf(props.activeTab) || 0
+  );
 
-  onKeyPress(e) {
+  const projectNameRef = useRef(null);
+  const descriptionEditRef = useRef(null);
+
+  useEffect(() => {
+    if (editingProjectName && projectNameRef.current) {
+      projectNameRef.current.value = props.project;
+      projectNameRef.current.focus();
+    }
+
+    if (editingDescription && descriptionEditRef.current) {
+      descriptionEditRef.current.value = props.metadata.DESCRIPTION;
+      descriptionEditRef.current.focus();
+    }
+  }, [
+    editingProjectName,
+    editingDescription,
+    props.project,
+    props.metadata.DESCRIPTION,
+  ]);
+
+  const handleKeyPress = (e) => {
     if (e.nativeEvent.keyCode === 13 || e.nativeEvent.keyCode === 27) {
-      document.getElementById(e.nativeEvent.target.id).blur(); //call the onBlur event which will call the REST service to rename the project
+      e.target.blur(); // call the onBlur event which will call the REST service to rename the project
     }
-  }
+  };
 
-  onBlur(e) {
-    if (e.nativeEvent.target.id === "projectName") {
-      this.props.renameProject(e.target.value).then(() => {
-        this.setState({ editingProjectName: false });
+  const handleBlur = (e) => {
+    if (e.target.id === "projectName") {
+      props.renameProject(e.target.value).then(() => {
+        setEditingProjectName(false);
       });
     } else {
-      this.props.renameDescription(e.target.value).then(() => {
-        this.setState({ editingDescription: false });
+      props.renameDescription(e.target.value).then(() => {
+        setEditingDescription(false);
       });
     }
-  }
+  };
 
-  startEditingProjectName() {
-    if (this.props.project) {
-      //a project may not be loaded
-      this.setState({ editingProjectName: true });
+  const startEditingProjectName = () => {
+    if (props.project) {
+      setEditingProjectName(true);
     }
-  }
-  startEditingDescription() {
-    if (this.props.project) {
-      //a project may not be loaded
-      this.setState({ editingDescription: true });
+  };
+
+  const startEditingDescription = () => {
+    if (props.project) {
+      setEditingDescription(true);
     }
-  }
-  startStopPuEditSession(evt) {
-    this.props.puEditing ? this.stopPuEditSession() : this.startPuEditSession();
-  }
-  startPuEditSession() {
-    this.setState({ puEditing: true });
-    this.props.startPuEditSession();
-  }
+  };
 
-  stopPuEditSession() {
-    this.setState({ puEditing: false });
-    this.props.stopPuEditSession();
-  }
+  const startStopPuEditSession = () =>
+    props.puEditing ? stopPuEditSession() : startPuEditSession();
 
-  changeIucnCategory(event, key, payload) {
-    this.props.changeIucnCategory(CONSTANTS.IUCN_CATEGORIES[key]);
-  }
-  changeCostname(event, key, payload) {
-    //get the costname
-    let costname = this.costnames[key];
+  const startPuEditSession = () => {
+    setShowPlanningGrid(true);
+    props.startPuEditSession();
+  };
+
+  const stopPuEditSession = () => {
+    setShowPlanningGrid(false);
+    props.stopPuEditSession();
+  };
+
+  const changeIucnCategory = (event) =>
+    props.changeIucnCategory(CONSTANTS.IUCN_CATEGORIES[event.target.value]);
+
+  const changeCostname = (event) => {
+    const costname = costnames[event.target.value];
     if (costname === "Custom..") {
-      this.props.openCostsDialog();
+      props.openCostsDialog();
     } else {
-      //update the cost profile on the server
-      this.props.changeCostname(costname).then((_) => {
-        //load the costs
-        this.props.loadCostsLayer(true);
+      props.changeCostname(costname).then(() => {
+        props.loadCostsLayer(true);
       });
     }
-  }
-  toggleProjectPrivacy(evt, isInputChecked) {
-    let checkedString = isInputChecked ? "True" : "False";
-    this.props.toggleProjectPrivacy(checkedString);
-  }
-  stopProcess() {
-    this.props.stopProcess(this.props.pid);
-  }
-  togglePlanningUnits(event, isInputChecked) {
-    //toggles the visibility of the planning grid
-    this.setState({ showPlanningGrid: !this.state.showPlanningGrid });
-    this.props.togglePULayer(isInputChecked);
-  }
-  toggleProtectedAreas(event, isInputChecked) {
-    //toggles the visibility of the protected areas
-    this.setState({ showProtectedAreas: !this.state.showProtectedAreas });
-    this.props.togglePALayer(isInputChecked);
-  }
-  toggleCosts(event, isInputChecked) {
-    //toggles the visibility of the costs
-    this.setState({ showCosts: !this.state.showCosts });
-    this.props.toggleCostsLayer(isInputChecked);
-  }
-  toggleStatuses(event, isInputChecked) {
-    //toggles the visibility of the statuses
-    this.setState({ showStatuses: !this.state.showStatuses });
-    this.props.toggleStatuses(isInputChecked);
-  }
-  render() {
-    this.costnames = [];
-    //add a custom item to the end of the cost profiles
-    if (this.props.costnames) {
-      this.costnames = this.props.costnames.slice();
-      this.costnames.push("Custom..");
-    }
-    return (
-      <React.Fragment>
-        <div
-          className={"infoPanel"}
-          style={{ display: this.props.open ? "block" : "none" }}
-        >
-          <Paper elevation={2} className="InfoPanelPaper">
-            <Paper elevation={2} className="titleBar">
-              {this.props.userRole === "ReadOnly" ? (
-                <span
-                  className={"projectNameEditBox"}
-                  title={this.props.project + " (Read-only)"}
-                >
-                  <FontAwesomeIcon
-                    style={{
-                      color: "white",
-                      height: "16px",
-                      marginTop: "4px",
-                      marginBottom: "2px",
-                      marginRight: "5px",
-                    }}
-                    icon={faLock}
-                  />
-                  {this.props.project}
-                </span>
-              ) : (
-                <span
-                  onClick={this.startEditingProjectName.bind(this)}
-                  className={"projectNameEditBox"}
-                  title="Click to rename the project"
-                >
-                  {this.props.project}
-                </span>
-              )}
-              {this.props.userRole === "ReadOnly" ? null : (
-                <input
-                  id="projectName"
-                  style={{
-                    position: "absolute",
-                    display: this.state.editingProjectName ? "block" : "none",
-                    left: "39px",
-                    top: "32px",
-                    width: "365px",
-                    border: "1px lightgray solid",
-                  }}
-                  className={"projectNameEditBox"}
-                  onKeyPress={this.onKeyPress.bind(this)}
-                  onBlur={this.onBlur.bind(this)}
-                />
-              )}
-            </Paper>
-            <Tabs
-              className={"tabs"}
-              value={this.props.activeTab}
-              style={{
-                backgroundColor: this.state.puEditing ? "#eee" : "unset",
-              }}
-            >
-              <Tab
-                label="Project"
-                onChange={this.props.project_tab_active}
-                value="project"
-                disabled={this.props.puEditing ? true : false}
-              >
-                <div>
-                  <div className={"tabTitle"}>Description</div>
-                  {this.props.userRole === "ReadOnly" ? null : (
-                    <TextareaAutosize
-                      minRows={5}
-                      id="descriptionEdit"
-                      style={{
-                        display: this.state.editingDescription
-                          ? "block"
-                          : "none",
-                      }}
-                      className={"descriptionEditBox"}
-                      onKeyPress={this.onKeyPress.bind(this)}
-                      onBlur={this.onBlur.bind(this)}
-                    />
-                  )}
-                  {this.props.userRole === "ReadOnly" ? (
-                    <div
-                      className={"description"}
-                      title={this.props.metadata.DESCRIPTION}
-                      dangerouslySetInnerHTML={{
-                        __html: this.props.metadata.DESCRIPTION,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      className={"description"}
-                      onClick={this.startEditingDescription.bind(this)}
-                      style={{
-                        display: !this.state.editingDescription
-                          ? "block"
-                          : "none",
-                      }}
-                      title="Click to edit"
-                      dangerouslySetInnerHTML={{
-                        __html: this.props.metadata.DESCRIPTION,
-                      }}
-                    />
-                  )}
-                  <div className={"tabTitle tabTitleTopMargin"}>Created</div>
-                  <div className={"createDate"}>
-                    {this.props.metadata.CREATEDATE}
-                  </div>
-                  <div
-                    style={{
-                      display:
-                        this.props.user !== this.props.owner ? "block" : "none",
-                    }}
-                  >
-                    <div className={"tabTitle tabTitleTopMargin"}>
-                      Created by
-                    </div>
-                    <div className={"createDate"}>{this.props.owner}</div>
-                  </div>
-                  <div className={"tabTitle tabTitleTopMargin"}>
-                    {this.props.metadata.OLDVERSION ? "Imported project" : ""}
-                  </div>
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "413px",
-                      display:
-                        this.props.userRole === "ReadOnly" ? "none" : "block",
-                    }}
-                  >
-                    <Checkbox
-                      label="Private"
-                      style={{ fontSize: "12px" }}
-                      checked={this.props.metadata.PRIVATE}
-                      onCheck={this.toggleProjectPrivacy.bind(this)}
-                    />
-                  </div>
-                </div>
-              </Tab>
-              <Tab
-                label="Features"
-                onChange={this.props.features_tab_active}
-                value="features"
-                disabled={this.props.puEditing ? true : false}
-              >
-                <SelectFeatures
-                  features={this.props.features}
-                  openFeatureMenu={this.props.openFeatureMenu}
-                  openFeaturesDialog={this.props.openFeaturesDialog}
-                  metadata={this.props.metadata}
-                  updateFeature={this.props.updateFeature}
-                  leftmargin={"10px"}
-                  maxheight={"409px"}
-                  simple={false}
-                  showTargetButton={true}
-                  openTargetDialog={this.props.openTargetDialog}
-                  userRole={this.props.userRole}
-                  toggleFeatureLayer={this.props.toggleFeatureLayer}
-                  toggleFeaturePUIDLayer={this.props.toggleFeaturePUIDLayer}
-                  useFeatureColors={this.props.useFeatureColors}
-                  smallLinearGauge={this.props.smallLinearGauge}
-                />
-              </Tab>
-              <Tab
-                label="Planning units"
-                onChange={this.props.pu_tab_active}
-                value="planning_units"
-              >
-                <div>
-                  <div>
-                    <div className={"tabTitle tabTitleInlineBlock"}>
-                      Planning Grid
-                    </div>
-                  </div>
-                  <div className={"description"}>
-                    {this.props.metadata.pu_alias}
-                  </div>
-                  <div>
-                    <div className={"tabTitle tabTitleTopMargin"}>Statuses</div>
-                  </div>
-                  <div
-                    style={{
-                      display:
-                        this.props.userRole === "ReadOnly" ? "none" : "block",
-                    }}
-                  >
-                    <div className={"puManualEditContainer"}>
-                      <FontAwesomeIcon
-                        icon={this.props.puEditing ? faSave : faLock}
-                        onClick={this.startStopPuEditSession.bind(this)}
-                        title={this.props.puEditing ? "Save" : "Manually edit"}
-                        style={{
-                          cursor: "pointer",
-                          marginLeft: "3px",
-                          marginRight: "10px",
-                          color: "rgba(255, 64, 129, 0.7)",
-                        }}
-                      />
-                      <div
-                        style={{
-                          display: this.props.puEditing
-                            ? "inline-block"
-                            : "none",
-                        }}
-                        className={"puManualEditClear"}
-                      >
-                        <FontAwesomeIcon
-                          icon={faEraser}
-                          onClick={this.props.clearManualEdits.bind(this)}
-                          title={"Clear all manual edits"}
-                          style={{
-                            cursor: "pointer",
-                            color: "rgba(255, 64, 129, 0.7)",
-                          }}
-                        />
-                      </div>
-                      <div
-                        className={"description"}
-                        style={{
-                          display: "inline-block",
-                          fontSize: "12px",
-                          paddingLeft: "7px",
-                        }}
-                      >
-                        {this.props.puEditing
-                          ? "Click on the map to change the status"
-                          : "Manually edit"}
-                      </div>
-                    </div>
-                  </div>
-                  <Select
-                    floatingLabelText={"Lock in protected areas"}
-                    floatingLabelFixed={true}
-                    underlineShow={false}
-                    disabled={
-                      this.props.preprocessing ||
-                      this.props.userRole === "ReadOnly"
-                    }
-                    menuItemStyle={{ fontSize: "12px" }}
-                    labelStyle={{ fontSize: "12px" }}
-                    style={{ marginTop: "-14px", width: "180px" }}
-                    value={this.props.metadata.IUCN_CATEGORY}
-                    onChange={this.changeIucnCategory.bind(this)}
-                  >
-                    {CONSTANTS.IUCN_CATEGORIES.map((item) => {
-                      return (
-                        <MenuItem
-                          value={item}
-                          key={item}
-                          primaryText={item}
-                          style={{ fontSize: "12px" }}
-                        />
-                      );
-                    })}
-                  </Select>
+  };
 
-                  {/*<FontAwesomeIcon icon={faExclamationTriangle} style={{color:'red', display:(this.props.metadata.IUCN_CATEGORY!=='None' && this.props.protected_area_intersections && this.props.protected_area_intersections.length===0) ? 'inline' : 'none', position:'absolute'}} title={'Protected areas have been updated since you locked these ones in'}/>*/}
-                  <div>
-                    <div className={"tabTitle"}>Costs</div>
-                  </div>
-                  <Select
-                    floatingLabelText={"Use cost surface"}
-                    floatingLabelFixed={true}
-                    underlineShow={false}
-                    disabled={
-                      this.props.preprocessing ||
-                      this.props.userRole === "ReadOnly"
-                    }
-                    menuItemStyle={{ fontSize: "12px" }}
-                    labelStyle={{ fontSize: "12px" }}
-                    style={{ marginTop: "-14px", width: "230px" }}
-                    value={this.props.costname}
-                    onChange={this.changeCostname.bind(this)}
-                  >
-                    {this.costnames.map((item) => {
-                      return (
-                        <MenuItem
-                          value={item}
-                          key={item}
-                          primaryText={item}
-                          style={{ fontSize: "12px" }}
-                        />
-                      );
-                    })}
-                  </Select>
-                </div>
-              </Tab>
-            </Tabs>
-            <Paper className={"lowerToolbar"}>
-              <ToolbarButton
-                icon={<FontAwesomeIcon icon={faShareAlt} />}
-                title={"Get a shareable link to this project"}
-                onClick={this.props.getShareableLink}
-                show={this.props.marxanServer.type === "remote"}
+  const toggleProjectPrivacy = (evt, isInputChecked) => {
+    const checkedString = isInputChecked ? "True" : "False";
+    props.toggleProjectPrivacy(checkedString);
+  };
+
+  const stopProcess = () => props.stopProcess(props.pid);
+
+  const togglePlanningUnits = (event, isInputChecked) => {
+    setShowPlanningGrid(!showPlanningGrid);
+    props.togglePULayer(isInputChecked);
+  };
+
+  const toggleProtectedAreas = (event, isInputChecked) => {
+    setShowProtectedAreas(!showProtectedAreas);
+    props.togglePALayer(isInputChecked);
+  };
+
+  const toggleCosts = (event, isInputChecked) => {
+    setShowCosts(!showCosts);
+    props.toggleCostsLayer(isInputChecked);
+  };
+
+  const toggleStatuses = (event, isInputChecked) => {
+    setShowStatuses(!showStatuses);
+    props.toggleStatuses(isInputChecked);
+  };
+
+  const handleTabChange = (evt, tabIndex) => {
+    setCurrentTabIndex(tabIndex);
+    if (tabIndex === 0) {
+      props.project_tab_active;
+    }
+    if (tabIndex === 1) {
+      props.features_tab_active;
+    }
+    if (tabIndex === 2) {
+      props.pu_tab_active;
+    }
+  };
+
+  let costnames = props.costnames ? [...props.costnames, "Custom.."] : [];
+
+  return (
+    <React.Fragment>
+      <div
+        className={"infoPanel"}
+        style={{ top: "60px", display: props.open ? "block" : "none" }}
+      >
+        <Paper elevation={2} className="InfoPanelPaper">
+          <Paper elevation={2} className="titleBar">
+            {props.userRole === "ReadOnly" ? (
+              <span
+                className={"projectNameEditBox"}
+                title={props.project + " (Read-only)"}
+              >
+                <FontAwesomeIcon
+                  style={{
+                    color: "white",
+                    height: "16px",
+                    marginTop: "4px",
+                    marginBottom: "2px",
+                    marginRight: "5px",
+                  }}
+                  icon={faLock}
+                />
+                {props.project}
+              </span>
+            ) : (
+              <span
+                onClick={startEditingProjectName}
+                className={"projectNameEditBox"}
+                title="Click to rename the project"
+              >
+                {props.project}
+              </span>
+            )}
+            {props.userRole === "ReadOnly" ? null : (
+              <input
+                id="projectName"
+                ref={projectNameRef}
+                style={{
+                  position: "absolute",
+                  display: editingProjectName ? "block" : "none",
+                  left: "39px",
+                  top: "32px",
+                  width: "365px",
+                  border: "1px lightgray solid",
+                }}
+                className={"projectNameEditBox"}
+                onKeyPress={handleKeyPress}
+                onBlur={handleBlur}
               />
-              <ToolbarButton
-                icon={<Settings style={{ height: "20px", width: "20px" }} />}
-                title="Run Settings"
-                onClick={() =>
-                  this.props.updateState({ settingsDialogOpen: true })
-                }
-              />
-              <div className="toolbarSpacer" />
-              <ToolbarButton
-                label="Stop"
-                title="Click to stop the current run"
-                show={this.props.userRole !== "ReadOnly"}
-                style={{ marginLeft: "194px" }}
-                onClick={this.stopProcess.bind(this)}
-                disabled={this.props.pid === 0}
-                secondary="true"
-              />
-              <ToolbarButton
-                label="Run"
-                title="Click to run this project"
-                show={this.props.userRole !== "ReadOnly"}
-                onClick={this.props.runMarxan}
-                disabled={
-                  this.props.preprocessing ||
-                  this.props.features.length === 0 ||
-                  this.props.puEditing
-                }
-                secondary="true"
-              />
-            </Paper>
+            )}
           </Paper>
-        </div>
-      </React.Fragment>
-    );
-  }
-}
+          <Tabs
+            value={currentTabIndex}
+            onChange={handleTabChange}
+            style={{ margin: "20px" }}
+          >
+            <Tab
+              label="Project"
+              value={0}
+              disabled={props.puEditing ? true : false}
+            />
+            <Tab
+              label="Features"
+              value={1}
+              disabled={props.puEditing ? true : false}
+            />
+            <Tab label="Planning units" value={2} />
+          </Tabs>
+          {currentTabIndex === 0 && (
+            <div>
+              <div className={"tabTitle"}>Description</div>
+              {props.userRole === "ReadOnly" ? null : (
+                <TextareaAutosize
+                  minRows={5}
+                  id="descriptionEdit"
+                  ref={descriptionEditRef}
+                  style={{ display: editingDescription ? "block" : "none" }}
+                  className={"descriptionEditBox"}
+                  onKeyPress={handleKeyPress}
+                  onBlur={handleBlur}
+                />
+              )}
+              {props.userRole === "ReadOnly" ? (
+                <div
+                  className={"description"}
+                  title={props.metadata.DESCRIPTION}
+                  dangerouslySetInnerHTML={{
+                    __html: props.metadata.DESCRIPTION,
+                  }}
+                />
+              ) : (
+                <div
+                  className={"description"}
+                  onClick={startEditingDescription}
+                  style={{ display: !editingDescription ? "block" : "none" }}
+                  title="Click to edit"
+                  dangerouslySetInnerHTML={{
+                    __html: props.metadata.DESCRIPTION,
+                  }}
+                />
+              )}
+              <div className={"tabTitle tabTitleTopMargin"}>Created</div>
+              <div className={"createDate"}>{props.metadata.CREATEDATE}</div>
+              <div
+                style={{
+                  display: props.user !== props.owner ? "block" : "none",
+                }}
+              >
+                <div className={"tabTitle tabTitleTopMargin"}>Created by</div>
+                <div className={"createDate"}>{props.owner}</div>
+              </div>
+              <div className={"tabTitle tabTitleTopMargin"}>
+                {props.metadata.OLDVERSION ? "Imported project" : ""}
+              </div>
+              <div
+                style={{
+                  position: "absolute",
+                  top: "413px",
+                  display: props.userRole === "ReadOnly" ? "none" : "block",
+                }}
+              >
+                <Checkbox
+                  label="Private"
+                  style={{ fontSize: "12px" }}
+                  checked={props.metadata.PRIVATE}
+                  onChange={toggleProjectPrivacy}
+                />
+              </div>
+            </div>
+          )}
+          {currentTabIndex === 1 && (
+            <SelectFeatures
+              features={props.features}
+              openFeatureMenu={props.openFeatureMenu}
+              openFeaturesDialog={props.openFeaturesDialog}
+              metadata={props.metadata}
+              updateFeature={props.updateFeature}
+              leftmargin={"10px"}
+              maxheight={"409px"}
+              simple={false}
+              showTargetButton={true}
+              openTargetDialog={props.openTargetDialog}
+              userRole={props.userRole}
+              toggleFeatureLayer={props.toggleFeatureLayer}
+              toggleFeaturePUIDLayer={props.toggleFeaturePUIDLayer}
+              selectedFeatures={props.selectedFeatures}
+              trigger={props.trigger}
+              puEditing={props.puEditing}
+              stopProcess={props.stopProcess}
+              processId={props.processId}
+            />
+          )}
+          {currentTabIndex === 2 && (
+            <div>
+              <div>
+                <div className={"tabTitle tabTitleInlineBlock"}>
+                  Planning Grid
+                </div>
+              </div>
+              <div className={"description"}>{props.metadata.pu_alias}</div>
+              <div>
+                <div className={"tabTitle tabTitleTopMargin"}>Statuses</div>
+              </div>
+              <div
+                style={{
+                  display: props.userRole === "ReadOnly" ? "none" : "block",
+                }}
+              >
+                <div className={"puManualEditContainer"}>
+                  <FontAwesomeIcon
+                    icon={props.puEditing ? faSave : faLock}
+                    onClick={() => startStopPuEditSession()}
+                    title={props.puEditing ? "Save" : "Manually edit"}
+                    style={{
+                      cursor: "pointer",
+                      marginLeft: "3px",
+                      marginRight: "10px",
+                      color: "rgba(255, 64, 129, 0.7)",
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: props.puEditing ? "inline-block" : "none",
+                    }}
+                    className={"puManualEditClear"}
+                  >
+                    <FontAwesomeIcon
+                      icon={faEraser}
+                      onClick={() => clearManualEdits()}
+                      title={"Clear all manual edits"}
+                      style={{
+                        cursor: "pointer",
+                        color: "rgba(255, 64, 129, 0.7)",
+                      }}
+                    />
+                  </div>
+                  <div
+                    className={"description"}
+                    style={{
+                      display: "inline-block",
+                      fontSize: "12px",
+                      paddingLeft: "7px",
+                    }}
+                  >
+                    {props.puEditing
+                      ? "Click on the map to change the status"
+                      : "Manually edit"}
+                  </div>
+                </div>
+              </div>
+              <Select
+                floatingLabelText={"Lock in protected areas"}
+                floatingLabelFixed={true}
+                underlineShow={false}
+                disabled={props.preprocessing || props.userRole === "ReadOnly"}
+                menuItemStyle={{ fontSize: "12px" }}
+                labelStyle={{ fontSize: "12px" }}
+                style={{ marginTop: "-14px", width: "180px" }}
+                value={props.metadata.IUCN_CATEGORY}
+                onChange={() => changeIucnCategory()}
+              >
+                {CONSTANTS.IUCN_CATEGORIES.map((item) => {
+                  return (
+                    <MenuItem
+                      value={item}
+                      key={item}
+                      primaryText={item}
+                      style={{ fontSize: "12px" }}
+                    />
+                  );
+                })}
+              </Select>
+              <div>
+                <div className={"tabTitle"}>Costs</div>
+              </div>
+              <Select
+                floatingLabelText={"Use cost surface"}
+                floatingLabelFixed={true}
+                underlineShow={false}
+                disabled={props.preprocessing || props.userRole === "ReadOnly"}
+                menuItemStyle={{ fontSize: "12px" }}
+                labelStyle={{ fontSize: "12px" }}
+                style={{ marginTop: "-14px", width: "230px" }}
+                value={props.costname}
+                onChange={() => changeCostname()}
+              >
+                {props.costnames.map((item) => {
+                  return (
+                    <MenuItem
+                      value={item}
+                      key={item}
+                      primaryText={item}
+                      style={{ fontSize: "12px" }}
+                    />
+                  );
+                })}
+              </Select>
+            </div>
+          )}
+          {/* <TabPanel value="project">
+            <div>
+              <div
+                style={{
+                  fontSize: "12px",
+                  marginLeft: "8px",
+                  marginTop: "5px",
+                }}
+              >
+                IUCN Category
+              </div>
+              <Select
+                labelId="iucnCategoryLabel"
+                id="iucnCategorySelect"
+                value={props.iucnCategory}
+                onChange={changeIucnCategory}
+                style={{
+                  fontSize: "12px",
+                  height: "30px",
+                  marginLeft: "8px",
+                  width: "190px",
+                  marginTop: "2px",
+                }}
+              >
+                {Object.keys(CONSTANTS.IUCN_CATEGORIES).map((key) => (
+                  <MenuItem key={key} value={key} style={{ fontSize: "12px" }}>
+                    {key}
+                  </MenuItem>
+                ))}
+              </Select>
+              <div
+                style={{
+                  fontSize: "12px",
+                  marginLeft: "8px",
+                  marginTop: "8px",
+                }}
+              >
+                Cost
+              </div>
+              <Select
+                labelId="costLabel"
+                id="costSelect"
+                value={props.costname}
+                onChange={changeCostname}
+                style={{
+                  fontSize: "12px",
+                  height: "30px",
+                  marginLeft: "8px",
+                  width: "190px",
+                  marginTop: "2px",
+                }}
+              >
+                {costnames.map((costname, index) => (
+                  <MenuItem
+                    key={index}
+                    value={index}
+                    style={{ fontSize: "12px" }}
+                  >
+                    {costname}
+                  </MenuItem>
+                ))}
+              </Select>
+              <div style={{ marginTop: "10px" }}>
+                <Button
+                  title="Save project"
+                  style={{ marginLeft: "5px" }}
+                  onClick={props.saveProject}
+                >
+                  <FontAwesomeIcon icon={faSave} />
+                </Button>
+                <Button
+                  title="Export project"
+                  style={{ marginLeft: "5px" }}
+                  onClick={props.exportProject}
+                >
+                  <FontAwesomeIcon icon={faShareAlt} />
+                </Button>
+                <Button
+                  title="Erase solutions"
+                  style={{ marginLeft: "5px" }}
+                  onClick={props.eraseSolutions}
+                >
+                  <FontAwesomeIcon icon={faEraser} />
+                </Button>
+                <Button
+                  title="Edit Planning Units"
+                  disabled={props.featureLoading}
+                  style={{
+                    marginLeft: "5px",
+                    marginTop: "5px",
+                    backgroundColor: props.puEditing ? "#e8f0fe" : "unset",
+                  }}
+                  onClick={() => startStopPuEditSession()}
+                >
+                  <Settings />
+                </Button>
+              </div>
+            </div>
+          </TabPanel>
+          <TabPanel value="project">
+            <div>
+              <div className={"tabTitle"}>Layers</div>
+              <Checkbox
+                label="Planning Units"
+                checked={showPlanningGrid}
+                onChange={togglePlanningUnits}
+                style={{ marginLeft: "8px", fontSize: "12px" }}
+              />
+              <Checkbox
+                label="Protected Areas"
+                checked={showProtectedAreas}
+                onChange={toggleProtectedAreas}
+                style={{ marginLeft: "8px", fontSize: "12px" }}
+              />
+              <Checkbox
+                label="Costs"
+                checked={showCosts}
+                onChange={toggleCosts}
+                style={{ marginLeft: "8px", fontSize: "12px" }}
+              />
+              <Checkbox
+                label="Statuses"
+                checked={showStatuses}
+                onChange={toggleStatuses}
+                style={{ marginLeft: "8px", fontSize: "12px" }}
+              />
+            </div>
+          </TabPanel> */}
+          <Paper className={"lowerToolbar"}>
+            <Button
+              icon={<FontAwesomeIcon icon={faShareAlt} />}
+              title={"Get a shareable link to this project"}
+              onClick={props.getShareableLink}
+              show={props.marxanServer.type === "remote"}
+            />
+            <Button
+              icon={<Settings style={{ height: "20px", width: "20px" }} />}
+              title="Run Settings"
+              onClick={() => props.updateState({ settingsDialogOpen: true })}
+            />
+            <div className="toolbarSpacer" />
+            <Button
+              label="Stop"
+              title="Click to stop the current run"
+              show={props.userRole !== "ReadOnly"}
+              style={{ marginLeft: "194px" }}
+              onClick={() => stopProcess()}
+              disabled={props.pid === 0}
+              secondary="true"
+            />
+            <Button
+              label="Run"
+              title="Click to run this project"
+              show={props.userRole !== "ReadOnly"}
+              onClick={props.runMarxan}
+              disabled={
+                props.preprocessing ||
+                props.features.length === 0 ||
+                props.puEditing
+              }
+              secondary="true"
+            />
+          </Paper>
+        </Paper>
+      </div>
+    </React.Fragment>
+  );
+};
 
 export default InfoPanel;

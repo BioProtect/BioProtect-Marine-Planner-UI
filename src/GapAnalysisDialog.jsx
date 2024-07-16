@@ -20,7 +20,7 @@ import {
   YAxis,
 } from "recharts";
 
-import CustomTooltip from "./CustomTooltip.js";
+import CustomTooltip from "./CustomTooltip";
 import MarxanDialog from "./MarxanDialog";
 import MetChart from "./MetChart";
 import Switch from "@mui/material/Switch";

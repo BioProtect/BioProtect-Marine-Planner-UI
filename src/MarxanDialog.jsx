@@ -1,5 +1,3 @@
-import Dialog from "@mui/material/Dialog";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -8,11 +6,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
  *
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
-import React from "react";
+import React, { useState } from "react";
+import { faQuestionCircle, faSearch } from "@fortawesome/free-solid-svg-icons";
+
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Grid from "@mui/material/Grid";
+import SearchField from "./SearchField";
 import Sync from "@mui/icons-material/Sync";
-import ToolbarButton from "./ToolbarButton";
-import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
+
+const DOCS_ROOT = "https://docs.marxanweb.org/";
 
 //properties can be:
 //contentWidth - the width of the content area
@@ -26,141 +33,100 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 //helpLink - a relative url to the bookmark in the user documentation that describes the particular dialog box
 //showSearchBox - true to show a search box
 
-let DOCS_ROOT = "https://docs.marxanweb.org/";
+const MarxanDialog = (props) => {
+  const [searchText, setSearchText] = useState("");
+  const [fullWidth, setFullWidth] = React.useState(true);
+  const [maxWidth, setMaxWidth] = React.useState("sm");
 
-class MarxanDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { searchText: "" };
-  }
-  openDocumentation() {
-    window.open(DOCS_ROOT + this.props.helpLink);
-  }
-  searchTextChange(evt) {
-    this.setState({ searchText: evt.target.value });
-    if (this.props.searchTextChanged)
-      this.props.searchTextChanged(evt.target.value);
-  }
-  clearSearch() {
-    this.searchTextChange({ target: { value: "" } });
-  }
-  render() {
-    //if the offsetX or rightX is set, then make this into a style
-    let offsetX = this.props.offsetX
-      ? { marginLeft: this.props.offsetX + "px", width: "400px" }
-      : this.props.rightX
-      ? { right: this.props.rightX + "px", width: "400px", left: null }
-      : {};
-    let offsetY = this.props.offsetY
-      ? { marginTop: this.props.offsetY - 60 + "px" }
-      : {};
-    let style = Object.assign(offsetX, offsetY);
-    let cancelButton = this.props.showCancelButton ? (
-      <ToolbarButton
-        label={this.props.cancelLabel ? this.props.cancelLabel : "Cancel"}
-        primary={true}
-        onClick={this.props.onCancel}
-        // disabled={this.props.cancelDisabled}
-      />
-    ) : null;
-    let okButton = this.props.hideOKButton ? null : (
-      <ToolbarButton
-        label={this.props.okLabel ? this.props.okLabel : "OK"}
-        primary={true}
-        onClick={this.props.onOk}
-        disabled={this.props.okDisabled}
-      />
-    );
-    return (
-      <Dialog
-        {...this.props}
-        onClose={this.props.onCancel}
-        overlayStyle={
-          this.props.showOverlay ? { display: "block" } : { display: "none" }
-        }
-        titleClassName={"dialogTitleStyle"}
-        className={"dialogGeneric"}
-        style={style}
-        actions={[this.props.actions, cancelButton, okButton]}
-      >
-        {[
-          this.props.titleBarIcon ? (
-            <FontAwesomeIcon
-              icon={this.props.titleBarIcon}
-              style={{ position: "absolute", top: "18px", left: "24px" }}
-              key="k1"
-            />
-          ) : null,
-          this.props.showSearchBox ? (
-            <div
-              style={{ right: "70px", position: "absolute", top: "13px" }}
-              title={"search"}
-              key="k27"
-            >
-              <input
-                value={this.state.searchText}
-                onChange={this.searchTextChange.bind(this)}
+  const openDocumentation = () => {
+    window.open(DOCS_ROOT + props.helpLink);
+  };
+
+  const searchTextChange = (evt) => {
+    setSearchText(evt.target.value);
+    if (props.searchTextChanged) props.searchTextChanged(evt.target.value);
+  };
+
+  const clearSearch = () => {
+    searchTextChange({ target: { value: "" } });
+  };
+
+  const cancelButton = props.showCancelButton ? (
+    <Button variant="outlined" primary={true} onClick={props.onCancel}>
+      {props.cancelLabel ? props.cancelLabel : "Cancel"}
+    </Button>
+  ) : null;
+
+  const okButton = props.hideOKButton ? null : (
+    <Button variant="outlined" onClick={props.onOk} disabled={props.okDisabled}>
+      {props.okLabel ? props.okLabel : "OK"}
+    </Button>
+  );
+
+  const actions = [props.actions, cancelButton, okButton];
+
+  return (
+    <Dialog
+      {...props}
+      fullWidth={fullWidth}
+      maxWidth={maxWidth}
+      onClose={props.onCancel}
+    >
+      <DialogTitle position="static">
+        <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+          <Grid item xs={4}>
+            {props.title ? props.title : null}
+          </Grid>
+          <Grid item xs={8}>
+            {[
+              props.titleBarIcon ? (
+                <FontAwesomeIcon
+                  icon={props.titleBarIcon}
+                  key="k1"
+                  style={{ position: "absolute", top: "18px", left: "24px" }}
+                />
+              ) : null,
+              props.showSearchBox ? (
+                <SearchField
+                  value={searchText}
+                  onChange={searchTextChange}
+                  key="k27"
+                ></SearchField>
+              ) : null,
+
+              <Sync
+                className="spin"
                 style={{
-                  border: "1px solid rgba(0,0,0,0.1)",
-                  borderRadius: "30px",
-                  width: "90px",
-                  height: "22px",
-                  fontFamily: "Roboto, sans-serif",
-                  fontSize: "12px",
-                  fontWeight: "400",
-                  color: "rgba(0,0,0,0.7)",
-                  paddingLeft: "10px",
-                }}
-              />
-              <FontAwesomeIcon
-                onClick={this.clearSearch.bind(this)}
-                icon={faSearch}
-                className={"appBarIcon docs"}
-                style={{
-                  fontSize: "13px",
+                  display:
+                    props.loading || props.showSpinner
+                      ? "inline-block"
+                      : "none",
+                  color: "rgb(255, 64, 129)",
                   position: "absolute",
-                  top: "1px",
-                  right: "2px",
-                  color:
-                    this.state.searchText === ""
-                      ? "rgba(0, 0, 0, 0.6)"
-                      : "rgb(255, 64, 129)",
+                  top: "15px",
+                  right: "41px",
+                  height: "22px",
+                  width: "22px",
                 }}
-                title={this.state.searchText === "" ? "Search" : "Clear search"}
-              />
-            </div>
-          ) : null,
-          <Sync
-            className="spin"
-            style={{
-              display:
-                this.props.loading || this.props.showSpinner
-                  ? "inline-block"
-                  : "none",
-              color: "rgb(255, 64, 129)",
-              position: "absolute",
-              top: "15px",
-              right: "41px",
-              height: "22px",
-              width: "22px",
-            }}
-            key={"spinner"}
-          />,
-          this.props.children,
-          this.props.helpLink ? (
-            <FontAwesomeIcon
-              icon={faQuestionCircle}
-              onClick={this.openDocumentation.bind(this)}
-              title={"Open documentation for this window"}
-              className={"appBarIcon docs"}
-              style={{ fontSize: "18px" }}
-              key="helpLink"
-            />
-          ) : null,
-        ]}
-      </Dialog>
-    );
-  }
-}
+                key={"spinner"}
+              />,
+              props.helpLink ? (
+                <FontAwesomeIcon
+                  icon={faQuestionCircle}
+                  onClick={openDocumentation}
+                  title={"Open documentation for this window"}
+                  className={"appBarIcon docs"}
+                  key="helpLink"
+                />
+              ) : null,
+            ]}
+          </Grid>
+        </Grid>
+      </DialogTitle>
+      <DialogContent>{props.children}</DialogContent>
+      <DialogActions>{actions}</DialogActions>
+    </Dialog>
+  );
+};
 
 export default MarxanDialog;

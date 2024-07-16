@@ -8,12 +8,12 @@
  */
 import * as React from "react";
 
-import FileUpload from "../FileUpload.js";
+import FileUpload from "../FileUpload";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTable from "../MarxanTable";
 import MarxanTextField from "../MarxanTextField";
 import Sync from "@mui/icons-material/Sync";
-import TableRow from "../TableRow.js";
+import TableRow from "../TableRow";
 import ToolbarButton from "../ToolbarButton";
 
 let INITIAL_STATE = {

@@ -90,13 +90,11 @@ const LoginDialog = (props) => {
         component="form"
         onSubmit={handleSubmit}
         noValidate
-        sx={{ mt: 1 }}
         // showOverlay={true}
-        okDisabled={okDisabled}
-        okLabel={okLabel}
-        showCancelButton={true}
-        // cancelLabel={"Register"}
-        // cancelDisabled={cancelDisabled}
+        hideOKButton={true}
+        showCancelButton={false}
+        cancelLabel={"Register"}
+        cancelDisabled={cancelDisabled}
       >
         <DialogTitle>
           <div style={{ display: "flex", justifyContent: "center" }}>

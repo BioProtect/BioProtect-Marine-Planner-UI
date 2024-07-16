@@ -23,13 +23,13 @@ import HelpMenu from "./HelpMenu";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import IdentifyPopup from "./IdentifyPopup";
-import ImportCostsDialog from "./ImportCostsDialog";
-import ImportFeaturesDialog from "./ImportFeaturesDialog";
-import ImportFromWebDialog from "./ImportFromWebDialog";
-import ImportGBIFDialog from "./ImportGBIFDialog";
-import ImportMXWDialog from "./ImportMXWDialog";
-import ImportPlanningGridDialog from "./ImportPlanningGridDialog";
-import ImportProjectDialog from "./ImportProjectDialog";
+import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
+import ImportFeaturesDialog from "./ImportComponents/ImportFeaturesDialog";
+import ImportFromWebDialog from "./ImportComponents/ImportFromWebDialog";
+import ImportGBIFDialog from "./ImportComponents/ImportGBIFDialog";
+import ImportMXWDialog from "./ImportComponents/ImportMXWDialog";
+import ImportPlanningGridDialog from "./ImportComponents/ImportPlanningGridDialog";
+import ImportProjectDialog from "./ImportComponents/ImportProjectDialog";
 import InfoPanel from "./InfoPanel";
 import LoadingDialog from "./LoadingDialog";
 import LoginDialog from "./LoginDialog";
@@ -5692,7 +5692,7 @@ class App extends React.Component {
         <LoginDialog
           open={!this.state.loggedIn}
           validateUser={this.validateUser.bind(this)}
-          onCancel={() => this.updateState({ registerDialogOpen: true })}
+          // onCancel={() => this.updateState({ registerDialogOpen: true })}
           loading={this.state.loading}
           user={this.state.user}
           password={this.state.password}

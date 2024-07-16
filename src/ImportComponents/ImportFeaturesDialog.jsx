@@ -9,14 +9,14 @@
 import * as React from "react";
 
 import Checkbox from "@mui/material/Checkbox";
-import FileUpload from "./FileUpload.js";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
+import FileUpload from "../FileUpload";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTextField from "../MarxanTextField";
 import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
-import ToolbarButton from "./ToolbarButton";
+import ToolbarButton from "../ToolbarButton";
 
 let INITIAL_STATE = {
   steps: ["shapefile", "single_or_multiple", "metadata"],
