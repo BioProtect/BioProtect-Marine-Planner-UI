@@ -9,14 +9,16 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import Button from "@mui/material/Button";
-import CONSTANTS from "./constants";
+import CONSTANTS from "../constants";
 import Checkbox from "@mui/material/Checkbox";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
+import ProjectTabContent from "./ProjectTabContent";
 import Select from "@mui/material/Select";
-import SelectFeatures from "./SelectFeatures";
+import SelectFeatures from "../SelectFeatures";
 import Settings from "@mui/icons-material/Settings";
+import { Stack } from "@mui/material";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { TextareaAutosize } from "@mui/base/TextareaAutosize";
@@ -163,7 +165,7 @@ const InfoPanel = (props) => {
         className={"infoPanel"}
         style={{ top: "60px", display: props.open ? "block" : "none" }}
       >
-        <Paper elevation={2} className="InfoPanelPaper">
+        <Paper elevation={2} className="InfoPanelPaper" mb={4}>
           <Paper elevation={2} className="titleBar">
             {props.userRole === "ReadOnly" ? (
               <span
@@ -209,11 +211,7 @@ const InfoPanel = (props) => {
               />
             )}
           </Paper>
-          <Tabs
-            value={currentTabIndex}
-            onChange={handleTabChange}
-            style={{ margin: "20px" }}
-          >
+          <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
             <Tab
               label="Project"
               value={0}
@@ -227,66 +225,17 @@ const InfoPanel = (props) => {
             <Tab label="Planning units" value={2} />
           </Tabs>
           {currentTabIndex === 0 && (
-            <div>
-              <div className={"tabTitle"}>Description</div>
-              {props.userRole === "ReadOnly" ? null : (
-                <TextareaAutosize
-                  minRows={5}
-                  id="descriptionEdit"
-                  ref={descriptionEditRef}
-                  style={{ display: editingDescription ? "block" : "none" }}
-                  className={"descriptionEditBox"}
-                  onKeyPress={handleKeyPress}
-                  onBlur={handleBlur}
-                />
-              )}
-              {props.userRole === "ReadOnly" ? (
-                <div
-                  className={"description"}
-                  title={props.metadata.DESCRIPTION}
-                  dangerouslySetInnerHTML={{
-                    __html: props.metadata.DESCRIPTION,
-                  }}
-                />
-              ) : (
-                <div
-                  className={"description"}
-                  onClick={startEditingDescription}
-                  style={{ display: !editingDescription ? "block" : "none" }}
-                  title="Click to edit"
-                  dangerouslySetInnerHTML={{
-                    __html: props.metadata.DESCRIPTION,
-                  }}
-                />
-              )}
-              <div className={"tabTitle tabTitleTopMargin"}>Created</div>
-              <div className={"createDate"}>{props.metadata.CREATEDATE}</div>
-              <div
-                style={{
-                  display: props.user !== props.owner ? "block" : "none",
-                }}
-              >
-                <div className={"tabTitle tabTitleTopMargin"}>Created by</div>
-                <div className={"createDate"}>{props.owner}</div>
-              </div>
-              <div className={"tabTitle tabTitleTopMargin"}>
-                {props.metadata.OLDVERSION ? "Imported project" : ""}
-              </div>
-              <div
-                style={{
-                  position: "absolute",
-                  top: "413px",
-                  display: props.userRole === "ReadOnly" ? "none" : "block",
-                }}
-              >
-                <Checkbox
-                  label="Private"
-                  style={{ fontSize: "12px" }}
-                  checked={props.metadata.PRIVATE}
-                  onChange={toggleProjectPrivacy}
-                />
-              </div>
-            </div>
+            <ProjectTabContent
+              setEditingDescription={setEditingDescription}
+              toggleProjectPrivacy={toggleProjectPrivacy}
+              descriptionEditRef={descriptionEditRef}
+              editingDescription={editingDescription}
+              userRole={props.userRole}
+              metadata={props.metadata}
+              startEditingDescription={startEditingDescription}
+              user={props.user}
+              owner={props.owner}
+            />
           )}
           {currentTabIndex === 1 && (
             <SelectFeatures
@@ -545,40 +494,60 @@ const InfoPanel = (props) => {
               />
             </div>
           </TabPanel> */}
-          <Paper className={"lowerToolbar"}>
-            <Button
-              icon={<FontAwesomeIcon icon={faShareAlt} />}
-              title={"Get a shareable link to this project"}
-              onClick={props.getShareableLink}
-              show={props.marxanServer.type === "remote"}
-            />
-            <Button
-              icon={<Settings style={{ height: "20px", width: "20px" }} />}
-              title="Run Settings"
-              onClick={() => props.updateState({ settingsDialogOpen: true })}
-            />
-            <div className="toolbarSpacer" />
-            <Button
-              label="Stop"
-              title="Click to stop the current run"
-              show={props.userRole !== "ReadOnly"}
-              style={{ marginLeft: "194px" }}
-              onClick={() => stopProcess()}
-              disabled={props.pid === 0}
-              secondary="true"
-            />
-            <Button
-              label="Run"
-              title="Click to run this project"
-              show={props.userRole !== "ReadOnly"}
-              onClick={props.runMarxan}
-              disabled={
-                props.preprocessing ||
-                props.features.length === 0 ||
-                props.puEditing
-              }
-              secondary="true"
-            />
+          <Paper pb={4}>
+            <Stack
+              direction="row"
+              spacing={1}
+              justifyContent="center"
+              alignItems="center"
+              pb={2}
+            >
+              <Button
+                variant="contained"
+                startIcon={<FontAwesomeIcon icon={faShareAlt} />}
+                title={"Get a shareable link to this project"}
+                onClick={props.getShareableLink}
+                show={props.marxanServer.type === "remote"}
+              >
+                Share
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={
+                  <Settings style={{ height: "20px", width: "20px" }} />
+                }
+                title="Run Settings"
+                onClick={() => props.updateState({ settingsDialogOpen: true })}
+              >
+                Settings
+              </Button>
+              <Button
+                variant="contained"
+                label="Stop"
+                title="Click to stop the current run"
+                show={props.userRole !== "ReadOnly"}
+                onClick={() => stopProcess()}
+                disabled={props.pid === 0}
+                secondary="true"
+              >
+                Stop
+              </Button>
+              <Button
+                variant="contained"
+                label="Run"
+                title="Click to run this project"
+                show={props.userRole !== "ReadOnly"}
+                onClick={props.runMarxan}
+                disabled={
+                  props.preprocessing ||
+                  props.features.length === 0 ||
+                  props.puEditing
+                }
+                secondary="true"
+              >
+                Run
+              </Button>
+            </Stack>
           </Paper>
         </Paper>
       </div>

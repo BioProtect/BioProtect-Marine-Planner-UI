@@ -30,7 +30,7 @@ import ImportGBIFDialog from "./ImportComponents/ImportGBIFDialog";
 import ImportMXWDialog from "./ImportComponents/ImportMXWDialog";
 import ImportPlanningGridDialog from "./ImportComponents/ImportPlanningGridDialog";
 import ImportProjectDialog from "./ImportComponents/ImportProjectDialog";
-import InfoPanel from "./InfoPanel";
+import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import LoadingDialog from "./LoadingDialog";
 import LoginDialog from "./LoginDialog";
 //mapbox imports

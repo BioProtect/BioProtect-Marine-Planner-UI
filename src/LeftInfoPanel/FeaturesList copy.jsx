@@ -9,11 +9,11 @@
 import * as React from "react";
 
 import IconButton from "@mui/material/IconButton";
-import LinearGauge from "./LinearGauge";
+import LinearGauge from "../LinearGauge";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import TargetIcon from "./TargetIcon";
+import TargetIcon from "../TargetIcon";
 import grey from "@mui/material/colors/grey";
 
 class FeaturesList extends React.Component {

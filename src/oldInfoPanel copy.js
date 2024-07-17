@@ -25,6 +25,7 @@ import { faEraser } from "@fortawesome/free-solid-svg-icons";
 import { faLock } from "@fortawesome/free-solid-svg-icons";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { faShareAlt } from "@fortawesome/free-solid-svg-icons";
+
 // import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
 class InfoPanel extends React.Component {

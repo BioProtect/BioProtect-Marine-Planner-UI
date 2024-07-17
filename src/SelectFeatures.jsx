@@ -1,71 +1,63 @@
-import FeaturesList from "./FeaturesList";
+import Button from "@mui/material/Button";
+import FeaturesList from "./LeftInfoPanel/FeaturesList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
 import React from "react";
-import ToolbarButton from "./ToolbarButton";
+import Stack from "@mui/material/Stack";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
 
-class SelectFeatures extends React.Component {
-  openFeaturesDialog(evt) {
-    this.props.openFeaturesDialog(true);
-  }
-  render() {
-    return (
-      <React.Fragment>
-        <div className={"newPUDialogPane"}>
-          <FeaturesList
-            {...this.props}
-            features={this.props.features}
-            openFeatureMenu={this.props.openFeatureMenu}
-            simple={this.props.simple}
-            updateFeature={this.props.updateFeature}
-            userRole={this.props.userRole}
-            toggleFeatureLayer={this.props.toggleFeatureLayer}
-            toggleFeaturePUIDLayer={this.props.toggleFeaturePUIDLayer}
-            useFeatureColors={this.props.useFeatureColors}
-            smallLinearGauge={this.props.smallLinearGauge}
-          />
-          <ToolbarButton
-            onClick={this.props.openTargetDialog}
-            show={
-              this.props.userRole !== "ReadOnly" && this.props.showTargetButton
-            }
-            icon={<FontAwesomeIcon icon={faCrosshairs} />}
-            style={{
-              marginLeft: this.props.leftmargin,
-              width: "30px",
-              marginTop: "5px",
-            }}
-            title={"Set a target for all features"}
-          />
-          <ToolbarButton
+const SelectFeatures = (props) => {
+  const openFeaturesDialog = (evt) => {
+    props.openFeaturesDialog(true);
+  };
+
+  return (
+    <React.Fragment>
+      <div className="newPUDialogPane">
+        <FeaturesList
+          {...props}
+          features={props.features}
+          openFeatureMenu={props.openFeatureMenu}
+          simple={props.simple}
+          updateFeature={props.updateFeature}
+          userRole={props.userRole}
+          toggleFeatureLayer={props.toggleFeatureLayer}
+          toggleFeaturePUIDLayer={props.toggleFeaturePUIDLayer}
+          useFeatureColors={props.useFeatureColors}
+          smallLinearGauge={props.smallLinearGauge}
+        />
+        <Stack
+          direction="row"
+          spacing={1}
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Button
+            variant="contained"
+            onClick={props.openTargetDialog}
+            show={props.userRole !== "ReadOnly" && props.showTargetButton}
+            startIcon={<FontAwesomeIcon icon={faCrosshairs} />}
+          >
+            Set a target for all features
+          </Button>
+          <Button
+            variant="contained"
             labelStyle={{ paddingLeft: "6px", paddingRight: "6px" }}
             label="+/-"
-            onClick={this.openFeaturesDialog.bind(this)}
+            onClick={openFeaturesDialog}
             show={
               !(
-                (this.props.metadata && this.props.metadata.OLDVERSION) ||
-                this.props.userRole === "ReadOnly"
+                (props.metadata && props.metadata.OLDVERSION) ||
+                props.userRole === "ReadOnly"
               )
             }
-            style={{
-              marginLeft: this.props.leftmargin,
-              width: "30px",
-              marginTop: "5px",
-            }}
-            title={"Add/remove features from the project"}
-          />
-        </div>
-      </React.Fragment>
-    );
-  }
-}
+            title="Add/remove features from the project"
+          >
+            +/-
+          </Button>
+        </Stack>
+      </div>
+    </React.Fragment>
+  );
+};
 
 export default SelectFeatures;
