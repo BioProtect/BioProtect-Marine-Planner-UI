@@ -9,16 +9,6 @@ import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Typography from "@mui/material/Typography";
 
 const ProjectTabContent = (props) => {
-  const handleKeyPress = (event) => {
-    if (event.key === "Enter") {
-      props.setEditingDescription(false);
-    }
-  };
-
-  const handleBlur = () => {
-    props.setEditingDescription(false);
-  };
-
   const toggleProjectPrivacy = (event) => {
     props.toggleProjectPrivacy(event.target.checked);
   };
@@ -37,35 +27,19 @@ const ProjectTabContent = (props) => {
               ref={props.descriptionEditRef}
               style={{ display: props.editingDescription ? "block" : "none" }}
               className="descriptionEditBox"
-              onKeyDown={handleKeyPress}
-              onBlur={handleBlur}
+              onKeyDown={props.handleKeyPress}
+              onBlur={props.handleBlur}
             />
           )}
-          {props.userRole === "ReadOnly" ? (
-            <Typography variant="body2" color="text.secondary">
-              <div
-                className="description"
-                title={props.metadata.DESCRIPTION}
-                dangerouslySetInnerHTML={{
-                  __html: props.metadata.DESCRIPTION,
-                }}
-              />
-            </Typography>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              <div
-                className="description"
-                onClick={props.startEditingDescription}
-                style={{
-                  display: !props.editingDescription ? "block" : "none",
-                }}
-                title="Click to edit"
-                dangerouslySetInnerHTML={{
-                  __html: props.metadata.DESCRIPTION,
-                }}
-              />
-            </Typography>
-          )}
+          <Typography variant="body2" color="text.secondary">
+            <div
+              className="description"
+              onClick={props.startEditingDescription}
+              title={props.userRole === "ReadOnly" ? "" : "Click to edit"}
+            >
+              {props.metadata.DESCRIPTION}
+            </div>
+          </Typography>
           <Typography variant="h5" component="div">
             Created
           </Typography>

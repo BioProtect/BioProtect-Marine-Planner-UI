@@ -14,7 +14,7 @@ import React from "react";
 import { Table } from "@mui/material";
 
 class FeatureInfoDialog extends React.Component {
-  onKeyPress(key, e) {
+  onKeyDown(key, e) {
     if (e.nativeEvent.keyCode === 13 || e.nativeEvent.keyCode === 27) {
       //update the feature
       this.updateFeatureValue(key, e);
@@ -109,7 +109,7 @@ class FeatureInfoDialog extends React.Component {
               suppressContentEditableWarning
               title="Click to edit"
               onBlur={this.updateFeatureValue.bind(this, "target_value")}
-              onKeyPress={this.onKeyPress.bind(this, "target_value")}
+              onKeyDown={this.onKeyDown.bind(this, "target_value")}
             >
               {props.row.value}
             </div>
@@ -125,7 +125,7 @@ class FeatureInfoDialog extends React.Component {
               suppressContentEditableWarning
               title="Click to edit"
               onBlur={this.updateFeatureValue.bind(this, "spf")}
-              onKeyPress={this.onKeyPress.bind(this, "spf")}
+              onKeyDown={this.onKeyDown.bind(this, "spf")}
             >
               {props.row.value}
             </div>

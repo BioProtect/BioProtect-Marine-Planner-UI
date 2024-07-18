@@ -7,25 +7,24 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React, { useEffect, useRef, useState } from "react";
+import {
+  faEraser,
+  faLock,
+  faSave,
+  faShareAlt,
+} from "@fortawesome/free-solid-svg-icons";
 
 import Button from "@mui/material/Button";
 import CONSTANTS from "../constants";
-import Checkbox from "@mui/material/Checkbox";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
-import ProjectTabContent from "./ProjectTabContent";
-import Select from "@mui/material/Select";
+import PlanningUnitsTab from "./PlanningUnitsTab";
+import ProjectTabContent from "./ProjectTab";
 import SelectFeatures from "../SelectFeatures";
 import Settings from "@mui/icons-material/Settings";
 import { Stack } from "@mui/material";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import { TextareaAutosize } from "@mui/base/TextareaAutosize";
-import { faEraser } from "@fortawesome/free-solid-svg-icons";
-import { faLock } from "@fortawesome/free-solid-svg-icons";
-import { faSave } from "@fortawesome/free-solid-svg-icons";
-import { faShareAlt } from "@fortawesome/free-solid-svg-icons";
 
 const activeTabArr = ["project", "features", "planning_units"];
 
@@ -85,7 +84,7 @@ const InfoPanel = (props) => {
   };
 
   const startEditingDescription = () => {
-    if (props.project) {
+    if (props.project && props.userRole !== "ReadOnly") {
       setEditingDescription(true);
     }
   };
@@ -103,11 +102,11 @@ const InfoPanel = (props) => {
     props.stopPuEditSession();
   };
 
-  const changeIucnCategory = (event) =>
+  const changeIucnCategory = (event) => {
     props.changeIucnCategory(CONSTANTS.IUCN_CATEGORIES[event.target.value]);
-
+  };
   const changeCostname = (event) => {
-    const costname = costnames[event.target.value];
+    const costname = event.target.value;
     if (costname === "Custom..") {
       props.openCostsDialog();
     } else {
@@ -206,7 +205,7 @@ const InfoPanel = (props) => {
                   border: "1px lightgray solid",
                 }}
                 className={"projectNameEditBox"}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 onBlur={handleBlur}
               />
             )}
@@ -235,6 +234,8 @@ const InfoPanel = (props) => {
               startEditingDescription={startEditingDescription}
               user={props.user}
               owner={props.owner}
+              handleBlur={handleBlur}
+              handleKeyPress={handleKeyPress}
             />
           )}
           {currentTabIndex === 1 && (
@@ -260,247 +261,27 @@ const InfoPanel = (props) => {
             />
           )}
           {currentTabIndex === 2 && (
-            <div>
-              <div>
-                <div className={"tabTitle tabTitleInlineBlock"}>
-                  Planning Grid
-                </div>
-              </div>
-              <div className={"description"}>{props.metadata.pu_alias}</div>
-              <div>
-                <div className={"tabTitle tabTitleTopMargin"}>Statuses</div>
-              </div>
-              <div
-                style={{
-                  display: props.userRole === "ReadOnly" ? "none" : "block",
-                }}
-              >
-                <div className={"puManualEditContainer"}>
-                  <FontAwesomeIcon
-                    icon={props.puEditing ? faSave : faLock}
-                    onClick={() => startStopPuEditSession()}
-                    title={props.puEditing ? "Save" : "Manually edit"}
-                    style={{
-                      cursor: "pointer",
-                      marginLeft: "3px",
-                      marginRight: "10px",
-                      color: "rgba(255, 64, 129, 0.7)",
-                    }}
-                  />
-                  <div
-                    style={{
-                      display: props.puEditing ? "inline-block" : "none",
-                    }}
-                    className={"puManualEditClear"}
-                  >
-                    <FontAwesomeIcon
-                      icon={faEraser}
-                      onClick={() => clearManualEdits()}
-                      title={"Clear all manual edits"}
-                      style={{
-                        cursor: "pointer",
-                        color: "rgba(255, 64, 129, 0.7)",
-                      }}
-                    />
-                  </div>
-                  <div
-                    className={"description"}
-                    style={{
-                      display: "inline-block",
-                      fontSize: "12px",
-                      paddingLeft: "7px",
-                    }}
-                  >
-                    {props.puEditing
-                      ? "Click on the map to change the status"
-                      : "Manually edit"}
-                  </div>
-                </div>
-              </div>
-              <Select
-                floatingLabelText={"Lock in protected areas"}
-                floatingLabelFixed={true}
-                underlineShow={false}
-                disabled={props.preprocessing || props.userRole === "ReadOnly"}
-                menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
-                style={{ marginTop: "-14px", width: "180px" }}
-                value={props.metadata.IUCN_CATEGORY}
-                onChange={() => changeIucnCategory()}
-              >
-                {CONSTANTS.IUCN_CATEGORIES.map((item) => {
-                  return (
-                    <MenuItem
-                      value={item}
-                      key={item}
-                      primaryText={item}
-                      style={{ fontSize: "12px" }}
-                    />
-                  );
-                })}
-              </Select>
-              <div>
-                <div className={"tabTitle"}>Costs</div>
-              </div>
-              <Select
-                floatingLabelText={"Use cost surface"}
-                floatingLabelFixed={true}
-                underlineShow={false}
-                disabled={props.preprocessing || props.userRole === "ReadOnly"}
-                menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
-                style={{ marginTop: "-14px", width: "230px" }}
-                value={props.costname}
-                onChange={() => changeCostname()}
-              >
-                {props.costnames.map((item) => {
-                  return (
-                    <MenuItem
-                      value={item}
-                      key={item}
-                      primaryText={item}
-                      style={{ fontSize: "12px" }}
-                    />
-                  );
-                })}
-              </Select>
-            </div>
+            <PlanningUnitsTab
+              metadata={props.metadata}
+              userRole={props.userRole}
+              puEditing={props.puEditing}
+              startStopPuEditSession={startStopPuEditSession}
+              clearManualEdits={props.clearManualEdits}
+              preprocessing={props.preprocessing}
+              changeIucnCategory={changeIucnCategory}
+              costname={props.costname}
+              costnames={costnames}
+              changeCostname={changeCostname}
+            />
           )}
-          {/* <TabPanel value="project">
-            <div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  marginLeft: "8px",
-                  marginTop: "5px",
-                }}
-              >
-                IUCN Category
-              </div>
-              <Select
-                labelId="iucnCategoryLabel"
-                id="iucnCategorySelect"
-                value={props.iucnCategory}
-                onChange={changeIucnCategory}
-                style={{
-                  fontSize: "12px",
-                  height: "30px",
-                  marginLeft: "8px",
-                  width: "190px",
-                  marginTop: "2px",
-                }}
-              >
-                {Object.keys(CONSTANTS.IUCN_CATEGORIES).map((key) => (
-                  <MenuItem key={key} value={key} style={{ fontSize: "12px" }}>
-                    {key}
-                  </MenuItem>
-                ))}
-              </Select>
-              <div
-                style={{
-                  fontSize: "12px",
-                  marginLeft: "8px",
-                  marginTop: "8px",
-                }}
-              >
-                Cost
-              </div>
-              <Select
-                labelId="costLabel"
-                id="costSelect"
-                value={props.costname}
-                onChange={changeCostname}
-                style={{
-                  fontSize: "12px",
-                  height: "30px",
-                  marginLeft: "8px",
-                  width: "190px",
-                  marginTop: "2px",
-                }}
-              >
-                {costnames.map((costname, index) => (
-                  <MenuItem
-                    key={index}
-                    value={index}
-                    style={{ fontSize: "12px" }}
-                  >
-                    {costname}
-                  </MenuItem>
-                ))}
-              </Select>
-              <div style={{ marginTop: "10px" }}>
-                <Button
-                  title="Save project"
-                  style={{ marginLeft: "5px" }}
-                  onClick={props.saveProject}
-                >
-                  <FontAwesomeIcon icon={faSave} />
-                </Button>
-                <Button
-                  title="Export project"
-                  style={{ marginLeft: "5px" }}
-                  onClick={props.exportProject}
-                >
-                  <FontAwesomeIcon icon={faShareAlt} />
-                </Button>
-                <Button
-                  title="Erase solutions"
-                  style={{ marginLeft: "5px" }}
-                  onClick={props.eraseSolutions}
-                >
-                  <FontAwesomeIcon icon={faEraser} />
-                </Button>
-                <Button
-                  title="Edit Planning Units"
-                  disabled={props.featureLoading}
-                  style={{
-                    marginLeft: "5px",
-                    marginTop: "5px",
-                    backgroundColor: props.puEditing ? "#e8f0fe" : "unset",
-                  }}
-                  onClick={() => startStopPuEditSession()}
-                >
-                  <Settings />
-                </Button>
-              </div>
-            </div>
-          </TabPanel>
-          <TabPanel value="project">
-            <div>
-              <div className={"tabTitle"}>Layers</div>
-              <Checkbox
-                label="Planning Units"
-                checked={showPlanningGrid}
-                onChange={togglePlanningUnits}
-                style={{ marginLeft: "8px", fontSize: "12px" }}
-              />
-              <Checkbox
-                label="Protected Areas"
-                checked={showProtectedAreas}
-                onChange={toggleProtectedAreas}
-                style={{ marginLeft: "8px", fontSize: "12px" }}
-              />
-              <Checkbox
-                label="Costs"
-                checked={showCosts}
-                onChange={toggleCosts}
-                style={{ marginLeft: "8px", fontSize: "12px" }}
-              />
-              <Checkbox
-                label="Statuses"
-                checked={showStatuses}
-                onChange={toggleStatuses}
-                style={{ marginLeft: "8px", fontSize: "12px" }}
-              />
-            </div>
-          </TabPanel> */}
-          <Paper pb={4}>
+          <Paper>
             <Stack
               direction="row"
               spacing={1}
               justifyContent="center"
               alignItems="center"
               pb={2}
+              pt={2}
             >
               <Button
                 variant="contained"

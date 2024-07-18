@@ -50,7 +50,7 @@ class TargetDialog extends React.PureComponent {
                 this.setState({ target_value: newValue })
               }
               defaultValue={this.state.target_value}
-              onKeyPress={this.handleKeyPress.bind(this)}
+              onKeyDown={this.handleKeyPress.bind(this)}
               floatingLabelShrinkStyle={{ fontSize: "16px" }}
               floatingLabelFocusStyle={{ fontSize: "16px" }}
               errorText={this.state.validTarget ? "" : "Invalid target"}

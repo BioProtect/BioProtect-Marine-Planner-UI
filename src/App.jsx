@@ -5530,6 +5530,7 @@ class App extends React.Component {
 
   //changes the cost profile for a project
   changeCostname(costname) {
+    console.log("costname ", costname);
     return new Promise((resolve, reject) => {
       this._get(
         "updateCosts?user=" +

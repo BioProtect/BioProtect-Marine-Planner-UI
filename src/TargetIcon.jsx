@@ -30,7 +30,7 @@ class TargetIcon extends React.PureComponent {
       this.setState({ localTargetValue: newValue });
     }
   }
-  onKeyPress(event) {
+  onKeyDown(event) {
     if (event.nativeEvent.key === "Enter") this.setState({ editing: false }); //will trigger the onBlur event of the input box
   }
   startEditing() {
@@ -108,7 +108,7 @@ class TargetIcon extends React.PureComponent {
           <input
             id={"input_" + this.props.interestFeature.id}
             onBlur={this.stopEditing.bind(this)}
-            onKeyPress={this.onKeyPress.bind(this)}
+            onKeyDown={this.onKeyDown.bind(this)}
             onChange={this.onChange.bind(this)}
             style={{
               backgroundColor: "transparent",

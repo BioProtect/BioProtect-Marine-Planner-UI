@@ -67,7 +67,7 @@ class ProfileDialog extends React.Component {
               floatingLabelFixed={true}
               onChange={(event, newValue) => this.updateState("NAME", newValue)}
               defaultValue={this.props.userData && this.props.userData.NAME}
-              onKeyPress={this.handleKeyPress.bind(this)}
+              onKeyDown={this.handleKeyPress.bind(this)}
               floatingLabelShrinkStyle={{ fontSize: "16px" }}
               floatingLabelFocusStyle={{ fontSize: "16px" }}
             />
@@ -79,7 +79,7 @@ class ProfileDialog extends React.Component {
                 this.updateState("EMAIL", newValue)
               }
               defaultValue={this.props.userData && this.props.userData.EMAIL}
-              onKeyPress={this.handleKeyPress.bind(this)}
+              onKeyDown={this.handleKeyPress.bind(this)}
               floatingLabelShrinkStyle={{ fontSize: "16px" }}
               floatingLabelFocusStyle={{ fontSize: "16px" }}
             />

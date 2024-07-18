@@ -34,7 +34,7 @@ class ResendPasswordDialog extends React.Component {
                 value={this.props.email}
                 className="loginUserField"
                 disabled={this.props.loading}
-                onKeyPress={this.handleKeyPress.bind(this)}
+                onKeyDown={this.handleKeyPress.bind(this)}
               />
             </div>,
           ]}
