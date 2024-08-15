@@ -1,7 +1,7 @@
-import FeaturesDialog from "./FeaturesDialog";
+import FeaturesDialog from "./Features/FeaturesDialog";
 import MarxanDialog from "./MarxanDialog";
 import Metadata from "./Metadata";
-import PlanningUnitsDialog from "./PlanningUnitsDialog";
+import PlanningUnitsDialog from "./PlanningGrids/PlanningUnitsDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *

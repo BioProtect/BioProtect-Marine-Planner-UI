@@ -12,7 +12,6 @@ import React, { useMemo } from "react";
 import { Table } from "@mui/material";
 
 const MarxanTable = (props) => {
-  console.log("props ", props);
   const filterData = () => {
     if (!props.searchText) {
       return props.data;
@@ -43,8 +42,6 @@ const MarxanTable = (props) => {
     () => filterData(),
     [props.data, props.searchText, props.searchColumns]
   );
-  console.log("filterData ", filterData);
-  console.log("filteredData ", filteredData);
 
   if (props.dataFiltered) {
     props.dataFiltered(filteredData);

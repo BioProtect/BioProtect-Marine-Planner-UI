@@ -1,7 +1,7 @@
-import { getArea, isNumber, isValidTargetValue } from "./Helpers";
+import { getArea, isNumber, isValidTargetValue } from "../Helpers";
 
-import CONSTANTS from "./constants";
-import MarxanDialog from "./MarxanDialog";
+import CONSTANTS from "../constants";
+import MarxanDialog from "../MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *

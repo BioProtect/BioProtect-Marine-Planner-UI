@@ -1,4 +1,4 @@
-import MarxanDialog from "./MarxanDialog";
+import MarxanDialog from "../MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *

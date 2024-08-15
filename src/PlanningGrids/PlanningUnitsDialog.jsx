@@ -8,7 +8,7 @@
  */
 import * as React from "react";
 
-import SelectMapboxLayer from "./SelectMapboxLayer";
+import SelectMapboxLayer from "../SelectMapboxLayer";
 import mapboxgl from "mapbox-gl";
 
 class PlanningUnitsDialog extends React.Component {

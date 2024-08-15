@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import MapContainer2 from "./MapContainer2";
-import MarxanDialog from "./MarxanDialog";
+import MapContainer2 from "../MapContainer2";
+import MarxanDialog from "../MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -10,7 +10,7 @@ import MarxanDialog from "./MarxanDialog";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import { getArea } from "./Helpers";
+import { getArea } from "../Helpers";
 
 class FeatureDialog extends React.Component {
   constructor(props) {

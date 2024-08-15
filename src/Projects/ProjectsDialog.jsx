@@ -8,11 +8,10 @@
  */
 import React, { useCallback, useState } from "react";
 
-import Divider from "@mui/material/Divider";
 import Import from "@mui/icons-material/GetApp";
-import MarxanDialog from "./MarxanDialog";
-import ProjectsTable from "./ProjectsTable";
-import ProjectsToobar from "./ProjectsToolbar";
+import MarxanDialog from "../MarxanDialog";
+import ProjectsTable from "../ProjectsDialogTable";
+import ProjectsToolbar from "./ProjectsToolbar";
 
 const ProjectsDialog = (props) => {
   const [searchText, setSearchText] = useState("");
@@ -151,7 +150,7 @@ const ProjectsDialog = (props) => {
         searchText={searchText}
         setSearchText={setSearchText}
       >
-        <ProjectsToobar
+        <ProjectsToolbar
           userRole={props.userRole}
           unauthorisedMethods={props.unauthorisedMethods}
           handleNew={() => _new()}
@@ -163,7 +162,7 @@ const ProjectsDialog = (props) => {
           exportProject={exportProject}
           selectedProject={selectedProject}
           cloneProject={cloneProject}
-          handelDelete={() => _delete()}
+          handleDelete={() => _delete()}
           updateState={() => props.updateState()}
         />
         <div id="projectsTable">

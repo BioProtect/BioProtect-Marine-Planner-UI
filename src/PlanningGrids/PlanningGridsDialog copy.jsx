@@ -2,8 +2,8 @@ import Export from "@mui/icons-material/Publish";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { faSync } from '@fortawesome/free-solid-svg-icons';
 import Import from "@mui/icons-material/GetApp";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTable from "./MarxanTable";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTable from "../MarxanTable";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -13,7 +13,7 @@ import MarxanTable from "./MarxanTable";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import ToolbarButton from "./ToolbarButton";
+import ToolbarButton from "../ToolbarButton";
 import { faFileCode } from "@fortawesome/free-solid-svg-icons";
 // import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";

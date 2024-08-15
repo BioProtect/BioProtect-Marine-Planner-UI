@@ -13,12 +13,12 @@ import Export from "@mui/icons-material/Publish";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Import from "@mui/icons-material/GetApp";
-import MarxanDialog from "./MarxanDialog";
-import MarxanTable from "./MarxanTable";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTable from "../MarxanTable";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
-import ToolbarButton from "./ToolbarButton";
+import ToolbarButton from "../ToolbarButton";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 

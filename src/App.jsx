@@ -13,9 +13,9 @@ import ClassificationDialog from "./ClassificationDialog";
 import ClumpingDialog from "./ClumpingDialog";
 import CostsDialog from "./CostsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
-import FeatureDialog from "./FeatureDialog";
-import FeatureInfoDialog from "./FeatureInfoDialog";
-import FeaturesDialog from "./FeaturesDialog";
+import FeatureDialog from "./Features/FeatureDialog";
+import FeatureInfoDialog from "./Features/FeatureInfoDialog";
+import FeaturesDialog from "./Features/FeaturesDialog";
 import GapAnalysisDialog from "./GapAnalysisDialog";
 import HelpMenu from "./HelpMenu";
 import HomeButton from "./HomeButton";
@@ -42,14 +42,14 @@ import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog";
 import NewPlanningGridDialog from "./NewPlanningGridDialog";
 import NewProjectDialog from "./NewProjectDialog";
 import NewProjectWizardDialog from "./NewProjectWizardDialog";
-import PlanningGridDialog from "./PlanningGridDialog";
-import PlanningGridsDialog from "./PlanningGridsDialog";
+import PlanningGridDialog from "./PlanningGrids/PlanningGridDialog";
+import PlanningGridsDialog from "./PlanningGrids/PlanningGridsDialog";
 //@mui/material components and icons
 import Popover from "@mui/material/Popover";
 import Preprocess from "@mui/icons-material/Autorenew";
 import ProfileDialog from "./ProfileDialog";
-import ProjectsDialog from "./ProjectsDialog";
-import ProjectsListDialog from "./ProjectsListDialog";
+import ProjectsDialog from "./Projects/ProjectsDialog";
+import ProjectsListDialog from "./Projects/ProjectsListDialog";
 import Properties from "@mui/icons-material/ErrorOutline";
 /*
  * Copyright (c) 2020 Andrew Cottam.

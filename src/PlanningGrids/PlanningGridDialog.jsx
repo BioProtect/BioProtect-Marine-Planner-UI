@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import MapContainer2 from "./MapContainer2";
-import MarxanDialog from "./MarxanDialog";
+import MapContainer2 from "../MapContainer2";
+import MarxanDialog from "../MarxanDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *

@@ -16,6 +16,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 
 const ProjectsTable = (props) => {
+  console.log("props.data ", props.data);
   const columns = props.columns;
 
   const filterData = () => {
@@ -64,7 +65,7 @@ const ProjectsTable = (props) => {
         <TableRow>
           {columns.map((column) => (
             <TableCell key={column.id} align="left" width={column.width}>
-              {column.id}
+              {column.id.toUpperCase()}
             </TableCell>
           ))}
         </TableRow>

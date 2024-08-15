@@ -15,21 +15,21 @@ import Popover from "@mui/material/Popover";
  */
 import React from "react";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
-import { faCircle } from "@fortawesome/free-solid-svg-icons";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
+import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 
 const FeaturesToolbar = (props) => {
   return (
     <div>
-      {/* <div
+      <div
         style={{
           display: props.metadata.OLDVERSION ? "block" : "none",
         }}
         className={"tabTitle"}
       >
         This is an imported project. Only features from this project are shown.
-      </div> */}
+      </div>
       <ButtonGroup aria-label="Basic button group" fullWidth="true">
         <Button
           show={
@@ -40,7 +40,7 @@ const FeaturesToolbar = (props) => {
           startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
           title="New feature"
           disabled={props.loading}
-          onClick={() => props.showNewFeaturePopover()}
+          onClick={(evt) => props.showNewFeaturePopover(evt)}
         >
           New
         </Button>
@@ -65,12 +65,13 @@ const FeaturesToolbar = (props) => {
             !props.addingRemovingFeatures &&
             props.userRole !== "ReadOnly"
           }
-          icon={<Import style={{ height: "20px", width: "20px" }} />}
+          startIcon={<Import style={{ height: "20px", width: "20px" }} />}
           title="Create new features from existing data"
           disabled={props.loading}
           onClick={() => props.showImportFeaturePopover()}
-          label={"Import"}
-        />
+        >
+          Import
+        </Button>
         <Popover
           open={props.importFeaturePopoverOpen}
           anchorEl={props.importFeatureAnchor}
@@ -106,7 +107,9 @@ const FeaturesToolbar = (props) => {
             !props.metadata.OLDVERSION &&
             !props.addingRemovingFeatures
           }
-          icon={<FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />}
+          startIcon={
+            <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
+          }
           title="Delete feature"
           disabled={
             props.selectedFeature === undefined ||
@@ -115,22 +118,25 @@ const FeaturesToolbar = (props) => {
               props.selectedFeature.created_by === "global admin")
           }
           onClick={() => props._delete()}
-          label={"Delete"}
-        />
+        >
+          Delete
+        </Button>
         <Button
           show={props.addingRemovingFeatures}
-          icon={<FontAwesomeIcon icon={faCircle} />}
+          startIcon={<FontAwesomeIcon icon={faTimesCircle} />}
           title="Clear all features"
           onClick={() => props.updateState({ selectedFeatureIds: [] })}
-          label={"Clear all"}
-        />
+        >
+          Clear all
+        </Button>
         <Button
           show={props.addingRemovingFeatures}
-          icon={<FontAwesomeIcon icon={faCheckCircle} />}
+          startIcon={<FontAwesomeIcon icon={faCheckCircle} />}
           title="Select all features"
           onClick={() => props.selectAllFeatures()}
-          label={"Select all"}
-        />
+        >
+          Select all
+        </Button>
       </ButtonGroup>
     </div>
   );
