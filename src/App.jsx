@@ -6,8 +6,6 @@ import { getMaxNumberOfClasses, zoomToBounds } from "./Helpers";
 import AboutDialog from "./AboutDialog";
 import AddToMap from "@mui/icons-material/Visibility";
 import AlertDialog from "./AlertDialog";
-//project components
-import AppBar from "./AppBar/AppBar";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import CONSTANTS from "./constants";
 import ChangePasswordDialog from "./ChangePasswordDialog";
@@ -36,6 +34,8 @@ import LoginDialog from "./LoginDialog";
 //mapbox imports
 import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw";
 import Menu from "@mui/material/Menu";
+//project components
+import MenuBar from "./MenuBar/MenuBar";
 import MenuItemWithButton from "./MenuItemWithButton";
 import NewFeatureDialog from "./NewFeatureDialog";
 import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog";
@@ -68,7 +68,7 @@ import RemoveFromMap from "@mui/icons-material/VisibilityOff";
 import RemoveFromProject from "@mui/icons-material/Remove";
 import ResendPasswordDialog from "./ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
-import ResultsPanel from "./ResultsPanel";
+import ResultsPanel from "./RightInfoPanel/ResultsPanel";
 import RunCumuluativeImpactDialog from "./Impacts/RunCumuluativeImpactDialog";
 import RunLogDialog from "./RunLogDialog";
 import RunSettingsDialog from "./RunSettingsDialog";
@@ -6429,14 +6429,12 @@ class App extends React.Component {
           userRole={this.state.userData.ROLE}
           runCumulativeImpact={this.runCumulativeImpact.bind(this)}
         />
-        <AppBar
+        <MenuBar
           open={this.state.loggedIn}
           user={this.state.user}
           userRole={this.state.userData.ROLE}
           infoPanelOpen={this.state.infoPanelOpen}
           resultsPanelOpen={this.state.resultsPanelOpen}
-          openFeaturesDialog={this.openFeaturesDialog.bind(this)}
-          openPlanningGridsDialog={this.openPlanningGridsDialog.bind(this)}
           toggleInfoPanel={this.toggleInfoPanel.bind(this)}
           toggleResultsPanel={this.toggleResultsPanel.bind(this)}
           showToolsMenu={this.showToolsMenu.bind(this)}
@@ -6446,6 +6444,8 @@ class App extends React.Component {
           openProjectsDialog={this.openProjectsDialog.bind(this)}
           openServerDetailsDialog={this.openServerDetailsDialog.bind(this)}
           openActivitiesDialog={this.openActivitiesDialog.bind(this)}
+          openFeaturesDialog={this.openFeaturesDialog.bind(this)}
+          openPlanningGridsDialog={this.openPlanningGridsDialog.bind(this)}
           openCumulativeImpactDialog={this.openCumulativeImpactDialog.bind(
             this
           )}

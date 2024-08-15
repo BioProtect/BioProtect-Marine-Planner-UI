@@ -16,8 +16,12 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Grid from "@mui/material/Grid";
+import InputAdornment from "@mui/material/InputAdornment";
 import SearchField from "./SearchField";
+import SearchIcon from "@mui/icons-material/Search";
 import Sync from "@mui/icons-material/Sync";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
 const DOCS_ROOT = "https://docs.marxanweb.org/";
 
@@ -34,21 +38,15 @@ const DOCS_ROOT = "https://docs.marxanweb.org/";
 //showSearchBox - true to show a search box
 
 const MarxanDialog = (props) => {
-  const [searchText, setSearchText] = useState("");
   const [fullWidth, setFullWidth] = React.useState(true);
-  const [maxWidth, setMaxWidth] = React.useState("sm");
+  const [maxWidth, setMaxWidth] = React.useState("med");
 
   const openDocumentation = () => {
     window.open(DOCS_ROOT + props.helpLink);
   };
 
   const searchTextChange = (evt) => {
-    setSearchText(evt.target.value);
-    if (props.searchTextChanged) props.searchTextChanged(evt.target.value);
-  };
-
-  const clearSearch = () => {
-    searchTextChange({ target: { value: "" } });
+    props.setSearchText(evt.target.value);
   };
 
   const cancelButton = props.showCancelButton ? (
@@ -72,54 +70,51 @@ const MarxanDialog = (props) => {
       maxWidth={maxWidth}
       onClose={props.onCancel}
     >
-      <DialogTitle position="static">
+      <DialogTitle position="static" align="middle">
         <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-          <Grid item xs={4}>
+          <Grid item xs={3}>
             {props.title ? props.title : null}
           </Grid>
-          <Grid item xs={8}>
-            {[
-              props.titleBarIcon ? (
-                <FontAwesomeIcon
-                  icon={props.titleBarIcon}
-                  key="k1"
-                  style={{ position: "absolute", top: "18px", left: "24px" }}
-                />
-              ) : null,
-              props.showSearchBox ? (
-                <SearchField
-                  value={searchText}
-                  onChange={searchTextChange}
-                  key="k27"
-                ></SearchField>
-              ) : null,
-
-              <Sync
-                className="spin"
-                style={{
-                  display:
-                    props.loading || props.showSpinner
-                      ? "inline-block"
-                      : "none",
-                  color: "rgb(255, 64, 129)",
-                  position: "absolute",
-                  top: "15px",
-                  right: "41px",
-                  height: "22px",
-                  width: "22px",
+          <Grid item xs={6}>
+            {props.showSearchBox ? (
+              <TextField
+                size="small"
+                id="outlined-start-adornment"
+                style={{ width: "100%", padding: 0 }}
+                InputProps={{
+                  startAdornment: <SearchIcon />,
+                  padding: 0,
                 }}
-                key={"spinner"}
-              />,
-              props.helpLink ? (
-                <FontAwesomeIcon
-                  icon={faQuestionCircle}
-                  onClick={openDocumentation}
-                  title={"Open documentation for this window"}
-                  className={"appBarIcon docs"}
-                  key="helpLink"
-                />
-              ) : null,
-            ]}
+                onChange={(evt) => searchTextChange(evt)}
+              />
+            ) : null}
+          </Grid>
+          <Grid item xs={1}>
+            <Sync
+              className="spin"
+              style={{
+                display:
+                  props.loading || props.showSpinner ? "inline-block" : "none",
+                color: "rgb(255, 64, 129)",
+                position: "absolute",
+                top: "15px",
+                right: "41px",
+                height: "22px",
+                width: "22px",
+              }}
+              key={"spinner"}
+            />
+          </Grid>
+          <Grid item xs={2}>
+            {props.helpLink ? (
+              <FontAwesomeIcon
+                icon={faQuestionCircle}
+                onClick={openDocumentation}
+                title={"Open documentation for this window"}
+                className={"appBarIcon docs"}
+                key="helpLink"
+              />
+            ) : null}
           </Grid>
         </Grid>
       </DialogTitle>

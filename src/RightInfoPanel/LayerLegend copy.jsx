@@ -9,9 +9,9 @@
 import * as React from "react";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Swatch from "./Swatch";
+import Swatch from "../Swatch";
 import Sync from "@mui/icons-material/Sync";
-import TransparencyControl from "./TransparencyControl";
+import TransparencyControl from "../TransparencyControl";
 import { faCog } from "@fortawesome/free-solid-svg-icons";
 
 class LayerLegend extends React.Component {
@@ -59,17 +59,17 @@ class LayerLegend extends React.Component {
         ) : null;
       return (
         <div
+          pl={4}
           key={key}
           style={{ display: this.props.range ? "inline" : "block" }}
         >
           {separator}
           <Swatch item={item} key={key} shape={this.props.shape} />
           <div
+            pl={4}
             style={{
               display: "inline-flex",
               verticalAlign: "top",
-              marginLeft: "7px",
-              fontSize: "12px",
             }}
             key={key + "_label"}
           >
@@ -103,6 +103,7 @@ class LayerLegend extends React.Component {
     return (
       <React.Fragment>
         <div
+          pl={4}
           className={"tabTitle tabTitleInlineBlock"}
           style={{
             marginTop: this.props.hasOwnProperty("topMargin")

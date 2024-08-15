@@ -22,7 +22,7 @@ import PlanningUnitsTab from "./PlanningUnitsTab";
 import ProjectTabContent from "./ProjectTab";
 import SelectFeatures from "../SelectFeatures";
 import Settings from "@mui/icons-material/Settings";
-import { Stack } from "@mui/material";
+import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 
@@ -162,7 +162,12 @@ const InfoPanel = (props) => {
     <React.Fragment>
       <div
         className={"infoPanel"}
-        style={{ top: "60px", display: props.open ? "block" : "none" }}
+        style={{
+          top: "60px",
+          width: "300px",
+          height: "400px",
+          display: props.open ? "block" : "none",
+        }}
       >
         <Paper elevation={2} className="InfoPanelPaper" mb={4}>
           <Paper elevation={2} className="titleBar">

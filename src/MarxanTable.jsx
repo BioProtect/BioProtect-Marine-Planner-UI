@@ -6,60 +6,57 @@
  *
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
-import React from "react";
+
+import React, { useMemo } from "react";
+
 import { Table } from "@mui/material";
 
-class MarxanTable extends React.Component {
-  //filters the data in the table from the search text
-  filterData() {
-    let filteredData = [];
-    if (this.props.searchText === "") {
-      filteredData = this.props.data;
-    } else {
-      filteredData = this.props.data.filter((item) => {
-        if (this.props.searchText.startsWith("!")) {
-          //does not contain search
-          return !Object.keys(item).some(
-            (key) =>
-              this.props.searchColumns.includes(key) &&
-              item[key] &&
-              item[key]
-                .toLowerCase()
-                .includes(this.props.searchText.toLowerCase().substring(1))
-          );
-        } else {
-          //contains search - this will exit the some loop (and return true) if there are any matching items
-          return Object.keys(item).some(
-            (key) =>
-              this.props.searchColumns.includes(key) &&
-              item[key] &&
-              item[key]
-                .toLowerCase()
-                .includes(this.props.searchText.toLowerCase())
-          );
-        }
-      });
+const MarxanTable = (props) => {
+  console.log("props ", props);
+  const filterData = () => {
+    if (!props.searchText) {
+      return props.data;
     }
-    //call the dataFiltered method passing the filtered data
-    if (this.props.hasOwnProperty("dataFiltered"))
-      this.props.dataFiltered(filteredData);
-    //return a value
-    return filteredData;
+
+    return props.data.filter((item) => {
+      const searchTextLower = props.searchText.toLowerCase();
+
+      if (searchTextLower.startsWith("!")) {
+        return !Object.keys(item).some(
+          (key) =>
+            props.searchColumns.includes(key) &&
+            item[key] &&
+            item[key].toLowerCase().includes(searchTextLower.substring(1))
+        );
+      } else {
+        return Object.keys(item).some(
+          (key) =>
+            props.searchColumns.includes(key) &&
+            item[key] &&
+            item[key].toLowerCase().includes(searchTextLower)
+        );
+      }
+    });
+  };
+
+  const filteredData = useMemo(
+    () => filterData(),
+    [props.data, props.searchText, props.searchColumns]
+  );
+  console.log("filterData ", filterData);
+  console.log("filteredData ", filteredData);
+
+  if (props.dataFiltered) {
+    props.dataFiltered(filteredData);
   }
-  render() {
-    let filteredData = this.filterData();
-    return (
-      <Table
-        {...this.props}
-        pageSize={filteredData.length}
-        className={"projectsReactTable noselect"}
-        showPagination={false}
-        minRows={0}
-        data={filteredData}
-        columns={this.props.columns}
-      />
-    );
-  }
-}
+
+  return (
+    <Table
+      {...props}
+      data={filteredData}
+      className="projectsReactTable noselect"
+    />
+  );
+};
 
 export default MarxanTable;

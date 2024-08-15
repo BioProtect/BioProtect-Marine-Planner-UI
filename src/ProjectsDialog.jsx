@@ -8,18 +8,11 @@
  */
 import React, { useCallback, useState } from "react";
 
-import Export from "@mui/icons-material/Publish";
-import FileCopyIcon from "@mui/icons-material/FileCopy";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Divider from "@mui/material/Divider";
 import Import from "@mui/icons-material/GetApp";
 import MarxanDialog from "./MarxanDialog";
-import MarxanTable from "./MarxanTable";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import Popover from "@mui/material/Popover";
-import ToolbarButton from "./ToolbarButton";
-import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import ProjectsTable from "./ProjectsTable";
+import ProjectsToobar from "./ProjectsToolbar";
 
 const ProjectsDialog = (props) => {
   const [searchText, setSearchText] = useState("");
@@ -95,137 +88,52 @@ const ProjectsDialog = (props) => {
       importProjectPopoverOpen: false,
     });
   }, [props]);
+
   const sortDate = useCallback((a, b, desc) => {
-    return new Date(
-      a.slice(6, 8),
-      a.slice(3, 5) - 1,
-      a.slice(0, 2),
-      a.slice(9, 11),
-      a.slice(12, 14),
-      a.slice(15, 17)
-    ) >
-      new Date(
-        b.slice(6, 8),
-        b.slice(3, 5) - 1,
-        b.slice(0, 2),
-        b.slice(9, 11),
-        b.slice(12, 14),
-        b.slice(15, 17)
-      )
-      ? 1
-      : -1;
+    const dateA = new Date(a.split("/").reverse().join(" "));
+    const dateB = new Date(b.split("/").reverse().join(" "));
+
+    if (dateA > dateB) return desc ? -1 : 1;
+    if (dateA < dateB) return desc ? 1 : -1;
+    return 0;
   }, []);
 
-  const renderDate = useCallback((row) => {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={row.original.createdate}
-      >
-        {row.original.createdate.substr(0, 8)}
-      </div>
-    );
-  }, []);
+  // const searchTextChanged = useCallback((value) => {
+  //   console.log("value ", value);
+  //   console.log("searchTextChanged ");
+  //   setSearchText(value);
+  // }, []);
 
-  const renderTitle = useCallback((row) => {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          // backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={row.original.description}
-      >
-        {row.original.description}
-      </div>
-    );
-  }, []);
+  const baseColumns = [
+    {
+      id: "name",
+      accessor: "name",
+      width: 260,
+    },
+    {
+      id: "description",
+      accessor: "description",
+      width: 390,
+    },
+    {
+      id: "created",
+      accessor: "createdate",
+      sortMethod: sortDate,
+      width: 70,
+    },
+  ];
 
-  const renderName = useCallback((row) => {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          // backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={row.original.name}
-      >
-        {row.original.name}
-      </div>
-    );
-  }, []);
+  const tableColumns = ["Admin", "ReadOnly"].includes(props.userRole)
+    ? [
+        ...baseColumns,
+        {
+          id: "user",
+          accessor: "user",
+          width: 90,
+        },
+      ]
+    : baseColumns;
 
-  const searchTextChanged = useCallback((value) => {
-    setSearchText(value);
-  }, []);
-
-  let tableColumns = [];
-  if (["Admin", "ReadOnly"].includes(props.userRole)) {
-    tableColumns = [
-      {
-        Header: "User",
-        accessor: "user",
-        width: 90,
-        headerStyle: { textAlign: "left" },
-      },
-      {
-        Header: "Name",
-        accessor: "name",
-        width: 200,
-        headerStyle: { textAlign: "left" },
-        Cell: renderName,
-      },
-      {
-        Header: "Description",
-        accessor: "description",
-        width: 360,
-        headerStyle: { textAlign: "left" },
-        Cell: renderTitle,
-      },
-      {
-        Header: "Created",
-        accessor: "createdate",
-        width: 70,
-        headerStyle: { textAlign: "left" },
-        Cell: renderDate,
-        sortMethod: sortDate,
-      },
-    ];
-  } else {
-    tableColumns = [
-      {
-        Header: "Name",
-        accessor: "name",
-        width: 260,
-        headerStyle: { textAlign: "left" },
-        Cell: renderName,
-      },
-      {
-        Header: "Description",
-        accessor: "description",
-        width: 390,
-        headerStyle: { textAlign: "left" },
-        Cell: renderTitle,
-      },
-      {
-        Header: "Created",
-        accessor: "createdate",
-        width: 220,
-        headerStyle: { textAlign: "left" },
-        Cell: renderDate,
-        sortMethod: sortDate,
-      },
-    ];
-  }
   if (props.projects) {
     return (
       <MarxanDialog
@@ -240,122 +148,50 @@ const ProjectsDialog = (props) => {
         bodyStyle={{ padding: "0px 24px 0px 24px" }}
         title="Projects"
         showSearchBox={true}
-        searchTextChanged={searchTextChanged}
+        searchText={searchText}
+        setSearchText={setSearchText}
       >
-        <React.Fragment key="k2">
-          <div id="projectsTable">
-            <MarxanTable
-              data={props.projects}
-              columns={tableColumns}
-              searchColumns={["user", "name", "description"]}
-              searchText={searchText}
-              selectedProject={selectedProject}
-              changeProject={changeProject}
-              getTrProps={(state, rowInfo, column) => {
-                return {
-                  style: {
-                    background:
-                      rowInfo.original.user ===
-                        (state.selectedProject && state.selectedProject.user) &&
-                      rowInfo.original.name ===
-                        (state.selectedProject && state.selectedProject.name)
-                        ? "aliceblue"
-                        : "",
-                  },
-                  onClick: (e) => {
-                    state.changeProject(e, rowInfo.original);
-                  },
-                };
-              }}
-            />
-          </div>
-          <div
-            id="projectsToolbar"
-            style={{
-              display: props.userRole === "ReadOnly" ? "none" : "block",
+        <ProjectsToobar
+          userRole={props.userRole}
+          unauthorisedMethods={props.unauthorisedMethods}
+          handleNew={() => _new()}
+          showImportProjectPopover={showImportProjectPopover}
+          loading={props.loading}
+          importProjectPopoverOpen={props.importProjectPopoverOpen}
+          openImportMXWDialog={openImportMXWDialog}
+          openImportProjectDialog={openImportProjectDialog}
+          exportProject={exportProject}
+          selectedProject={selectedProject}
+          cloneProject={cloneProject}
+          handelDelete={() => _delete()}
+          updateState={() => props.updateState()}
+        />
+        <div id="projectsTable">
+          <ProjectsTable
+            data={props.projects}
+            columns={tableColumns}
+            searchColumns={["user", "name", "description"]}
+            searchText={searchText}
+            selectedProject={selectedProject}
+            changeProject={changeProject}
+            getTrProps={(state, rowInfo, column) => {
+              return {
+                style: {
+                  background:
+                    rowInfo.original.user ===
+                      (state.selectedProject && state.selectedProject.user) &&
+                    rowInfo.original.name ===
+                      (state.selectedProject && state.selectedProject.name)
+                      ? "aliceblue"
+                      : "",
+                },
+                onClick: (e) => {
+                  state.changeProject(e, rowInfo.original);
+                },
+              };
             }}
-          >
-            <ToolbarButton
-              show={!props.unauthorisedMethods.includes("createProject")}
-              icon={<FontAwesomeIcon icon={faPlusCircle} />}
-              title="New project"
-              onClick={_new}
-              label={"New"}
-            />
-            <ToolbarButton
-              show={!(props.userRole === "ReadOnly")}
-              icon={<Import style={{ height: "20px", width: "20px" }} />}
-              title="Import a project from Marxan Web or Marxan DOS"
-              onClick={showImportProjectPopover}
-              disabled={props.loading}
-              label={"Import"}
-            />
-            <Popover
-              open={props.importProjectPopoverOpen}
-              anchorEl={importProjectAnchor}
-              anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-              targetOrigin={{ horizontal: "left", vertical: "top" }}
-              onClose={() =>
-                props.updateState({ importProjectPopoverOpen: false })
-              }
-            >
-              <Menu desktop={true}>
-                <MenuItem
-                  style={{
-                    display: !props.unauthorisedMethods.includes(
-                      "importProject"
-                    )
-                      ? "inline-block"
-                      : "none",
-                  }}
-                  primaryText="From Marxan Web"
-                  title="Import a project from a Marxan Web *.mxw file"
-                  onClick={openImportMXWDialog}
-                />
-                <MenuItem
-                  style={{
-                    display: !props.unauthorisedMethods.includes(
-                      "createImportProject"
-                    )
-                      ? "inline-block"
-                      : "none",
-                  }}
-                  primaryText="From Marxan DOS"
-                  title="Import a project from a Marxan DOS"
-                  onClick={openImportProjectDialog}
-                />
-              </Menu>
-            </Popover>
-            <ToolbarButton
-              show={!props.unauthorisedMethods.includes("exportProject")}
-              icon={<Export style={{ height: "20px", width: "20px" }} />}
-              title="Export project"
-              onClick={exportProject}
-              disabled={
-                !selectedProject || props.loading || selectedProject.oldVersion
-              }
-              label={"Export"}
-            />
-            <ToolbarButton
-              show={!props.unauthorisedMethods.includes("cloneProject")}
-              icon={<FileCopyIcon style={{ height: "20px", width: "20px" }} />}
-              title="Clone project"
-              onClick={cloneProject}
-              disabled={!selectedProject || props.loading}
-              label={"Clone"}
-            />
-            <ToolbarButton
-              show={!props.unauthorisedMethods.includes("deleteProject")}
-              icon={
-                <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
-              }
-              title="Delete project"
-              disabled={!selectedProject || props.loading}
-              onClick={_delete}
-              label={"Delete"}
-            />
-          </div>
-        </React.Fragment>
+          />
+        </div>
       </MarxanDialog>
     );
   } else {
