@@ -8,7 +8,7 @@ import AddToMap from "@mui/icons-material/Visibility";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import CONSTANTS from "./constants";
-import ChangePasswordDialog from "./ChangePasswordDialog";
+import ChangePasswordDialog from "./User/ChangePasswordDialog";
 import ClassificationDialog from "./ClassificationDialog";
 import ClumpingDialog from "./ClumpingDialog";
 import CostsDialog from "./CostsDialog";
@@ -47,7 +47,7 @@ import PlanningGridsDialog from "./PlanningGrids/PlanningGridsDialog";
 //@mui/material components and icons
 import Popover from "@mui/material/Popover";
 import Preprocess from "@mui/icons-material/Autorenew";
-import ProfileDialog from "./ProfileDialog";
+import ProfileDialog from "./User/ProfileDialog";
 import ProjectsDialog from "./Projects/ProjectsDialog";
 import ProjectsListDialog from "./Projects/ProjectsListDialog";
 import Properties from "@mui/icons-material/ErrorOutline";

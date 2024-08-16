@@ -1,5 +1,5 @@
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTextField from "../MarxanTextField";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
