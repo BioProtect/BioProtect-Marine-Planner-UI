@@ -1,25 +1,20 @@
 import {
-  faInfoCircle,
-  faQuestionCircle,
+  faCog,
+  faEdit,
+  faSignOut,
+  faUserLock,
 } from "@fortawesome/free-solid-svg-icons";
 
-import CONSTANTS from "./constants";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Menu from "@mui/material/Menu";
-import MenuBarListItem from "./MenuBarListItem";
-import MenuItem from "@mui/material/MenuItem";
+import MenuBarListItem from "../MenuBarListItem";
 import React from "react";
 
-const HelpMenu = (props) => {
-  const openDocumentation = () => {
-    window.open(CONSTANTS.DOCS_ROOT);
-  };
-
+const UserMenu = (props) => {
   return (
     <Menu
       open={props.open}
       anchorEl={props.menuAnchor}
-      onClose={props.hideHelpMenu}
+      onClose={props.hideUserMenu}
       PaperProps={{
         elevation: 0,
         sx: {
@@ -37,7 +32,7 @@ const HelpMenu = (props) => {
             display: "block",
             position: "absolute",
             top: 0,
-            left: 10,
+            right: 10,
             width: 10,
             height: 10,
             bgcolor: "background.paper",
@@ -48,19 +43,32 @@ const HelpMenu = (props) => {
       }}
     >
       <MenuBarListItem
-        handleClick={openDocumentation}
-        title="Documentation"
-        icon={faQuestionCircle}
-        text="Documentation"
+        handleClick={props.openUserSettingsDialog}
+        title="Settings"
+        icon={faCog}
+        text="Settings"
       />
       <MenuBarListItem
-        handleClick={props.openAboutDialog}
-        title="About"
-        icon={faInfoCircle}
-        text="About"
+        handleClick={props.openProfileDialog}
+        title="Profile"
+        icon={faEdit}
+        text="Profile"
+      />
+
+      <MenuBarListItem
+        handleClick={props.openChangePasswordDialog}
+        title="Change password"
+        icon={faUserLock}
+        text="Change password"
+      />
+      <MenuBarListItem
+        handleClick={props.logout}
+        title="Log out"
+        icon={faSignOut}
+        text="Log out"
       />
     </Menu>
   );
 };
 
-export default HelpMenu;
+export default UserMenu;

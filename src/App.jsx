@@ -80,9 +80,9 @@ import TargetDialog from "./TargetDialog";
 // import { ThemeProvider } from "@mui/material/styles";
 import ToolsMenu from "./ToolsMenu";
 import UpdateWDPADialog from "./UpdateWDPADialog";
-import UserMenu from "./UserMenu";
-import UserSettingsDialog from "./UserSettingsDialog";
-import UsersDialog from "./UsersDialog";
+import UserMenu from "./User/UserMenu";
+import UserSettingsDialog from "./User/UserSettingsDialog";
+import UsersDialog from "./User/UsersDialog";
 import Welcome from "./Welcome";
 import ZoomIn from "@mui/icons-material/ZoomIn";
 /*eslint-disable no-unused-vars*/

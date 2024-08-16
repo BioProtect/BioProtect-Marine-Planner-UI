@@ -6,10 +6,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
-import ToolbarButton from "../ToolbarButton";
+import React from "react";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
-
 const ProjectsToolbar = (props) => {
   return (
     <div

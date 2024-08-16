@@ -1,4 +1,5 @@
 import MarxanDialog from "./MarxanDialog";
+import React from "react";
 import Typography from "@mui/material/Typography";
 import biopama_small from "./images/biopama_small.png";
 import iucn from "./images/iucn.png";

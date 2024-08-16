@@ -1,14 +1,13 @@
+import {
+  faCircle,
+  faPlusCircle,
+  faTrashAlt,
+} from "@fortawesome/free-solid-svg-icons";
+
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
-import Export from "@mui/icons-material/Publish";
-import FileCopyIcon from "@mui/icons-material/FileCopy";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import Popover from "@mui/material/Popover";
-import ToolbarButton from "../ToolbarButton";
-import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import React from "react";
 
 const CumulativeImpactsToolbar = (props) => {
   return (
@@ -31,7 +30,7 @@ const CumulativeImpactsToolbar = (props) => {
 
         <Button
           show={!props.metadata.OLDVERSION && props.userRole !== "ReadOnly"}
-          startIcon={<FontAwesomeIcon icon={faPlayCircle} />}
+          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
           title="View uploaded activities"
           onClick={props.openImportedActivitesDialog}
           disabled={props.loading}
@@ -58,7 +57,7 @@ const CumulativeImpactsToolbar = (props) => {
         <Button
           startIcon={<FontAwesomeIcon icon={faCircle} />}
           title="Clear all Impact layers"
-          onClick={props.clearAllImpacts}
+          // onClick={props.clearAllImpacts}
           disabled={!props.selectedProject || props.loading}
         >
           Clear all

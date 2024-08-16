@@ -183,6 +183,7 @@ const CumulativeImpactDialog = (props) => {
       showSearchBox={true}
       searchText={searchText}
       searchTextChanged={setSearchText}
+      fullWidth={true}
     >
       <React.Fragment key="k10">
         <div id="projectsTable">
@@ -194,7 +195,7 @@ const CumulativeImpactDialog = (props) => {
             selectedImpactIds={props.selectedImpactIds}
             clickImpact={clickImpact}
             preview={preview}
-            columns={tableColumns}
+            columns={columns}
             getTrProps={(state, rowInfo) => ({
               style: {
                 background:
@@ -220,7 +221,6 @@ const CumulativeImpactDialog = (props) => {
           openHumanActivitiesDialog={openHumanActivitiesDialog}
           deleteImpact={deleteImpact}
           selectedImpact={selectedImpact}
-          clea
         />
       </React.Fragment>
     </MarxanDialog>

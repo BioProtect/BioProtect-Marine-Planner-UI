@@ -1,4 +1,4 @@
-import MarxanDialog from "./MarxanDialog";
+import MarxanDialog from "../MarxanDialog";
 import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
