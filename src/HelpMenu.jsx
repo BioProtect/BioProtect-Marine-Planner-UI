@@ -1,73 +1,65 @@
+import {
+  faInfoCircle,
+  faQuestionCircle,
+} from "@fortawesome/free-solid-svg-icons";
+
 import CONSTANTS from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Menu from "@mui/material/Menu";
+import MenuBarListItem from "./MenuBarListItem";
 import MenuItem from "@mui/material/MenuItem";
-import Popover from "@mui/material/Popover";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
-import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
-import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 
-class HelpMenu extends React.Component {
-  openDocumentation() {
+const HelpMenu = (props) => {
+  const openDocumentation = () => {
     window.open(CONSTANTS.DOCS_ROOT);
-  }
+  };
 
-  render() {
-    return (
-      <React.Fragment>
-        <Popover
-          open={this.props.open}
-          anchorEl={this.props.menuAnchor}
-          anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-          targetOrigin={{ horizontal: "left", vertical: "top" }}
-          onClose={this.props.hideHelpMenu}
-        >
-          <Menu
-            desktop={true}
-            onMouseLeave={this.props.hideHelpMenu}
-            menuItemStyle={{
-              backgroundColor: "rgb(0, 188, 212)",
-              color: "white",
-            }}
-            listStyle={{ width: "120px", backgroundColor: "rgb(0, 188, 212)" }}
-            selectedMenuItemStyle={{ color: "rgb(24,24,24)" }}
-            width={"102px"}
-          >
-            <MenuItem
-              primaryText="Documentation"
-              onClick={this.openDocumentation.bind(this)}
-              leftIcon={
-                <FontAwesomeIcon
-                  style={{ height: "18px", marginTop: "4px", fontSize: "18px" }}
-                  icon={faQuestionCircle}
-                  color={"white"}
-                />
-              }
-            />
-            <MenuItem
-              primaryText="About"
-              onClick={this.props.openAboutDialog}
-              leftIcon={
-                <FontAwesomeIcon
-                  style={{ height: "18px", marginTop: "4px", fontSize: "18px" }}
-                  icon={faInfoCircle}
-                  color={"white"}
-                />
-              }
-            />
-          </Menu>
-        </Popover>
-      </React.Fragment>
-    );
-  }
-}
+  return (
+    <Menu
+      open={props.open}
+      anchorEl={props.menuAnchor}
+      onClose={props.hideHelpMenu}
+      PaperProps={{
+        elevation: 0,
+        sx: {
+          overflow: "visible",
+          filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+          mt: 1.5,
+          "& .MuiAvatar-root": {
+            width: 32,
+            height: 32,
+            ml: -0.5,
+            mr: 1,
+          },
+          "&::before": {
+            content: '""',
+            display: "block",
+            position: "absolute",
+            top: 0,
+            left: 10,
+            width: 10,
+            height: 10,
+            bgcolor: "background.paper",
+            transform: "translateY(-50%) rotate(45deg)",
+            zIndex: 0,
+          },
+        },
+      }}
+    >
+      <MenuBarListItem
+        handleClick={openDocumentation}
+        title="Documentation"
+        icon={faQuestionCircle}
+        text="Documentation"
+      />
+      <MenuBarListItem
+        handleClick={props.openAboutDialog}
+        title="About"
+        icon={faInfoCircle}
+        text="About"
+      />
+    </Menu>
+  );
+};
 
 export default HelpMenu;

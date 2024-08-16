@@ -87,6 +87,8 @@ const LoginDialog = (props) => {
     <React.Fragment>
       <MarxanDialog
         {...props}
+        fullWidth={false}
+        maxWidth="sm"
         component="form"
         onSubmit={handleSubmit}
         noValidate

@@ -25,8 +25,6 @@ class UserMenu extends React.Component {
         <Popover
           open={this.props.open}
           anchorEl={this.props.menuAnchor}
-          anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-          targetOrigin={{ horizontal: "left", vertical: "top" }}
           onClose={this.props.hideUserMenu}
         >
           <Menu

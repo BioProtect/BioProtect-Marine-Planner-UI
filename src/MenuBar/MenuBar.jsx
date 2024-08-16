@@ -55,7 +55,7 @@ const MenuBar = (props) => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             <AppBarIcon
               icon={faBookOpen}
-              onClick={props.openProjectsDialog}
+              onClick={() => props.openProjectsDialog()}
               title="Projects"
             />
             <AppBarIcon
@@ -65,12 +65,12 @@ const MenuBar = (props) => {
             />
             <AppBarIcon
               icon={faThLarge}
-              onClick={props.openPlanningGridsDialog.bind(this)}
+              onClick={() => props.openPlanningGridsDialog()}
               title="Planning grids"
             />
             <AppBarIcon
               icon={faGlobeEurope}
-              onClick={props.openAtlasLayersDialog}
+              onClick={() => props.openAtlasLayersDialog()}
               title="Atlas Layers"
             />
             <AppBarIcon

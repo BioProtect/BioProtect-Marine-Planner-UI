@@ -38,9 +38,8 @@ const DOCS_ROOT = "https://docs.marxanweb.org/";
 //showSearchBox - true to show a search box
 
 const MarxanDialog = (props) => {
-  const [fullWidth, setFullWidth] = React.useState(true);
-  const [maxWidth, setMaxWidth] = React.useState("med");
-
+  const fullW = props.fullWidth ? props.fullWidth : false;
+  const maxW = props.maxWidth ? props.maxWidth : "lg";
   const openDocumentation = () => {
     window.open(DOCS_ROOT + props.helpLink);
   };
@@ -66,8 +65,8 @@ const MarxanDialog = (props) => {
   return (
     <Dialog
       {...props}
-      fullWidth={fullWidth}
-      maxWidth={maxWidth}
+      fullWidth={fullW}
+      maxWidth={maxW}
       onClose={props.onCancel}
     >
       <DialogTitle position="static" align="middle">

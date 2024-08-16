@@ -1,124 +1,114 @@
+import React, { useCallback, useEffect, useState } from "react";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "./MarxanDialog";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
-import { Table } from "@mui/material";
-class RunSettingsDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { data: [], updateEnabled: false };
-    this.renderEditable = this.renderEditable.bind(this);
-  }
-  componentDidUpdate(prevProps) {
-    if (prevProps.runParams !== this.props.runParams) {
-      this.setState({ data: this.props.runParams });
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+
+const RunSettingsDialog = (props) => {
+  const [data, setData] = useState([]);
+  const [updateEnabled, setUpdateEnabled] = useState(false);
+
+  useEffect(() => {
+    if (props.runParams !== data) {
+      setData(props.runParams);
     }
-  }
-  openParametersDialog() {
-    this.props.openParametersDialog();
-  }
-  //posts the results back to the server
-  updateRunParams() {
-    //ui feedback
-    this.setState({ updateEnabled: false });
-    if (this.props.userRole !== "ReadOnly")
-      this.props.updateRunParams(this.state.data);
-    this.props.onOk();
-  }
-  setUpdateEnabled() {
-    this.setState({ updateEnabled: true });
-  }
-  renderEditable(cellInfo) {
-    return this.props.userRole === "ReadOnly" ? (
-      <React.Fragment>
-        <div>{this.state.data[cellInfo.index]["value"]}</div>
-      </React.Fragment>
-    ) : (
-      <React.Fragment>
-        <div
-          style={{
-            backgroundColor: "#fafafa",
-            float:
-              [...this.state.data][cellInfo.index]["key"] === "BLM"
-                ? "left"
-                : "none",
-          }}
-          contentEditable
-          suppressContentEditableWarning
-          onFocus={this.setUpdateEnabled.bind(this)}
-          onBlur={(e) => {
-            const data = [...this.state.data];
-            data[cellInfo.index][cellInfo.column.id] = e.target.innerHTML;
-            this.setState({ data });
-          }}
-        >
-          {this.state.data[cellInfo.index]["value"]}
-        </div>
-        <FontAwesome
-          name="external-link-alt"
-          onClick={this.props.showClumpingDialog}
-          title="Click to open the BLM comparison dialog"
-          style={{
-            display:
-              [...this.state.data][cellInfo.index]["key"] === "BLM"
-                ? "block"
-                : "none",
-            cursor: "pointer",
-            paddingTop: "6px",
-            paddingLeft: "35px",
-          }}
-        />
-      </React.Fragment>
-    );
-  }
-  render() {
-    return (
-      <MarxanDialog
-        {...this.props}
-        contentWidth={400}
-        offsetX={80}
-        offsetY={260}
-        onOk={this.updateRunParams.bind(this)}
-        helpLink={"user.html#run-settings"}
-        title="Run settings"
-      >
-        {
-          <div style={{ height: "275px" }} key="k16">
-            <Table
-              showPagination={false}
-              className={"summary_infoTable"}
-              minRows={0}
-              pageSize={this.state.data.length}
-              data={this.state.data}
-              noDataText=""
-              columns={[
-                {
-                  Header: "Parameter",
-                  accessor: "key",
-                  width: 165,
-                  headerStyle: { textAlign: "left" },
-                },
-                {
-                  Header: "Value",
-                  accessor: "value",
-                  width: 193,
-                  headerStyle: { textAlign: "left" },
-                  Cell: this.renderEditable,
-                },
-              ]}
-            />
+  }, [props.runParams, data]);
+
+  const openParametersDialog = useCallback(() => {
+    props.openParametersDialog();
+  }, [props]);
+
+  const updateRunParams = useCallback(() => {
+    setUpdateEnabled(false);
+    if (props.userRole !== "ReadOnly") {
+      props.updateRunParams(data);
+    }
+    props.onOk();
+  }, [props, data]);
+
+  const enableUpdate = useCallback(() => {
+    setUpdateEnabled(true);
+  }, []);
+
+  const handleBlur = useCallback(
+    (e, index) => {
+      const updatedData = [...data];
+      updatedData[index].value = e.target.innerHTML;
+      setData(updatedData);
+    },
+    [data]
+  );
+
+  const renderEditable = useCallback(
+    (cellInfo) => {
+      return props.userRole === "ReadOnly" ? (
+        <div>{data[cellInfo.index]["value"]}</div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <div
+            style={{
+              backgroundColor: "#fafafa",
+              float: data[cellInfo.index]["key"] === "BLM" ? "left" : "none",
+              flexGrow: 1,
+            }}
+            contentEditable
+            suppressContentEditableWarning
+            onFocus={enableUpdate}
+            onBlur={(e) => handleBlur(e, cellInfo.index)}
+          >
+            {data[cellInfo.index]["value"]}
           </div>
-        }
-      </MarxanDialog>
-    );
-  }
-}
+          {data[cellInfo.index]["key"] === "BLM" && (
+            <FontAwesomeIcon
+              icon={faExternalLinkAlt}
+              onClick={props.showClumpingDialog}
+              title="Click to open the BLM comparison dialog"
+              style={{
+                cursor: "pointer",
+                marginLeft: "10px",
+              }}
+            />
+          )}
+        </div>
+      );
+    },
+    [props.userRole, data, enableUpdate, handleBlur, props.showClumpingDialog]
+  );
+
+  return (
+    <MarxanDialog
+      {...props}
+      fullWidth={false}
+      maxWidth="md"
+      onOk={updateRunParams}
+      helpLink={"user.html#run-settings"}
+      title="Run settings"
+    >
+      <Table aria-label="run settings table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Parameter</TableCell>
+            <TableCell>Value</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {data.map((row, index) => (
+            <TableRow key={index}>
+              <TableCell>{row.key}</TableCell>
+              <TableCell>
+                {renderEditable({ index, column: { id: "value" } })}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </MarxanDialog>
+  );
+};
 
 export default RunSettingsDialog;

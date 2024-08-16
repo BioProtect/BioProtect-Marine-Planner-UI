@@ -296,7 +296,6 @@ const ProjectsDialog = (props) => {
               open={props.importProjectPopoverOpen}
               anchorEl={importProjectAnchor}
               anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-              targetOrigin={{ horizontal: "left", vertical: "top" }}
               onClose={() =>
                 props.updateState({ importProjectPopoverOpen: false })
               }

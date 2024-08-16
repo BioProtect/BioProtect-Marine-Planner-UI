@@ -47,8 +47,6 @@ const FeaturesToolbar = (props) => {
         <Popover
           open={props.newFeaturePopoverOpen}
           anchorEl={props.newFeatureAnchor}
-          anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-          targetOrigin={{ horizontal: "left", vertical: "top" }}
           onClose={() => props.updateState({ newFeaturePopoverOpen: false })}
         >
           <Menu desktop={true}>
@@ -76,7 +74,6 @@ const FeaturesToolbar = (props) => {
           open={props.importFeaturePopoverOpen}
           anchorEl={props.importFeatureAnchor}
           anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-          targetOrigin={{ horizontal: "left", vertical: "top" }}
           onClose={() => props.updateState({ importFeaturePopoverOpen: false })}
         >
           <Menu desktop={true}>

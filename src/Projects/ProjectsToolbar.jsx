@@ -40,7 +40,6 @@ const ProjectsToolbar = (props) => {
           open={props.importProjectPopoverOpen}
           anchorEl={props.importProjectAnchor}
           anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-          targetOrigin={{ horizontal: "left", vertical: "top" }}
           onClose={() => props.updateState({ importProjectPopoverOpen: false })}
         >
           <Menu desktop={true}>

@@ -233,6 +233,7 @@ class App extends React.Component {
       humanActivitiesDialogOpen: false,
       importedActivitiesDialogOpen: false,
       NewMarinePlanningGridDialogOpen: false,
+      menuAnchor: null,
     };
   }
 
@@ -6061,6 +6062,8 @@ class App extends React.Component {
           deletePlanningGrid={this.deletePlanningUnitGrid.bind(this)}
           previewPlanningGrid={this.previewPlanningGrid.bind(this)}
           marxanServer={this.state.marxanServer}
+          fullWidth={true}
+          maxWidth="false"
         />
         <PlanningGridDialog
           open={this.state.planningGridDialogOpen}
