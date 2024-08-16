@@ -1,0 +1,340 @@
+import Export from "@mui/icons-material/Publish";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faSync } from '@fortawesome/free-solid-svg-icons';
+import Import from "@mui/icons-material/GetApp";
+import MarxanDialog from "../MarxanDialog";
+import MarxanTable from "../MarxanTable";
+/*
+ * Copyright (c) 2020 Andrew Cottam.
+ *
+ * This file is part of marxanweb/marxan-client
+ * (see https://github.com/marxanweb/marxan-client).
+ *
+ * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
+ */
+import React from "react";
+import ToolbarButton from "../ToolbarButton";
+import { faFileCode } from "@fortawesome/free-solid-svg-icons";
+// import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
+import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+
+class PlanningGridsDialog extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { searchText: "", selectedPlanningGrid: undefined };
+  }
+  _delete() {
+    this.props.deletePlanningGrid(
+      this.state.selectedPlanningGrid.feature_class_name
+    );
+    this.setState({ selectedPlanningGrid: false });
+  }
+  _new() {
+    this.props.openNewPlanningGridDialog();
+    this.closeDialog();
+  }
+
+  _new_marine() {
+    this.props.updateState({ NewMarinePlanningGridDialogOpen: true });
+    this.closeDialog();
+  }
+
+  openImportDialog() {
+    this.props.updateState({ importPlanningGridDialogOpen: true });
+    this.closeDialog();
+  }
+  exportPlanningGrid() {
+    this.props
+      .exportPlanningGrid(this.state.selectedPlanningGrid.feature_class_name)
+      .then((url) => {
+        window.location = url;
+      });
+    this.closeDialog();
+  }
+  changePlanningGrid(event, planningGrid) {
+    this.setState({ selectedPlanningGrid: planningGrid });
+  }
+  closeDialog() {
+    this.setState({ selectedPlanningGrid: undefined });
+    this.props.updateState({ planningGridsDialogOpen: false });
+  }
+  preview(planning_grid_metadata) {
+    console.log("planning_grid_metadata ", planning_grid_metadata);
+
+    this.props.previewPlanningGrid(planning_grid_metadata);
+  }
+  sortDate(a, b, desc) {
+    return new Date(
+      a.slice(6, 8),
+      a.slice(3, 5) - 1,
+      a.slice(0, 2),
+      a.slice(9, 11),
+      a.slice(12, 14),
+      a.slice(15, 17)
+    ) >
+      new Date(
+        b.slice(6, 8),
+        b.slice(3, 5) - 1,
+        b.slice(0, 2),
+        b.slice(9, 11),
+        b.slice(12, 14),
+        b.slice(15, 17)
+      )
+      ? 1
+      : -1;
+  }
+
+  renderRow(alias, name) {
+    let title = name ? alias + " (" + name + ")" : alias;
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#dadada",
+          borderRadius: "2px",
+        }}
+        title={title}
+      >
+        {alias}
+      </div>
+    );
+  }
+
+  renderName(row) {
+    return this.renderRow(row.original.alias, row.original.feature_class_name);
+  }
+  renderTitle(row) {
+    return this.renderRow(row.original.description, null);
+  }
+  renderDate(row) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#dadada",
+          borderRadius: "2px",
+        }}
+        title={row.original.creation_date}
+      >
+        {row.original.creation_date.substr(0, 8)}
+      </div>
+    );
+  }
+  renderCreatedBy(row) {
+    return this.renderRow(row.original.created_by, null);
+  }
+  renderCountry(row) {
+    return this.renderRow(row.original.country, null);
+  }
+  renderArea(row) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#dadada",
+          borderRadius: "2px",
+        }}
+      >
+        {isNaN(row.original._area) ? "" : row.original._area}
+      </div>
+    );
+  }
+  renderPreview(row) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#dadada",
+          borderRadius: "2px",
+        }}
+        title="Click to preview"
+      >
+        ..
+      </div>
+    );
+  }
+  searchTextChanged(value) {
+    this.setState({ searchText: value });
+  }
+  render() {
+    let tableColumns = [];
+    tableColumns = [
+      {
+        Header: "Name",
+        accessor: "alias",
+        width: 274,
+        headerStyle: { textAlign: "left" },
+        Cell: this.renderName.bind(this),
+      },
+      {
+        Header: "Description",
+        accessor: "description",
+        width: 269,
+        headerStyle: { textAlign: "left" },
+        Cell: this.renderTitle.bind(this),
+      },
+      {
+        Header: "Created",
+        accessor: "creation_date",
+        width: 70,
+        headerStyle: { textAlign: "left" },
+        Cell: this.renderDate.bind(this),
+        sortMethod: this.sortDate.bind(this),
+      },
+      {
+        Header: "Created by",
+        accessor: "created_by",
+        width: 70,
+        headerStyle: { textAlign: "left" },
+        Cell: this.renderCreatedBy.bind(this),
+      },
+      {
+        Header: "",
+        width: 8,
+        headerStyle: { textAlign: "center" },
+        Cell: this.renderPreview.bind(this),
+      },
+    ];
+    return (
+      <MarxanDialog
+        {...this.props}
+        // titleBarIcon={faBookOpen}
+        onOk={this.closeDialog.bind(this)}
+        showCancelButton={false}
+        helpLink={"user.html#the-planning-grids-window"}
+        autoDetectWindowHeight={false}
+        bodyStyle={{ padding: "0px 24px 0px 24px" }}
+        title="Planning grids"
+        showSearchBox={true}
+        searchTextChanged={this.searchTextChanged.bind(this)}
+      >
+        {
+          <React.Fragment key="k2">
+            <div id="projectsTable">
+              <MarxanTable
+                data={this.props.planningGrids}
+                columns={tableColumns}
+                searchColumns={[
+                  "country",
+                  "domain",
+                  "alias",
+                  "description",
+                  "created_by",
+                ]}
+                searchText={this.state.searchText}
+                selectedPlanningGrid={this.state.selectedPlanningGrid}
+                changePlanningGrid={this.changePlanningGrid.bind(this)}
+                getTrProps={(state, rowInfo) => {
+                  return {
+                    style: {
+                      background:
+                        rowInfo.original.alias ===
+                        (state.selectedPlanningGrid &&
+                          state.selectedPlanningGrid.alias)
+                          ? "aliceblue"
+                          : "",
+                    },
+                    onClick: (e) => {
+                      state.changePlanningGrid(e, rowInfo.original);
+                    },
+                  };
+                }}
+                getTdProps={(state, rowInfo, column) => {
+                  return {
+                    onClick: (e) => {
+                      if (column.Header === "") this.preview(rowInfo.original);
+                    },
+                  };
+                }}
+              />
+            </div>
+            <div
+              id="projectsToolbar"
+              style={{
+                display: this.props.userRole === "ReadOnly" ? "none" : "block",
+              }}
+            >
+              <ToolbarButton
+                show={
+                  !this.props.unauthorisedMethods.includes(
+                    "createPlanningUnitGrid"
+                  )
+                }
+                icon={<FontAwesomeIcon icon={faPlusCircle} />}
+                title="New planning grid"
+                onClick={this._new.bind(this)}
+                label={"New"}
+              />
+              <ToolbarButton
+                show={
+                  !this.props.unauthorisedMethods.includes(
+                    "createMarinePlanningUnitGrid"
+                  )
+                }
+                icon={<FontAwesomeIcon icon={faFileCode} />}
+                title="Import from simple Shapefile"
+                onClick={this._new_marine.bind(this)}
+                label={"New"}
+              />
+              <ToolbarButton
+                show={
+                  !this.props.unauthorisedMethods.includes(
+                    "importPlanningUnitGrid"
+                  )
+                }
+                icon={<Import style={{ height: "20px", width: "20px" }} />}
+                title="Import an existing planning grid from the local machine"
+                onClick={this.openImportDialog.bind(this)}
+                label={"Import"}
+              />
+              <ToolbarButton
+                show={
+                  !this.props.unauthorisedMethods.includes(
+                    "exportPlanningUnitGrid"
+                  )
+                }
+                icon={<Export style={{ height: "20px", width: "20px" }} />}
+                title="Export planning grid"
+                onClick={this.exportPlanningGrid.bind(this)}
+                disabled={
+                  !this.state.selectedPlanningGrid || this.props.loading
+                }
+                label={"Export"}
+              />
+              <ToolbarButton
+                show={
+                  !this.props.unauthorisedMethods.includes(
+                    "deletePlanningUnitGrid"
+                  )
+                }
+                icon={
+                  <FontAwesomeIcon
+                    icon={faTrashAlt}
+                    color="rgb(255, 64, 129)"
+                  />
+                }
+                title="Delete planning grid"
+                disabled={
+                  !this.state.selectedPlanningGrid ||
+                  this.props.loading ||
+                  (this.state.selectedPlanningGrid &&
+                    this.state.selectedPlanningGrid.created_by ===
+                      "global admin")
+                }
+                onClick={this._delete.bind(this)}
+                label={"Delete"}
+              />
+            </div>
+          </React.Fragment>
+        }
+      </MarxanDialog>
+    ); //return
+  }
+}
+
+export default PlanningGridsDialog;

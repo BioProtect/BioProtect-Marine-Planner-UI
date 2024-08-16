@@ -194,11 +194,6 @@ body {
   /* Gecko Browsers */
 }
 
-.ReactTable {
-  font-size: 12px;
-  margin-left: -2px;
-}
-
 .rt-td {
   padding: 0px 5px !important;
 }
@@ -277,10 +272,6 @@ body {
 
 table input {
   font-size: 13px;
-}
-
-#projectsToolbar {
-  margin: 18px 10px 10px 0px;
 }
 
 .uploadDiv {
