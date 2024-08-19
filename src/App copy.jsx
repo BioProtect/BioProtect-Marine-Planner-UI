@@ -96,340 +96,357 @@ import packageJson from "../package.json";
 let MARXAN_CLIENT_VERSION = packageJson.version;
 let timers = []; //array of timers for seeing when asynchronous calls have finished
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Map } from 'mapbox-gl'; // Assuming you're using mapbox-gl
-import classyBrew from "classybrew";
-import CONSTANTS from './constants'; // Adjust the import based on your actual file location
-
-const App = () => {
-  const [registry, setRegistry] = useState(undefined);
-  const [marxanServers, setMarxanServers] = useState([]);
-  const [marxanServer, setMarxanServer] = useState({});
-    const [brew, setBrew] = useState(null);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState('');
-
-
-
-const [dialogsState, setDialogsState] = useState({
-  addToProject: true,
-  activities: [],
-  activitiesDialogOpen: false,
-  allFeatures: [],
-  allImpacts: [],
-  aboutDialogOpen: false,
-  addingRemovingFeatures: false,
-  atlasLayers: [],
-  atlasLayersDialogOpen: false,
-  baseline: "North Star",
-  basemaps: [],
-  clumpingRunning: false,
-  clumpingDialogOpen: false,
-  costsDialogOpen: false,
-  costsLoading: false,
-  costnames: [],
-  currentFeature: {},
-  cumulativeImpactDialogOpen: false,
-  dataBreaks: [],
-  featureDatasetFilename: "",
-  feature_metadata: {},
-  featureDialogOpen: false,
-  featuresDialogOpen: false,
-  file: {},
-  files: {},
-  gapAnalysis: [],
-  gapAnalysisDialogOpen: false,
-  guestUserEnabled: true,
-  identifyFeatures: [],
-  identifyPlanningUnits: {},
-  identifyProtectedAreas: [],
-  identifyVisible: false,
-  importCostsDialogOpen: false,
-  importFeaturesDialogOpen: false,
-  importFromWebDialogOpen: false,
-  importGBIFDialogOpen: false,
-  importMXWDialogOpen: false,
-  importPlanningGridDialogOpen: false,
-  loggedIn: false,
-  loading: false,
-  mapCentre: { lng: 0, lat: 0 },
-  mapZoom: 12,
-  menuAnchor: null,
-  newFeaturePopoverOpen: false,
-  newProjectDialogOpen: false,
-  newProjectWizardDialogOpen: false,
-  notifications: [],
-  notificationsOpen: false,
-  pa_layer_visible: false,
-  planningGridDialogOpen: false,
-  planningGridsDialogOpen: false,
-  planning_unit_grids: [],
-  planning_units: [],
-  project: "",
-  projectFeatures: [],
-  projectList: [],
-  projectListDialogHeading: "",
-  projectListDialogTitle: "",
-  puEditing: false,
-  resendPasswordDialogOpen: false,
-  resetDialogOpen: false,
-  runningImpactMessage: "Import Activity",
-  selectedCosts: [],
-  selectedFeatureIds: [],
-  selectedImpactIds: [],
-  selectedLayers: [],
-  shareableLink: false,
-  shareableLinkDialogOpen: false,
-  shareableLinkUrl: "",
-  updateWDPADialogOpen: false,
-  unauthorisedMethods: [],
-  user: "",
-  userData: { SHOWWELCOMESCREEN: true, REPORTUNITS: "Ha" },
-  users: [],
-  usersDialogOpen: false,
-  welcomeDialogOpen: false,
-  wdpaAttribution: "",
-  runningImpactMessage: "Import Activity",
-  impactDatasetFilename: "",
-  runningImpactMessage: "Import Activity",
-  newMarinePlanningGridDialogOpen: false,
-  gapAnalysis: [],
-  visibleLayers: [],
-  atlasLayers: [],
-  selectedLayers: [],
-  selectedImpactIds: [],
-  impact_metadata: {},
-  runningImpactMessage: "Import Activity",
-  allImpacts: [],
-  cumulativeImpactDialogOpen: false,
-  activitiesDialogOpen: false,
-  atlasLayersDialogOpen: false,
-  activities: [],
-  uploadedActivities: [],
-  humanActivitiesDialogOpen: false,
-  importedActivitiesDialogOpen: false,
-  NewMarinePlanningGridDialogOpen: false,
-  menuAnchor: null,
-});
-
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has("project")) {
-      setDialogsState(prevState => ({ ...prevState, loggedIn: true, shareableLink: true }));
-    }
-
-    const fetchGlobalVariables = async () => {
-      try {
-        const response = await fetch(CONSTANTS.MARXAN_REGISTRY);
-        const registryData = await response.json();
-        setRegistry(registryData);
-        mapboxgl.accessToken = "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg";
-        setBrew(new classyBrew());
-        setDialogsState(prevState => ({ ...prevState, basemaps: registryData.MAPBOX_BASEMAPS }));
-        await initialiseServers(registryData.MARXAN_SERVERS);
-        if (searchParams.has("project")) openShareableLink(searchParams);
-        if (searchParams.has("server")) selectServerByName(searchParams.get("server"));
-      } catch (error) {
-        console.error("Error fetching global variables:", error);
-      }
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      registry: undefined,
+      marxanServers: [],
+      marxanServer: {},
+      usersDialogOpen: false,
+      alertDialogOpen: false,
+      featureMenuOpen: false,
+      profileDialogOpen: false,
+      aboutDialogOpen: false,
+      helpDialogOpen: false,
+      importProjectDialogOpen: false,
+      UserSettingsDialogOpen: false,
+      welcomeDialogOpen: false,
+      registerDialogOpen: false,
+      clumpingDialogOpen: false,
+      settingsDialogOpen: false,
+      projectsDialogOpen: false,
+      openInfoDialogOpen: false,
+      importGBIFDialogOpen: false,
+      newProjectDialogOpen: false,
+      newProjectWizardDialogOpen: false,
+      shareableLinkDialogOpen: false,
+      classificationDialogOpen: false,
+      resendPasswordDialogOpen: false,
+      NewPlanningGridDialogOpen: false,
+      importPlanningGridDialogOpen: false,
+      ProjectsListDialogOpen: false,
+      changePasswordDialogOpen: false,
+      importFeaturesDialogOpen: false,
+      importFromWebDialogOpen: false,
+      serverDetailsDialogOpen: false,
+      planningGridsDialogOpen: false,
+      planningGridDialogOpen: false,
+      updateWDPADialogOpen: false,
+      NewFeatureDialogOpen: false,
+      importMXWDialogOpen: false,
+      featuresDialogOpen: false,
+      gapAnalysisDialogOpen: false,
+      featureDialogOpen: false,
+      runLogDialogOpen: false,
+      resetDialogOpen: false,
+      costsDialogOpen: false,
+      importCostsDialogOpen: false,
+      infoPanelOpen: false,
+      resultsPanelOpen: false,
+      targetDialogOpen: false,
+      notificationsOpen: false,
+      guestUserEnabled: true,
+      toolsMenuOpen: false,
+      userMenuOpen: false,
+      helpMenuOpen: false,
+      addToProject: true,
+      smallLinearGauge: true,
+      users: [],
+      user: "",
+      password: "",
+      project: "",
+      projectList: [],
+      owner: "", // the owner of the project - may be different to the user, e.g. if logged on as guest (user) and accessing someone elses project (owner)
+      loggedIn: false,
+      shareableLink: false,
+      userData: { SHOWWELCOMESCREEN: true, REPORTUNITS: "Ha" },
+      unauthorisedMethods: [],
+      metadata: {},
+      renderer: {},
+      runParams: [],
+      files: {},
+      popup_point: { x: 0, y: 0 },
+      snackbarOpen: false,
+      snackbarMessage: "",
+      tilesets: [],
+      identifyPlanningUnits: {},
+      identifyProtectedAreas: [],
+      identifyFeatures: [],
+      loading: false, //true when GET/POST requests are ongoing
+      preprocessing: false, //true when a WebSocket is ongoing
+      uploading: false, //true when an upload to Mapbox is ongoing
+      identifyVisible: false,
+      pa_layer_visible: false,
+      currentFeature: {},
+      featureDatasetFilename: "",
+      dataBreaks: [],
+      allFeatures: [], //all of the interest features in the metadata_interest_features table
+      projectFeatures: [], //the features for the currently loaded project
+      selectedFeatureIds: [],
+      addingRemovingFeatures: false,
+      costnames: [],
+      selectedCosts: [],
+      countries: [],
+      planning_units: [],
+      planning_unit_grids: [],
+      planning_grid_metadata: {},
+      feature_metadata: {},
+      activeTab: "project",
+      activeResultsTab: "legend",
+      logMessages: [],
+      map0_paintProperty: [],
+      map1_paintProperty: [],
+      map2_paintProperty: [],
+      map3_paintProperty: [],
+      map4_paintProperty: [],
+      clumpingRunning: false,
+      projectListDialogTitle: "",
+      projectListDialogHeading: "",
+      pid: 0,
+      basemaps: [],
+      basemap: "North Star",
+      mapCentre: { lng: 0, lat: 0 },
+      mapZoom: 12,
+      runLogs: [],
+      puEditing: false,
+      wdpaAttribution: "",
+      shareableLinkUrl: "",
+      notifications: [],
+      gapAnalysis: [],
+      costsLoading: false,
+      protected_area_intersections: [],
+      visibleLayers: [],
+      atlasLayers: [],
+      selectedLayers: [],
+      selectedImpactIds: [],
+      impact_metadata: {},
+      impactDatasetFilename: "",
+      runningImpactMessage: "Import Activity",
+      newFeaturePopoverOpen: false,
+      allImpacts: [],
+      cumulativeImpactDialogOpen: false,
+      activitiesDialogOpen: false,
+      atlasLayersDialogOpen: false,
+      activities: [],
+      uploadedActivities: [],
+      humanActivitiesDialogOpen: false,
+      importedActivitiesDialogOpen: false,
+      NewMarinePlanningGridDialogOpen: false,
+      menuAnchor: null,
     };
-    fetchGlobalVariables();
-  }, []);
+  }
 
-  const openShareableLink = async (searchParams) => {
+  componentDidMount() {
+    //get the query parameters
+    var searchParams = new URLSearchParams(window.location.search);
+    //if this is a shareable link, then dont show the login form
+    if (searchParams.has("project"))
+      this.setState({ loggedIn: true, shareableLink: true });
+    //parse the application level variables from the Marxan Registry
+    this.getGlobalVariables().then(() => {
+      console.log("GETTING GLOBAL VARS...");
+      //automatically login if this is a shareable link
+      if (searchParams.has("project")) this.openShareableLink(searchParams);
+      //select a server if it is passed
+      if (searchParams.has("server"))
+        this._selectServer(searchParams.get("server"));
+    });
+    //instantiate the classybrew to get the color ramps for the renderers
+    this.setState({ brew: new classyBrew() });
+  }
+
+  //gets various global variables from the marxan registry
+  getGlobalVariables() {
+    return new Promise((resolve, reject) => {
+      fetch(CONSTANTS.MARXAN_REGISTRY).then((response) => {
+        console.log("response ", response);
+        console.log("CONSTANTS.MARXAN_REGISTRY ", CONSTANTS.MARXAN_REGISTRY);
+        response.json().then((registryData) => {
+          console.log("registryData ", registryData);
+          this.setState({ registry: registryData });
+          // mapboxgl.accessToken = registryData.MBAT_PUBLIC; //this is my public access token
+          mapboxgl.accessToken =
+            "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg"; //this is my public access token
+          //initialise the basemaps
+          this.setState({ basemaps: registryData.MAPBOX_BASEMAPS });
+          //get all the information for the marxan servers by polling them
+          this.initialiseServers(registryData.MARXAN_SERVERS).then(
+            (response) => {
+              resolve(response);
+            }
+          );
+        });
+      });
+    });
+  }
+
+  //automatically logs in and loads a project as a guest user
+  openShareableLink(searchParams) {
     try {
       if (
         searchParams.has("server") &&
         searchParams.has("user") &&
         searchParams.has("project")
       ) {
-        const serverData = marxanServers.find(
-          server => server.name === searchParams.get("server")
+        //get the server data from the servers object
+        let serverData = this.state.marxanServers.find(
+          (server) => server.name === searchParams.get("server")
         );
-        if (!serverData) throw new Error("Invalid server parameter on shareable link");
-        if (serverData.offline) throw new Error("Server is offline");
-        if (!serverData.guestUserEnabled) throw new Error("Guest user is not enabled on the server");
-        await selectServer(serverData);
-        await switchToGuestUser();
-        await validateUser();
-        await loadProject(searchParams.get("project"), searchParams.get("user"));
-        setDialogsState(prevState => ({ ...prevState, shareableLink: false }));
+        if (serverData === undefined)
+          throw new Error("Invalid server parameter on shareable link");
+        if (serverData && serverData.offline)
+          throw new Error("Server is offline");
+        if (serverData && !serverData.guestUserEnabled)
+          throw new Error("Guest user is not enabled on the server");
+        //set the server
+        this.selectServer(serverData);
+        //switch to the guest user
+        this.switchToGuestUser().then(() => {
+          //login
+          this.validateUser().then((response) => {
+            this.loadProject(
+              searchParams.get("project"),
+              searchParams.get("user")
+            ).then(() => {
+              //hide the loading dialog
+              this.setState({ shareableLink: false });
+            });
+          });
+        });
       } else {
         throw new Error("Invalid query parameters on shareable link");
       }
     } catch (err) {
-      alert(err.message);
+      alert(err);
     }
-  };
+  }
 
-  const selectServer = useCallback((server) => {
-    // Implement server selection logic
-    console.log('server ', server);
-    setMarxanServer(server);
-    // Check if there is a new version of the WDPA
-    if (server.wdpa_version !== registry.WDPA.latest_version) {
-      setDialogsState(prevState => ({ ...prevState, setNewWDPAVersion:true}));
-    } else {
-      setDialogsState(prevState => ({ ...prevState, setNewWDPAVersion:false}));
-    }
-    // Set the link to the WDPA vector tiles layer name based on the version
-    setWDPAVectorTilesLayerName(value.wdpa_version);
-    // If server is online, not CORS-enabled, and guest user is enabled, switch to guest user
-    if (!value.offline && !value.corsEnabled && value.guestUserEnabled) {
-      switchToGuestUser();
-    }
-  }, [registry.WDPA.latest_version]);
-  
-  const setWDPAVectorTilesLayerName = useCallback((wdpa_version) => {
-    // Get the short version of the wdpa_version, e.g., August 2019 to aug_2019
-    const version = wdpa_version.toLowerCase().substr(0, 3) + "_" + wdpa_version.substr(-4);
-    setWdpaVectorTileLayer(`wdpa_${version}_polygons`);
-  }, []);
-
-  // const switchToGuestUser = useCallback(async () => {
-  //   // Implement guest user switch logic
-  // }, []);
-
-  // const validateUser = useCallback(async () => {
-  //   // Implement user validation logic
-  // }, []);
-
-  // const loadProject = useCallback(async (project, user) => {
-  //   // Implement project loading logic
-  // }, []);
-
-  // const initialiseServers = useCallback(async (servers) => {
-  //   // Implement server initialization logic
-  //   setMarxanServers(servers);
-  // }, []);
-
-  const setSnackBar = useCallback((message) => {
-    setSnackbarMessage(message);
-    setSnackbarOpen(true);
-  }, []);
-
-  // ---------------------------------------------------------------- //
-  // REQUEST HELPERS
-  // ---------------------------------------------------------------- //
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////// REQUEST HELPERS
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
-  const _get = useCallback((params, timeout = CONSTANTS.TIMEOUT) => {
-    
-    setDialogsState(prevState => ({ ...prevState,loading: true}));
+  _get(params, timeout = CONSTANTS.TIMEOUT) {
     return new Promise((resolve, reject) => {
-      jsonp(marxanServer.endpoint + params, { timeout })
-        .promise
-        .then(response => {
-          setDialogsState(prevState => ({ ...prevState,loading: false}));
-          if (!checkForErrors(response)) {
+      //set the global loading flag
+      this.setState({ loading: true });
+      jsonp(this.state.marxanServer.endpoint + params, {
+        timeout: timeout,
+      }).promise.then(
+        (response) => {
+          this.setState({ loading: false });
+          if (!this.checkForErrors(response)) {
             resolve(response);
           } else {
             reject(response.error);
           }
-        })
-        .catch(err => {
-          setDialogsState(prevState => ({ ...prevState, loading:false}));
-          setSnackBar(
-            `Request timeout - See <a href='${CONSTANTS.ERRORS_PAGE}#request-timeout' target='blank'>here</a>`
+        },
+        (err) => {
+          this.setState({ loading: false });
+          this.setSnackBar(
+            "Request timeout - See <a href='" +
+              CONSTANTS.ERRORS_PAGE +
+              "#request-timeout' target='blank'>here</a>"
           );
           reject(err);
-        });
+        }
+      );
     });
-  }, [checkForErrors, setSnackBar]);
+  }
 
   //makes a POST request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
-    const _post = useCallback(async (method, formData, timeout = CONSTANTS.TIMEOUT, withCredentials = CONSTANTS.SEND_CREDENTIALS) => {
-    setDialogsState(prevState => ({ ...prevState,loading: true}));
-    
-    try {
-      const controller = new AbortController();
-      const { signal } = controller;
-      // Set a timeout to abort the request if it takes too long
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-      const response = await fetch(marxanServer.endpoint + method, formData, {
-        method: 'POST',
-        credentials: withCredentials,
-        signal, // Pass the AbortSignal to the fetch call
-      });
-      clearTimeout(timeoutId);
-      const data = await response.json();
-      
-      if (!checkForErrors(data)) {
-        return data;
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        if (err.message !== 'Network Error') {
-          setSnackbarMessage(err.message);
-        }
-      }
-      throw err;
-    } finally {
-      setDialogsState(prevState => ({ ...prevState,loading: false}));
-    }
-  }, [marxanServer.endpoint, checkForErrors]);
-
-  
-  // Memoized WebSocket function
-  const _ws = useCallback((params, msgCallback) => {
+  _post(
+    method,
+    formData,
+    timeout = CONSTANTS.TIMEOUT,
+    withCredentials = CONSTANTS.SEND_CREDENTIALS
+  ) {
     return new Promise((resolve, reject) => {
-      // Create a new WebSocket instance
-      const ws = new WebSocket(marxanServer.websocketEndpoint + params);
+      //set the global loading flag
+      this.setState({ loading: true });
+      axios
+        .post(this.state.marxanServer.endpoint + method, formData, {
+          withCredentials: withCredentials,
+        })
+        .then(
+          (response) => {
+            if (!this.checkForErrors(response.data)) {
+              this.setState({ loading: false });
+              resolve(response.data);
+            } else {
+              this.setState({ loading: false });
+              reject(response.data.error);
+            }
+          },
+          (err) => {
+            //TODO - If the request is unauthorised it returns the Status Code of 200 with the error: "HTTP 403: Forbidden (The 'ReadOnly' role does not have permission to access the 'updateSpecFile' service)" - but for some reason this error handling is used
+            this.setState({ loading: false });
+            if (err.message !== "Network Error") this.setSnackBar(err.message);
+            reject(err);
+          }
+        );
+    });
+  }
 
-      // WebSocket event handlers
-      ws.onMessage = (evt) => {
-        const message = JSON.parse(evt.data);
-
-        if (!checkForErrors(message)) {
-          if (message.status === 'Finished') {
+  //web socket requests
+  _ws(params, msgCallback) {
+    return new Promise((resolve, reject) => {
+      let ws = new WebSocket(
+        this.state.marxanServer.websocketEndpoint + params
+      );
+      //get the message and pass it to the msgCallback function
+      ws.onmessage = (evt) => {
+        let message = JSON.parse(evt.data);
+        //check for errors
+        if (!this.checkForErrors(message)) {
+          if (message.status === "Finished") {
+            //pass the message back to the callback
             msgCallback(message);
-            setDialogsState(prevState => ({ ...prevState, preprocessing: false }));
+            //reset state
+            this.setState({ preprocessing: false });
+            //if the web socket has finished then resolve the promise
             resolve(message);
           } else {
             msgCallback(message);
           }
         } else {
+          //pass the message back to the callback
           msgCallback(message);
-          setDialogsState(prevState => ({ ...prevState, preprocessing: false }));
+          //reset state
+          this.setState({ preprocessing: false });
           reject(message.error);
         }
       };
-
-      ws.onOpen = (evt) => {
-        // Handle WebSocket open event if necessary
+      ws.onopen = (evt) => {
+        //do something if necessary
       };
-
-      ws.onError = (evt) => {
-        setDialogsState(prevState => ({ ...prevState, preprocessing: false }));
+      ws.onerror = (evt) => {
+        //reset state
+        this.setState({ preprocessing: false });
         reject(evt);
       };
-
-      ws.onClose = (evt) => {
-        setDialogsState(prevState => ({ ...prevState, preprocessing: false }));
+      ws.onclose = (evt) => {
+        //reset state
+        this.setState({ preprocessing: false });
         if (!evt.wasClean) {
-          msgCallback({ status: 'SocketClosedUnexpectedly' });
+          msgCallback({ status: "SocketClosedUnexpectedly" });
         } else {
           reject(evt);
         }
       };
     });
-  }, [marxanServer.websocketEndpoint, checkForErrors]);
+  }
 
-
-  // Memoized function to check for errors using responseIsTimeoutOrEmpty and isServerError
-  const checkForErrors = useCallback((response, showSnackbar = true) => {
-    const networkError = responseIsTimeoutOrEmpty(response, showSnackbar);
-    const serverError = isServerError(response, showSnackbar);
-    const isError = networkError || serverError;
-
+  //checks the reponse for errors
+  checkForErrors(response, showSnackbar = true) {
+    let networkError = this.responseIsTimeoutOrEmpty(response, showSnackbar);
+    //check the response from the server for an error property - if it has one then show it in the snackbar
+    let serverError = this.isServerError(response, showSnackbar);
+    let isError = networkError || serverError;
     if (isError) {
-      // Write the full trace to the console if available
-      const error = response.hasOwnProperty("trace")
+      //write the full trace to the console if available
+      let error = response.hasOwnProperty("trace")
         ? response.trace
         : response.hasOwnProperty("error")
         ? response.error
@@ -437,22 +454,22 @@ const [dialogsState, setDialogsState] = useState({
       console.error("Error message from server: " + error);
     }
     return isError;
-  }, [responseIsTimeoutOrEmpty, isServerError]);
+  }
 
-  // Memoized function to check for timeout errors or empty responses
-  const responseIsTimeoutOrEmpty = useCallback((response, showSnackbar = true) => {
+  //checks the response from a REST call for timeout errors or empty responses
+  responseIsTimeoutOrEmpty(response, showSnackbar = true) {
     if (!response) {
-      const msg = "No response received from server";
-      if (showSnackbar) {
-        setSnackBar(msg);
-      }
+      let msg = "No response received from server";
+      if (showSnackbar) this.setSnackBar(msg);
       return true;
+    } else {
+      return false;
     }
-    return false;
-  }, [setSnackBar]);
+  }
 
-  // Memoized function to check if the response indicates a server error
-  const isServerError = useCallback((response, showSnackbar = true) => {
+  //checks to see if the rest server raised an error and if it did then show in the snackbar
+  isServerError(response, showSnackbar) {
+    //errors may come from the marxan server or from the rest server which have slightly different json responses
     if (
       (response && response.error) ||
       (response &&
@@ -460,46 +477,42 @@ const [dialogsState, setDialogsState] = useState({
         response.metadata.hasOwnProperty("error") &&
         response.metadata.error != null)
     ) {
-      const err = response.error ? response.error : response.metadata.error;
-      if (showSnackbar) {
-        setSnackBar(err);
-      }
+      var err = response.error ? response.error : response.metadata.error;
+      if (showSnackbar) this.setSnackBar(err);
       return true;
     } else {
-      // Handle warnings from server responses
-      if (response && response.warning) {
-        if (showSnackbar) {
-          setSnackBar(response.warning);
-        }
+      //some server responses are warnings and will not stop the function from running as normal
+      if (response.warning) {
+        if (showSnackbar) this.setSnackBar(response.warning);
       }
       return false;
     }
-  }, [setSnackBar]);
+  }
 
   //called when any websocket message is received - this logic removes duplicate messages
-  const wsMessageCallback = (message) =>  {
+  wsMessageCallback(message) {
     //dont log any clumping projects
     if (message.user === "_clumping") return;
     //log the message
-    logMessage(message);
+    this.logMessage(message);
     switch (message.status) {
       case "Started": //from the open method of all MarxanWebSocketHandler subclasses
         //set the processing state when the websocket starts
-        setDialogsState(prevState => ({ ...prevState, preprocessing: true }));
+        this.setState({ preprocessing: true });
         break;
       case "pid": //from marxan runs and preprocessing - the pid is an identifer and the pid, e.g. m1234 is a marxan run process with a pid of 1234
-        setDialogsState(prevState => ({ ...prevState, pid: message.pid }));
+        this.setState({ pid: message.pid });
         break;
       case "FeatureCreated":
         //remove all preprocessing messages
-        removeMessageFromLog("Preprocessing");
-        newFeatureCreated(message.id);
+        this.removeMessageFromLog("Preprocessing");
+        this.newFeatureCreated(message.id);
         break;
       case "Finished": //from the close method of all MarxanWebSocketHandler subclasses
         //reset the pid
-        resetPID();
+        this.resetPID();
         //remove all preprocessing messages
-        removeMessageFromLog("Preprocessing");
+        this.removeMessageFromLog("Preprocessing");
         break;
       default:
         break;
@@ -507,81 +520,94 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   //resets the pid value
-  const resetPID = () => {
-    setDialogsState(prevState => ({ ...prevState, pid: 0 }));
+  resetPID() {
+    this.setState({ pid: 0 });
   }
-  
   //logs the message if necessary - this removes duplicates
-  const logMessage = useCallback((message) => {
+  logMessage(message) {
+    //log the message from the websocket
     if (message.status === "SocketClosedUnexpectedly") {
-      // Server closed WebSocket unexpectedly
-      // Remove the "Preprocessing" messages
-      // Reset the PID
-      messageLogger({
+      //server closed WebSocket unexpectedly - uncaught server error, server crash or WebSocket timeout)
+      this.log({
         method: message.method,
         status: "Finished",
         error: "The WebSocket connection closed unexpectedly",
       });
-      removeMessageFromLog("Preprocessing");
-      resetPID();
+      //remove the Preprocessing messages which show the processing spinner
+      this.removeMessageFromLog("Preprocessing");
+      //reset the PID
+      this.resetPID();
     } else {
-      // Check if the message has a PID and handle accordingly
+      //see if the message has a pid and if it does then see if the status has changed since the last message - if it has then log the message - this does not apply to RunningMarxan messages as all of these need to be logged
       if (message.hasOwnProperty("pid") && message.status !== "RunningMarxan") {
-        const existingMessages = logMessages.filter((_message) => 
-          _message.hasOwnProperty("pid") && _message.pid === message.pid
-        );
-
-        if (existingMessages.length > 0) {
-          // Compare with the latest status
-          if (message.status !== existingMessages[existingMessages.length - 1].status) {
-            // Remove the processing message if status is "Finished"
-            if (message.status === "Finished") {
-              removeMessageFromLog("RunningQuery", message.pid);
-            }
-            messageLogger(message);
+        //get the existing status
+        let _messages = this.state.logMessages.filter((_message) => {
+          if (_message.hasOwnProperty("pid")) {
+            return _message.pid === message.pid;
+          } else {
+            return false;
+          }
+        });
+        //if there is already a message for that pid
+        if (_messages.length > 0) {
+          //compare with the latest status
+          if (message.status !== _messages[_messages.length - 1].status) {
+            //if the new status is different and the message status is finished, then remove the processing message
+            if (message.status === "Finished")
+              this.removeMessageFromLog("RunningQuery", message.pid);
+            this.log(message);
           }
         } else {
-          // Log the first message for that PID
-          messageLogger(message);
+          //log the first message for that pid
+          this.log(message);
         }
       } else {
-        // Remove duplicate messages from the log (unless they have specific statuses)
+        //remove duplicate messages from the log (unless they are from the marxan run or have a status of started or finished)
         if (
           !(
             message.status === "RunningMarxan" ||
             message.status === "Started" ||
             message.status === "Finished"
           )
-        ) {
-          removeMessageFromLog(message.status);
-        }
-        // Log the message
-        messageLogger(message);
+        )
+          this.removeMessageFromLog(message.status);
+        //log the message
+        this.log(message);
       }
     }
-  }, [logMessages]);
+  }
 
-  // removes a message from the log by matching on pid and status or just status
-  // update the messages state - filter previous messages state by pid and status
-  const removeMessageFromLog = useCallback((status, pid) => {
-    setDialogsState(prevState => ({
-      ...prevState,
-      logMessages: prevState.logMessages.filter(message => {
-        if (pid !== undefined) {
-          return !(message.pid === pid && message.status === status);
+  //removes a message from the log by matching on the status and if it is passed, the pid
+  removeMessageFromLog(status, pid) {
+    let _messages = this.state.logMessages;
+    //filter the messages to remove those that match on status (and pid)
+    _messages = _messages.filter((_message) => {
+      if (pid !== undefined) {
+        if (_message.hasOwnProperty("pid")) {
+          return !(_message.pid === pid && _message.status === status);
         } else {
-          return !(message.status === status);
+          return true;
         }
-      }),
-    }));
-  }, []);
+      } else {
+        //match just on the status
+        return !(_message.status === status);
+      }
+    });
+    this.setState({ logMessages: _messages });
+  }
+
+  //can be called from other components
+  setSnackBar(message, silent = false) {
+    if (!silent)
+      this.setState({ snackbarOpen: true, snackbarMessage: message });
+  }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////// MANAGING MARXAN SERVERS
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   //initialises the servers by requesting their capabilities and then filtering the list of available servers
-  const initialiseServers = (marxanServers) => {
+  initialiseServers(marxanServers) {
     return new Promise((resolve, reject) => {
       //get a list of server hosts from the marxan.json registry
       let hosts = marxanServers.map((server) => {
@@ -619,7 +645,7 @@ const [dialogsState, setDialogsState] = useState({
           if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
           return 0;
         });
-        setDialogsState(prevState => ({ ...prevState, marxanServers: marxanServers }, () => {
+        this.setState({ marxanServers: marxanServers }, () => {
           resolve("ServerData retrieved");
         });
       });
@@ -627,21 +653,6 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   //gets the capabilities of all servers
-    // Function to get capabilities for all servers
-  const getAllServerCapabilities = useCallback(async (marxanServers) => {
-    try {
-      const promises = marxanServers.map(async (server) => {
-        const capabilities = await getServerCapabilities(server);
-      return { server, capabilities };
-      });
-      const results = await Promise.all(promises);
-      setServerCapabilities(results);
-    } catch (error) {
-      console.error('Error getting server capabilities:', error);
-    }
-  }, []);
-  
-  
   async getAllServerCapabilities(marxanServers) {
     let promises = await marxanServers.map(async (server) => {
       await this.getServerCapabilities(server);
@@ -734,17 +745,32 @@ const [dialogsState, setDialogsState] = useState({
       console.log("fetch failed with: " + error);
     }
   }
-  // Function to programmatically select a server
-  const selectServerByName = useCallback((servername) => {
-    // Remove the search part of the URL
-    window.history.replaceState({}, document.title, '/');
+  //programatically selects a server
+  _selectServer(servername) {
+    //remove the search part of the url
+    window.history.replaceState({}, document.title, "/");
+    //get the server object from the name
+    let server = this.state.marxanServers.filter(
+      (item) => item.name === servername
+    );
+    if (server.length) this.selectServer(server[0]);
+  }
 
-    // Find the server object from the name
-    const server = marxanServers.find((item) => item.name === servername);
-    if (server) {
-      selectServer(server);
+  //called when the user selects a server
+  selectServer(value) {
+    console.log("value ", value);
+    this.setState({ marxanServer: value });
+    //see if there is a new version of the wdpa
+    value.wdpa_version !== this.state.registry.WDPA.latest_version
+      ? this.setState({ newWDPAVersion: true })
+      : this.setState({ newWDPAVersion: false });
+    //set the link to the WDPA vector tiles based on the version that is included in the server in the PostGIS database
+    this.setWDPAVectorTilesLayerName(value.wdpa_version);
+    //if the server is ready only then change the user/password to the guest user
+    if (!value.offline && !value.corsEnabled && value.guestUserEnabled) {
+      this.switchToGuestUser();
     }
-  }, [marxanServers]);
+  }
 
   //sets the layer name for the WDPA vector tiles based on the WDPA version
   setWDPAVectorTilesLayerName(wdpa_version) {
@@ -754,24 +780,9 @@ const [dialogsState, setDialogsState] = useState({
     //set the value of the vector_tile_layer based on which version of the wdpa the server has in the PostGIS database
     this.wdpa_vector_tile_layer = "wdpa_" + version + "_polygons";
   }
-  //called when the user selects a server
-  selectServer(value) {
-    console.log("value ", value);
-    setDialogsState(prevState => ({ ...prevState, marxanServer: value });
-    //see if there is a new version of the wdpa
-    value.wdpa_version !== this.state.registry.WDPA.latest_version
-      ? setDialogsState(prevState => ({ ...prevState, newWDPAVersion: true })
-      : setDialogsState(prevState => ({ ...prevState, newWDPAVersion: false });
-    //set the link to the WDPA vector tiles based on the version that is included in the server in the PostGIS database
-    this.setWDPAVectorTilesLayerName(value.wdpa_version);
-    //if the server is ready only then change the user/password to the guest user
-    if (!value.offline && !value.corsEnabled && value.guestUserEnabled) {
-      this.switchToGuestUser();
-    }
-  }
 
   closeSnackbar() {
-    setDialogsState(prevState => ({ ...prevState, snackbarOpen: false });
+    this.setState({ snackbarOpen: false });
   }
 
   startLogging(clearLog = false) {
@@ -783,21 +794,19 @@ const [dialogsState, setDialogsState] = useState({
 
   //clears the log
   clearLog() {
-    setDialogsState(prevState => ({ ...prevState, logMessages: [] });
+    this.setState({ logMessages: [] });
   }
 
   //centralised logging method - all log messages are routed through this method (can be called from components to update the log)
-  const messageLogger = useCallback((message) => {
-    // Add a timestamp to the message
-    const timestampedMessage = { ...message, timestamp: new Date() };
-
-    // Update the state with the new log message
-    setDialogsState(prevState => ({
-      ...prevState,
-      logMessages: [...prevState.logMessages, timestampedMessage],
-    }));
-  }, []);
-  
+  log(message) {
+    //add a timestamp to the message
+    Object.assign(message, { timestamp: new Date() });
+    let _messages = this.state.logMessages;
+    //add the message to the existing log
+    _messages.push(message);
+    //set the state
+    this.setState({ logMessages: _messages });
+  }
 
   //utiliy method for getting all puids from normalised data, e.g. from [["VI", [7, 8, 9]], ["IV", [0, 1, 2, 3, 4]], ["V", [5, 6]]]
   getPuidsFromNormalisedData(normalisedData) {
@@ -809,11 +818,11 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   changeUserName(user) {
-    setDialogsState(prevState => ({ ...prevState, user: user });
+    this.setState({ user: user });
   }
 
   changePassword(password) {
-    setDialogsState(prevState => ({ ...prevState, password: password });
+    this.setState({ password: password });
   }
 
   //checks the users credentials
@@ -850,7 +859,7 @@ const [dialogsState, setDialogsState] = useState({
     return new Promise((resolve, reject) => {
       this._get("getUser?user=" + this.state.user)
         .then((response) => {
-          setDialogsState(
+          this.setState(
             {
               userData: response.userData,
               unauthorisedMethods: response.unauthorisedMethods,
@@ -897,7 +906,7 @@ const [dialogsState, setDialogsState] = useState({
   //log out and reset some state
   logout() {
     this.hideUserMenu();
-    setDialogsState(prevState => ({ ...prevState,
+    this.setState({
       loggedIn: false,
       user: "",
       password: "",
@@ -923,14 +932,14 @@ const [dialogsState, setDialogsState] = useState({
 
   switchToGuestUser() {
     return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, user: "guest", password: "password" }, () => {
+      this.setState({ user: "guest", password: "password" }, () => {
         resolve("Switched to guest user");
       });
     });
   }
 
   changeEmail(value) {
-    setDialogsState(prevState => ({ ...prevState, resendEmail: value });
+    this.setState({ resendEmail: value });
   }
 
   resendPassword() {
@@ -950,10 +959,10 @@ const [dialogsState, setDialogsState] = useState({
   getUsers() {
     this._get("getUsers")
       .then((response) => {
-        setDialogsState(prevState => ({ ...prevState, users: response.users });
+        this.setState({ users: response.users });
       })
       .catch((error) => {
-        setDialogsState(prevState => ({ ...prevState, users: [] });
+        this.setState({ users: [] });
       });
   }
 
@@ -968,7 +977,7 @@ const [dialogsState, setDialogsState] = useState({
         return item.user !== user;
       });
       //update the users state
-      setDialogsState(prevState => ({ ...prevState, users: usersCopy });
+      this.setState({ users: usersCopy });
       //see if the current project belongs to the deleted user
       if (this.state.owner === user) {
         this.setSnackBar(
@@ -991,7 +1000,7 @@ const [dialogsState, setDialogsState] = useState({
     let projects = this.state.projects.map((project) => {
       return project.user !== user;
     });
-    setDialogsState(prevState => ({ ...prevState, projects: projects });
+    this.setState({ projects: projects });
   }
 
   //changes a users role
@@ -1008,7 +1017,7 @@ const [dialogsState, setDialogsState] = useState({
       }
     });
     //update the users state
-    setDialogsState(prevState => ({ ...prevState, users: usersCopy });
+    this.setState({ users: usersCopy });
   }
 
   //toggles if the guest user is enabled on the server or not
@@ -1019,14 +1028,14 @@ const [dialogsState, setDialogsState] = useState({
       _marxanServer = Object.assign(_marxanServer, {
         guestUserEnabled: response.enabled,
       });
-      setDialogsState(prevState => ({ ...prevState, marxanServer: _marxanServer });
+      this.setState({ marxanServer: _marxanServer });
     });
   }
 
   //toggles the projects privacy
   toggleProjectPrivacy(newValue) {
     this.updateProjectParameter("PRIVATE", newValue).then((response) => {
-      setDialogsState(prevState => ({ ...prevState,
+      this.setState({
         metadata: Object.assign(this.state.metadata, {
           PRIVATE: newValue === "True",
         }),
@@ -1119,7 +1128,7 @@ const [dialogsState, setDialogsState] = useState({
 
   //hides the notifications from the UI
   hideNotifications() {
-    setDialogsState(prevState => ({ ...prevState, notificationsOpen: false });
+    this.setState({ notificationsOpen: false });
   }
 
   //add the passed notifications to the notifications state
@@ -1149,7 +1158,7 @@ const [dialogsState, setDialogsState] = useState({
       return Object.assign(item, { visible: visible });
     });
     _notifications.push.apply(_notifications, notifications);
-    setDialogsState(prevState => ({ ...prevState, notifications: _notifications });
+    this.setState({ notifications: _notifications });
   }
 
   //removes a notification
@@ -1161,7 +1170,7 @@ const [dialogsState, setDialogsState] = useState({
     //remove it in the users notifications.dat file
     this.dismissNotification(notification);
     //set the state
-    setDialogsState(prevState => ({ ...prevState, notifications: _notifications });
+    this.setState({ notifications: _notifications });
   }
 
   //dismisses a notification on the server
@@ -1177,7 +1186,7 @@ const [dialogsState, setDialogsState] = useState({
   //clears all of the dismissed notifications on the server
   resetNotifications() {
     this._get("resetNotifications?user=" + this.state.user).then(() => {
-      setDialogsState(prevState => ({ ...prevState, notifications: [], dismissedNotifications: [] });
+      this.setState({ notifications: [], dismissedNotifications: [] });
       this.parseNotifications();
     });
   }
@@ -1218,7 +1227,7 @@ const [dialogsState, setDialogsState] = useState({
         .then((response) => {
           // if succesfull write the state back to the userData key
           if (this.state.user === user)
-            setDialogsState(prevState => ({ ...prevState, userData: this.newUserData });
+            this.setState({ userData: this.newUserData });
           resolve();
         })
         .catch((error) => {
@@ -1275,7 +1284,7 @@ const [dialogsState, setDialogsState] = useState({
     this.updateProjectParams(this.state.project, parameters).then(
       (response) => {
         //if succesfull write the state back
-        setDialogsState(prevState => ({ ...prevState, runParams: this.runParams });
+        this.setState({ runParams: this.runParams });
       }
     );
     //save the local state to be able to update the state on callback
@@ -1285,7 +1294,7 @@ const [dialogsState, setDialogsState] = useState({
   //gets the planning unit grids
   getPlanningUnitGrids() {
     this._get("getPlanningUnitGrids").then((response) => {
-      setDialogsState(prevState => ({ ...prevState, planning_unit_grids: response.planning_unit_grids });
+      this.setState({ planning_unit_grids: response.planning_unit_grids });
     });
   }
 
@@ -1299,7 +1308,7 @@ const [dialogsState, setDialogsState] = useState({
       this._get("getProject?user=" + user + "&project=" + project)
         .then((response) => {
           // set the state for the app based on the data that is returned from the server
-          setDialogsState(prevState => ({ ...prevState,
+          this.setState({
             loggedIn: true,
             project: response.project,
             owner: user,
@@ -1330,7 +1339,7 @@ const [dialogsState, setDialogsState] = useState({
           //set a local variable for the feature preprocessing - this is because we dont need to track state with these variables as they are not bound to anything
           this.feature_preprocessing = response.feature_preprocessing;
           //set a local variable for the protected area intersections - this is because we dont need to track state with these variables as they are not bound to anything
-          setDialogsState(prevState => ({ ...prevState,
+          this.setState({
             protected_area_intersections: response.protected_area_intersections,
           });
           //set a local variable for the selected iucn category
@@ -1351,7 +1360,7 @@ const [dialogsState, setDialogsState] = useState({
           if (
             error.toString().indexOf("Logged on as read-only guest user") > -1
           ) {
-            setDialogsState(prevState => ({ ...prevState, loggedIn: true });
+            this.setState({ loggedIn: true });
             resolve("No project loaded - logged on as read-only guest user'");
           }
           if (error.toString().indexOf("does not exist") > -1) {
@@ -1412,7 +1421,7 @@ const [dialogsState, setDialogsState] = useState({
     //get the selected feature ids
     this.getSelectedFeatureIds();
     //set the state
-    setDialogsState(prevState => ({ ...prevState,
+    this.setState({
       allFeatures: outFeatures,
       projectFeatures: outFeatures.filter((item) => {
         return item.selected;
@@ -1451,7 +1460,7 @@ const [dialogsState, setDialogsState] = useState({
   //resets state in between runs
   resetRun() {
     this.runMarxanResponse = {};
-    setDialogsState(prevState => ({ ...prevState, solutions: [] });
+    this.setState({ solutions: [] });
   }
   //create a new user on the server
   createNewUser(user, password, name, email) {
@@ -1497,7 +1506,7 @@ const [dialogsState, setDialogsState] = useState({
     formData.append("spf_values", spf_values.join(","));
     this._post("createProject", formData).then((response) => {
       this.setSnackBar(response.info);
-      setDialogsState(prevState => ({ ...prevState, projectsDialogOpen: false });
+      this.setState({ projectsDialogOpen: false });
       this.loadProject(response.name, response.user);
     });
   }
@@ -1603,7 +1612,7 @@ const [dialogsState, setDialogsState] = useState({
             newName
         )
           .then((response) => {
-            setDialogsState(prevState => ({ ...prevState, project: newName });
+            this.setState({ project: newName });
             this.setSnackBar(response.info);
             resolve("Project renamed");
           })
@@ -1617,7 +1626,7 @@ const [dialogsState, setDialogsState] = useState({
   renameDescription(newDesc) {
     return new Promise((resolve, reject) => {
       this.updateProjectParameter("DESCRIPTION", newDesc).then((response) => {
-        setDialogsState(prevState => ({ ...prevState,
+        this.setState({
           metadata: Object.assign(this.state.metadata, {
             DESCRIPTION: newDesc,
           }),
@@ -1641,7 +1650,7 @@ const [dialogsState, setDialogsState] = useState({
         )
           projects.push(project);
       });
-      setDialogsState(prevState => ({ ...prevState, projects: projects });
+      this.setState({ projects: projects });
     });
   }
 
@@ -1881,7 +1890,7 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   runFinished(solutions) {
-    setDialogsState(prevState => ({ ...prevState, solutions: solutions });
+    this.setState({ solutions: solutions });
   }
 
   //gets the protected area information in m2 from the marxan run and populates the interest features with the values
@@ -1919,7 +1928,7 @@ const [dialogsState, setDialogsState] = useState({
       //start the logging
       this.startLogging();
       //set the spinner and lot states
-     messageLogger({
+      this.log({
         method: "importProject",
         status: "Importing",
         info: "Starting import..",
@@ -1928,7 +1937,7 @@ const [dialogsState, setDialogsState] = useState({
       //TODO: SORT OUT ROLLING BACK IF AN IMPORT FAILS - AND DONT PROVIDE REST CALLS TO DELETE PLANNING UNITS
       this.createImportProject(project)
         .then((response) => {
-         messageLogger({
+          this.log({
             method: "importProject",
             status: "Importing",
             info: "Project '" + project + "' created",
@@ -1944,7 +1953,7 @@ const [dialogsState, setDialogsState] = useState({
               feature_class_name = response.feature_class_name;
               //get the uploadid
               uploadId = response.uploadId;
-             messageLogger({
+              this.log({
                 method: "importProject",
                 status: "Importing",
                 info: "Planning grid imported",
@@ -1952,7 +1961,7 @@ const [dialogsState, setDialogsState] = useState({
               //upload all of the files from the local system
               this.uploadFiles(files, project)
                 .then((response) => {
-                 messageLogger({
+                  this.log({
                     method: "importProject",
                     status: "Importing",
                     info: "All files uploaded",
@@ -1960,7 +1969,7 @@ const [dialogsState, setDialogsState] = useState({
                   //upgrade the project to the new version of Marxan - this adds the necessary settings in the project file and calculates the statistics for species in the puvspr.dat and puts them in the feature_preprocessing.dat file
                   this.upgradeProject(project)
                     .then((response) => {
-                     messageLogger({
+                      this.log({
                         method: "importProject",
                         status: "Importing",
                         info: "Project updated to new version",
@@ -1993,7 +2002,7 @@ const [dialogsState, setDialogsState] = useState({
                           this.pollMapbox(uploadId).then((response) => {
                             //refresh the planning grids
                             this.getPlanningUnitGrids();
-                           messageLogger({
+                            this.log({
                               method: "importProject",
                               status: "Finished",
                               info: "Import complete",
@@ -2045,7 +2054,7 @@ const [dialogsState, setDialogsState] = useState({
         filepath = file.webkitRelativePath.split("/").slice(1).join("/");
         formData.append("filename", filepath);
         formData.append("value", file);
-       messageLogger({
+        this.log({
           method: "uploadFiles",
           status: "Uploading",
           info: "Uploading: " + file.webkitRelativePath,
@@ -2072,7 +2081,7 @@ const [dialogsState, setDialogsState] = useState({
   //uploads a single file to a specific folder - value is the filename
   uploadFileToFolder(value, filename, destFolder) {
     return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, loading: true });
+      this.setState({ loading: true });
       const formData = new FormData();
       //the binary data for the file
       formData.append("value", value);
@@ -2160,19 +2169,19 @@ const [dialogsState, setDialogsState] = useState({
         var clump = _projects[0].clump;
         switch (clump) {
           case 0:
-            setDialogsState(prevState => ({ ...prevState, map0_paintProperty: paintProperties });
+            this.setState({ map0_paintProperty: paintProperties });
             break;
           case 1:
-            setDialogsState(prevState => ({ ...prevState, map1_paintProperty: paintProperties });
+            this.setState({ map1_paintProperty: paintProperties });
             break;
           case 2:
-            setDialogsState(prevState => ({ ...prevState, map2_paintProperty: paintProperties });
+            this.setState({ map2_paintProperty: paintProperties });
             break;
           case 3:
-            setDialogsState(prevState => ({ ...prevState, map3_paintProperty: paintProperties });
+            this.setState({ map3_paintProperty: paintProperties });
             break;
           case 4:
-            setDialogsState(prevState => ({ ...prevState, map4_paintProperty: paintProperties });
+            this.setState({ map4_paintProperty: paintProperties });
             break;
           default:
             break;
@@ -2202,7 +2211,7 @@ const [dialogsState, setDialogsState] = useState({
       total += item[1].length;
       return null;
     });
-    setDialogsState(prevState => ({ ...prevState, summaryStats: summaryStats });
+    this.setState({ summaryStats: summaryStats });
     return total;
   }
   //gets a sample of the data to be able to do a classification, e.g. natural breaks, jenks etc.
@@ -2259,7 +2268,7 @@ const [dialogsState, setDialogsState] = useState({
         brewCopy.colorSchemes.opacity[this.state.renderer.NUMCLASSES] =
           newBrewColorScheme;
         //set the state
-        setDialogsState(prevState => ({ ...prevState, brew: brewCopy });
+        this.setState({ brew: brewCopy });
       }
     }
     //set the color code - see the color theory section on Joshua Tanners page here https://github.com/tannerjt/classybrew - for all the available colour codes
@@ -2271,7 +2280,7 @@ const [dialogsState, setDialogsState] = useState({
       //set the numClasses to the max for the color scheme
       numClasses = colorSchemeLength;
       //reset the renderer
-      setDialogsState(prevState => ({ ...prevState,
+      this.setState({
         renderer: Object.assign(this.state.renderer, {
           NUMCLASSES: numClasses,
         }),
@@ -2281,7 +2290,7 @@ const [dialogsState, setDialogsState] = useState({
     this.state.brew.setNumClasses(numClasses);
     //set the classification method - one of equal_interval, quantile, std_deviation, jenks (default)
     this.state.brew.classify(classification);
-    setDialogsState(prevState => ({ ...prevState, dataBreaks: this.state.brew.getBreaks() });
+    this.setState({ dataBreaks: this.state.brew.getBreaks() });
   }
 
   //called when the renderer state has been updated - renders the solution and saves the renderer back to the server
@@ -2292,7 +2301,7 @@ const [dialogsState, setDialogsState] = useState({
   }
   //change the renderer, e.g. jenks, natural_breaks etc.
   changeRenderer(renderer) {
-    setDialogsState(
+    this.setState(
       {
         renderer: Object.assign(this.state.renderer, {
           CLASSIFICATION: renderer,
@@ -2305,7 +2314,7 @@ const [dialogsState, setDialogsState] = useState({
   }
   //change the number of classes of the renderer
   changeNumClasses(numClasses) {
-    setDialogsState(
+    this.setState(
       {
         renderer: Object.assign(this.state.renderer, {
           NUMCLASSES: numClasses,
@@ -2320,13 +2329,13 @@ const [dialogsState, setDialogsState] = useState({
   changeColorCode(colorCode) {
     //set the maximum number of classes that can be selected in the other select boxes
     if (this.state.renderer.NUMCLASSES > this.state.brew.getNumClasses()) {
-      setDialogsState(prevState => ({ ...prevState,
+      this.setState({
         renderer: Object.assign(this.state.renderer, {
           NUMCLASSES: this.state.brew.getNumClasses(),
         }),
       });
     }
-    setDialogsState(
+    this.setState(
       {
         renderer: Object.assign(this.state.renderer, { COLORCODE: colorCode }),
       },
@@ -2337,7 +2346,7 @@ const [dialogsState, setDialogsState] = useState({
   }
   //change how many of the top classes only to show
   changeShowTopClasses(numClasses) {
-    setDialogsState(
+    this.setState(
       {
         renderer: Object.assign(this.state.renderer, {
           TOPCLASSES: numClasses,
@@ -2567,7 +2576,7 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   updateMapCentreAndZoom() {
-    setDialogsState(prevState => ({ ...prevState,
+    this.setState({
       mapCentre: this.map.getCenter(),
       mapZoom: this.map.getZoom(),
     });
@@ -2614,7 +2623,7 @@ const [dialogsState, setDialogsState] = useState({
       //get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
       var clickedFeatures = this.getRenderedFeatures(e.point, featureLayerIds);
       //set the popup point
-      setDialogsState(prevState => ({ ...prevState, popup_point: e.point });
+      this.setState({ popup_point: e.point });
       //get any planning unit features under the mouse
       let planningUnitFeatures = this.getFeaturesByLayerStartsWith(
         clickedFeatures,
@@ -2646,7 +2655,7 @@ const [dialogsState, setDialogsState] = useState({
         "marxan_wdpa_"
       );
       //set the state to populate the identify popup
-      setDialogsState(prevState => ({ ...prevState,
+      this.setState({
         identifyVisible: true,
         identifyFeatures: identifyFeatures,
         identifyProtectedAreas: identifyProtectedAreas,
@@ -2671,7 +2680,7 @@ const [dialogsState, setDialogsState] = useState({
       }
     });
     //set the state
-    setDialogsState(prevState => ({ ...prevState, visibleLayers: visibleLayers });
+    this.setState({ visibleLayers: visibleLayers });
   }
   //gets a set of features that have a layerid that starts with the passed text
   getFeaturesByLayerStartsWith(features, startsWith) {
@@ -2701,7 +2710,7 @@ const [dialogsState, setDialogsState] = useState({
         );
       }
       //set the state to update the identify popup
-      setDialogsState(prevState => ({ ...prevState,
+      this.setState({
         identifyPlanningUnits: {
           puData: response.data.pu_data,
           features: response.data.features,
@@ -2726,7 +2735,7 @@ const [dialogsState, setDialogsState] = useState({
 
   //hides the identify popup
   hideIdentifyPopup(e) {
-    setDialogsState(prevState => ({ ...prevState, identifyVisible: false, identifyPlanningUnits: {} });
+    this.setState({ identifyVisible: false, identifyPlanningUnits: {} });
   }
 
   //gets a Mapbox Style Specification JSON object from the passed ESRI style endpoint
@@ -2769,7 +2778,7 @@ const [dialogsState, setDialogsState] = useState({
     console.log("setBasemap ", basemap);
     return new Promise((resolve, reject) => {
       //change the state
-      setDialogsState(prevState => ({ ...prevState, basemap: basemap.name });
+      this.setState({ basemap: basemap.name });
       //get a valid map style
       this.getValidStyle(basemap).then((style) => {
         //load the style
@@ -2864,7 +2873,7 @@ const [dialogsState, setDialogsState] = useState({
           //zoom to the layers extent
           if (tileset.bounds != null) zoomToBounds(this.map, tileset.bounds);
           //set the state
-          setDialogsState(prevState => ({ ...prevState, tileset: tileset });
+          this.setState({ tileset: tileset });
           //filter the wdpa vector tiles as the map doesn't respond to state changes - NO LONGER USED
           // this.filterWdpaByIucnCategory(this.state.metadata.IUCN_CATEGORY);
           resolve();
@@ -2952,7 +2961,7 @@ const [dialogsState, setDialogsState] = useState({
       },
     });
     //set the result layer in app state so that it can update the Legend component and its opacity control
-    setDialogsState(prevState => ({ ...prevState,
+    this.setState({
       resultsLayer: this.map.getLayer(CONSTANTS.RESULTS_LAYER_NAME),
     });
     //add the planning unit layer
@@ -3026,7 +3035,7 @@ const [dialogsState, setDialogsState] = useState({
         this.wdpa_vector_tile_layer +
         "&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}",
     ];
-    setDialogsState(prevState => ({ ...prevState, wdpaAttribution: attribution });
+    this.setState({ wdpaAttribution: attribution });
     this.map.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
       attribution: attribution,
       type: "vector",
@@ -3072,7 +3081,7 @@ const [dialogsState, setDialogsState] = useState({
       },
     });
     //set the wdpa layer in app state so that it can update the Legend component and its opacity control
-    setDialogsState(prevState => ({ ...prevState, wdpaLayer: this.map.getLayer(CONSTANTS.WDPA_LAYER_NAME) });
+    this.setState({ wdpaLayer: this.map.getLayer(CONSTANTS.WDPA_LAYER_NAME) });
   }
 
   showLayer(id) {
@@ -3171,14 +3180,14 @@ const [dialogsState, setDialogsState] = useState({
 
   //fired when the projects tab is selected
   project_tab_active() {
-    setDialogsState(prevState => ({ ...prevState, activeTab: "project" });
+    this.setState({ activeTab: "project" });
     this.pu_tab_inactive();
   }
 
   //fired when the features tab is selected
   features_tab_active() {
     if (this.state.activeTab !== "features") {
-      setDialogsState(prevState => ({ ...prevState, activeTab: "features" });
+      this.setState({ activeTab: "features" });
       //render the sum solution map
       // this.renderSolution(this.runMarxanResponse.ssoln, true);
       //hide the planning unit layers
@@ -3188,7 +3197,7 @@ const [dialogsState, setDialogsState] = useState({
 
   //fired when the planning unit tab is selected
   pu_tab_active() {
-    setDialogsState(prevState => ({ ...prevState, activeTab: "planning_units" });
+    this.setState({ activeTab: "planning_units" });
     //show the planning units layer
     this.showLayer(CONSTANTS.PU_LAYER_NAME);
     //show the planning units status layer
@@ -3231,7 +3240,7 @@ const [dialogsState, setDialogsState] = useState({
 
   // fired when a new tab is selected
   setActiveTab(newValue) {
-    setDialogsState(prevState => ({ ...prevState, activeResultsTab: newValue });
+    this.setState({ activeResultsTab: newValue });
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3240,7 +3249,7 @@ const [dialogsState, setDialogsState] = useState({
 
   startPuEditSession() {
     //set the state
-    setDialogsState(prevState => ({ ...prevState, puEditing: true });
+    this.setState({ puEditing: true });
     //set the cursor to a crosshair
     this.map.getCanvas().style.cursor = "crosshair";
     //add the left mouse click event to the planning unit layer
@@ -3253,7 +3262,7 @@ const [dialogsState, setDialogsState] = useState({
 
   stopPuEditSession() {
     //set the state
-    setDialogsState(prevState => ({ ...prevState, puEditing: false });
+    this.setState({ puEditing: false });
     //reset the cursor
     this.map.getCanvas().style.cursor = "pointer";
     //remove the mouse left click event
@@ -3267,7 +3276,7 @@ const [dialogsState, setDialogsState] = useState({
   //clears all of the manual edits from the pu edit layer (except the protected area units)
   clearManualEdits() {
     //clear all the planning unit statuses
-    setDialogsState(prevState => ({ ...prevState, planning_units: [] }, () => {
+    this.setState({ planning_units: [] }, () => {
       //get the puids for the current iucn category
       let puids = this.getPuidsFromIucnCategory(
         this.state.metadata.IUCN_CATEGORY
@@ -3328,7 +3337,7 @@ const [dialogsState, setDialogsState] = useState({
       //add it to the new status array
       if (next_status !== 0) this.addPuidToArray(statuses, next_status, puid);
       //set the state
-      setDialogsState(prevState => ({ ...prevState, planning_units: statuses });
+      this.setState({ planning_units: statuses });
       //re-render the planning unit edit layer
       this.renderPuEditLayer();
     }
@@ -3434,7 +3443,7 @@ const [dialogsState, setDialogsState] = useState({
 
   //previews the planning grid
   previewPlanningGrid(planning_grid_metadata) {
-    setDialogsState(prevState => ({ ...prevState,
+    this.setState({
       planning_grid_metadata: planning_grid_metadata,
       planningGridDialogOpen: true,
     });
@@ -3502,14 +3511,14 @@ const [dialogsState, setDialogsState] = useState({
   importPlanningUnitGrid(zipFilename, alias, description) {
     return new Promise((resolve, reject) => {
       this.startLogging();
-     messageLogger({
+      this.log({
         method: "importPlanningUnitGrid",
         status: "Started",
         info: "Importing planning grid..",
       });
       this.importZippedShapefileAsPu(zipFilename, alias, description)
         .then((response) => {
-         messageLogger({
+          this.log({
             method: "importPlanningUnitGrid",
             status: "Finished",
             info: response.info,
@@ -3521,7 +3530,7 @@ const [dialogsState, setDialogsState] = useState({
         .catch((error) => {
           //importZippedShapefileAsPu error
           this.deletePlanningUnitGrid(alias, true);
-         messageLogger({
+          this.log({
             method: "importPlanningUnitGrid",
             status: "Finished",
             error: error,
@@ -3608,7 +3617,7 @@ const [dialogsState, setDialogsState] = useState({
 
   getCountries() {
     this._get("getCountries").then((response) => {
-      setDialogsState(prevState => ({ ...prevState, countries: response.records });
+      this.setState({ countries: response.records });
     });
   }
 
@@ -3623,7 +3632,7 @@ const [dialogsState, setDialogsState] = useState({
         300000
       )
         .then((response) => {
-          setDialogsState(prevState => ({ ...prevState, loading: true });
+          this.setState({ loading: true });
           //poll mapbox to see when the upload has finished
           this.pollMapbox(response.uploadid).then((response2) => {
             resolve(response2);
@@ -3637,16 +3646,16 @@ const [dialogsState, setDialogsState] = useState({
 
   //polls mapbox to see when an upload has finished - returns as promise
   pollMapbox(uploadid) {
-    setDialogsState(prevState => ({ ...prevState, uploading: true });
-   messageLogger({ info: "Uploading to Mapbox..", status: "Uploading" });
+    this.setState({ uploading: true });
+    this.log({ info: "Uploading to Mapbox..", status: "Uploading" });
     return new Promise((resolve, reject) => {
       if (uploadid === "0") {
-       messageLogger({
+        this.log({
           info: "Tileset already exists on Mapbox",
           status: "UploadComplete",
         });
         //reset state
-        setDialogsState(prevState => ({ ...prevState, uploading: false });
+        this.setState({ uploading: false });
         resolve("Uploaded to Mapbox");
       } else {
         let timer = setInterval(() => {
@@ -3668,7 +3677,7 @@ const [dialogsState, setDialogsState] = useState({
             .then((response) => {
               if (response.complete) {
                 resolve("Uploaded to Mapbox");
-               messageLogger({ info: "Uploaded", status: "UploadComplete" });
+                this.log({ info: "Uploaded", status: "UploadComplete" });
                 //clear the timer
                 this.clearMapboxTimer(uploadid);
               }
@@ -3682,7 +3691,7 @@ const [dialogsState, setDialogsState] = useState({
                   CONSTANTS.ERRORS_PAGE +
                   "#mapbox-upload-error' target='blank'>here</a>";
                 //log the error
-               messageLogger({ error: err, status: "UploadFailed" });
+                this.log({ error: err, status: "UploadFailed" });
                 //set the snackbox
                 this.setSnackBar(err);
                 //clear the timer
@@ -3690,7 +3699,7 @@ const [dialogsState, setDialogsState] = useState({
               }
             })
             .catch((error) => {
-              setDialogsState(prevState => ({ ...prevState, uploading: false });
+              this.setState({ uploading: false });
               reject(error);
             });
         }, 3000);
@@ -3706,12 +3715,12 @@ const [dialogsState, setDialogsState] = useState({
     //remove the timer from the timers array
     timers = timers.filter((timer) => timer.uploadid !== uploadid);
     //reset state
-    if (timers.length === 0) setDialogsState(prevState => ({ ...prevState, uploading: false });
+    if (timers.length === 0) this.setState({ uploading: false });
   }
 
   openWelcomeDialog() {
     this.parseNotifications();
-    setDialogsState(prevState => ({ ...prevState, welcomeDialogOpen: true });
+    this.setState({ welcomeDialogOpen: true });
   }
   openFeaturesDialog(showClearSelectAll) {
     //refresh the features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
@@ -3720,7 +3729,7 @@ const [dialogsState, setDialogsState] = useState({
       !this.state.metadata.OLDVERSION
     )
       this.refreshFeatures();
-    setDialogsState(prevState => ({ ...prevState,
+    this.setState({
       featuresDialogOpen: true,
       addingRemovingFeatures: showClearSelectAll,
     });
@@ -3728,11 +3737,11 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   updateState(state_obj) {
-    setDialogsState(state_obj);
+    this.setState(state_obj);
   }
 
   closeNewFeatureDialog() {
-    setDialogsState(prevState => ({ ...prevState, NewFeatureDialogOpen: false });
+    this.setState({ NewFeatureDialogOpen: false });
     //finalise digitising
     this.finaliseDigitising();
   }
@@ -3740,7 +3749,7 @@ const [dialogsState, setDialogsState] = useState({
     //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
     if (this.state.marxanServer.system !== "Windows")
       this.getPlanningUnitGrids();
-    setDialogsState(prevState => ({ ...prevState, planningGridsDialogOpen: true });
+    this.setState({ planningGridsDialogOpen: true });
   }
 
   //used by the import wizard to import a users zipped shapefile as the planning units
@@ -3773,13 +3782,13 @@ const [dialogsState, setDialogsState] = useState({
     if (this.state.atlasLayers.length < 1) {
       this.getAtlasLayers();
     }
-    setDialogsState(prevState => ({ ...prevState, atlasLayersDialogOpen: true });
+    this.setState({ atlasLayersDialogOpen: true });
   }
   openCumulativeImpactDialog() {
     //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
     // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
     this.getImpacts();
-    setDialogsState(prevState => ({ ...prevState, cumulativeImpactDialogOpen: true });
+    this.setState({ cumulativeImpactDialogOpen: true });
   }
   //makes a call to get the impacts from the server and returns them
   getImpacts() {
@@ -3789,7 +3798,7 @@ const [dialogsState, setDialogsState] = useState({
         .then((response) => {
           console.log("response ", response);
 
-          setDialogsState(prevState => ({ ...prevState,
+          this.setState({
             allImpacts: response.data,
           });
           resolve();
@@ -3817,7 +3826,7 @@ const [dialogsState, setDialogsState] = useState({
         visibility: "none",
       },
     });
-    // setDialogsState(prevState => ({ ...prevState, map: map });
+    // this.setState({ map: map });
   }
 
   getAtlasLayers() {
@@ -3846,9 +3855,9 @@ const [dialogsState, setDialogsState] = useState({
               visibility: "none",
             },
           });
-          // setDialogsState(prevState => ({ ...prevState, map: map });
+          // this.setState({ map: map });
         });
-        setDialogsState(prevState => ({ ...prevState, atlasLayers: parseddata });
+        this.setState({ atlasLayers: parseddata });
       })
       .catch((error) => console.error("Error:", error));
   }
@@ -3858,7 +3867,7 @@ const [dialogsState, setDialogsState] = useState({
       this._get("getActivities")
         .then((response) => JSON.parse(response.data))
         .then((data) => {
-          setDialogsState(prevState => ({ ...prevState,
+          this.setState({
             activities: data,
             fetched: true,
           });
@@ -3872,12 +3881,12 @@ const [dialogsState, setDialogsState] = useState({
 
   openImportedActivitesDialog() {
     this.getUploadedActivities();
-    setDialogsState(prevState => ({ ...prevState, importedActivitiesDialogOpen: true });
+    this.setState({ importedActivitiesDialogOpen: true });
   }
 
   openCostsDialog() {
     this.getImpacts();
-    setDialogsState(prevState => ({ ...prevState, costsDialogOpen: true });
+    this.setState({ costsDialogOpen: true });
   }
 
   getUploadedActivities() {
@@ -3885,7 +3894,7 @@ const [dialogsState, setDialogsState] = useState({
       this._get("getUploadedActivities")
         .then((response) => {
           console.log("response ", response);
-          setDialogsState(prevState => ({ ...prevState,
+          this.setState({
             uploadedActivities: response.data,
             fetched: true,
           });
@@ -3914,18 +3923,18 @@ const [dialogsState, setDialogsState] = useState({
         : "visible";
     this.map.setLayoutProperty(layer, "visibility", visibility);
     this.state.selectedLayers.includes(layer)
-      ? setDialogsState((prevState) => ({
+      ? this.setState((prevState) => ({
           selectedLayers: [...prevState.selectedLayers].filter(
             (item) => item !== layer
           ),
         }))
-      : setDialogsState((prevState) => ({
+      : this.setState((prevState) => ({
           selectedLayers: [...prevState.selectedLayers, layer],
         }));
   }
 
   closeAtlasLayersDialog() {
-    setDialogsState(prevState => ({ ...prevState, atlasLayersDialogOpen: false });
+    this.setState({ atlasLayersDialogOpen: false });
   }
 
   //when a user clicks a impact in the ImpactsDialog
@@ -3938,14 +3947,14 @@ const [dialogsState, setDialogsState] = useState({
 
   //adds a impact to the selectedImpactIds array
   addImpact(impact, callback) {
-    setDialogsState((prevState) => ({
+    this.setState((prevState) => ({
       selectedImpactIds: [...prevState.selectedImpactIds, impact.id],
     }));
   }
 
   //removes a impact from the selectedImpactIds array
   removeImpact(impact) {
-    setDialogsState((prevState) => ({
+    this.setState((prevState) => ({
       selectedImpactIds: prevState.selectedImpactIds.filter(
         (imp) => imp !== impact.id
       ),
@@ -4008,7 +4017,7 @@ const [dialogsState, setDialogsState] = useState({
     this.state.allImpacts.forEach((impact) => {
       if (impact.selected) ids.push(impact.id);
     });
-    setDialogsState(prevState => ({ ...prevState, selectedImpactIds: ids });
+    this.setState({ selectedImpactIds: ids });
   }
 
   //updates the properties of a impact and then updates the impacts state
@@ -4028,7 +4037,7 @@ const [dialogsState, setDialogsState] = useState({
   //the callback is optional and will be called when the state has updated
   setImpactsState(newImpacts, callback) {
     //update allImpacts and projectImpacts with the new value
-    setDialogsState(
+    this.setState(
       {
         allImpacts: newImpacts,
         projectImpacts: newImpacts.filter((item) => {
@@ -4043,17 +4052,17 @@ const [dialogsState, setDialogsState] = useState({
     if (this.state.activities.length < 1) {
       this.getActivities();
     }
-    setDialogsState(prevState => ({ ...prevState, humanActivitiesDialogOpen: true });
+    this.setState({ humanActivitiesDialogOpen: true });
   }
 
   closeHumanActivitiesDialog() {
-    setDialogsState(prevState => ({ ...prevState, humanActivitiesDialogOpen: false });
+    this.setState({ humanActivitiesDialogOpen: false });
   }
 
   //create new impact from the created pressures
   importImpacts(filename, selectedActivity, description) {
     //start the logging
-    setDialogsState(prevState => ({ ...prevState, loading: true });
+    this.setState({ loading: true });
     this.startLogging();
     return new Promise((resolve, reject) => {
       //get the request url
@@ -4068,7 +4077,7 @@ const [dialogsState, setDialogsState] = useState({
       this._ws(url, this.wsMessageCallback.bind(this))
         .then((message) => {
           this.pollMapbox(message.uploadId).then((response) => {
-            setDialogsState(prevState => ({ ...prevState, loading: false }));
+            this.setState({ loading: false });
             resolve("Cumulative Impact Layer uploaded");
           });
         })
@@ -4079,7 +4088,7 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   runCumulativeImpact(selectedUploadedActivityIds) {
-    setDialogsState(prevState => ({ ...prevState, loading: true });
+    this.setState({ loading: true });
     this.startLogging();
     return new Promise((resolve, reject) => {
       this._ws(
@@ -4088,7 +4097,7 @@ const [dialogsState, setDialogsState] = useState({
       )
         .then((message) => {
           // this.pollMapbox(message.uploadId).then((response) => {
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
+          this.setState({ loading: false });
           resolve("Cumulative Impact Layer uploaded");
           // });
         })
@@ -4101,8 +4110,8 @@ const [dialogsState, setDialogsState] = useState({
   uploadRaster(data) {
     console.log("upload raster ata ", data);
     return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, loading: true });
-     messageLogger({
+      this.setState({ loading: true });
+      this.log({
         method: "uploadRaster",
         status: "In Progress",
         info: "Uploading Raster...",
@@ -4126,13 +4135,13 @@ const [dialogsState, setDialogsState] = useState({
     //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
     // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
     this.getUploadedActivities();
-    setDialogsState(prevState => ({ ...prevState, activitiesDialogOpen: true });
+    this.setState({ activitiesDialogOpen: true });
   }
 
   //create new impact from the created pressures
   saveActivityToDb(filename, selectedActivity, description) {
     //start the logging
-    setDialogsState(prevState => ({ ...prevState, loading: true });
+    this.setState({ loading: true });
     this.startLogging();
     return new Promise((resolve, reject) => {
       //get the request url
@@ -4147,7 +4156,7 @@ const [dialogsState, setDialogsState] = useState({
       this._ws(url, this.wsMessageCallback.bind(this))
         .then((message) => {
           console.log("message ", message);
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
+          this.setState({ loading: false });
           resolve("Raster saved to db");
         })
         .catch((error) => {
@@ -4161,7 +4170,7 @@ const [dialogsState, setDialogsState] = useState({
       "this.state.metadata.PLANNING_UNIT_NAME ",
       this.state.metadata.PLANNING_UNIT_NAME
     );
-    setDialogsState(prevState => ({ ...prevState, loading: true });
+    this.setState({ loading: true });
     this.startLogging();
     return new Promise((resolve, reject) => {
       let url =
@@ -4178,7 +4187,7 @@ const [dialogsState, setDialogsState] = useState({
       this._ws(url, this.wsMessageCallback.bind(this))
         .then((message) => {
           console.log("message ", message);
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
+          this.setState({ loading: false });
           this.addCost(data.alias);
           resolve("Costs created from Cumulative impact");
         })
@@ -4212,7 +4221,7 @@ const [dialogsState, setDialogsState] = useState({
     this.state.allFeatures.forEach((feature) => {
       if (feature.selected) ids.push(feature.id);
     });
-    setDialogsState(prevState => ({ ...prevState, selectedFeatureIds: ids });
+    this.setState({ selectedFeatureIds: ids });
   }
 
   //when a user clicks a feature in the FeaturesDialog
@@ -4235,7 +4244,7 @@ const [dialogsState, setDialogsState] = useState({
       return value !== feature.id;
     });
     return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, selectedFeatureIds: ids }, () => {
+      this.setState({ selectedFeatureIds: ids }, () => {
         resolve("Feature removed");
       });
     });
@@ -4246,7 +4255,7 @@ const [dialogsState, setDialogsState] = useState({
     let ids = this.state.selectedFeatureIds;
     //add the feautre to the selected feature array
     ids.push(feature.id);
-    setDialogsState(prevState => ({ ...prevState, selectedFeatureIds: ids }, callback);
+    this.setState({ selectedFeatureIds: ids }, callback);
   }
 
   //starts a digitising session
@@ -4338,7 +4347,7 @@ const [dialogsState, setDialogsState] = useState({
   //the callback is optional and will be called when the state has updated
   setFeaturesState(newFeatures, callback) {
     //update allFeatures and projectFeatures with the new value
-    setDialogsState(
+    this.setState(
       {
         allFeatures: newFeatures,
         projectFeatures: newFeatures.filter((item) => {
@@ -4360,7 +4369,7 @@ const [dialogsState, setDialogsState] = useState({
 
   //previews the feature
   previewFeature(feature_metadata) {
-    setDialogsState(prevState => ({ ...prevState,
+    this.setState({
       feature_metadata: feature_metadata,
       featureDialogOpen: true,
     });
@@ -4511,17 +4520,17 @@ const [dialogsState, setDialogsState] = useState({
   //requests matching species names in GBIF
   gbifSpeciesSuggest(q) {
     return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, loading: true });
+      this.setState({ loading: true });
       jsonp(
         "https://api.gbif.org/v1/species/suggest?q=" + q + "&rank=SPECIES"
       ).promise.then(
         (response) => {
           resolve(response);
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
+          this.setState({ loading: false });
         },
         (err) => {
           reject(err);
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
+          this.setState({ loading: false });
         }
       );
     });
@@ -4531,7 +4540,7 @@ const [dialogsState, setDialogsState] = useState({
   createNewFeature(name, description) {
     //start the logging
     this.startLogging();
-   messageLogger({
+    this.log({
       method: "createNewFeature",
       status: "Started",
       info: "Creating feature..",
@@ -4549,7 +4558,7 @@ const [dialogsState, setDialogsState] = useState({
     formData.append("linestring", "Linestring(" + coords + ")");
     this._post("createFeatureFromLinestring", formData)
       .then((response) => {
-       messageLogger({
+        this.log({
           method: "createNewFeature",
           status: "Finished",
           info: response.info,
@@ -4562,7 +4571,7 @@ const [dialogsState, setDialogsState] = useState({
         });
       })
       .catch((error) => {
-       messageLogger({ status: "Finished", error: error });
+        this.log({ status: "Finished", error: error });
       });
   }
 
@@ -4599,7 +4608,7 @@ const [dialogsState, setDialogsState] = useState({
       if (a.alias.toLowerCase() > b.alias.toLowerCase()) return 1;
       return 0;
     });
-    setDialogsState(prevState => ({ ...prevState, allFeatures: featuresCopy });
+    this.setState({ allFeatures: featuresCopy });
   }
 
   //attempts to delete a feature - if the feature is in use in a project then it will not be deleted and the list of projects will be shown
@@ -4638,7 +4647,7 @@ const [dialogsState, setDialogsState] = useState({
       return item.id !== feature.id;
     });
     //update the allFeatures state
-    setDialogsState(prevState => ({ ...prevState, allFeatures: featuresCopy });
+    this.setState({ allFeatures: featuresCopy });
   }
 
   //makes a call to get the features from the server and returns them
@@ -4660,7 +4669,7 @@ const [dialogsState, setDialogsState] = useState({
       this.getFeatures()
         .then((response) => {
           //set the allfeatures state
-          setDialogsState(prevState => ({ ...prevState, allFeatures: response.data }, () => {
+          this.setState({ allFeatures: response.data }, () => {
             resolve("Features returned");
           });
         })
@@ -4703,14 +4712,14 @@ const [dialogsState, setDialogsState] = useState({
     });
   }
   openFeatureMenu(evt, feature) {
-    setDialogsState(prevState => ({ ...prevState,
+    this.setState({
       featureMenuOpen: true,
       currentFeature: feature,
       menuAnchor: evt.currentTarget,
     });
   }
   closeFeatureMenu(evt) {
-    setDialogsState(prevState => ({ ...prevState, featureMenuOpen: false });
+    this.setState({ featureMenuOpen: false });
   }
 
   //hides the feature layer
@@ -4908,104 +4917,104 @@ const [dialogsState, setDialogsState] = useState({
 
   showUserMenu(e) {
     e.preventDefault();
-    setDialogsState(prevState => ({ ...prevState, userMenuOpen: true, menuAnchor: e.currentTarget });
+    this.setState({ userMenuOpen: true, menuAnchor: e.currentTarget });
   }
   hideUserMenu(e) {
-    setDialogsState(prevState => ({ ...prevState, userMenuOpen: false });
+    this.setState({ userMenuOpen: false });
   }
   showHelpMenu(e) {
     e.preventDefault();
-    setDialogsState(prevState => ({ ...prevState, helpMenuOpen: true, menuAnchor: e.currentTarget });
+    this.setState({ helpMenuOpen: true, menuAnchor: e.currentTarget });
   }
   hideHelpMenu(e) {
-    setDialogsState(prevState => ({ ...prevState, helpMenuOpen: false });
+    this.setState({ helpMenuOpen: false });
   }
   showToolsMenu(e) {
     e.preventDefault();
-    setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: true, menuAnchor: e.currentTarget });
+    this.setState({ toolsMenuOpen: true, menuAnchor: e.currentTarget });
   }
   hideToolsMenu(e) {
-    setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: false });
+    this.setState({ toolsMenuOpen: false });
   }
 
   openProjectsDialog() {
-    setDialogsState(prevState => ({ ...prevState, projectsDialogOpen: true });
+    this.setState({ projectsDialogOpen: true });
     this.getProjects();
   }
 
   openNewProjectWizardDialog() {
     this.getCountries();
-    setDialogsState(prevState => ({ ...prevState, newProjectWizardDialogOpen: true });
+    this.setState({ newProjectWizardDialogOpen: true });
   }
 
   openNewPlanningGridDialog() {
     this.getCountries();
-    setDialogsState(prevState => ({ ...prevState, NewPlanningGridDialogOpen: true });
+    this.setState({ NewPlanningGridDialogOpen: true });
   }
 
   openUserSettingsDialog() {
-    setDialogsState(prevState => ({ ...prevState, UserSettingsDialogOpen: true });
+    this.setState({ UserSettingsDialogOpen: true });
     this.hideUserMenu();
   }
 
   openProfileDialog() {
-    setDialogsState(prevState => ({ ...prevState, profileDialogOpen: true });
+    this.setState({ profileDialogOpen: true });
     this.hideUserMenu();
   }
 
   openAboutDialog() {
-    setDialogsState(prevState => ({ ...prevState, aboutDialogOpen: true });
+    this.setState({ aboutDialogOpen: true });
     this.hideHelpMenu();
   }
 
   openClassificationDialog() {
-    setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: true });
+    this.setState({ classificationDialogOpen: true });
   }
   closeClassificationDialog() {
-    setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: false });
+    this.setState({ classificationDialogOpen: false });
   }
 
   openUsersDialog() {
     this.getUsers();
-    setDialogsState(prevState => ({ ...prevState, usersDialogOpen: true });
+    this.setState({ usersDialogOpen: true });
   }
 
   toggleInfoPanel() {
-    setDialogsState(prevState => ({ ...prevState, infoPanelOpen: !this.state.infoPanelOpen });
+    this.setState({ infoPanelOpen: !this.state.infoPanelOpen });
   }
   toggleResultsPanel() {
-    setDialogsState(prevState => ({ ...prevState, resultsPanelOpen: !this.state.resultsPanelOpen });
+    this.setState({ resultsPanelOpen: !this.state.resultsPanelOpen });
   }
 
   openRunLogDialog() {
     this.getRunLogs();
     this.startPollingRunLogs();
-    setDialogsState(prevState => ({ ...prevState, runLogDialogOpen: true });
+    this.setState({ runLogDialogOpen: true });
   }
   closeRunLogDialog() {
     this.stopPollingRunLogs();
-    setDialogsState(prevState => ({ ...prevState, runLogDialogOpen: false });
+    this.setState({ runLogDialogOpen: false });
   }
   openGapAnalysisDialog() {
-    setDialogsState(prevState => ({ ...prevState, gapAnalysisDialogOpen: true, gapAnalysis: [] });
+    this.setState({ gapAnalysisDialogOpen: true, gapAnalysis: [] });
     this.runGapAnalysis();
   }
   closeGapAnalysisDialog() {
-    setDialogsState(prevState => ({ ...prevState, gapAnalysisDialogOpen: false, gapAnalysis: [] });
+    this.setState({ gapAnalysisDialogOpen: false, gapAnalysis: [] });
   }
   openServerDetailsDialog() {
-    setDialogsState(prevState => ({ ...prevState, serverDetailsDialogOpen: true });
+    this.setState({ serverDetailsDialogOpen: true });
     this.hideHelpMenu();
   }
   closeServerDetailsDialog() {
-    setDialogsState(prevState => ({ ...prevState, serverDetailsDialogOpen: false });
+    this.setState({ serverDetailsDialogOpen: false });
   }
   openChangePasswordDialog() {
     this.hideUserMenu();
-    setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: true });
+    this.setState({ changePasswordDialogOpen: true });
   }
   closeChangePasswordDialog() {
-    setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: false });
+    this.setState({ changePasswordDialogOpen: false });
   }
 
   showProjectListDialog(
@@ -5013,7 +5022,7 @@ const [dialogsState, setDialogsState] = useState({
     projectListDialogTitle,
     projectListDialogHeading
   ) {
-    setDialogsState(
+    this.setState(
       {
         projectList: projectList,
         projectListDialogTitle: projectListDialogTitle,
@@ -5025,10 +5034,10 @@ const [dialogsState, setDialogsState] = useState({
     );
   }
   openTargetDialog() {
-    setDialogsState(prevState => ({ ...prevState, targetDialogOpen: true });
+    this.setState({ targetDialogOpen: true });
   }
   closeTargetDialog() {
-    setDialogsState(prevState => ({ ...prevState, targetDialogOpen: false });
+    this.setState({ targetDialogOpen: false });
   }
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////// PROTECTED AREAS LAYERS STUFF
@@ -5038,7 +5047,7 @@ const [dialogsState, setDialogsState] = useState({
     //update the state
     let _metadata = this.state.metadata;
     _metadata.IUCN_CATEGORY = iucnCategory;
-    setDialogsState(prevState => ({ ...prevState, metadata: _metadata });
+    this.setState({ metadata: _metadata });
     //update the input.dat file
     this.updateProjectParameter("IUCN_CATEGORY", iucnCategory);
     //filter the wdpa vector tiles - NO LONGER USED
@@ -5057,7 +5066,7 @@ const [dialogsState, setDialogsState] = useState({
     this.map.setFilter(CONSTANTS.WDPA_LAYER_NAME, filterExpr);
     //turn on/off the protected areas legend
     let layer = iucnCategory === "None" ? false : true;
-    setDialogsState(prevState => ({ ...prevState, pa_layer_visible: layer });
+    this.setState({ pa_layer_visible: layer });
   }
 
   getIndividualIucnCategories(iucnCategory) {
@@ -5160,7 +5169,7 @@ const [dialogsState, setDialogsState] = useState({
       this.appPuidsToPlanningUnits(statuses, 2, newPuids);
     }
     //update the state
-    setDialogsState(prevState => ({ ...prevState, planning_units: statuses });
+    this.setState({ planning_units: statuses });
     //re-render the layer
     this.renderPuEditLayer();
     //update the pu.dat file
@@ -5194,7 +5203,7 @@ const [dialogsState, setDialogsState] = useState({
         )
           .then((message) => {
             //set the state
-            setDialogsState(prevState => ({ ...prevState,
+            this.setState({
               protected_area_intersections: message.intersections,
             });
             //return a value to the then() call
@@ -5235,7 +5244,7 @@ const [dialogsState, setDialogsState] = useState({
             wdpa_version: this.state.registry.WDPA.latest_version,
           });
           //update the state and when it is finished, re-add the wdpa source and layer
-          setDialogsState(prevState => ({ ...prevState, newWDPAVersion: false, marxanServer: obj }, () => {
+          this.setState({ newWDPAVersion: false, marxanServer: obj }, () => {
             //set the source for the WDPA layer to the new vector tiles
             this.setWDPAVectorTilesLayerName(
               this.state.registry.WDPA.latest_version
@@ -5251,7 +5260,7 @@ const [dialogsState, setDialogsState] = useState({
             this.addWDPASource();
             this.addWDPALayer();
             //reset the protected area intersections on the client
-            setDialogsState(prevState => ({ ...prevState, protected_area_intersections: [] });
+            this.setState({ protected_area_intersections: [] });
             //recalculate the protected area intersections and refilter the vector tiles
             this.changeIucnCategory(this.state.metadata.IUCN_CATEGORY);
             //close the dialog
@@ -5290,7 +5299,7 @@ const [dialogsState, setDialogsState] = useState({
             //update the state
             var currentFiles = this.state.files;
             currentFiles.BOUNDNAME = "bounds.dat";
-            setDialogsState(prevState => ({ ...prevState, files: currentFiles });
+            this.setState({ files: currentFiles });
             //return a value to the then() call
             resolve(message);
           })
@@ -5315,7 +5324,7 @@ const [dialogsState, setDialogsState] = useState({
             //when the planning unit file has been updated, update the PuVSpr file - this does all the preprocessing using web sockets
             this.updatePuvsprFile().then((value) => {
               //show the clumping dialog
-              setDialogsState(prevState => ({ ...prevState,
+              this.setState({
                 clumpingDialogOpen: true,
                 clumpingRunning: true,
               });
@@ -5337,7 +5346,7 @@ const [dialogsState, setDialogsState] = useState({
     //reset the paint properties in the clumping dialog
     this.resetPaintProperties();
     //return state to normal
-    setDialogsState(prevState => ({ ...prevState, clumpingDialogOpen: false });
+    this.setState({ clumpingDialogOpen: false });
   }
 
   //creates a group of 5 projects with UUIDs in the _clumping folder
@@ -5391,7 +5400,7 @@ const [dialogsState, setDialogsState] = useState({
     //reset the counter
     this.projectsRun = 0;
     //set the intitial state
-    setDialogsState(prevState => ({ ...prevState, clumpingRunning: true });
+    this.setState({ clumpingRunning: true });
     //run the projects
     projects.forEach((project) => {
       this.startMarxanJob("_clumping", project.projectName, false).then(
@@ -5403,7 +5412,7 @@ const [dialogsState, setDialogsState] = useState({
           //increment the project counter
           this.projectsRun = this.projectsRun + 1;
           //set the state
-          if (this.projectsRun === 5) setDialogsState(prevState => ({ ...prevState, clumpingRunning: false });
+          if (this.projectsRun === 5) this.setState({ clumpingRunning: false });
         }
       );
     });
@@ -5435,7 +5444,7 @@ const [dialogsState, setDialogsState] = useState({
 
   resetPaintProperties() {
     //reset the paint properties
-    setDialogsState(prevState => ({ ...prevState,
+    this.setState({
       map0_paintProperty: [],
       map1_paintProperty: [],
       map2_paintProperty: [],
@@ -5463,7 +5472,7 @@ const [dialogsState, setDialogsState] = useState({
   getRunLogs() {
     if (!this.state.unauthorisedMethods.includes("getRunLogs")) {
       this._get("getRunLogs").then((response) => {
-        setDialogsState(prevState => ({ ...prevState, runLogs: response.data });
+        this.setState({ runLogs: response.data });
       });
     }
   }
@@ -5496,7 +5505,7 @@ const [dialogsState, setDialogsState] = useState({
         this.wsMessageCallback.bind(this)
       )
         .then((message) => {
-          setDialogsState(prevState => ({ ...prevState, gapAnalysis: message.data });
+          this.setState({ gapAnalysis: message.data });
           resolve(message);
         })
         .catch((error) => {
@@ -5518,7 +5527,7 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   setAddToProject(evt, isChecked) {
-    setDialogsState(prevState => ({ ...prevState, addToProject: isChecked });
+    this.setState({ addToProject: isChecked });
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5539,7 +5548,7 @@ const [dialogsState, setDialogsState] = useState({
       )
         .then((response) => {
           //update the state
-          setDialogsState(prevState => ({ ...prevState,
+          this.setState({
             metadata: Object.assign(this.state.metadata, { COSTS: costname }),
           });
           resolve();
@@ -5552,10 +5561,10 @@ const [dialogsState, setDialogsState] = useState({
 
   //loads the costs layer
   loadCostsLayer(forceReload = false) {
-    setDialogsState(prevState => ({ ...prevState, costsLoading: true });
+    this.setState({ costsLoading: true });
     this.getPlanningUnitsCostData(forceReload).then((cost_data) => {
       this.renderPuCostLayer(cost_data).then(() => {
-        setDialogsState(prevState => ({ ...prevState, costsLoading: false });
+        this.setState({ costsLoading: false });
         //do something
       });
     });
@@ -5614,7 +5623,7 @@ const [dialogsState, setDialogsState] = useState({
     let _costnames = this.state.costnames;
     //add the cost profile
     _costnames.push(costname);
-    setDialogsState(prevState => ({ ...prevState, costnames: _costnames });
+    this.setState({ costnames: _costnames });
   }
   //deletes a cost file on the server
   deleteCost(costname) {
@@ -5632,7 +5641,7 @@ const [dialogsState, setDialogsState] = useState({
           let _costnames = this.state.costnames;
           //remove the deleted cost profile
           _costnames = _costnames.filter((item) => item !== costname);
-          setDialogsState(prevState => ({ ...prevState, costnames: _costnames });
+          this.setState({ costnames: _costnames });
           resolve();
         })
         .catch((error) => {
