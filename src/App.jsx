@@ -99,7 +99,8 @@ let timers = []; //array of timers for seeing when asynchronous calls have finis
 import React, { useState, useEffect, useCallback } from "react";
 import { Map } from 'mapbox-gl'; // Assuming you're using mapbox-gl
 import classyBrew from "classybrew";
-import CONSTANTS from './constants'; // Adjust the import based on your actual file location
+import CONSTANTS from './constants'; 
+import { addLocalServer, getServerCapabilities, filterAndSortServers } from "./Server/serverFunctions";
 
 const App = () => {
   const [registry, setRegistry] = useState(undefined);
@@ -109,6 +110,8 @@ const App = () => {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
     const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState('');
+    const [newWDPAVersion, setNewWDPAVersion] = useState(false)
+    const [activeTab, setActiveTab] = useState("")
 
 
 
@@ -132,6 +135,7 @@ const [dialogsState, setDialogsState] = useState({
   currentFeature: {},
   cumulativeImpactDialogOpen: false,
   dataBreaks: [],
+  dismissedNotifications: [],
   featureDatasetFilename: "",
   feature_metadata: {},
   featureDialogOpen: false,
@@ -167,6 +171,7 @@ const [dialogsState, setDialogsState] = useState({
   planning_unit_grids: [],
   planning_units: [],
   project: "",
+  projects: [],
   projectFeatures: [],
   projectList: [],
   projectListDialogHeading: "",
@@ -263,24 +268,6 @@ const [dialogsState, setDialogsState] = useState({
       alert(err.message);
     }
   };
-
-  const selectServer = useCallback((server) => {
-    // Implement server selection logic
-    console.log('server ', server);
-    setMarxanServer(server);
-    // Check if there is a new version of the WDPA
-    if (server.wdpa_version !== registry.WDPA.latest_version) {
-      setDialogsState(prevState => ({ ...prevState, setNewWDPAVersion:true}));
-    } else {
-      setDialogsState(prevState => ({ ...prevState, setNewWDPAVersion:false}));
-    }
-    // Set the link to the WDPA vector tiles layer name based on the version
-    setWDPAVectorTilesLayerName(value.wdpa_version);
-    // If server is online, not CORS-enabled, and guest user is enabled, switch to guest user
-    if (!value.offline && !value.corsEnabled && value.guestUserEnabled) {
-      switchToGuestUser();
-    }
-  }, [registry.WDPA.latest_version]);
   
   const setWDPAVectorTilesLayerName = useCallback((wdpa_version) => {
     // Get the short version of the wdpa_version, e.g., August 2019 to aug_2019
@@ -288,32 +275,35 @@ const [dialogsState, setDialogsState] = useState({
     setWdpaVectorTileLayer(`wdpa_${version}_polygons`);
   }, []);
 
-  // const switchToGuestUser = useCallback(async () => {
-  //   // Implement guest user switch logic
-  // }, []);
 
-  // const validateUser = useCallback(async () => {
-  //   // Implement user validation logic
-  // }, []);
+  const switchToGuestUser = useCallback(async () => {
+  // Set the state to switch to guest user
+  await setDialogsState(prevState => ({ 
+    ...prevState, 
+    user: "guest", 
+    password: "password" 
+  }));
+  return "Switched to guest user";
+}, []);
+
+const validateUser = async (user, password) => {
+  try {
+    await checkPassword(user, password);    
+    await login();
+    return "User validated";
+  } catch (error) {
+    console.error("Validation or login failed:", error);
+    throw error; // Re-throw the error to be handled by the caller
+  }
+};
 
   // const loadProject = useCallback(async (project, user) => {
   //   // Implement project loading logic
   // }, []);
 
-  // const initialiseServers = useCallback(async (servers) => {
-  //   // Implement server initialization logic
-  //   setMarxanServers(servers);
-  // }, []);
-
-  const setSnackBar = useCallback((message) => {
-    setSnackbarMessage(message);
-    setSnackbarOpen(true);
-  }, []);
-
   // ---------------------------------------------------------------- //
   // REQUEST HELPERS
   // ---------------------------------------------------------------- //
-
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   const _get = useCallback((params, timeout = CONSTANTS.TIMEOUT) => {
     
@@ -340,7 +330,7 @@ const [dialogsState, setDialogsState] = useState({
   }, [checkForErrors, setSnackBar]);
 
   //makes a POST request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
-    const _post = useCallback(async (method, formData, timeout = CONSTANTS.TIMEOUT, withCredentials = CONSTANTS.SEND_CREDENTIALS) => {
+  const _post = useCallback(async (method, formData, timeout = CONSTANTS.TIMEOUT, withCredentials = CONSTANTS.SEND_CREDENTIALS) => {
     setDialogsState(prevState => ({ ...prevState,loading: true}));
     
     try {
@@ -373,7 +363,6 @@ const [dialogsState, setDialogsState] = useState({
       setDialogsState(prevState => ({ ...prevState,loading: false}));
     }
   }, [marxanServer.endpoint, checkForErrors]);
-
   
   // Memoized WebSocket function
   const _ws = useCallback((params, msgCallback) => {
@@ -419,7 +408,6 @@ const [dialogsState, setDialogsState] = useState({
       };
     });
   }, [marxanServer.websocketEndpoint, checkForErrors]);
-
 
   // Memoized function to check for errors using responseIsTimeoutOrEmpty and isServerError
   const checkForErrors = useCallback((response, showSnackbar = true) => {
@@ -576,63 +564,47 @@ const [dialogsState, setDialogsState] = useState({
     }));
   }, []);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// MANAGING MARXAN SERVERS
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  //initialises the servers by requesting their capabilities and then filtering the list of available servers
-  const initialiseServers = (marxanServers) => {
-    return new Promise((resolve, reject) => {
-      //get a list of server hosts from the marxan.json registry
-      let hosts = marxanServers.map((server) => {
-        return server.host;
-      });
-      //add the current domain - this may be a local/local network install
-      let name =
-        window.location.hostname === "localhost"
-          ? "localhost"
-          : window.location.hostname;
-      marxanServers.push({
-        name: name,
-        protocol: window.location.protocol,
-        host: window.location.hostname,
-        port: 5000,
-        description: "Local machine",
-        type: "local",
-      });
-      //get all the server capabilities - when all the servers have responded, finalise the marxanServer array
-      this.getAllServerCapabilities(marxanServers).then((server) => {
-        //remove the current domain if either the marxan server is not installed, or it is already in the list of servers from the marxan registry
-        marxanServers = marxanServers.filter((item) => {
-          return (
-            item.type === "remote" ||
-            (item.type === "local" &&
-              !item.offline &&
-              hosts.indexOf(item.host) === -1) ||
-            item.host === "localhost"
-          );
-        });
-        //sort the servers by the name
-        marxanServers.sort((a, b) => {
-          if (a.name.toLowerCase() < b.name.toLowerCase() || a.type === "local")
-            return -1;
-          if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
-          return 0;
-        });
-        setDialogsState(prevState => ({ ...prevState, marxanServers: marxanServers }, () => {
-          resolve("ServerData retrieved");
-        });
-      });
-    });
+  // ---------------------------------------------------------------- //
+  // MANAGING DIFFERENT SERVERS
+  // ---------------------------------------------------------------- //
+    const selectServer = useCallback((server) => {
+    // Implement server selection logic
+    console.log('server ', server);
+    setMarxanServer(server);
+    // Check if there is a new version of the WDPA
+    if (server.wdpa_version !== registry.WDPA.latest_version) ? setNewWDPAVersion(true): setNewWDPAVersion(false);
+    // Set the link to the WDPA vector tiles layer name based on the version
+    setWDPAVectorTilesLayerName(server.wdpa_version);
+    // If server is online, not CORS-enabled, and guest user is enabled, switch to guest user
+    if (!server.offline && !server.corsEnabled && server.guestUserEnabled) {
+      switchToGuestUser();
+    }
+  }, [registry.WDPA.latest_version]);
+  
+  const initialiseServers = useCallback(async (servers) => {
+  try {
+    // Add the local machine server to the list
+    addLocalServer(servers);
+    // Fetch capabilities for all servers
+    await getAllServerCapabilities(servers);
+    // filter and sort servers
+    const filteredAndSortedServers = filterAndSortServers(servers);
+    // Update the marxanServers state with the filtered and sorted server list
+    setMarxanServers(filteredAndSortedServers);
+    return "ServerData retrieved";
+  } catch (error) {
+    console.error("Failed to initialise servers:", error);
+    throw error;
   }
+}, [setMarxanServers]);
 
   //gets the capabilities of all servers
-    // Function to get capabilities for all servers
+  // Function to get capabilities for all servers
   const getAllServerCapabilities = useCallback(async (marxanServers) => {
     try {
       const promises = marxanServers.map(async (server) => {
-        const capabilities = await getServerCapabilities(server);
-      return { server, capabilities };
+        const updatedServer = await getServerCapabilities(server);
+        return updatedServer;
       });
       const results = await Promise.all(promises);
       setServerCapabilities(results);
@@ -641,262 +613,100 @@ const [dialogsState, setDialogsState] = useState({
     }
   }, []);
   
+  useEffect(() => {
+    getAllServerCapabilities(marxanServers);
+  }, [marxanServers, getAllServerCapabilities]);
   
-  async getAllServerCapabilities(marxanServers) {
-    let promises = await marxanServers.map(async (server) => {
-      await this.getServerCapabilities(server);
-    });
-    await Promise.all(promises);
-  }
-
-  //gets the capabilities of the server by making a request to the getServerData method
-  async getServerCapabilities(server) {
-    //get the endpoint for all http/https requests
-    let endpoint =
-      server.protocol +
-      "//" +
-      server.host +
-      ":" +
-      server.port +
-      CONSTANTS.TORNADO_PATH;
-    //get the WebService endpoint
-    let websocketEndpoint =
-      server.protocol === "http:"
-        ? "ws://" + server.host + ":" + server.port + CONSTANTS.TORNADO_PATH
-        : "wss://" + server.host + ":" + server.port + CONSTANTS.TORNADO_PATH;
-    //set the default properties for the server - by default the server is offline, has no guest access and CORS is not enabled
-    server = Object.assign(server, {
-      endpoint: endpoint,
-      websocketEndpoint: websocketEndpoint,
-      offline: true,
-      guestUserEnabled: false,
-      corsEnabled: false,
-    });
-    //poll the server to make sure tornado is running
-    try {
-      const controller = new AbortController();
-      const signal = controller.signal;
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const response = await fetch(endpoint + "getServerData", {
-        credentials: "include",
-        signal: signal,
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) {
-        throw Error(
-          "fetch returned a 404 or 500 error: " + response.statusText
-        );
-      }
-      const json = await response.json();
-      if (json.hasOwnProperty("info")) {
-        //see if CORS is enabled from this domain - either the domain has been added as an allowable domain on the server, or the client and server are on the same machine
-        let corsEnabled =
-          json.serverData.PERMITTED_DOMAINS.indexOf(window.location.hostname) >
-            -1 || server.host === window.location.hostname
-            ? true
-            : false;
-        //set the flags for the server capabilities
-
-        server = Object.assign(server, {
-          guestUserEnabled: json.serverData.ENABLE_GUEST_USER,
-          corsEnabled: corsEnabled,
-          offline: false,
-          machine: json.serverData.MACHINE,
-          client_version: json.serverData.MARXAN_CLIENT_VERSION,
-          server_version: json.serverData.MARXAN_SERVER_VERSION,
-          node: json.serverData.NODE,
-          processor: json.serverData.PROCESSOR,
-          processor_count: json.serverData.PROCESSOR_COUNT,
-          ram: json.serverData.RAM,
-          release: json.serverData.RELEASE,
-          system: json.serverData.SYSTEM,
-          version: json.serverData.VERSION,
-          wdpa_version: json.serverData.WDPA_VERSION,
-          planning_grid_units_limit: Number(
-            json.serverData.PLANNING_GRID_UNITS_LIMIT
-          ),
-          disk_space: json.serverData.DISK_FREE_SPACE,
-          shutdowntime: json.serverData.SHUTDOWNTIME,
-          enable_reset: json.serverData.ENABLE_RESET,
-        });
-        //if the server defines its own name then set it
-        if (json.serverData.SERVER_NAME !== "") {
-          server = Object.assign(server, { name: json.serverData.SERVER_NAME });
-        }
-        //if the server defines its own description then set it
-        if (json.serverData.SERVER_DESCRIPTION !== "") {
-          server = Object.assign(server, {
-            description: json.serverData.SERVER_DESCRIPTION,
-          });
-        }
-      }
-    } catch (error) {
-      console.log("fetch failed with: " + error);
-    }
-  }
   // Function to programmatically select a server
   const selectServerByName = useCallback((servername) => {
     // Remove the search part of the URL
     window.history.replaceState({}, document.title, '/');
-
-    // Find the server object from the name
     const server = marxanServers.find((item) => item.name === servername);
     if (server) {
       selectServer(server);
     }
   }, [marxanServers]);
 
-  //sets the layer name for the WDPA vector tiles based on the WDPA version
-  setWDPAVectorTilesLayerName(wdpa_version) {
-    //get the short version of the wdpa_version, e.g. August 2019 to aug_2019
-    let version =
-      wdpa_version.toLowerCase().substr(0, 3) + "_" + wdpa_version.substr(-4);
-    //set the value of the vector_tile_layer based on which version of the wdpa the server has in the PostGIS database
-    this.wdpa_vector_tile_layer = "wdpa_" + version + "_polygons";
-  }
-  //called when the user selects a server
-  selectServer(value) {
-    console.log("value ", value);
-    setDialogsState(prevState => ({ ...prevState, marxanServer: value });
-    //see if there is a new version of the wdpa
-    value.wdpa_version !== this.state.registry.WDPA.latest_version
-      ? setDialogsState(prevState => ({ ...prevState, newWDPAVersion: true })
-      : setDialogsState(prevState => ({ ...prevState, newWDPAVersion: false });
-    //set the link to the WDPA vector tiles based on the version that is included in the server in the PostGIS database
-    this.setWDPAVectorTilesLayerName(value.wdpa_version);
-    //if the server is ready only then change the user/password to the guest user
-    if (!value.offline && !value.corsEnabled && value.guestUserEnabled) {
-      this.switchToGuestUser();
-    }
+  const closeSnackbar = () => {
+    setDialogsState(prevState => ({ ...prevState, snackbarOpen: false }));
   }
 
-  closeSnackbar() {
-    setDialogsState(prevState => ({ ...prevState, snackbarOpen: false });
-  }
-
-  startLogging(clearLog = false) {
-    //switches the results pane to the log tab
+  const startLogging = (clearLog = false) => {
+    //switches the results pane to the log tab and clears log if needs be
     this.setActiveTab("log");
-    //clear the log if needs be
     if (clearLog) this.clearLog();
   }
 
-  //clears the log
-  clearLog() {
-    setDialogsState(prevState => ({ ...prevState, logMessages: [] });
+  // clears the log
+  const clearLog = ()=> {
+    setDialogsState(prevState => ({ ...prevState, logMessages: [] }));
   }
 
-  //centralised logging method - all log messages are routed through this method (can be called from components to update the log)
+  // Main logging method - all log messages use this method
   const messageLogger = useCallback((message) => {
     // Add a timestamp to the message
     const timestampedMessage = { ...message, timestamp: new Date() };
-
     // Update the state with the new log message
     setDialogsState(prevState => ({
       ...prevState,
       logMessages: [...prevState.logMessages, timestampedMessage],
     }));
   }, []);
-  
 
-  //utiliy method for getting all puids from normalised data, e.g. from [["VI", [7, 8, 9]], ["IV", [0, 1, 2, 3, 4]], ["V", [5, 6]]]
-  getPuidsFromNormalisedData(normalisedData) {
-    let puids = [];
-    normalisedData.forEach((item) => {
-      puids = puids.concat(item[1]);
-    });
-    return puids;
+  // utiliy method for getting all puids from normalised data, e.g. from [["VI", [7, 8, 9]], ["IV", [0, 1, 2, 3, 4]], ["V", [5, 6]]]
+  const getPuidsFromNormalisedData = (normalisedData) => {
+ return normalisedData.flatMap(item => item[1]);
+};
+
+  // ---------------------------------------------------------------- //
+  // MANAGING USERS
+  // ---------------------------------------------------------------- //
+
+  const changeUserName = (user) => {
+    setDialogsState(prevState => ({ ...prevState, user: user }));
   }
 
-  changeUserName(user) {
-    setDialogsState(prevState => ({ ...prevState, user: user });
-  }
-
-  changePassword(password) {
-    setDialogsState(prevState => ({ ...prevState, password: password });
+  const changePassword = (password) => {
+    setDialogsState(prevState => ({ ...prevState, password: password }));
   }
 
   //checks the users credentials
-  checkPassword(user, password) {
-    return new Promise((resolve, reject) => {
-      this._get("validateUser?user=" + user + "&password=" + password, 10000)
-
-        .then((response) => {
-          resolve();
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
+  const checkPassword = async (user, password) => {
+  try {
+    const response = await _get(`validateUser?user=${user}&password=${password}`, 10000);
+    return response;
+  } catch (error) {
+    throw error;
   }
-  //validates the user and then logs in if successful
-  validateUser(user, password) {
-    return new Promise((resolve, reject) => {
-      this.checkPassword(user, password)
-        .then(() => {
-          //user validated - log them in
-          this.login().then((response) => {
-            resolve("User validated");
-          });
-        })
-        .catch((error) => {
-          //
-        });
-    });
-  }
+};
 
   //the user is validated so login
-  login() {
-    return new Promise((resolve, reject) => {
-      this._get("getUser?user=" + this.state.user)
-        .then((response) => {
-          setDialogsState(
-            {
-              userData: response.userData,
-              unauthorisedMethods: response.unauthorisedMethods,
-              project: response.userData.LASTPROJECT,
-              dismissedNotifications: response.dismissedNotifications
-                ? response.dismissedNotifications
-                : [],
-            },
-            () => {
-              //show the welcome dialog
-              //   this.openWelcomeDialog();
-            }
-          );
-          //set the basemap
-          var basemap = this.state.basemaps.filter((item) => {
-            return item.name === response.userData.BASEMAP;
-          })[0];
-          this.setBasemap(basemap).then(() => {
-            //get all features
-            this.getAllFeatures().then(() => {
-              //get the users last project and load it
-              console.log(
-                "response.userData.LASTPROJECT this.state.user ",
-                response.userData.LASTPROJECT,
-                this.state.user
-              );
-              this.loadProject(
-                response.userData.LASTPROJECT,
-                this.state.user
-              ).then((response) => {
-                resolve("Logged in");
-              });
-            });
-            //get all planning grids
-            this.getPlanningUnitGrids();
-          });
-        })
-        .catch((error) => {
-          //do something
-        });
+const login = async () => {
+  try {
+    const response = await _get(`getUser?user=${this.state.user}`);
+    setDialogsState({
+      userData: response.userData,
+      unauthorisedMethods: response.unauthorisedMethods,
+      project: response.userData.LASTPROJECT,
+      dismissedNotifications: response.dismissedNotifications || [],
     });
-  }
 
+    // Set the basemap
+    const basemap = dialogsState.basemaps.find(item => item.name === response.userData.BASEMAP);
+    await setBasemap(basemap);
+    await getAllFeatures();
+    await loadProject(response.userData.LASTPROJECT, dialogsState.user);
+    await getPlanningUnitGrids();
+    return "Logged in";
+  } catch (error) {
+    console.error("Login failed:", error);
+    // Handle error appropriately
+    throw error;
+  }
+};
   //log out and reset some state
-  logout() {
-    this.hideUserMenu();
+  const logout = () => {
+    hideUserMenu();
     setDialogsState(prevState => ({ ...prevState,
       loggedIn: false,
       user: "",
@@ -913,179 +723,173 @@ const [dialogsState, setDialogsState] = useState({
       resultsPanelOpen: false,
       brew: new classyBrew(),
       notifications: [],
-    });
-    this.resetResults();
+    }));
+    resetResults();
     //clear the currently set cookies
-    this._get("logout").then((response) => {
-      //do something
-    });
+    _get("logout").then((response) => {});
   }
 
-  switchToGuestUser() {
-    return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, user: "guest", password: "password" }, () => {
-        resolve("Switched to guest user");
-      });
-    });
+  const changeEmail = (value) => {
+    setDialogsState(prevState => ({ ...prevState, resendEmail: value }));
   }
-
-  changeEmail(value) {
-    setDialogsState(prevState => ({ ...prevState, resendEmail: value });
+  
+  const resendPassword = async () => {
+  try {
+    const response = await _get(`resendPassword?user=${dialogsState.user}`);
+    setSnackBar(response.info);
+    // Close the resend password dialog
+    setDialogsState(prevState => ({ ...prevState, resendPasswordDialogOpen: false }));
+  } catch (error) {
+    console.error("Failed to resend password:", error);
   }
+};
 
-  resendPassword() {
-    this._get("resendPassword?user=" + this.state.user)
-      .then((response) => {
-        //ui feedback
-        this.setSnackBar(response.info);
-        //close the resend password dialog
-        this.updateState({ resendPasswordDialogOpen: false });
-      })
-      .catch((error) => {
-        //do something
-      });
+  const getUsers = async () => {
+  try {
+    // Fetch the users data
+    const response = await _get("getUsers");
+    // Update state with the users data
+    setDialogsState(prevState => ({
+      ...prevState,
+      users: response.users
+    }));
+  } catch (error) {
+    // Handle the error and update state with an empty users array
+    console.error("Failed to get users:", error);
+    setDialogsState(prevState => ({
+      ...prevState,
+      users: []
+    }));
   }
+};
 
-  //gets data for all users
-  getUsers() {
-    this._get("getUsers")
-      .then((response) => {
-        setDialogsState(prevState => ({ ...prevState, users: response.users });
-      })
-      .catch((error) => {
-        setDialogsState(prevState => ({ ...prevState, users: [] });
-      });
-  }
+const deleteUser = async (user) => {
+  try {
+    await _get(`deleteUser?user=${user}`);
+    setSnackBar("User deleted");
+    const usersCopy = dialogsState.users.filter((item) => item.user !== user);
+    setDialogsState(prevState => ({
+      ...prevState,
+      users: usersCopy
+    }));
 
-  //deletes a user
-  deleteUser(user) {
-    this._get("deleteUser?user=" + user).then((response) => {
-      this.setSnackBar("User deleted");
-      //remove it from the users array
-      let usersCopy = this.state.users;
-      //remove the user
-      usersCopy = usersCopy.filter((item) => {
-        return item.user !== user;
-      });
-      //update the users state
-      setDialogsState(prevState => ({ ...prevState, users: usersCopy });
-      //see if the current project belongs to the deleted user
-      if (this.state.owner === user) {
-        this.setSnackBar(
-          "Current project no longer exists. Loading next available."
-        );
-        //load the next available project
-        this.state.projects.some((project) => {
-          if (project.user !== user)
-            this.loadProject(project.name, project.user);
-          return project.name !== this.state.project;
-        });
-        //delete all the projects belonging to that user
-        this.deleteProjectsForUser(user);
+    // Check if the current project belongs to the deleted user
+    if (dialogsState.owner === user) {
+      setSnackBar(
+        "Current project no longer exists. Loading next available."
+      );
+
+      // Load the next available project
+      const nextProject = dialogsState.projects.find(project => project.user !== user);
+      if (nextProject) {
+        await this.loadProject(nextProject.name, nextProject.user);
       }
-    });
+      await this.deleteProjectsForUser(user);
+    }
+  } catch (error) {
+    // Handle errors
+    console.error("Failed to delete user:", error);
+    this.setSnackBar("Failed to delete user");
   }
+};
 
-  //deletes all of the projects belonging to the passed user from the state
-  deleteProjectsForUser(user) {
-    let projects = this.state.projects.map((project) => {
-      return project.user !== user;
-    });
-    setDialogsState(prevState => ({ ...prevState, projects: projects });
+  //deletes all of the projects belonging to the passed user from the state  
+  const deleteProjectsForUser = (user) => {
+    const updatedProjects = dialogsState.projects.filter((project) => project.user !== user);
+    setDialogsState(prevState => ({ ...prevState, projects: updatedProjects }));
+};
+
+  const changeRole = (user, role) => {
+    updateUser({ ROLE: role }, user);
+    const updatedUsers = dialogsState.users.map((item) => 
+      item.user === user ? { ...item, ROLE: role } : item
+    );
+    // Update the state with the modified user list
+    setDialogsState(prevState => ({ ...prevState, users: updatedUsers }));
   }
+};
 
-  //changes a users role
-  changeRole(user, role) {
-    this.updateUser({ ROLE: role }, user);
-    //copy the users state
-    let usersCopy = this.state.users;
-    //change the users role
-    usersCopy = usersCopy.map((item) => {
-      if (item.user === user) {
-        return Object.assign(item, { ROLE: role });
-      } else {
-        return item;
-      }
-    });
-    //update the users state
-    setDialogsState(prevState => ({ ...prevState, users: usersCopy });
-  }
+  //toggles if the guest user is enabled on the server or not  
+const toggleEnableGuestUser = async () => {
+    const response = await _get("toggleEnableGuestUser");
+    // Update the marxanServer object with the new guestUserEnabled status
+    setMarxanServer(prevMarxanServer => ({
+      ...prevMarxanServer,
+      guestUserEnabled: response.enabled
+    }));
+};
 
-  //toggles if the guest user is enabled on the server or not
-  toggleEnableGuestUser() {
-    this._get("toggleEnableGuestUser").then((response) => {
-      //if succesfull set the state
-      let _marxanServer = this.state.marxanServer;
-      _marxanServer = Object.assign(_marxanServer, {
-        guestUserEnabled: response.enabled,
-      });
-      setDialogsState(prevState => ({ ...prevState, marxanServer: _marxanServer });
-    });
-  }
+  
+  const toggleProjectPrivacy = async (newValue) => {
+    const response = await updateProjectParameter("PRIVATE", newValue);
+    setDialogsState(prevState => ({
+      ...prevState,
+      metadata: {
+        ...prevState.metadata, // Ensure to update metadata correctly
+        PRIVATE: newValue === "True",
+      },
+    }));
+};
 
-  //toggles the projects privacy
-  toggleProjectPrivacy(newValue) {
-    this.updateProjectParameter("PRIVATE", newValue).then((response) => {
-      setDialogsState(prevState => ({ ...prevState,
-        metadata: Object.assign(this.state.metadata, {
-          PRIVATE: newValue === "True",
-        }),
-      });
-    });
-  }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// NOTIFICATIONS
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // ---------------------------------------------------------------- //
+  // NOTIFICATIONS
+  // ---------------------------------------------------------------- //
 
   //parse the notifications
-  parseNotifications() {
+  const parseNotifications = useCallback(() => {
+    const newNotifications = [];
+
     //see if there are any new notifications from the marxan-registry
-    if (this.state.registry.NOTIFICATIONS.length > 0) {
-      this.addNotifications(this.state.registry.NOTIFICATIONS);
+    if (dialogsState.registry.NOTIFICATIONS.length > 0) {
+      addNotifications(dialogsState.registry.NOTIFICATIONS);
     }
-    //see if there is a new version of the wdpa data - this comes from the Marxan Registry WDPA object - if there is then show a notification to admin users
-    if (this.state.newWDPAVersion)
-      this.addNotifications([
+    // Check for new version of wdpa data
+    // From the Marxan Registry WDPA object - if there is then show a notification to admin users
+    if (dialogsState.newWDPAVersion) {
+      addNotifications([
         {
-          id: "wdpa_update_" + this.state.registry.WDPA.latest_version,
+          id: "wdpa_update_" + dialogsState.registry.WDPA.latest_version,
           html: "A new version of the WDPA is available. Go to Help | Server Details for more information.",
           type: "Data Update",
           showForRoles: ["Admin"],
         },
       ]);
+    }
     //see if there is a new version of the marxan-client software
-    if (MARXAN_CLIENT_VERSION !== this.state.registry.CLIENT_VERSION)
-      this.addNotifications([
+    if (MARXAN_CLIENT_VERSION !== dialogsState.registry.CLIENT_VERSION) {
+      addNotifications([
         {
-          id: "marxan_client_update_" + this.state.registry.CLIENT_VERSION,
+          id: "marxan_client_update_" + dialogsState.registry.CLIENT_VERSION,
           html:
             "A new version of marxan-client is available (" +
-            this.state.registry.CLIENT_VERSION +
+            dialogsState.registry.CLIENT_VERSION +
             "). Go to Help | About for more information.",
           type: "Software Update",
           showForRoles: ["Admin"],
         },
       ]);
+    }
     //see if there is a new version of the marxan-server software
     if (
-      this.state.marxanServer.server_version !==
-      this.state.registry.SERVER_VERSION
-    )
-      this.addNotifications([
+      dialogsState.marxanServer.server_version !==
+      dialogsState.registry.SERVER_VERSION
+    ) {
+      addNotifications([
         {
-          id: "marxan_server_update_" + this.state.registry.SERVER_VERSION,
+          id: "marxan_server_update_" + dialogsState.registry.SERVER_VERSION,
           html:
             "A new version of marxan-server is available (" +
-            this.state.registry.SERVER_VERSION +
+            dialogsState.registry.SERVER_VERSION +
             "). Go to Help | Server Details for more information.",
           type: "Software Update",
           showForRoles: ["Admin"],
         },
       ]);
+    }
     //check that there is enough disk space
-    if (this.state.marxanServer.disk_space < 1000) {
-      this.addNotifications([
+    if (dialogsState.marxanServer.disk_space < 1000) {
+      addNotifications([
         {
           id: "hardware_1000",
           html: "Disk space < 1Gb",
@@ -1093,9 +897,8 @@ const [dialogsState, setDialogsState] = useState({
           showForRoles: ["Admin"],
         },
       ]);
-    } else {
-      if (this.state.marxanServer.disk_space < 2000) {
-        this.addNotifications([
+    } else if (dialogsState.marxanServer.disk_space < 2000) {
+        addNotifications([
           {
             id: "hardware_2000",
             html: "Disk space < 2Gb",
@@ -1103,9 +906,8 @@ const [dialogsState, setDialogsState] = useState({
             showForRoles: ["Admin"],
           },
         ]);
-      } else {
-        if (this.state.marxanServer.disk_space < 3000)
-          this.addNotifications([
+      } else if (dialogsState.marxanServer.disk_space < 3000) {
+          addNotifications([
             {
               id: "hardware_3000",
               html: "Disk space < 3Gb",
@@ -1114,264 +916,221 @@ const [dialogsState, setDialogsState] = useState({
             },
           ]);
       }
-    }
+  })
+  
+  const addNotifications = (notifications) => {
+    const currentNotifications = [...dialogsState.notifications];
+    // Process and filter notifications based on role, dismissal, and expiry
+    const processedNotifications = notifications.map((item) => {
+      const allowedForRole = item.showForRoles.includes(dialogsState.userData.ROLE);
+      const notDismissed = !dialogsState.dismissedNotifications.includes(String(item.id));
+      let notExpired = true;
+      // Check if the notification has an expiry date and if it is still valid
+      if (item.expires) {
+        try {
+          const expiryDate = new Date(item.expires);
+          notExpired = !isNaN(expiryDate) && new Date() <= expiryDate;
+        } catch (err) {
+          // Invalid date, keep as not expired
+          console.error("Invalid expiry date:", item.expires, err);
+        }
+      }
+      // Determine visibility based on role, dismissal, and expiry
+      const visible = allowedForRole && notDismissed && notExpired;
+      return { ...item, visible };
+    });
+  const updatedNotifications = [...currentNotifications, ...processedNotifications];
+    setDialogsState(prevState => ({ ...prevState, notifications: updatedNotifications}));
   }
 
   //hides the notifications from the UI
-  hideNotifications() {
-    setDialogsState(prevState => ({ ...prevState, notificationsOpen: false });
-  }
-
-  //add the passed notifications to the notifications state
-  addNotifications(notifications) {
-    let _notifications = this.state.notifications;
-    //set the visibility of the notifications based on the users role, whether they have already been dismissed or if it has expired
-    notifications = notifications.map((item) => {
-      let allowedForRole =
-        item.showForRoles.indexOf(this.state.userData.ROLE) > -1;
-      let notDismissed =
-        this.state.dismissedNotifications.indexOf(String(item.id)) === -1;
-      let notExpired = true;
-      //if an expiry date is set, then get this as a Date
-      if (
-        item.hasOwnProperty("expires") &&
-        item.hasOwnProperty("expires") &&
-        item.expires !== ""
-      ) {
-        try {
-          var d = Date.parse(item.expires);
-          if (new Date() > d) notExpired = false;
-        } catch (err) {
-          //invalid date so not expiry date
-        }
-      }
-      let visible = allowedForRole && notDismissed && notExpired;
-      return Object.assign(item, { visible: visible });
-    });
-    _notifications.push.apply(_notifications, notifications);
-    setDialogsState(prevState => ({ ...prevState, notifications: _notifications });
+  const hideNotifications = () => {
+    setDialogsState(prevState => ({ ...prevState, notificationsOpen: false }));
   }
 
   //removes a notification
-  removeNotification(notification) {
+  const removeNotification = async (notification) => {
     //remove the notification from the state
-    let _notifications = this.state.notifications.filter(
-      (_notification) => _notification.id !== notification.id
-    );
+    const updatedNotifications = dialogsState.notifications.filter((item) => item.id !== notification.id);
     //remove it in the users notifications.dat file
-    this.dismissNotification(notification);
+    await dismissNotification(notification);
     //set the state
-    setDialogsState(prevState => ({ ...prevState, notifications: _notifications });
+    setDialogsState(prevState => ({ ...prevState, notifications: updatedNotifications }));
   }
 
   //dismisses a notification on the server
-  dismissNotification(notification) {
-    this._get(
-      "dismissNotification?user=" +
-        this.state.user +
-        "&notificationid=" +
-        notification.id
-    );
+  const dismissNotification = async (notification) => {
+    await _get(`dismissNotification?user=${dialogsState.user}&notificationid=${notification.id}`);
   }
 
   //clears all of the dismissed notifications on the server
-  resetNotifications() {
-    this._get("resetNotifications?user=" + this.state.user).then(() => {
-      setDialogsState(prevState => ({ ...prevState, notifications: [], dismissedNotifications: [] });
-      this.parseNotifications();
-    });
-  }
+  const resetNotifications = async () => {
+    await _get(`resetNotifications?user=${dialogsState.user}`);
+    setDialogsState(prevState => ({ 
+      ...prevState, 
+      notifications: [], 
+      dismissedNotifications: []
+    }));
+    parseNotifications();
+  };
 
-  appendToFormData(formData, obj) {
-    //iterate through the object and add each key/value pair to the formData to post to the server
-    for (var key in obj) {
-      //only add non-prototype objects
-      if (obj.hasOwnProperty(key)) {
-        formData.append(key, obj[key]);
-      }
+const appendToFormData = (formData, obj) => {
+  // Iterate through the object and add each key/value pair to the FormData
+  Object.entries(obj).forEach(([key, value]) => {
+    formData.append(key, value);
+  });
+  return formData;
+};
+
+const removeKeys = (obj, keys) => {
+  // Create a shallow copy of the object to avoid mutating the original
+  const newObj = { ...obj };
+  // Iterate over the keys and delete each key from the new object
+  keys.forEach(key => {
+    delete newObj[key];
+  });
+  return newObj;
+};
+
+const updateUser = async (parameters, user = dialogsState.user) => {
+  try {
+    // Remove keys that are not part of the user's information
+    const filteredParameters = removeKeys(parameters, ["updated", "validEmail"]);
+    const formData = new FormData();
+    formData.append("user", user);
+    appendToFormData(formData, filteredParameters);
+
+    const response = await _post("updateUserParameters", formData);
+
+    // If successful, update the state if the current user is being updated
+    if (dialogsState.user === user) {
+      // Update local user data
+      const newUserData = { ...dialogsState.userData, ...filteredParameters };
+      // Update state
+      setDialogsState(prevState => ({
+        ...prevState,
+        userData: newUserData
+      }));
     }
-    return formData;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error; // Optional: rethrow error if you want to handle it further up the call stack
   }
+};
 
-  //removes the keys from the object
-  removeKeys(obj, keys) {
-    keys.map((key) => {
-      delete obj[key];
-      return null;
-    });
-    return obj;
+  // saveOptions - Options are in users data - use updateUser to update them
+  const saveOptions = (options) => {
+    await updateUser(options);
   }
-
-  //updates all parameter in the user.dat file then updates the state (in userData)
-  updateUser(parameters, user = this.state.user) {
-    return new Promise((resolve, reject) => {
-      //remove the keys that are not part of the users information
-      parameters = this.removeKeys(parameters, ["updated", "validEmail"]);
-      //initialise the form data
-      let formData = new FormData();
-      //add the current user
-      formData.append("user", user);
-      //append all the key/value pairs
-      this.appendToFormData(formData, parameters);
-      //post to the server
-      this._post("updateUserParameters", formData)
-        .then((response) => {
-          // if succesfull write the state back to the userData key
-          if (this.state.user === user)
-            setDialogsState(prevState => ({ ...prevState, userData: this.newUserData });
-          resolve();
-        })
-        .catch((error) => {
-          reject(error);
-        });
-      //if we have updated the current user then save a local property so that if the changes are saved to the server then we can update the local state
-      if (this.state.user === user)
-        this.newUserData = Object.assign(this.state.userData, parameters);
-    });
-  }
-
-  //saveOptions - the options are in the users data so we use the updateUser REST call to update them
-  saveOptions(options) {
-    this.updateUser(options);
-  }
+  
   //updates the project from the old version to the new version
-  upgradeProject(project) {
-    return this._get(
-      "upgradeProject?user=" + this.state.user + "&project=" + project
-    );
+  const upgradeProject = async (project) => {
+    return await _get(`upgradeProject?user=${dialogsState.user}&project=${project}`);
   }
 
   //updates the project parameters back to the server (i.e. the input.dat file)
-  updateProjectParams(project, parameters) {
+  const updateProjectParams = async (project, parameters) => {
     //initialise the form data
     let formData = new FormData();
-    //add the current user
-    formData.append("user", this.state.owner);
-    //add the current project
+    formData.append("user", dialogsState.owner);
     formData.append("project", project);
-    //append all the key/value pairs
-    this.appendToFormData(formData, parameters);
+    appendToFormData(formData, parameters);
     //post to the server and return a promise
-    return this._post("updateProjectParameters", formData);
+    return await _post("updateProjectParameters", formData);
   }
 
   //updates a single parameter in the input.dat file directly
-  updateProjectParameter(parameter, value) {
-    let obj = {};
-    obj[parameter] = value;
-    //update the parameter and return a promise
-    return this.updateProjectParams(this.state.project, obj);
-  }
+  
+  const updateProjectParameter = async (parameter, value) => {
+    // Create an object with the parameter and its value
+    const obj = { [parameter]: value };
+    return await updateProjectParams(dialogsState.project, obj);
+};
+
 
   //updates the run parameters for the current project
-  updateRunParams(array) {
+  const updateRunParams = async (array) => {
     //convert the run parameters array into an object
-    let parameters = {};
-    array.map((obj) => {
-      parameters[obj.key] = obj.value;
-      return null;
-    });
-    //update the project parameters
-    this.updateProjectParams(this.state.project, parameters).then(
-      (response) => {
-        //if succesfull write the state back
-        setDialogsState(prevState => ({ ...prevState, runParams: this.runParams });
-      }
-    );
-    //save the local state to be able to update the state on callback
-    this.runParams = array;
+    const parameters = array.reduce((acc, obj) => {
+      acc[obj.key] = obj.value;
+      return acc;
+    }, {});
+    await updateProjectParams(dialogsState.project, parameters);
+    setDialogsState(prevState => ({ ...prevState, runParams: parameters }));
   }
 
   //gets the planning unit grids
-  getPlanningUnitGrids() {
-    this._get("getPlanningUnitGrids").then((response) => {
-      setDialogsState(prevState => ({ ...prevState, planning_unit_grids: response.planning_unit_grids });
-    });
+  const getPlanningUnitGrids = async () => {
+    const response = await _get("getPlanningUnitGrids");
+    setDialogsState(prevState => ({
+      ...prevState,
+      planning_unit_grids: response.planning_unit_grids
+    }));
+};
+
+
+const loadProject = async (project, user) => {
+  try {
+    // Reset the results from any previous projects
+    resetResults();
+    // Fetch project data
+    const response = await _get(`getProject?user=${user}&project=${project}`);
+    // Update state based on the data returned from the server
+    setDialogsState(prevState => ({
+      ...prevState,
+      loggedIn: true,
+      project: response.project,
+      owner: user,
+      runParams: response.runParameters,
+      files: { ...response.files },
+      metadata: response.metadata,
+      renderer: response.renderer,
+      planning_units: response.planning_units,
+      costnames: response.costnames,
+      infoPanelOpen: true,
+      resultsPanelOpen: true,
+    }));
+
+    // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
+    if (response.metadata.PLANNING_UNIT_NAME) {
+      await changePlanningGrid(CONSTANTS.MAPBOX_USER + "." + response.metadata.PLANNING_UNIT_NAME);
+      await getResults(user, response.project);
+    }
+
+    // Set a local variable - Dont need to track state with these variables as they are not bound to anything
+    this.feature_preprocessing = response.feature_preprocessing;
+    this.previousIucnCategory = response.metadata.IUCN_CATEGORY;
+    this.protected_area_intersections = response.protected_area_intersections
+
+    // Initialize interest features and preload costs data
+    initialiseInterestFeatures(response.metadata.OLDVERSION, response.features);
+    await getPlanningUnitsCostData();
+    // Activate the project tab
+    project_tab_active();
+    return "Project loaded";
+  } catch (error) {
+    console.log("error", error);
+    
+    if (error.toString().includes("Logged on as read-only guest user")) {
+      setDialogsState(prevState => ({ ...prevState, loggedIn: true }));
+      return "No project loaded - logged on as read-only guest user";
+    }
+
+    if (error.toString().includes("does not exist")) {
+      // Handle case where project does not exist
+      setSnackBar("Loading first available project");
+      await loadProject("", dialogsState.user);
+      return
+    }
+    
+    throw error; // Re-throw the error to handle it outside if needed
   }
+};
 
-  //loads a project
-  loadProject(project, user) {
-    console.log("user ", user);
-    console.log("project ", project);
-    return new Promise((resolve, reject) => {
-      //reset the results from any previous projects
-      this.resetResults();
-      this._get("getProject?user=" + user + "&project=" + project)
-        .then((response) => {
-          // set the state for the app based on the data that is returned from the server
-          setDialogsState(prevState => ({ ...prevState,
-            loggedIn: true,
-            project: response.project,
-            owner: user,
-            runParams: response.runParameters,
-            files: Object.assign(response.files),
-            metadata: response.metadata,
-            renderer: response.renderer,
-            planning_units: response.planning_units,
-            costnames: response.costnames,
-            infoPanelOpen: true,
-            resultsPanelOpen: true,
-          });
-          // this.loadProjectUpdateState(response, user);
-          // *********
-          // - this function does exist. Was i trying to change state here?
-
-          //if there is a PLANNING_UNIT_NAME passed then change to this planning grid and load the results if there are any available
-          if (response.metadata.PLANNING_UNIT_NAME) {
-            this.changePlanningGrid(
-              CONSTANTS.MAPBOX_USER + "." + response.metadata.PLANNING_UNIT_NAME
-            ).then(() => {
-              //poll the server to see if results are available for this project - if there are these will be loaded
-              this.getResults(user, response.project).then((response) => {
-                resolve("Project loaded");
-              });
-            });
-          }
-          //set a local variable for the feature preprocessing - this is because we dont need to track state with these variables as they are not bound to anything
-          this.feature_preprocessing = response.feature_preprocessing;
-          //set a local variable for the protected area intersections - this is because we dont need to track state with these variables as they are not bound to anything
-          setDialogsState(prevState => ({ ...prevState,
-            protected_area_intersections: response.protected_area_intersections,
-          });
-          //set a local variable for the selected iucn category
-          this.previousIucnCategory = response.metadata.IUCN_CATEGORY;
-          //initialise all the interest features with the interest features for this project
-          this.initialiseInterestFeatures(
-            response.metadata.OLDVERSION,
-            response.features
-          );
-          //preload the costs data instead of loading it when the user clicks on the Planning Units tab
-          this.getPlanningUnitsCostData();
-          //activate the project tab
-          this.project_tab_active();
-        })
-        .catch((error) => {
-          console.log("error ", error);
-
-          if (
-            error.toString().indexOf("Logged on as read-only guest user") > -1
-          ) {
-            setDialogsState(prevState => ({ ...prevState, loggedIn: true });
-            resolve("No project loaded - logged on as read-only guest user'");
-          }
-          if (error.toString().indexOf("does not exist") > -1) {
-            //probably the last loaded project has been deleted - send some feedback and load another project
-            this.setSnackBar("Loading first available project");
-            //passing an empty project to loadProject will load the first project
-            this.loadProject("", this.state.user);
-          }
-        });
-    });
-  }
 
   //matches and returns an item in an object array with the passed id - this assumes the first item in the object is the id identifier
-  getArrayItem(arr, id) {
-    let tmpArr = arr.filter((item) => {
-      return item[0] === id;
-    });
-    let returnValue = tmpArr.length > 0 ? tmpArr[0] : undefined;
-    return returnValue;
-  }
+  const getArrayItem = (arr, id) => arr.find(([itemId]) => itemId === id);
+
 
   //initialises the interest features based on the currently loading project
   initialiseInterestFeatures(oldVersion, projectFeatures) {
@@ -1545,7 +1304,7 @@ const [dialogsState, setDialogsState] = useState({
           //ui feedback
           this.setSnackBar("Current project deleted - loading first available");
           //load the next available project
-          this.state.projects.some((project) => {
+          dialogsState.projects.some((project) => {
             if (project.name !== this.state.project)
               this.loadProject(project.name, this.state.user);
             return project.name !== this.state.project;
@@ -3023,7 +2782,7 @@ const [dialogsState, setDialogsState] = useState({
     let tiles = [
       this.state.registry.WDPA.tilesUrl +
         "layer=marxan:" +
-        this.wdpa_vector_tile_layer +
+        wdpaVectorTileLayer +
         "&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}",
     ];
     setDialogsState(prevState => ({ ...prevState, wdpaAttribution: attribution });
@@ -3044,7 +2803,7 @@ const [dialogsState, setDialogsState] = useState({
       },
       type: "fill",
       source: CONSTANTS.WDPA_SOURCE_NAME,
-      "source-layer": this.wdpa_vector_tile_layer,
+      "source-layer": wdpaVectorTileLayer,
       layout: {
         visibility: "visible",
       },
@@ -3170,9 +2929,9 @@ const [dialogsState, setDialogsState] = useState({
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   //fired when the projects tab is selected
-  project_tab_active() {
-    setDialogsState(prevState => ({ ...prevState, activeTab: "project" });
-    this.pu_tab_inactive();
+  const project_tab_active = () => {
+    setDialogsState(prevState => ({ ...prevState, activeTab: "project" }));
+    pu_tab_inactive();
   }
 
   //fired when the features tab is selected
@@ -3210,7 +2969,7 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   //fired whenever another tab is selected
-  pu_tab_inactive() {
+  const pu_tab_inactive = () => {
     //show the results layer
     this.showLayer(CONSTANTS.RESULTS_LAYER_NAME);
     //show the feature layer and feature puid layers
@@ -3710,8 +3469,8 @@ const [dialogsState, setDialogsState] = useState({
   }
 
   openWelcomeDialog() {
-    this.parseNotifications();
-    setDialogsState(prevState => ({ ...prevState, welcomeDialogOpen: true });
+    parseNotifications();
+    setDialogsState(prevState => ({ ...prevState, welcomeDialogOpen: true }));
   }
   openFeaturesDialog(showClearSelectAll) {
     //refresh the features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
