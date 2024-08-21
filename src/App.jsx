@@ -91,6 +91,8 @@ import classyBrew from "classybrew";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
+import { createNewUser, updateUser, deleteUser, getUsers} from "./User/userService";
+import { getProjectList, getProjectsForFeature } from "./Projects/projectsService";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -110,8 +112,8 @@ const App = () => {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
     const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState('');
-    const [newWDPAVersion, setNewWDPAVersion] = useState(false)
-    const [activeTab, setActiveTab] = useState("")
+    const [newWDPAVersion, setNewWDPAVersion] = useState(false);
+    const [activeTab, setActiveTab] = useState("");
 
 
 
@@ -301,9 +303,15 @@ const validateUser = async (user, password) => {
   //   // Implement project loading logic
   // }, []);
 
-  // ---------------------------------------------------------------- //
-  // REQUEST HELPERS
-  // ---------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// REQUEST HELPERS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   const _get = useCallback((params, timeout = CONSTANTS.TIMEOUT) => {
     
@@ -564,9 +572,15 @@ const validateUser = async (user, password) => {
     }));
   }, []);
 
-  // ---------------------------------------------------------------- //
-  // MANAGING DIFFERENT SERVERS
-  // ---------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// MANAGING SERVERS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
     const selectServer = useCallback((server) => {
     // Implement server selection logic
     console.log('server ', server);
@@ -633,7 +647,7 @@ const validateUser = async (user, password) => {
 
   const startLogging = (clearLog = false) => {
     //switches the results pane to the log tab and clears log if needs be
-    this.setActiveTab("log");
+    setActiveTab("log");
     if (clearLog) this.clearLog();
   }
 
@@ -658,27 +672,30 @@ const validateUser = async (user, password) => {
  return normalisedData.flatMap(item => item[1]);
 };
 
-  // ---------------------------------------------------------------- //
-  // MANAGING USERS
-  // ---------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// MANAGING USERS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+const handleCreateUser = async (user, password, name, email) => await createNewUser(user, password, name, email);
+  
+const handleUserUpdate = async (parameters, user=dialogsState.user) =>  await updateUser(parameters, user);
+  
+const handleGetUsers = async () =>  await getUsers();
 
-  const changeUserName = (user) => {
-    setDialogsState(prevState => ({ ...prevState, user: user }));
-  }
+const handleDeleteUser = async (user) => await deleteUser(user);
 
-  const changePassword = (password) => {
-    setDialogsState(prevState => ({ ...prevState, password: password }));
-  }
+const changeUserName = (user) => setDialogsState(prevState => ({ ...prevState, user: user }));
 
-  //checks the users credentials
-  const checkPassword = async (user, password) => {
-  try {
-    const response = await _get(`validateUser?user=${user}&password=${password}`, 10000);
-    return response;
-  } catch (error) {
-    throw error;
-  }
-};
+const changePassword = (password) => setDialogsState(prevState => ({ ...prevState, password: password }));
+
+const checkPassword = async (user, password) => await _get(`validateUser?user=${user}&password=${password}`, 10000);
+
+const changeEmail = (value) => setDialogsState(prevState => ({ ...prevState, resendEmail: value }));
 
   //the user is validated so login
 const login = async () => {
@@ -705,35 +722,31 @@ const login = async () => {
   }
 };
   //log out and reset some state
-  const logout = () => {
-    hideUserMenu();
-    setDialogsState(prevState => ({ ...prevState,
-      loggedIn: false,
-      user: "",
-      password: "",
-      project: "",
-      owner: "",
-      runParams: [],
-      files: {},
-      metadata: {},
-      renderer: {},
-      planning_units: [],
-      projectFeatures: [],
-      infoPanelOpen: false,
-      resultsPanelOpen: false,
-      brew: new classyBrew(),
-      notifications: [],
-    }));
-    resetResults();
-    //clear the currently set cookies
-    _get("logout").then((response) => {});
-  }
-
-  const changeEmail = (value) => {
-    setDialogsState(prevState => ({ ...prevState, resendEmail: value }));
-  }
+const logout = () => {
+  hideUserMenu();
+  setDialogsState(prevState => ({ ...prevState,
+    loggedIn: false,
+    user: "",
+    password: "",
+    project: "",
+    owner: "",
+    runParams: [],
+    files: {},
+    metadata: {},
+    renderer: {},
+    planning_units: [],
+    projectFeatures: [],
+    infoPanelOpen: false,
+    resultsPanelOpen: false,
+    brew: new classyBrew(),
+    notifications: [],
+  }));
+  resetResults();
+  //clear the currently set cookies
+  _get("logout").then((response) => {});
+}
   
-  const resendPassword = async () => {
+const resendPassword = async () => {
   try {
     const response = await _get(`resendPassword?user=${dialogsState.user}`);
     setSnackBar(response.info);
@@ -744,81 +757,24 @@ const login = async () => {
   }
 };
 
-  const getUsers = async () => {
-  try {
-    // Fetch the users data
-    const response = await _get("getUsers");
-    // Update state with the users data
-    setDialogsState(prevState => ({
-      ...prevState,
-      users: response.users
-    }));
-  } catch (error) {
-    // Handle the error and update state with an empty users array
-    console.error("Failed to get users:", error);
-    setDialogsState(prevState => ({
-      ...prevState,
-      users: []
-    }));
-  }
-};
+const changeRole = (user, role) => {
+  handleUserUpdate({ ROLE: role }, user);
+  const updatedUsers = dialogsState.users.map((item) => 
+    item.user === user ? { ...item, ROLE: role } : item
+  );
+  // Update the state with the modified user list
+  setDialogsState(prevState => ({ ...prevState, users: updatedUsers }));
+}
 
-const deleteUser = async (user) => {
-  try {
-    await _get(`deleteUser?user=${user}`);
-    setSnackBar("User deleted");
-    const usersCopy = dialogsState.users.filter((item) => item.user !== user);
-    setDialogsState(prevState => ({
-      ...prevState,
-      users: usersCopy
-    }));
-
-    // Check if the current project belongs to the deleted user
-    if (dialogsState.owner === user) {
-      setSnackBar(
-        "Current project no longer exists. Loading next available."
-      );
-
-      // Load the next available project
-      const nextProject = dialogsState.projects.find(project => project.user !== user);
-      if (nextProject) {
-        await this.loadProject(nextProject.name, nextProject.user);
-      }
-      await this.deleteProjectsForUser(user);
-    }
-  } catch (error) {
-    // Handle errors
-    console.error("Failed to delete user:", error);
-    this.setSnackBar("Failed to delete user");
-  }
-};
-
-  //deletes all of the projects belonging to the passed user from the state  
-  const deleteProjectsForUser = (user) => {
-    const updatedProjects = dialogsState.projects.filter((project) => project.user !== user);
-    setDialogsState(prevState => ({ ...prevState, projects: updatedProjects }));
-};
-
-  const changeRole = (user, role) => {
-    updateUser({ ROLE: role }, user);
-    const updatedUsers = dialogsState.users.map((item) => 
-      item.user === user ? { ...item, ROLE: role } : item
-    );
-    // Update the state with the modified user list
-    setDialogsState(prevState => ({ ...prevState, users: updatedUsers }));
-  }
-};
-
-  //toggles if the guest user is enabled on the server or not  
+//toggles if the guest user is enabled on the server or not  
 const toggleEnableGuestUser = async () => {
-    const response = await _get("toggleEnableGuestUser");
-    // Update the marxanServer object with the new guestUserEnabled status
-    setMarxanServer(prevMarxanServer => ({
-      ...prevMarxanServer,
-      guestUserEnabled: response.enabled
-    }));
+  const response = await _get("toggleEnableGuestUser");
+  // Update the marxanServer object with the new guestUserEnabled status
+  setMarxanServer(prevMarxanServer => ({
+    ...prevMarxanServer,
+    guestUserEnabled: response.enabled
+  }));
 };
-
   
   const toggleProjectPrivacy = async (newValue) => {
     const response = await updateProjectParameter("PRIVATE", newValue);
@@ -830,11 +786,16 @@ const toggleEnableGuestUser = async () => {
       },
     }));
 };
-
-
-  // ---------------------------------------------------------------- //
-  // NOTIFICATIONS
-  // ---------------------------------------------------------------- //
+  
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// NOTIFICATIONS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   //parse the notifications
   const parseNotifications = useCallback(() => {
@@ -982,51 +943,12 @@ const appendToFormData = (formData, obj) => {
   return formData;
 };
 
-const removeKeys = (obj, keys) => {
-  // Create a shallow copy of the object to avoid mutating the original
-  const newObj = { ...obj };
-  // Iterate over the keys and delete each key from the new object
-  keys.forEach(key => {
-    delete newObj[key];
-  });
-  return newObj;
-};
-
-const updateUser = async (parameters, user = dialogsState.user) => {
-  try {
-    // Remove keys that are not part of the user's information
-    const filteredParameters = removeKeys(parameters, ["updated", "validEmail"]);
-    const formData = new FormData();
-    formData.append("user", user);
-    appendToFormData(formData, filteredParameters);
-
-    const response = await _post("updateUserParameters", formData);
-
-    // If successful, update the state if the current user is being updated
-    if (dialogsState.user === user) {
-      // Update local user data
-      const newUserData = { ...dialogsState.userData, ...filteredParameters };
-      // Update state
-      setDialogsState(prevState => ({
-        ...prevState,
-        userData: newUserData
-      }));
-    }
-  } catch (error) {
-    console.error("Error updating user:", error);
-    throw error; // Optional: rethrow error if you want to handle it further up the call stack
-  }
-};
 
   // saveOptions - Options are in users data - use updateUser to update them
-  const saveOptions = (options) => {
-    await updateUser(options);
-  }
+  const saveOptions = (options) => await handleUserUpdate(options);
   
   //updates the project from the old version to the new version
-  const upgradeProject = async (project) => {
-    return await _get(`upgradeProject?user=${dialogsState.user}&project=${project}`);
-  }
+  const upgradeProject = async (project) => await _get(`upgradeProject?user=${dialogsState.user}&project=${project}`);
 
   //updates the project parameters back to the server (i.e. the input.dat file)
   const updateProjectParams = async (project, parameters) => {
@@ -1041,11 +963,7 @@ const updateUser = async (parameters, user = dialogsState.user) => {
 
   //updates a single parameter in the input.dat file directly
   
-  const updateProjectParameter = async (parameter, value) => {
-    // Create an object with the parameter and its value
-    const obj = { [parameter]: value };
-    return await updateProjectParams(dialogsState.project, obj);
-};
+  const updateProjectParameter = async (parameter, value) => await updateProjectParams(dialogsState.project, { [parameter]: value });
 
 
   //updates the run parameters for the current project
@@ -1133,485 +1051,383 @@ const loadProject = async (project, user) => {
 
 
   //initialises the interest features based on the currently loading project
-  initialiseInterestFeatures(oldVersion, projectFeatures) {
-    //if the project is from an old version of marxan then the interest features can only come from the list of features in the current project
-    let features = oldVersion
-      ? JSON.parse(JSON.stringify(projectFeatures))
-      : this.state.allFeatures; //make a copy of the projectFeatures
-    //get a list of the ids for the features that are in this project
-    var ids = projectFeatures.map((item) => {
-      return item.id;
-    });
-    //iterate through features to add the required attributes to be used in the app and to populate them based on the current project features
-    var outFeatures = features.map((item) => {
-      //see if the feature is in the current project
-      var projectFeature =
-        ids.indexOf(item.id) > -1
-          ? projectFeatures[ids.indexOf(item.id)]
-          : null;
-      //get the preprocessing for that feature from the feature_preprocessing.dat file
-      let preprocessing = this.getArrayItem(
-        this.feature_preprocessing,
-        item.id
-      );
-      //add the required attributes to the features - these will be populated in the function calls preprocessFeature (pu_area, pu_count) and pollResults (protected_area, target_area)
-      this.addFeatureAttributes(item, oldVersion);
-      //if the interest feature is in the current project then populate the data from that feature
-      if (projectFeature) {
-        item["selected"] = true;
-        item["preprocessed"] = preprocessing ? true : false;
-        item["pu_area"] = preprocessing ? preprocessing[1] : -1;
-        item["pu_count"] = preprocessing ? preprocessing[2] : -1;
-        item["spf"] = projectFeature["spf"];
-        item["target_value"] = projectFeature["target_value"];
-        item["occurs_in_planning_grid"] = item["pu_count"] > 0;
-      }
-      return item;
-    });
-    //get the selected feature ids
-    this.getSelectedFeatureIds();
-    //set the state
-    setDialogsState(prevState => ({ ...prevState,
-      allFeatures: outFeatures,
-      projectFeatures: outFeatures.filter((item) => {
-        return item.selected;
-      }),
-    });
-  }
+const initialiseInterestFeatures = (oldVersion, projectFeatures) => {
+  // Determine features based on project version
+  const features = oldVersion
+    ? projectFeatures.map((feature) => ({ ...feature })) // deep copy
+    : [...dialogsState.allFeatures];
+
+  // Extract feature IDs
+  const projectFeatureIds = projectFeatures.map((item) => item.id);
+
+  // Process features
+  const processedFeatures = features.map((feature) => {
+     // Check if the feature is part of the current project
+    const projectFeature = projectFeatureIds.includes(item.id)
+      ? projectFeatures[projectFeatureIds.indexOf(item.id)]
+      : null;
+    
+    const preprocessing = getArrayItem(this.feature_preprocessing, feature.id);
+    // Add required attributes
+    addFeatureAttributes(feature, oldVersion);
+
+    // Populate data if feature is part of the project
+    if (projectFeature) {
+      Object.assign(feature, {
+        selected: true,
+        preprocessed: !!preprocessing,
+        pu_area: preprocessing ? preprocessing[1] : -1,
+        pu_count: preprocessing ? preprocessing[2] : -1,
+        spf: projectFeature.spf,
+        target_value: projectFeature.target_value,
+        occurs_in_planning_grid: preprocessing && preprocessing[2] > 0,
+      });
+    }
+    return feature;
+  });
+  
+  // Get the selected feature ids
+  getSelectedFeatureIds();
+
+  // Update state
+  setDialogsState((prevState) => ({
+    ...prevState,
+    allFeatures: processedFeatures,
+    projectFeatures: processedFeatures.filter((item) => item.selected),
+  }));
+  
+  
+};
+
 
   //adds the required attributes for the features to work in the marxan web app - these are the default values
-  addFeatureAttributes(item, oldVersion) {
-    // the -1 flag indicates that the values are unknown
-    item["selected"] = false; //if the feature is currently selected (i.e. in the current project)
-    item["preprocessed"] = false; //has the feature already been intersected with the planning grid to populate the puvspr.dat file
-    item["pu_area"] = -1; //the area of the feature within the planning grid
-    item["pu_count"] = -1; //the number of planning units that the feature intersects with
-    item["spf"] = 40; //species penalty factor
-    item["target_value"] = 17; //the target value for the feature to protect as a percentage
-    item["target_area"] = -1; //the area of the feature that must be protected to meet the targets percentage
-    item["protected_area"] = -1; //the area of the feature that is protected
-    item["feature_layer_loaded"] = false; //is the features distribution currently visible on the map
-    item["feature_puid_layer_loaded"] = false; //are the planning units that intersect the feature currently visible on the map
-    item["old_version"] = oldVersion; //true if the current project is an project imported from marxan for DOS
-    item["occurs_in_planning_grid"] = false; //does the feature occur in the planning grid
-    item["color"] = window.colors[item.id % window.colors.length]; //color for the map layer and analysis outputs
-    item["in_filter"] = true; //true if the feature is currently visible in the features dialog
-  }
+  const addFeatureAttributes = (item, oldVersion) => {
+    const defaultAttributes = {
+      selected: false, // if the feature is currently selected (i.e. in the current project)
+      preprocessed: false, // has the feature already been intersected with the planning grid to populate the puvspr.dat file
+      pu_area: -1, // the area of the feature within the planning grid
+      pu_count: -1, // the number of planning units that the feature intersects with
+      spf: 40, // species penalty factor
+      target_value: 17, // the target value for the feature to protect as a percentage
+      target_area: -1, // the area of the feature that must be protected to meet the targets percentage
+      protected_area: -1, // the area of the feature that is protected
+      feature_layer_loaded: false, // is the feature's distribution currently visible on the map
+      feature_puid_layer_loaded: false, // are the planning units that intersect the feature currently visible on the map
+      old_version: oldVersion, // true if the current project is a project imported from Marxan for DOS
+      occurs_in_planning_grid: false, // does the feature occur in the planning grid
+      color: window.colors[item.id % window.colors.length], // color for the map layer and analysis outputs
+      in_filter: true, // true if the feature is currently visible in the features dialog
+    };
+    return { ...item, ...defaultAttributes };
+  };
+
 
   //resets various variables and state in between users
-  resetResults() {
-    //reset the run
-    this.resetRun();
-    //reset the cost data
-    this.cost_data = undefined;
-    //reset any feature layers that are shown
-    this.hideFeatureLayer();
+  const resetResults = () => {
+    resetRun();                   //reset the run
+    this.cost_data = undefined;   //reset the cost data
+    hideFeatureLayer();      //reset any feature layers that are shown
   }
+  
   //resets state in between runs
-  resetRun() {
+  const resetRun = () => {
     this.runMarxanResponse = {};
-    setDialogsState(prevState => ({ ...prevState, solutions: [] });
-  }
-  //create a new user on the server
-  createNewUser(user, password, name, email) {
-    let formData = new FormData();
-    formData.append("user", user);
-    formData.append("password", password);
-    formData.append("fullname", name);
-    formData.append("email", email);
-    this._post("createUser", formData).then((response) => {
-      //ui feedback
-      this.setSnackBar(response.info);
-      //close the register dialog
-      //enter the new users name in the username box and a blank password
-      this.updateState({
-        registerDialogOpen: false,
-        user: user,
-        password: "",
-      });
-    });
-  }
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// PROJECTS
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  //REST call to create a new project from the wizard
-  createNewProject(project) {
-    let formData = new FormData();
-    formData.append("user", this.state.user);
-    formData.append("project", project.name);
-    formData.append("description", project.description);
-    formData.append("planning_grid_name", project.planning_grid_name);
-    var interest_features = [];
-    var target_values = [];
-    var spf_values = [];
-    project.features.forEach((item) => {
-      interest_features.push(item.id);
-      target_values.push(17);
-      spf_values.push(40);
-    });
-    //prepare the data that will populate the spec.dat file
-    formData.append("interest_features", interest_features.join(","));
-    formData.append("target_values", target_values.join(","));
-    formData.append("spf_values", spf_values.join(","));
-    this._post("createProject", formData).then((response) => {
-      this.setSnackBar(response.info);
-      setDialogsState(prevState => ({ ...prevState, projectsDialogOpen: false });
-      this.loadProject(response.name, response.user);
-    });
+    setDialogsState(prevState => ({ ...prevState, solutions: [] }));
   }
 
-  createNewNationalProject(params) {
-    return new Promise((resolve, reject) => {
-      //first create the planning grid
-      this.createNewPlanningUnitGrid(
-        params.iso3,
-        params.domain,
-        params.areakm2,
-        params.shape
-      )
-        .then((response) => {
-          console.log(response);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-      //create the features from
-      // world ecosystems
-      // species from gbif
-      // species from the red list
-    });
-  }
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// PROJECTS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
-  //REST call to create a new import project from the wizard
-  createImportProject(project) {
-    let formData = new FormData();
-    formData.append("user", this.state.user);
-    formData.append("project", project);
-    return this._post("createImportProject", formData);
-  }
+const createNewProject = async (project) => {
+  const formData = new FormData();
+  formData.append("user", dialogsState.user);
+  formData.append("project", project.name);
+  formData.append("description", project.description);
+  formData.append("planning_grid_name", project.planning_grid_name);
+  const interest_features = [];
+  const target_values = [];
+  const spf_values = [];
+  project.features.forEach((item) => {
+    interest_features.push(item.id);
+    target_values.push(17);
+    spf_values.push(40);
+  });
+  //prepare the data that will populate the spec.dat file
+  formData.append("interest_features", interest_features.join(","));
+  formData.append("target_values", target_values.join(","));
+  formData.append("spf_values", spf_values.join(","));
+  
+  const response = await _post("createProject", formData);
+  
+  setSnackBar(response.info);
+  setDialogsState(prevState => ({ ...prevState, projectsDialogOpen: false }));
+  
+  await loadProject(response.name, response.user);
+}
 
-  //REST call to delete a specific project
-  deleteProject(user, project, silent = false) {
-    this._get("deleteProject?user=" + user + "&project=" + project).then(
-      (response) => {
-        //refresh the projects list
-        this.getProjects();
-        //ui feedback
-        this.setSnackBar(response.info, silent); //we may not want to show the snackbar if we are deleting a project silently, e.g. on a rollback after an unsuccesful import
-        //see if the user deleted the current project
-        if (response.project === this.state.project) {
-          //ui feedback
-          this.setSnackBar("Current project deleted - loading first available");
-          //load the next available project
-          dialogsState.projects.some((project) => {
-            if (project.name !== this.state.project)
-              this.loadProject(project.name, this.state.user);
-            return project.name !== this.state.project;
-          });
-        }
+const createNewNationalProject = (params) => {
+  try {
+    const response = await createNewPlanningUnitGrid(params.iso3, params.domain, params.areakm2, params.shape);
+    console.log(response)
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+//REST call to create a new import project from the wizard
+const createImportProject = async (project) => {
+  const formData = new FormData();
+  formData.append("user", dialogsState.user);
+  formData.append("project", project);
+  return await _post("createImportProject", formData);
+}
+
+//REST call to delete a specific project
+const deleteProject = async (user, project, silent = false) => {
+  const response = await _get(`deleteProject?user=${user}&project=${project}`);
+  await getProjects();
+  // Dont always want tp show snackbar -  e.g. on a rollback after an unsuccesful import
+  setSnackBar(response.info, silent); 
+  //see if the user deleted the current project
+  if (response.project === this.state.project) {
+    setSnackBar("Current project deleted - loading first available");
+    //load the next available project
+    dialogsState.projects.some((project) => {
+      if (project.name !== this.state.project) {
+        await loadProject(project.name, this.state.user);
       }
-    );
+      return project.name !== dialogsState.project;
+    });
   }
+}
 
   //exports the project on the server and returns the *.mxw file
-  exportProject(user, project) {
-    return new Promise((resolve, reject) => {
-      //switches the results pane to the log tab
-      this.setActiveTab("log");
-      //call the websocket
-      this._ws(
-        "exportProject?user=" + user + "&project=" + project,
-        this.wsMessageCallback.bind(this)
-      )
-        .then((message) => {
-          //websocket has finished
-          resolve(
-            this.state.marxanServer.endpoint + "exports/" + message.filename
-          );
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
+const exportProject = async (user, project) => {
+  try {
+    setActiveTab("log");
+    const message = await _ws(`exportProject?user=${user}project=${project}`, wsMessageCallback);
+    return marxanServer.endpoint + "exports/" + message.filename
+  } catch (error) {
+    console.log(error)
   }
+}
 
-  cloneProject(user, project) {
-    this._get("cloneProject?user=" + user + "&project=" + project)
-      .then((response) => {
-        //refresh the projects list
-        this.getProjects();
-        //ui feedback
-        this.setSnackBar(response.info);
-      })
-      .catch((error) => {
-        //do something
-      });
-  }
+const cloneProject = async (user, project) => {
+  const response = await _get(`cloneProject?user=${user}&project=${project}`);
+  getProjects();
+  setSnackBar(response.info);
+}
 
   //rename a specific project on the server
-  renameProject(newName) {
-    return new Promise((resolve, reject) => {
-      if (newName !== "" && newName !== this.state.project) {
-        this._get(
-          "renameProject?user=" +
-            this.state.owner +
-            "&project=" +
-            this.state.project +
-            "&newName=" +
-            newName
-        )
-          .then((response) => {
-            setDialogsState(prevState => ({ ...prevState, project: newName });
-            this.setSnackBar(response.info);
-            resolve("Project renamed");
-          })
-          .catch((error) => {
-            //do something
-          });
-      }
-    });
+const renameProject = async (newName) => {
+  if (newName !== "" && newName !== dialogsState.project) {
+    const response = await _get(`renameProject?user=${dialogsState.owner}&project=${dialogsState.project}&newName=${newName}`);
+    setDialogsState(prevState => ({ ...prevState, project: newName }));
+    setSnackBar(response.info);
+    return "Project renamed"
   }
+}
+  
   //rename the description for a specific project on the server
-  renameDescription(newDesc) {
-    return new Promise((resolve, reject) => {
-      this.updateProjectParameter("DESCRIPTION", newDesc).then((response) => {
-        setDialogsState(prevState => ({ ...prevState,
-          metadata: Object.assign(this.state.metadata, {
-            DESCRIPTION: newDesc,
-          }),
-        });
-        resolve("Description renamed");
-      });
-    });
-  }
+const renameDescription = async (newDesc) => {
+    await updateProjectParameter("DESCRIPTION", newDesc);
+    setDialogsState(prevState => ({ 
+      ...prevState,
+      metadata: Object.assign(dialogsState.metadata, { DESCRIPTION: newDesc })
+    }));
+  return "Description Renamed";
+}
+  
+const getProjects = async () => {
+  const response = await _get(`getProjects?user=${dialogsState.user}`);
+  //filter the projects so that private ones arent shown
+  const projects = response.projects.filter((proj) => {
+    return !((proj.private) && (proj.user !== dialogsState.user) && (dialogsState.userData.ROLE !== "Admin"))
+  })
+  setDialogsState(prevState => ({ ...prevState, projects: projects }));
+}
 
-  getProjects() {
-    this._get("getProjects?user=" + this.state.user).then((response) => {
-      let projects = [];
-      //filter the projects so that private ones arent shown
-      response.projects.forEach((project) => {
-        if (
-          !(
-            project.private &&
-            project.user !== this.state.user &&
-            this.state.userData.ROLE !== "Admin"
-          )
-        )
-          projects.push(project);
-      });
-      setDialogsState(prevState => ({ ...prevState, projects: projects });
-    });
-  }
-
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////CODE TO PREPROCESS AND RUN MARXAN
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// PREPROCESS AND RUN MARXAN
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   //run a marxan job on the server
-  runMarxan(e) {
-    //start the logging
-    this.startLogging();
-    //reset all of the protected and target areas for all features
-    this.resetProtectedAreas();
-    //reset the run results
-    this.resetRun();
-    //update the spec.dat file with any that have been added or removed or changed target or spf
-    this.updateSpecFile()
-      .then((value) => {
-        //when the species file has been updated, update the planning unit file
-        this.updatePuFile();
-        //when the planning unit file has been updated, update the PuVSpr file - this does all the preprocessing using websockets
-        this.updatePuvsprFile()
-          .then((value) => {
-            //start the marxan job
-            this.startMarxanJob(this.state.owner, this.state.project)
-              .then((response) => {
-                //update the run log
-                this.getRunLogs();
-                if (!this.checkForErrors(response)) {
-                  //run completed - get the results
-                  this.getResults(response.user, response.project);
-                  //switch to the features tab
-                  this.features_tab_active();
-                } else {
-                  //set state with no solutions
-                  this.runFinished([]);
-                }
-              })
-              .catch((error) => {
-                //reset the running state
-                this.marxanStopped(error);
-              }); //startMarxanJob
-          })
-          .catch((error) => {
-            //updatePuvsprFile error
-            console.error(error);
-          });
-      })
-      .catch((error) => {
-        //updateSpecFile error
-        console.error(error);
-      });
+const runMarxan = (event) => {
+  startLogging();               // start the logging
+  resetProtectedAreas();        // reset all of the protected and target areas for all features
+  resetRun();                   // reset the run results
+  
+  try {
+     //update the spec.dat file with any that have been added or removed or changed target or spf
+    await updateSpecFile();
+    updatePuFile();               // when the species file has been updated, update the planning unit file
+  } catch (error) {
+    console.error(error);
   }
+ 
+  try {
+    await updatePuvsprFile()      // update the PuVSpr file - preprocessing using websockets
+  } catch (error) {
+    //updatePuvsprFile error
+    console.error(error);
+  }
+  
+  try {
+    const response = await startMarxanJob(dialogsState.owner, dialogsState.project); //start the marxan job
+    await getRunLogs();           //update the run log
+    
+    if (!checkForErrors(response)) {
+      await getResults(response.user, response.project);  //run completed - get the results
+      features_tab_active();      //switch to the features tab
+    } else {
+      runFinished([]);            //set state with no solutions
+    }
+  } catch (error) {
+    marxanStopped(error);
+  }
+}
 
   //stops a process running on the server
-  stopProcess(pid) {
-    this._get("stopProcess?pid=" + pid, 10000).catch((error) => {
-      //if the pid no longer exists then the state needs to be reset anyway
-      this.getRunLogs();
-    });
+const stopProcess = async (pid) => {
+  try {
+    await _get(`stopProcess?pid=${pid}`, 10000);
+  } catch (error) {
+    console.log(error);
   }
+  getRunLogs();
+}
 
   //ui feedback when marxan is stopped by the user
-  marxanStopped(error) {
-    //update the run log
-    this.getRunLogs();
-  }
+const marxanStopped = (error) => getRunLogs();
 
-  resetProtectedAreas() {
-    //reset all of the results for allFeatures to set their protected_area and target_area to -1
-    this.state.allFeatures.forEach((feature) => {
-      feature.protected_area = -1;
-      feature.target_area = -1;
-    });
-  }
+const resetProtectedAreas = () => {
+  const updatedFeatures = dialogsState.allFeatures.map(feature => ({
+    ...feature,
+    protected_area: -1,
+    target_area: -1,
+  }));
+  
+  // Set the state with updated features
+  setDialogsState(prevState => ({ ...prevState, allFeatures: updatedFeatures }));
+}
 
   //updates the species file with any target values that have changed
-  updateSpecFile() {
-    let formData = new FormData();
-    formData.append("user", this.state.owner);
-    formData.append("project", this.state.project);
-    var interest_features = [];
-    var target_values = [];
-    var spf_values = [];
-    this.state.projectFeatures.forEach((item) => {
-      interest_features.push(item.id);
-      target_values.push(item.target_value);
-      spf_values.push(item.spf);
-    });
-    //prepare the data that will populate the spec.dat file
-    formData.append("interest_features", interest_features.join(","));
-    formData.append("target_values", target_values.join(","));
-    formData.append("spf_values", spf_values.join(","));
-    return this._post("updateSpecFile", formData);
-  }
+const updateSpecFile = () => {
+  const formData = new FormData();
+  formData.append("user", dialogsState.owner);
+  formData.append("project", dialogsState.project);
+  //prepare the data that will populate the spec.dat file
+  formData.append("interest_features", dialogsState.projectFeatures.map(item => item.id).join(","));
+  formData.append("target_values", dialogsState.projectFeatures.map(item => item.target_value).join(","));
+  formData.append("spf_values", dialogsState.projectFeatures.map(item => item.spf).join(","));
+  return await _post("updateSpecFile", formData);
+}
 
   //updates the planning unit file with any changes - not implemented yet
-  updatePuFile() {}
+const updatePuFile = () => {};
 
-  updatePuvsprFile() {
-    //preprocess the features to create the puvspr.dat file on the server - this is done on demand when the project is run because the user may add/remove Conservation features willy nilly
-    let promise = this.preprocessAllFeatures();
-    return promise;
+const updatePuvsprFile = async () => {
+  try {
+    // Preprocess features to create the puvspr.dat file on the server
+    // Done on demand when the project is run because the user may add/remove Conservation features dynamically
+    await preprocessAllFeatures();
+  } catch (error) {
+    console.error("Error updating PuVSpr file:", error);
+    throw error; // Rethrow the error to be handled by the caller if necessary
   }
-
+};
   //preprocess a single feature
-  async preprocessSingleFeature(feature) {
-    this.closeFeatureMenu();
-    this.startLogging();
-    this.preprocessFeature(feature);
-  }
+  
+const preprocessSingleFeature = async (feature) => {
+  closeFeatureMenu();
+  startLogging();
+  preprocessFeature(feature);
+}
 
-  //preprocess synchronously, i.e. one after another
-  async preprocessAllFeatures() {
-    var feature;
-    //iterate through the features and preprocess the ones that need preprocessing
-    for (var i = 0; i < this.state.projectFeatures.length; ++i) {
-      feature = this.state.projectFeatures[i];
-      if (!feature.preprocessed) {
-        await this.preprocessFeature(feature);
-      } else {
-        //
-      }
+//preprocess synchronously, i.e. one after another
+const preprocessAllFeatures = async () => {
+  for (const feature of dialogsState.projectFeatures) {
+    if (!feature.preprocessed) {
+      await preprocessFeature(feature);    
     }
   }
+}
 
-  //preprocesses a feature using websockets - i.e. intersects it with the planning units grid and writes the intersection results into the puvspr.dat file ready for a marxan run - this will have no server timeout as its running using websockets
-  preprocessFeature(feature) {
-    return new Promise((resolve, reject) => {
-      //switches the results pane to the log tab
-      this.setActiveTab("log");
-      //call the websocket
-      this._ws(
-        "preprocessFeature?user=" +
-          this.state.owner +
-          "&project=" +
-          this.state.project +
-          "&planning_grid_name=" +
-          this.state.metadata.PLANNING_UNIT_NAME +
-          "&feature_class_name=" +
-          feature.feature_class_name +
-          "&alias=" +
-          feature.alias +
-          "&id=" +
-          feature.id,
-        this.wsMessageCallback.bind(this)
-      )
-        .then((message) => {
-          //websocket has finished
-          this.updateFeature(feature, {
-            preprocessed: true,
-            pu_count: Number(message.pu_count),
-            pu_area: Number(message.pu_area),
-            occurs_in_planning_grid: Number(message.pu_count) > 0,
-          });
-          resolve(message);
-        })
-        .catch((error) => {
-          reject(error);
-        });
+//preprocesses a feature using websockets - i.e. intersects it with the planning units grid and writes the intersection results into the puvspr.dat file ready for a marxan run - this will have no server timeout as its running using websockets
+const preprocessFeature = async (feature) => {
+  try {
+    // Switch to the log tab
+    setActiveTab("log");
+
+    // Call the WebSocket
+    const message = await _ws(
+      `preprocessFeature?user=${dialogsState.owner}&project=${dialogsState.project}&planning_grid_name=${dialogsState.metadata.PLANNING_UNIT_NAME}&feature_class_name=${feature.feature_class_name}&alias=${feature.alias}&id=${feature.id}`,
+      wsMessageCallback
+    );
+
+    // Update feature with new data
+    updateFeature(feature, {
+      preprocessed: true,
+      pu_count: Number(message.pu_count),
+      pu_area: Number(message.pu_area),
+      occurs_in_planning_grid: Number(message.pu_count) > 0,
     });
-  }
 
-  //calls the marxan executeable and runs it getting the output streamed through websockets
-  startMarxanJob(user, project) {
-    return new Promise((resolve, reject) => {
-      //make the request to get the marxan data
-      this._ws(
-        "runMarxan?user=" + user + "&project=" + project,
-        this.wsMessageCallback.bind(this)
-      )
-        .then((message) => {
-          resolve(message);
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
+    return message;
+  } catch (error) {
+    console.error("Error preprocessing feature:", error);
+    throw error; // Re-throw the error to handle it further up the call stack if needed
   }
+};
 
-  //gets the results for a project
-  getResults(user, project) {
-    return new Promise((resolve, reject) => {
-      this._get("getResults?user=" + user + "&project=" + project)
-        .then((response) => {
-          this.runCompleted(response);
-          resolve("Results retrieved");
-        })
-        .catch((error) => {
-          reject("Unable to get results");
-        });
-    });
+
+//calls the marxan executeable and runs it getting the output streamed through websockets
+const startMarxanJob = async (user, project) => {
+  try {
+    // Make the request to get the Marxan data
+    return await _ws(`runMarxan?user=${user}&project=${project}`, wsMessageCallback);
+  } catch (error) {
+    console.error("Error starting Marxan job:", error);
+    throw error; // Re-throw the error to handle it further up the call stack if needed
   }
+};
 
-  //run completed
-  runCompleted(response) {
-    var solutions;
-    //get the response and store it in this component
-    this.runMarxanResponse = response;
-    //if we have some data to map then set the state to reflect this
-    if (
-      this.runMarxanResponse.ssoln &&
-      this.runMarxanResponse.ssoln.length > 0
-    ) {
-      this.setSnackBar(response.info);
-      //render the sum solution map
-      this.renderSolution(this.runMarxanResponse.ssoln, true);
-      //create the array of solutions to pass to the InfoPanels table
-      solutions = response.summary;
-      //the array data are in the format "Run_Number","Score","Cost","Planning_Units" - so create an array of objects to pass to the outputs table
-      solutions = solutions.map((item) => {
+//gets the results for a project
+const getResults = async (user, project) => {
+  try {
+    const response = await _get(`getResults?user=${user}&project=${project}`);
+    runCompleted(response);
+    return "Results retrieved";
+  } catch (error) {
+    console.error("Unable to get results:", error);
+    throw new Error("Unable to get results"); // Optionally re-throw the error for further handling
+  }
+};
+
+//run completed
+const runCompleted = (response) => {
+  this.runMarxanResponse = response;
+
+  // Check if solutions are present
+  if (this.runMarxanResponse.ssoln?.length > 0) {
+    setSnackBar(response.info);
+    renderSolution(this.runMarxanResponse.ssoln, true);
+
+    // Map the solutions to the required format
+    const solutions = response.summary.map((item) => {
         return {
           Run_Number: item[0],
           Score: Number(item[1]).toFixed(1),
@@ -1620,56 +1436,58 @@ const loadProject = async (project, user) => {
           Missing_Values: item[12],
         };
       });
-      //add in the row for the summed solutions
-      solutions.splice(0, 0, {
-        Run_Number: "Sum",
-        Score: "",
-        Cost: "",
-        Planning_Units: "",
-        Missing_Values: "",
-      });
-      //select the first row in the solutions table
 
-      //update the amount of each target that is protected in the current run from the output_mvbest.txt file
-      this.updateProtectedAmount(this.runMarxanResponse.mvbest);
-    } else {
-      solutions = [];
-    }
-    //set state
-    this.runFinished(solutions);
-  }
-
-  runFinished(solutions) {
-    setDialogsState(prevState => ({ ...prevState, solutions: solutions });
-  }
-
-  //gets the protected area information in m2 from the marxan run and populates the interest features with the values
-  updateProtectedAmount(mvData) {
-    //copy the current project features state
-    let features = this.state.allFeatures;
-    //iterate through the features and set the protected amount
-    features.forEach((feature) => {
-      //get the matching item in the mvbest data
-      let mvbestItemIndex = mvData.findIndex((item) => {
-        return item[0] === feature.id;
-      });
-      if (mvbestItemIndex > -1) {
-        //the mvbest file may not contain the data for the feature if the project has not been run since the feature was added
-        //get the missing values item for the specific feature
-        let mvItem = mvData[mvbestItemIndex];
-        Object.assign(feature, {
-          target_area: mvItem[2],
-          protected_area: mvItem[3],
-        });
-      }
+    // Add the summed solution row
+    solutions.unshift({
+      Run_Number: "Sum",
+      Score: "",
+      Cost: "",
+      Planning_Units: "",
+      Missing_Values: "",
     });
-    //update allFeatures and projectFeatures with the new value
-    this.setFeaturesState(features);
-  }
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////IMPORT PROJECT ROUTINES
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    updateProtectedAmount(reponse.mvbest);
+    runFinished(solutions);
+  } else {
+    // No solutions available
+    runFinished([]);
+  }
+};
+
+const runFinished = (solutions) => setDialogsState(prevState => ({ ...prevState, solutions: solutions }));
+
+// Get the protected area information in m2 from marxan run and populate interest features with the values
+const updateProtectedAmount = (mvData) => {
+  // Create a map for quick lookup of mvData by feature ID
+  const mvDataMap = new Map(mvData.map(([id, , targetArea, protectedArea]) => [id, { targetArea, protectedArea }]));
+
+  // Update features with corresponding data from mvData
+  const updatedFeatures = dialogsState.allFeatures.map((feature) => {
+    const mvItem = mvDataMap.get(feature.id);
+    if (mvItem) {
+      return {
+        ...feature,
+        target_area: mvItem.targetArea,
+        protected_area: mvItem.protectedArea,
+      };
+    }
+    return feature;
+  });
+
+  // Update state with the updated features
+  this.setFeaturesState(updatedFeatures);
+};
+
+
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// IMPORT PROJECT ROUTINES
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   importProject(project, description, zipFilename, files, planning_grid_name) {
     return new Promise((resolve, reject) => {
@@ -1882,9 +1700,15 @@ const loadProject = async (project, user) => {
     });
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// SOLUTIONS
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// SOLUTIONS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   //load a specific solution for the current project
   loadSolution(solution) {
@@ -1986,9 +1810,15 @@ const loadProject = async (project, user) => {
     return [].concat.apply([], arrays);
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// CLASSIFICATION AND RENDERING
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// CLASSIFICATION AND RENDERING
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   //gets the classification and colorbrewer object for doing the rendering
   classifyData(data, numClasses, colorCode, classification) {
@@ -2283,10 +2113,16 @@ const loadProject = async (project, user) => {
       features = this.map.queryRenderedFeatures(pt, { layers: layers });
     return features;
   }
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// MAP INSTANTIATION, LAYERS ADDING/REMOVING AND INTERACTION
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// MAP INSTANTIATION, LAYERS ADDING/REMOVING AND INTERACTION
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   //instantiates the mapboxgl map
   createMap(url) {
@@ -2924,9 +2760,15 @@ const loadProject = async (project, user) => {
     });
   }
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ///ACTIVATION/DEACTIVATION OF TABS
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// TABS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   //fired when the projects tab is selected
   const project_tab_active = () => {
@@ -2993,9 +2835,16 @@ const loadProject = async (project, user) => {
     setDialogsState(prevState => ({ ...prevState, activeResultsTab: newValue });
   }
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ///PLANNING UNIT WORKFLOW AND FUNCTIONS
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// PLANNING UNITS AND WORKFLOW
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   startPuEditSession() {
     //set the state
@@ -3187,9 +3036,16 @@ const loadProject = async (project, user) => {
     return statuses;
   }
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //ROUTINES FOR CREATING A NEW PROJECT AND PLANNING UNIT GRIDS
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// NEW PROJECT AND PU GRIDS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   //previews the planning grid
   previewPlanningGrid(planning_grid_metadata) {
@@ -3514,19 +3370,15 @@ const loadProject = async (project, user) => {
         description
     );
   }
-  // ----------------------------
-  // --------------------------------------------------------
-  // ------------------------------------------------------------------------------------
-  // ----------------------------------------------------------------------------------------------------------------
-  // --------------------------------------------------------------------------------------------------------------------------------------------
-  // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  // CUMULATIVE IMPACT
-  // ----------------------------
-  // --------------------------------------------------------
-  // ------------------------------------------------------------------------------------
-  // ----------------------------------------------------------------------------------------------------------------
-  // --------------------------------------------------------------------------------------------------------------------------------------------
-  // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// CUMULATIVE IMPACT
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
   openAtlasLayersDialog() {
     //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
     if (this.state.atlasLayers.length < 1) {
@@ -3947,9 +3799,15 @@ const loadProject = async (project, user) => {
     });
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // MANAGING INTEREST FEATURES SECTION
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// FEATURES
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   //updates the properties of a feature and then updates the features state
   updateFeature(feature, newProps) {
@@ -3966,13 +3824,16 @@ const loadProject = async (project, user) => {
   }
 
   //gets the ids of the selected features
-  getSelectedFeatureIds() {
-    let ids = [];
-    this.state.allFeatures.forEach((feature) => {
-      if (feature.selected) ids.push(feature.id);
-    });
-    setDialogsState(prevState => ({ ...prevState, selectedFeatureIds: ids });
-  }
+  const getSelectedFeatureIds = () => {
+    const selectedFeatureIds = dialogsState.allFeatures
+      .filter((feature) => feature.selected)
+      .map((feature) => feature.id);
+
+    setDialogsState((prevState) => ({
+      ...prevState,
+      selectedFeatureIds: selectedFeatureIds,
+    }));
+  };
 
   //when a user clicks a feature in the FeaturesDialog
   clickFeature(feature) {
@@ -3986,19 +3847,20 @@ const loadProject = async (project, user) => {
     }
   }
 
-  //removes a feature from the selectedFeatureIds array
-  removeFeature(feature) {
-    let ids = this.state.selectedFeatureIds;
-    //remove the feature  - this requires a callback on setState otherwise the state is not updated before updateSelectedFeatures is called
-    ids = ids.filter((value, index, arr) => {
-      return value !== feature.id;
+  //removes a feature from the selectedFeatureIds array  
+const removeFeature = (feature) => {
+  return new Promise((resolve, reject) => {
+    const updatedFeatureIds = dialogsState.selectedFeatureIds.filter(id => id !== feature.id);
+    setDialogsState(prevState => {
+      return { ...prevState, selectedFeatureIds: updatedFeatureIds };
+    }, () => {
+      // State update callback
+      resolve("Feature removed");
     });
-    return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, selectedFeatureIds: ids }, () => {
-        resolve("Feature removed");
-      });
-    });
-  }
+  });
+};
+
+
 
   //adds a feature to the selectedFeatureIds array
   addFeature(feature, callback) {
@@ -4343,7 +4205,7 @@ const loadProject = async (project, user) => {
   //adds the required attributes to use it in Marxan Web and update the allFeatures array
   initialiseNewFeature(feature) {
     //add the required attributes
-    this.addFeatureAttributes(feature);
+    addFeatureAttributes(feature);
     //update the allFeatures array
     this.addNewFeature(feature);
   }
@@ -4362,7 +4224,7 @@ const loadProject = async (project, user) => {
   }
 
   //attempts to delete a feature - if the feature is in use in a project then it will not be deleted and the list of projects will be shown
-  deleteFeature(feature) {
+const deleteFeature = (feature) => {
     this.getProjectsForFeature(feature).then((projects) => {
       if (projects.length === 0) {
         this._deleteFeature(feature);
@@ -4375,109 +4237,95 @@ const loadProject = async (project, user) => {
       }
     });
   }
+  
+const deleteFeature = async (feature) => {
+  try {
+    // Fetch projects associated with the feature
+    const projects = await this.getProjectsForFeature(feature);
+
+    // Check if there are any projects using the feature
+    if (projects.length === 0) {
+      // No projects using the feature, proceed with deletion
+      await this._deleteFeature(feature);
+    } else {
+      // Projects using the feature, show dialog to the user
+      this.showProjectListDialog(
+        projects,
+        "Failed to delete planning feature",
+        "The feature is used in the following projects"
+      );
+    }
+  } catch (error) {
+    // Handle any errors that occur during the process
+    console.error("Error deleting feature:", error);
+    // Optionally: show error feedback to the user
+    this.setSnackBar("Failed to delete feature due to an error.");
+  }
+};
+
 
   //deletes a feature
-  _deleteFeature(feature) {
-    this._get("deleteFeature?feature_name=" + feature.feature_class_name).then(
-      (response) => {
-        this.setSnackBar("Feature deleted");
-        //remove it from the current project if necessary
-        this.removeFeature(feature);
-        //remove it from the allFeatures array
-        this.removeFeatureFromAllFeatures(feature);
-      }
-    );
-  }
+const _deleteFeature = async (feature) => {
+  const response = await _get(`deleteFeature?feature_name=${feature.feature_class_name}`);
+  setSnackBar("Feature deleted");
+  await removeFeature(feature);
+  removeFeatureFromAllFeatures(feature) //remove it from the allFeatures array
+}
 
   //removes a feature from the allFeatures array
-  removeFeatureFromAllFeatures(feature) {
-    let featuresCopy = this.state.allFeatures;
-    //remove the feature
-    featuresCopy = featuresCopy.filter((item) => {
-      return item.id !== feature.id;
-    });
-    //update the allFeatures state
-    setDialogsState(prevState => ({ ...prevState, allFeatures: featuresCopy });
-  }
+const removeFeatureFromAllFeatures = (feature) => {
+  setDialogsState(prevState => ({
+    ...prevState,
+    allFeatures: prevState.allFeatures.filter(item => item.id !== feature.id),
+  }));
+};
+
 
   //makes a call to get the features from the server and returns them
-  getFeatures() {
-    return new Promise((resolve, reject) => {
-      this._get("getAllSpeciesData")
-        .then((response) => {
-          resolve(response);
-        })
-        .catch((error) => {
-          //do something
-        });
-    });
-  }
+const getFeatures = async () => await _get("getAllSpeciesData");
 
-  //gets all the features from the server and updates the state
-  getAllFeatures() {
-    return new Promise((resolve, reject) => {
-      this.getFeatures()
-        .then((response) => {
-          //set the allfeatures state
-          setDialogsState(prevState => ({ ...prevState, allFeatures: response.data }, () => {
-            resolve("Features returned");
-          });
-        })
-        .catch((error) => {
-          //do something
-        });
-    });
-  }
+// Gets all the features from the server and updates the state
+const getAllFeatures = async () => {
+  const response = await getFeatures();
+  setDialogsState(prevState => ({ ...prevState, allFeatures: response.data }));
+}
 
   //gets the feature ids as a set from the allFeatures array
-  getFeatureIds(_features) {
-    return new Set(
-      _features.map((item) => {
-        return item.id;
-      })
-    );
-  }
+const getFeatureIds = (_features) => new Set(_features.map((item) => item.id));
 
   //refreshes the allFeatures state
-  refreshFeatures() {
-    //refresh all features
-    this.getFeatures().then((response) => {
-      //get the existing feature ids in the client
-      let existingIds = this.getFeatureIds(this.state.allFeatures);
-      //get the new feature ids in the server
-      let newIds = this.getFeatureIds(response.data);
-      //get the features that have been removed as a set
-      let removedIds = new Set([...existingIds].filter((x) => !newIds.has(x)));
-      removedIds.forEach((item) => {
-        //remove it from the allFeatures array
-        this.removeFeatureFromAllFeatures({ id: item });
-      });
-      //get the features that have been added as a set
-      let addedIds = new Set([...newIds].filter((x) => !existingIds.has(x)));
-      //iterate through the new features and initialise them
-      let addedFeatures = response.data.filter((item) => addedIds.has(item.id));
-      addedFeatures.forEach((item) => {
-        this.initialiseNewFeature(item);
-      });
-    });
-  }
-  openFeatureMenu(evt, feature) {
-    setDialogsState(prevState => ({ ...prevState,
-      featureMenuOpen: true,
-      currentFeature: feature,
-      menuAnchor: evt.currentTarget,
-    });
-  }
-  closeFeatureMenu(evt) {
-    setDialogsState(prevState => ({ ...prevState, featureMenuOpen: false });
-  }
+const refreshFeatures = async () => {
+  // Fetch the latest features
+  const response = await getFeatures();
+  const newFeatures = response.data;
+
+  // Extract existing and new feature IDs
+  const existingFeatureIds = getFeatureIds(dialogsState.allFeatures);
+  const newFeatureIds = getFeatureIds(newFeatures);
+
+  // Determine which features have been removed or added
+  const removedFeatureIds = [...existingFeatureIds].filter(id => !newFeatureIds.has(id));
+  const addedFeatureIds = [...newFeatureIds].filter(id => !existingFeatureIds.has(id));
+
+  // Remove features that are no longer present
+  removedFeatureIds.forEach(id => removeFeatureFromAllFeatures({ id }));
+
+  // Initialize new features
+  const addedFeatures = newFeatures.filter(feature => addedFeatureIds.includes(feature.id));
+  addedFeatures.forEach(feature => initialiseNewFeature(feature));
+};
+
+const openFeatureMenu = (evt, feature) => setDialogsState(prevState => ({ ...prevState, featureMenuOpen: true, currentFeature: feature, menuAnchor: evt.currentTarget }));
+  
+const closeFeatureMenu = (evt) => setDialogsState(prevState => ({ ...prevState, featureMenuOpen: false }));
 
   //hides the feature layer
-  hideFeatureLayer() {
-    this.state.projectFeatures.forEach((feature) => {
-      if (feature.feature_layer_loaded) this.toggleFeatureLayer(feature);
-    });
-  }
+const hideFeatureLayer = () => {
+  dialogsState.projectFeatures.forEach((feature) => {
+    if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
+  });
+}
+
 
   //toggles the feature layer on the map
   toggleFeatureLayer(feature) {
@@ -4627,144 +4475,118 @@ const loadProject = async (project, user) => {
     );
   }
 
-  //gets a list of projects for a feature
-  getProjectsForFeature(feature) {
-    return new Promise((resolve, reject) => {
-      this._get("listProjectsForFeature?feature_class_id=" + feature.id).then(
-        (response) => {
-          resolve(response.projects);
-        }
-      );
-    });
-  }
 
-  //gets a list of projects for either a feature or a planning grid
-  getProjectList(obj, _type) {
-    if (_type === "feature") {
-      this.getProjectsForFeature(obj).then((projects) => {
-        this.showProjectListDialog(
-          projects,
-          "Projects list",
-          "The feature is used in the following projects:"
-        );
-      });
-    } else {
-      this.getProjectsForPlanningGrid(obj.feature_class_name).then(
-        (projects) => {
-          this.showProjectListDialog(
-            projects,
-            "Projects list",
-            "The feature is used in the following projects:"
-          );
-        }
-      );
-    }
-  }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// DIALOG OPENING/CLOSING FUNCTIONS
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// DIALOGS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
   showUserMenu(e) {
     e.preventDefault();
-    setDialogsState(prevState => ({ ...prevState, userMenuOpen: true, menuAnchor: e.currentTarget });
+    setDialogsState(prevState => ({ ...prevState, userMenuOpen: true, menuAnchor: e.currentTarget }));
   }
   hideUserMenu(e) {
-    setDialogsState(prevState => ({ ...prevState, userMenuOpen: false });
+    setDialogsState(prevState => ({ ...prevState, userMenuOpen: false }));
   }
   showHelpMenu(e) {
     e.preventDefault();
-    setDialogsState(prevState => ({ ...prevState, helpMenuOpen: true, menuAnchor: e.currentTarget });
+    setDialogsState(prevState => ({ ...prevState, helpMenuOpen: true, menuAnchor: e.currentTarget }));
   }
   hideHelpMenu(e) {
-    setDialogsState(prevState => ({ ...prevState, helpMenuOpen: false });
+    setDialogsState(prevState => ({ ...prevState, helpMenuOpen: false }));
   }
   showToolsMenu(e) {
     e.preventDefault();
-    setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: true, menuAnchor: e.currentTarget });
+    setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: true, menuAnchor: e.currentTarget }));
   }
   hideToolsMenu(e) {
-    setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: false });
+    setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: false }));
   }
 
   openProjectsDialog() {
-    setDialogsState(prevState => ({ ...prevState, projectsDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, projectsDialogOpen: true }));
     this.getProjects();
   }
 
   openNewProjectWizardDialog() {
     this.getCountries();
-    setDialogsState(prevState => ({ ...prevState, newProjectWizardDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, newProjectWizardDialogOpen: true }));
   }
 
   openNewPlanningGridDialog() {
     this.getCountries();
-    setDialogsState(prevState => ({ ...prevState, NewPlanningGridDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, NewPlanningGridDialogOpen: true }));
   }
 
   openUserSettingsDialog() {
-    setDialogsState(prevState => ({ ...prevState, UserSettingsDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, UserSettingsDialogOpen: true }));
     this.hideUserMenu();
   }
 
   openProfileDialog() {
-    setDialogsState(prevState => ({ ...prevState, profileDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, profileDialogOpen: true }));
     this.hideUserMenu();
   }
 
   openAboutDialog() {
-    setDialogsState(prevState => ({ ...prevState, aboutDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, aboutDialogOpen: true }));
     this.hideHelpMenu();
   }
 
   openClassificationDialog() {
-    setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: true }));
   }
   closeClassificationDialog() {
-    setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: false });
+    setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: false }));
   }
 
   openUsersDialog() {
-    this.getUsers();
-    setDialogsState(prevState => ({ ...prevState, usersDialogOpen: true });
+    handleGetUsers();
+    setDialogsState(prevState => ({ ...prevState, usersDialogOpen: true }));
   }
 
   toggleInfoPanel() {
-    setDialogsState(prevState => ({ ...prevState, infoPanelOpen: !this.state.infoPanelOpen });
+    setDialogsState(prevState => ({ ...prevState, infoPanelOpen: !this.state.infoPanelOpen }));
   }
   toggleResultsPanel() {
-    setDialogsState(prevState => ({ ...prevState, resultsPanelOpen: !this.state.resultsPanelOpen });
+    setDialogsState(prevState => ({ ...prevState, resultsPanelOpen: !this.state.resultsPanelOpen }));
   }
 
   openRunLogDialog() {
     this.getRunLogs();
     this.startPollingRunLogs();
-    setDialogsState(prevState => ({ ...prevState, runLogDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, runLogDialogOpen: true }));
   }
   closeRunLogDialog() {
     this.stopPollingRunLogs();
-    setDialogsState(prevState => ({ ...prevState, runLogDialogOpen: false });
+    setDialogsState(prevState => ({ ...prevState, runLogDialogOpen: false }));
   }
   openGapAnalysisDialog() {
-    setDialogsState(prevState => ({ ...prevState, gapAnalysisDialogOpen: true, gapAnalysis: [] });
+    setDialogsState(prevState => ({ ...prevState, gapAnalysisDialogOpen: true, gapAnalysis: [] }));
     this.runGapAnalysis();
   }
   closeGapAnalysisDialog() {
-    setDialogsState(prevState => ({ ...prevState, gapAnalysisDialogOpen: false, gapAnalysis: [] });
+    setDialogsState(prevState => ({ ...prevState, gapAnalysisDialogOpen: false, gapAnalysis: [] }));
   }
   openServerDetailsDialog() {
-    setDialogsState(prevState => ({ ...prevState, serverDetailsDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, serverDetailsDialogOpen: true }));
     this.hideHelpMenu();
   }
   closeServerDetailsDialog() {
-    setDialogsState(prevState => ({ ...prevState, serverDetailsDialogOpen: false });
+    setDialogsState(prevState => ({ ...prevState, serverDetailsDialogOpen: false }));
   }
   openChangePasswordDialog() {
     this.hideUserMenu();
-    setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: true }));
   }
   closeChangePasswordDialog() {
-    setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: false });
+    setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: false }));
   }
 
   showProjectListDialog(
@@ -4784,14 +4606,20 @@ const loadProject = async (project, user) => {
     );
   }
   openTargetDialog() {
-    setDialogsState(prevState => ({ ...prevState, targetDialogOpen: true });
+    setDialogsState(prevState => ({ ...prevState, targetDialogOpen: true }));
   }
   closeTargetDialog() {
-    setDialogsState(prevState => ({ ...prevState, targetDialogOpen: false });
+    setDialogsState(prevState => ({ ...prevState, targetDialogOpen: false }));
   }
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// PROTECTED AREAS LAYERS STUFF
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// PROTECTED AREAS LAYERS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   changeIucnCategory(iucnCategory) {
     //update the state
@@ -5024,9 +4852,15 @@ const loadProject = async (project, user) => {
     }); //return
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// BOUNDARY LENGTH MODIFIER AND CLUMPING
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// BOUNDARY LENGTH AND CLUMPING
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   async preprocessBoundaryLengths(iucnCategory) {
     if (this.state.files.BOUNDNAME) {
@@ -5203,9 +5037,15 @@ const loadProject = async (project, user) => {
     });
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// MANAGING RUNS
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// MANAGING RUNS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   //called when the run log dialog opens and starts polling the run log
   startPollingRunLogs() {
@@ -5238,9 +5078,15 @@ const loadProject = async (project, user) => {
     this.updateState({ shareableLinkDialogOpen: true });
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// GAP ANALYSIS
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// GAP ANALYSIS
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   runGapAnalysis() {
     return new Promise((resolve, reject) => {
@@ -5280,9 +5126,15 @@ const loadProject = async (project, user) => {
     setDialogsState(prevState => ({ ...prevState, addToProject: isChecked });
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////// COSTS
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// COSTSy
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------------------- //
 
   //changes the cost profile for a project
   changeCostname(costname) {
@@ -5453,8 +5305,8 @@ const loadProject = async (project, user) => {
           loading={this.state.loading}
           user={this.state.user}
           password={this.state.password}
-          changeUserName={this.changeUserName.bind(this)}
-          changePassword={this.changePassword.bind(this)}
+          changeUserName={changeUserName}
+          changePassword={changePassword}
           updateState={this.updateState.bind(this)}
           marxanServers={this.state.marxanServers}
           selectServer={this.selectServer.bind(this)}
@@ -5463,7 +5315,7 @@ const loadProject = async (project, user) => {
         />
         <RegisterDialog
           open={this.state.registerDialogOpen}
-          onOk={this.createNewUser.bind(this)}
+          onOk={handleCreateUser}
           updateState={this.updateState.bind(this)}
           loading={this.state.loading}
         />
@@ -5538,7 +5390,7 @@ const loadProject = async (project, user) => {
           loading={this.state.loading}
           user={this.state.user}
           users={this.state.users}
-          deleteUser={this.deleteUser.bind(this)}
+          deleteUser={handleDeleteUser}
           changeRole={this.changeRole.bind(this)}
           guestUserEnabled={this.state.marxanServer.guestUserEnabled}
           toggleEnableGuestUser={this.toggleEnableGuestUser.bind(this)}
@@ -5549,7 +5401,7 @@ const loadProject = async (project, user) => {
           onCancel={() => this.updateState({ profileDialogOpen: false })}
           loading={this.state.loading}
           userData={this.state.userData}
-          updateUser={this.updateUser.bind(this)}
+          updateUser={handleUserUpdate}
         />
         <AboutDialog
           open={this.state.aboutDialogOpen}
@@ -5683,7 +5535,7 @@ const loadProject = async (project, user) => {
           okDisabled={true}
           countries={this.state.countries}
           updateState={this.updateState.bind(this)}
-          createNewNationalProject={this.createNewNationalProject.bind(this)}
+          createNewNationalProject={createNewNationalProject}
         />
         <NewPlanningGridDialog
           open={this.state.NewPlanningGridDialogOpen}
@@ -5752,7 +5604,7 @@ const loadProject = async (project, user) => {
           getTilesetMetadata={this.getMetadata.bind(this)}
           setSnackBar={this.setSnackBar.bind(this)}
           reportUnits={this.state.userData.REPORTUNITS}
-          getProjectList={this.getProjectList.bind(this)}
+          getProjectList={getProjectList}
         />
         <NewFeatureDialog
           open={this.state.NewFeatureDialogOpen}
@@ -5828,7 +5680,7 @@ const loadProject = async (project, user) => {
           planning_grid_metadata={this.state.planning_grid_metadata}
           getTilesetMetadata={this.getMetadata.bind(this)}
           setSnackBar={this.setSnackBar.bind(this)}
-          getProjectList={this.getProjectList.bind(this)}
+          getProjectList={getProjectList}
         />
         <ProjectsListDialog
           open={this.state.ProjectsListDialogOpen}
@@ -5964,7 +5816,7 @@ const loadProject = async (project, user) => {
           onClose={this.closeChangePasswordDialog.bind(this)}
           checkPassword={this.checkPassword.bind(this)}
           setSnackBar={this.setSnackBar.bind(this)}
-          updateUser={this.updateUser.bind(this)}
+          updateUser={handleUserUpdate}
         />
         <AlertDialog
           open={this.state.alertDialogOpen}
