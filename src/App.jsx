@@ -92,7 +92,9 @@ import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
 import { createNewUser, updateUser, deleteUser, getUsers} from "./User/userService";
-import { getProjectList, getProjectsForFeature } from "./Projects/projectsService";
+import { getProjectList, getProjectsForFeature, prepareFormDataNewProject, createImportProject } from "./Projects/projectsService";
+import { uploadFileToFolder, uploadFiles, uploadFileToProject } from "./ImportComponents/importService";
+import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -258,7 +260,7 @@ const [dialogsState, setDialogsState] = useState({
         if (!serverData) throw new Error("Invalid server parameter on shareable link");
         if (serverData.offline) throw new Error("Server is offline");
         if (!serverData.guestUserEnabled) throw new Error("Guest user is not enabled on the server");
-        await selectServer(serverData);
+        selectServer(serverData);
         await switchToGuestUser();
         await validateUser();
         await loadProject(searchParams.get("project"), searchParams.get("user"));
@@ -581,19 +583,18 @@ const validateUser = async (user, password) => {
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
-    const selectServer = useCallback((server) => {
-    // Implement server selection logic
-    console.log('server ', server);
-    setMarxanServer(server);
-    // Check if there is a new version of the WDPA
-    if (server.wdpa_version !== registry.WDPA.latest_version) ? setNewWDPAVersion(true): setNewWDPAVersion(false);
-    // Set the link to the WDPA vector tiles layer name based on the version
-    setWDPAVectorTilesLayerName(server.wdpa_version);
-    // If server is online, not CORS-enabled, and guest user is enabled, switch to guest user
-    if (!server.offline && !server.corsEnabled && server.guestUserEnabled) {
-      switchToGuestUser();
-    }
-  }, [registry.WDPA.latest_version]);
+const selectServer = useCallback((server) => {
+  console.log('server ', server);
+  setMarxanServer(server);
+  // Check if there is a new version of the WDPA
+  setNewWDPAVersion(server.wdpa_version !== registry.WDPA.latest_version);
+  // Set the link to the WDPA vector tiles layer name based on the version
+  setWDPAVectorTilesLayerName(server.wdpa_version);
+  // If server is online, not CORS-enabled, and guest user is enabled, switch to guest user
+  if (!server.offline && !server.corsEnabled && server.guestUserEnabled) {
+    switchToGuestUser();
+  }
+}, [registry.WDPA.latest_version]);
   
   const initialiseServers = useCallback(async (servers) => {
   try {
@@ -612,65 +613,63 @@ const validateUser = async (user, password) => {
   }
 }, [setMarxanServers]);
 
-  //gets the capabilities of all servers
-  // Function to get capabilities for all servers
-  const getAllServerCapabilities = useCallback(async (marxanServers) => {
-    try {
-      const promises = marxanServers.map(async (server) => {
-        const updatedServer = await getServerCapabilities(server);
-        return updatedServer;
-      });
-      const results = await Promise.all(promises);
-      setServerCapabilities(results);
-    } catch (error) {
-      console.error('Error getting server capabilities:', error);
-    }
-  }, []);
-  
-  useEffect(() => {
-    getAllServerCapabilities(marxanServers);
-  }, [marxanServers, getAllServerCapabilities]);
-  
-  // Function to programmatically select a server
-  const selectServerByName = useCallback((servername) => {
-    // Remove the search part of the URL
-    window.history.replaceState({}, document.title, '/');
-    const server = marxanServers.find((item) => item.name === servername);
-    if (server) {
-      selectServer(server);
-    }
-  }, [marxanServers]);
-
-  const closeSnackbar = () => {
-    setDialogsState(prevState => ({ ...prevState, snackbarOpen: false }));
+//gets the capabilities of all servers
+// Function to get capabilities for all servers
+const getAllServerCapabilities = useCallback(async (marxanServers) => {
+  try {
+    const promises = marxanServers.map(async (server) => {
+      const updatedServer = await getServerCapabilities(server);
+      return updatedServer;
+    });
+    const results = await Promise.all(promises);
+    setServerCapabilities(results);
+  } catch (error) {
+    console.error('Error getting server capabilities:', error);
   }
+}, []);
 
-  const startLogging = (clearLog = false) => {
-    //switches the results pane to the log tab and clears log if needs be
-    setActiveTab("log");
-    if (clearLog) this.clearLog();
+useEffect(() => {
+  getAllServerCapabilities(marxanServers);
+}, [marxanServers, getAllServerCapabilities]);
+
+// Function to programmatically select a server
+const selectServerByName = useCallback((servername) => {
+  // Remove the search part of the URL
+  window.history.replaceState({}, document.title, '/');
+  const server = marxanServers.find((item) => item.name === servername);
+  if (server) {
+    selectServer(server);
   }
+}, [marxanServers]);
 
-  // clears the log
-  const clearLog = ()=> {
-    setDialogsState(prevState => ({ ...prevState, logMessages: [] }));
-  }
+const closeSnackbar = () => {
+  setDialogsState(prevState => ({ ...prevState, snackbarOpen: false }));
+}
 
-  // Main logging method - all log messages use this method
-  const messageLogger = useCallback((message) => {
-    // Add a timestamp to the message
-    const timestampedMessage = { ...message, timestamp: new Date() };
-    // Update the state with the new log message
-    setDialogsState(prevState => ({
-      ...prevState,
-      logMessages: [...prevState.logMessages, timestampedMessage],
-    }));
-  }, []);
+const startLogging = (clearLog = false) => {
+  //switches the results pane to the log tab and clears log if needs be
+  setActiveTab("log");
+  if (clearLog) this.clearLog();
+}
+
+// clears the log
+const clearLog = ()=> {
+  setDialogsState(prevState => ({ ...prevState, logMessages: [] }));
+}
+
+// Main logging method - all log messages use this method
+const messageLogger = useCallback((message) => {
+  // Add a timestamp to the message
+  const timestampedMessage = { ...message, timestamp: new Date() };
+  // Update the state with the new log message
+  setDialogsState(prevState => ({
+    ...prevState,
+    logMessages: [...prevState.logMessages, timestampedMessage],
+  }));
+}, []);
 
   // utiliy method for getting all puids from normalised data, e.g. from [["VI", [7, 8, 9]], ["IV", [0, 1, 2, 3, 4]], ["V", [5, 6]]]
-  const getPuidsFromNormalisedData = (normalisedData) => {
- return normalisedData.flatMap(item => item[1]);
-};
+const getPuidsFromNormalisedData = (normalisedData) =>  normalisedData.flatMap(item => item[1]);
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -757,8 +756,8 @@ const resendPassword = async () => {
   }
 };
 
-const changeRole = (user, role) => {
-  handleUserUpdate({ ROLE: role }, user);
+const changeRole = async (user, role) => {
+  await handleUserUpdate({ ROLE: role }, user);
   const updatedUsers = dialogsState.users.map((item) => 
     item.user === user ? { ...item, ROLE: role } : item
   );
@@ -944,8 +943,8 @@ const appendToFormData = (formData, obj) => {
 };
 
 
-  // saveOptions - Options are in users data - use updateUser to update them
-  const saveOptions = (options) => await handleUserUpdate(options);
+// saveOptions - Options are in users data - use updateUser to update them
+const saveOptions = async (options) => await handleUserUpdate(options);
   
   //updates the project from the old version to the new version
   const upgradeProject = async (project) => await _get(`upgradeProject?user=${dialogsState.user}&project=${project}`);
@@ -1100,26 +1099,26 @@ const initialiseInterestFeatures = (oldVersion, projectFeatures) => {
 };
 
 
-  //adds the required attributes for the features to work in the marxan web app - these are the default values
-  const addFeatureAttributes = (item, oldVersion) => {
-    const defaultAttributes = {
-      selected: false, // if the feature is currently selected (i.e. in the current project)
-      preprocessed: false, // has the feature already been intersected with the planning grid to populate the puvspr.dat file
-      pu_area: -1, // the area of the feature within the planning grid
-      pu_count: -1, // the number of planning units that the feature intersects with
-      spf: 40, // species penalty factor
-      target_value: 17, // the target value for the feature to protect as a percentage
-      target_area: -1, // the area of the feature that must be protected to meet the targets percentage
-      protected_area: -1, // the area of the feature that is protected
-      feature_layer_loaded: false, // is the feature's distribution currently visible on the map
-      feature_puid_layer_loaded: false, // are the planning units that intersect the feature currently visible on the map
-      old_version: oldVersion, // true if the current project is a project imported from Marxan for DOS
-      occurs_in_planning_grid: false, // does the feature occur in the planning grid
-      color: window.colors[item.id % window.colors.length], // color for the map layer and analysis outputs
-      in_filter: true, // true if the feature is currently visible in the features dialog
-    };
-    return { ...item, ...defaultAttributes };
+//adds the required attributes for the features to work in the marxan web app - these are the default values
+const addFeatureAttributes = (item, oldVersion) => {
+  const defaultAttributes = {
+    selected: false, // if the feature is currently selected (i.e. in the current project)
+    preprocessed: false, // has the feature already been intersected with the planning grid to populate the puvspr.dat file
+    pu_area: -1, // the area of the feature within the planning grid
+    pu_count: -1, // the number of planning units that the feature intersects with
+    spf: 40, // species penalty factor
+    target_value: 17, // the target value for the feature to protect as a percentage
+    target_area: -1, // the area of the feature that must be protected to meet the targets percentage
+    protected_area: -1, // the area of the feature that is protected
+    feature_layer_loaded: false, // is the feature's distribution currently visible on the map
+    feature_puid_layer_loaded: false, // are the planning units that intersect the feature currently visible on the map
+    old_version: oldVersion, // true if the current project is a project imported from Marxan for DOS
+    occurs_in_planning_grid: false, // does the feature occur in the planning grid
+    color: window.colors[item.id % window.colors.length], // color for the map layer and analysis outputs
+    in_filter: true, // true if the feature is currently visible in the features dialog
   };
+  return { ...item, ...defaultAttributes };
+};
 
 
   //resets various variables and state in between users
@@ -1146,69 +1145,48 @@ const initialiseInterestFeatures = (oldVersion, projectFeatures) => {
 // ----------------------------------------------------------------------------------------------- //
 
 const createNewProject = async (project) => {
-  const formData = new FormData();
-  formData.append("user", dialogsState.user);
-  formData.append("project", project.name);
-  formData.append("description", project.description);
-  formData.append("planning_grid_name", project.planning_grid_name);
-  const interest_features = [];
-  const target_values = [];
-  const spf_values = [];
-  project.features.forEach((item) => {
-    interest_features.push(item.id);
-    target_values.push(17);
-    spf_values.push(40);
-  });
-  //prepare the data that will populate the spec.dat file
-  formData.append("interest_features", interest_features.join(","));
-  formData.append("target_values", target_values.join(","));
-  formData.append("spf_values", spf_values.join(","));
-  
+  const formData = prepareFormDataNewProject(project, dialogsState.user);
   const response = await _post("createProject", formData);
-  
+
   setSnackBar(response.info);
   setDialogsState(prevState => ({ ...prevState, projectsDialogOpen: false }));
-  
+
   await loadProject(response.name, response.user);
 }
 
-const createNewNationalProject = (params) => {
-  try {
-    const response = await createNewPlanningUnitGrid(params.iso3, params.domain, params.areakm2, params.shape);
-    console.log(response)
-  } catch (error) {
-    console.log(error);
-  }
-}
+const createNewNationalProject = async (params) => await createNewPlanningUnitGrid(params.iso3, params.domain, params.areakm2, params.shape);
 
-//REST call to create a new import project from the wizard
-const createImportProject = async (project) => {
-  const formData = new FormData();
-  formData.append("user", dialogsState.user);
-  formData.append("project", project);
-  return await _post("createImportProject", formData);
-}
 
 //REST call to delete a specific project
 const deleteProject = async (user, project, silent = false) => {
-  const response = await _get(`deleteProject?user=${user}&project=${project}`);
-  await getProjects();
-  // Dont always want tp show snackbar -  e.g. on a rollback after an unsuccesful import
-  setSnackBar(response.info, silent); 
-  //see if the user deleted the current project
-  if (response.project === this.state.project) {
-    setSnackBar("Current project deleted - loading first available");
-    //load the next available project
-    dialogsState.projects.some((project) => {
-      if (project.name !== this.state.project) {
-        await loadProject(project.name, this.state.user);
+  try {
+    // Make the request to delete the project
+    const response = await _get(`deleteProject?user=${user}&project=${project}`);
+    
+    // Fetch the updated list of projects
+    await getProjects();
+
+    // Show a snackbar message, but allow it to be silent if specified
+    setSnackBar(response.info, silent);
+    
+    // Check if the deleted project is the current one
+    if (response.project === dialogsState.project) {
+      setSnackBar("Current project deleted - loading first available");
+
+      // Find the next available project
+      const nextProject = dialogsState.projects.find(p => p.name !== dialogsState.project);
+      
+      if (nextProject) {
+        await loadProject(nextProject.name, dialogsState.user);
       }
-      return project.name !== dialogsState.project;
-    });
+    }
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    // Optionally handle the error, e.g., set an error state or notify the user
   }
 }
 
-  //exports the project on the server and returns the *.mxw file
+//exports the project on the server and returns the *.mxw file
 const exportProject = async (user, project) => {
   try {
     setActiveTab("log");
@@ -1265,7 +1243,7 @@ const getProjects = async () => {
 // ----------------------------------------------------------------------------------------------- //
 
   //run a marxan job on the server
-const runMarxan = (event) => {
+const runMarxan = async (event) => {
   startLogging();               // start the logging
   resetProtectedAreas();        // reset all of the protected and target areas for all features
   resetRun();                   // reset the run results
@@ -1325,7 +1303,7 @@ const resetProtectedAreas = () => {
 }
 
   //updates the species file with any target values that have changed
-const updateSpecFile = () => {
+const updateSpecFile = async () => {
   const formData = new FormData();
   formData.append("user", dialogsState.owner);
   formData.append("project", dialogsState.project);
@@ -1489,179 +1467,105 @@ const updateProtectedAmount = (mvData) => {
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 
-  importProject(project, description, zipFilename, files, planning_grid_name) {
-    return new Promise((resolve, reject) => {
-      let feature_class_name = "",
-        uploadId;
-      //start the logging
-      this.startLogging();
-      //set the spinner and lot states
-     messageLogger({
-        method: "importProject",
-        status: "Importing",
-        info: "Starting import..",
-      });
-      //create a new project
-      //TODO: SORT OUT ROLLING BACK IF AN IMPORT FAILS - AND DONT PROVIDE REST CALLS TO DELETE PLANNING UNITS
-      this.createImportProject(project)
-        .then((response) => {
-         messageLogger({
-            method: "importProject",
-            status: "Importing",
-            info: "Project '" + project + "' created",
-          });
-          //create the planning unit file
-          this.importZippedShapefileAsPu(
-            zipFilename,
-            planning_grid_name,
-            "Imported with the project '" + project + "'"
-          )
-            .then((response) => {
-              //get the planning unit feature_class_name
-              feature_class_name = response.feature_class_name;
-              //get the uploadid
-              uploadId = response.uploadId;
-             messageLogger({
-                method: "importProject",
-                status: "Importing",
-                info: "Planning grid imported",
-              });
-              //upload all of the files from the local system
-              this.uploadFiles(files, project)
-                .then((response) => {
-                 messageLogger({
-                    method: "importProject",
-                    status: "Importing",
-                    info: "All files uploaded",
-                  });
-                  //upgrade the project to the new version of Marxan - this adds the necessary settings in the project file and calculates the statistics for species in the puvspr.dat and puts them in the feature_preprocessing.dat file
-                  this.upgradeProject(project)
-                    .then((response) => {
-                     messageLogger({
-                        method: "importProject",
-                        status: "Importing",
-                        info: "Project updated to new version",
-                      });
-                      //update the project file with the new settings - we also have to set the OUTPUTDIR to the standard 'output' as some imported projects may have set different output folders, e.g. output_BLMBEST
-                      let d = new Date();
-                      let formattedDate =
-                        ("00" + d.getDate()).slice(-2) +
-                        "/" +
-                        ("00" + (d.getMonth() + 1)).slice(-2) +
-                        "/" +
-                        d.getFullYear().toString().slice(-2) +
-                        " " +
-                        ("00" + d.getHours()).slice(-2) +
-                        ":" +
-                        ("00" + d.getMinutes()).slice(-2) +
-                        ":" +
-                        ("00" + d.getSeconds()).slice(-2);
-                      this.updateProjectParams(project, {
-                        DESCRIPTION:
-                          description +
-                          " (imported from an existing Marxan project)",
-                        CREATEDATE: formattedDate,
-                        OLDVERSION: "True",
-                        PLANNING_UNIT_NAME: feature_class_name,
-                        OUTPUTDIR: "output",
-                      })
-                        .then((response) => {
-                          // wait for the tileset to upload to mapbox
-                          this.pollMapbox(uploadId).then((response) => {
-                            //refresh the planning grids
-                            this.getPlanningUnitGrids();
-                           messageLogger({
-                              method: "importProject",
-                              status: "Finished",
-                              info: "Import complete",
-                            });
-                            //now open the project
-                            this.loadProject(project, this.state.user);
-                            resolve("Import complete");
-                          });
-                        })
-                        .catch((error) => {
-                          //updateProjectParams error
-                          reject(error);
-                        });
-                    })
-                    .catch((error) => {
-                      //upgradeProject error
-                      reject(error);
-                    });
-                })
-                .catch((error) => {
-                  //uploadFiles error
-                  reject(error);
-                });
-            })
-            .catch((error) => {
-              //importZippedShapefileAsPu error - delete the project
-              this.deleteProject(this.state.user, project, true);
-              reject(error);
-            });
-        })
-        .catch((error) => {
-          //createImportProject failed - the project already exists
-          reject(error);
-        });
-    });
-  }
+const importProject = async (project, description, zipFilename, files, planning_grid_name) => {
+  let feature_class_name = "";
+  let uploadId;
 
-  //uploads a list of files to the current project
-  async uploadFiles(files, project) {
-    var file, filepath;
-    for (var i = 0; i < files.length; i++) {
-      file = files.item(i);
-      //see if it is a marxan data file
-      if (file.name.slice(-4) === ".dat") {
-        const formData = new FormData();
-        formData.append("user", this.state.owner);
-        formData.append("project", project);
-        //the webkitRelativePath will include the folder itself so we have to remove this, e.g. 'Marxan project/input/puvspr.dat' -> '/input/puvspr.dat'
-        filepath = file.webkitRelativePath.split("/").slice(1).join("/");
-        formData.append("filename", filepath);
-        formData.append("value", file);
-       messageLogger({
-          method: "uploadFiles",
-          status: "Uploading",
-          info: "Uploading: " + file.webkitRelativePath,
-        });
-        await this._post("uploadFile", formData);
-      }
-    }
-  }
+  startLogging();
+  messageLogger({
+    method: "importProject",
+    status: "Importing",
+    info: "Starting import..",
+  });
 
-  //uploads a single file to the current projects input folder
-  uploadFileToProject(value, filename, project) {
-    return new Promise((resolve, reject) => {
-      const formData = new FormData();
-      formData.append("user", this.state.owner);
-      formData.append("project", this.state.project);
-      formData.append("filename", "input/" + filename);
-      formData.append("value", value);
-      this._post("uploadFile", formData).then(function (response) {
-        resolve(response);
-      });
-    });
-  }
+  // Create a new project
+  await createImportProject(project);
+  messageLogger({
+    method: "importProject",
+    status: "Importing",
+    info: `Project '${project}' created`,
+  });
 
-  //uploads a single file to a specific folder - value is the filename
-  uploadFileToFolder(value, filename, destFolder) {
-    return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, loading: true });
-      const formData = new FormData();
-      //the binary data for the file
-      formData.append("value", value);
-      //the filename
-      formData.append("filename", filename);
-      //the folder to upload to
-      formData.append("destFolder", destFolder);
-      this._post("uploadFileToFolder", formData).then(function (response) {
-        resolve(response);
-      });
+  try {
+    // Import the planning unit file
+    const puResponse = await importZippedShapefileAsPu(zipFilename, planning_grid_name, `Imported with the project '${project}'`);
+    feature_class_name = puResponse.feature_class_name;
+    uploadId = puResponse.uploadId;
+
+    messageLogger({
+      method: "importProject",
+      status: "Importing",
+      info: "Planning grid imported",
     });
+  } catch (error) {
+    deleteProject(dialogsState.user, project, true);
+    throw error;
   }
+  
+  try {
+    // Upload all the files
+    await uploadFiles(files, project);
+    messageLogger({
+      method: "importProject",
+      status: "Importing",
+      info: "All files uploaded",
+    });
+
+    // Upgrade the project to the new version of Marxan
+    await upgradeProject(project);
+    messageLogger({
+      method: "importProject",
+      status: "Importing",
+      info: "Project updated to new version",
+    });
+
+    // Update project parameters
+    const formattedDate = new Date().toLocaleString('en-GB', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit' 
+    }).replace(',', '');
+
+    await updateProjectParams(project, {
+      DESCRIPTION: `${description} (imported from an existing Marxan project)`,
+      CREATEDATE: formattedDate,
+      OLDVERSION: "True",
+      PLANNING_UNIT_NAME: feature_class_name,
+      OUTPUTDIR: "output",
+    });
+
+    // Poll Mapbox and complete the import
+    await pollMapbox(uploadId);
+    await getPlanningUnitGrids();
+    messageLogger({
+      method: "importProject",
+      status: "Finished",
+      info: "Import complete",
+    });
+
+    // Load the project
+    await loadProject(project, dialogsState.user);
+    return "Import complete";
+  } catch (error) {
+    messageLogger({
+      method: "importProject",
+      status: "Failed",
+      info: "Import failed",
+    });
+    // Handle specific errors here if needed, like rolling back project creation, deleting files, etc.
+    throw error;
+  }
+};
+
+
+
+
+
+
+
 
   //pads a number with zeros to a specific size, e.g. pad(9,5) => 00009
   pad(num, size) {
@@ -1957,9 +1861,9 @@ const updateProtectedAmount = (mvData) => {
   //gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
   getPaintProperties(data, sum, setRenderer) {
     //build an expression to get the matching puids with different numbers of 'numbers' in the marxan results
-    var fill_color_expression = this.initialiseFillColorExpression("puid");
+    var fill_color_expression = initialiseFillColorExpression("puid");
     var fill_outline_color_expression =
-      this.initialiseFillColorExpression("puid");
+      initialiseFillColorExpression("puid");
     if (data.length > 0) {
       var color, visibleValue, value;
       //create the renderer using Joshua Tanners excellent library classybrew - available here https://github.com/tannerjt/classybrew
@@ -2020,10 +1924,8 @@ const updateProtectedAmount = (mvData) => {
     };
   }
 
-  //initialises the fill color expression for matching on attributes values
-  initialiseFillColorExpression(attribute) {
-    return ["match", ["get", attribute]];
-  }
+//initialises the fill color expression for matching on attributes values
+const initialiseFillColorExpression = (attribute) => ["match", ["get", attribute]];
 
   //renders the planning units edit layer according to the type of layer and pu status
   renderPuEditLayer() {
@@ -2509,7 +2411,7 @@ const updateProtectedAmount = (mvData) => {
       url: "mapbox://" + tileset.id,
     });
     //add the results layer
-    this.addMapLayer({
+    addMapLayer({
       id: CONSTANTS.RESULTS_LAYER_NAME,
       metadata: {
         name: "Results",
@@ -2528,7 +2430,7 @@ const updateProtectedAmount = (mvData) => {
       },
     });
     //add the planning units costs layer
-    this.addMapLayer({
+    addMapLayer({
       id: CONSTANTS.COSTS_LAYER_NAME,
       metadata: {
         name: "Planning Unit Cost",
@@ -2551,7 +2453,7 @@ const updateProtectedAmount = (mvData) => {
       resultsLayer: this.map.getLayer(CONSTANTS.RESULTS_LAYER_NAME),
     });
     //add the planning unit layer
-    this.addMapLayer({
+    addMapLayer({
       id: CONSTANTS.PU_LAYER_NAME,
       metadata: {
         name: "Planning Unit",
@@ -2571,7 +2473,7 @@ const updateProtectedAmount = (mvData) => {
       },
     });
     //add the planning units manual edit layer - this layer shows which individual planning units have had their status changed
-    this.addMapLayer({
+    addMapLayer({
       id: CONSTANTS.STATUS_LAYER_NAME,
       metadata: {
         name: "Planning Unit Status",
@@ -2631,7 +2533,7 @@ const updateProtectedAmount = (mvData) => {
 
   //adds the WDPA vector tile layer - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
   addWDPALayer() {
-    this.addMapLayer({
+    addMapLayer({
       id: CONSTANTS.WDPA_LAYER_NAME,
       metadata: {
         name: "Protected Areas",
@@ -2691,10 +2593,10 @@ const updateProtectedAmount = (mvData) => {
     //add the layer
     this.map.addLayer(mapLayer, beforeLayer);
   }
-  //centralised code to remove a layer from the maps current style
-  removeMapLayer(layerid) {
-    this.map.removeLayer(layerid);
-  }
+  
+//centralised code to remove a layer from the maps current style
+const removeMapLayer = (layerid) => this.map.removeLayer(layerid);
+
   isLayerVisible(layername) {
     return (
       this.map &&
@@ -3608,7 +3510,7 @@ const updateProtectedAmount = (mvData) => {
         "source-layer": layerName,
         paint: { "raster-opacity": 0.85 },
       };
-      this.addMapLayer(rasterLayer, beforeLayer);
+      addMapLayer(rasterLayer, beforeLayer);
       this.updateImpact(impact, { impact_layer_loaded: true });
     }
   }
@@ -4187,69 +4089,48 @@ const removeFeature = (feature) => {
       });
   }
 
-  //gets the new feature information and updates the state
-  newFeatureCreated(id) {
-    //load the interest feature from the marxan web database
-    this._get("getFeature?oid=" + id + "&format=json").then((response) => {
-      let feature = response.data[0];
-      //add the required attributes to use it in Marxan Web and update the allFeatures array
-      this.initialiseNewFeature(feature);
-      //if add to project is set then add the feature to the project, wait for the selectedFeatureIds state to be updated and then call updateSelectedFeatures
-      if (this.state.addToProject)
-        this.addFeature(feature, () => {
-          this.updateSelectedFeatures();
-        });
-    });
-  }
+//gets the new feature information and updates the state
+const newFeatureCreated = async (id) => {
+  const response = await this._get(`getFeature?oid=${id}&format=json`);
+  const feature = response.data[0];
+  initialiseNewFeature(feature); // Add the required attributes and update the allFeatures array
 
-  //adds the required attributes to use it in Marxan Web and update the allFeatures array
-  initialiseNewFeature(feature) {
-    //add the required attributes
-    addFeatureAttributes(feature);
-    //update the allFeatures array
-    this.addNewFeature(feature);
-  }
-  //adds a new feature to the allFeatures array
-  addNewFeature(feature) {
-    //update the allFeatures array
-    var featuresCopy = this.state.allFeatures;
-    featuresCopy.push(feature);
-    //sort the features alphabetically
-    featuresCopy.sort((a, b) => {
-      if (a.alias.toLowerCase() < b.alias.toLowerCase()) return -1;
-      if (a.alias.toLowerCase() > b.alias.toLowerCase()) return 1;
-      return 0;
+  // If 'addToProject' is set, add the feature to the project
+  if (dialogsState.addToProject) {
+    addFeature(feature, () => {
+      updateSelectedFeatures();
     });
-    setDialogsState(prevState => ({ ...prevState, allFeatures: featuresCopy });
   }
+};
 
-  //attempts to delete a feature - if the feature is in use in a project then it will not be deleted and the list of projects will be shown
-const deleteFeature = (feature) => {
-    this.getProjectsForFeature(feature).then((projects) => {
-      if (projects.length === 0) {
-        this._deleteFeature(feature);
-      } else {
-        this.showProjectListDialog(
-          projects,
-          "Failed to delete planning feature",
-          "The feature is used in the following projects"
-        );
-      }
-    });
-  }
-  
+
+//adds the required attributes to use it in Marxan Web and update the allFeatures array
+const initialiseNewFeature = (feature) => {
+  addFeatureAttributes(feature); // Add the required attributes to the feature
+  addNewFeature(feature); // Add the new feature to the state
+};
+
+//adds a new feature to the allFeatures array
+const addNewFeature = (feature) => {
+  const featuresCopy = [...dialogsState.allFeatures, feature]; // Get the current list of features and add new
+  // Sort the features alphabetically by alias
+  featuresCopy.sort((a, b) => a.alias.localeCompare(b.alias, undefined, { sensitivity: 'base' }));
+  setDialogsState(prevState => ({ ...prevState, allFeatures: featuresCopy }));
+};
+
+//attempts to delete a feature - if the feature is in use in a project then it will not be deleted and the list of projects will be shown
 const deleteFeature = async (feature) => {
   try {
     // Fetch projects associated with the feature
-    const projects = await this.getProjectsForFeature(feature);
+    const projects = await getProjectsForFeature(feature);
 
     // Check if there are any projects using the feature
     if (projects.length === 0) {
       // No projects using the feature, proceed with deletion
-      await this._deleteFeature(feature);
+      await _deleteFeature(feature);
     } else {
       // Projects using the feature, show dialog to the user
-      this.showProjectListDialog(
+      showProjectListDialog(
         projects,
         "Failed to delete planning feature",
         "The feature is used in the following projects"
@@ -4259,12 +4140,11 @@ const deleteFeature = async (feature) => {
     // Handle any errors that occur during the process
     console.error("Error deleting feature:", error);
     // Optionally: show error feedback to the user
-    this.setSnackBar("Failed to delete feature due to an error.");
+    setSnackBar("Failed to delete feature due to an error.");
   }
 };
 
-
-  //deletes a feature
+//deletes a feature
 const _deleteFeature = async (feature) => {
   const response = await _get(`deleteFeature?feature_name=${feature.feature_class_name}`);
   setSnackBar("Feature deleted");
@@ -4272,7 +4152,7 @@ const _deleteFeature = async (feature) => {
   removeFeatureFromAllFeatures(feature) //remove it from the allFeatures array
 }
 
-  //removes a feature from the allFeatures array
+//removes a feature from the allFeatures array
 const removeFeatureFromAllFeatures = (feature) => {
   setDialogsState(prevState => ({
     ...prevState,
@@ -4280,8 +4160,7 @@ const removeFeatureFromAllFeatures = (feature) => {
   }));
 };
 
-
-  //makes a call to get the features from the server and returns them
+//makes a call to get the features from the server and returns them
 const getFeatures = async () => await _get("getAllSpeciesData");
 
 // Gets all the features from the server and updates the state
@@ -4290,10 +4169,10 @@ const getAllFeatures = async () => {
   setDialogsState(prevState => ({ ...prevState, allFeatures: response.data }));
 }
 
-  //gets the feature ids as a set from the allFeatures array
+//gets the feature ids as a set from the allFeatures array
 const getFeatureIds = (_features) => new Set(_features.map((item) => item.id));
 
-  //refreshes the allFeatures state
+//refreshes the allFeatures state
 const refreshFeatures = async () => {
   // Fetch the latest features
   const response = await getFeatures();
@@ -4319,164 +4198,122 @@ const openFeatureMenu = (evt, feature) => setDialogsState(prevState => ({ ...pre
   
 const closeFeatureMenu = (evt) => setDialogsState(prevState => ({ ...prevState, featureMenuOpen: false }));
 
-  //hides the feature layer
+//hides the feature layer
 const hideFeatureLayer = () => {
   dialogsState.projectFeatures.forEach((feature) => {
     if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
   });
 }
 
-
-  //toggles the feature layer on the map
-  toggleFeatureLayer(feature) {
-    if (feature.tilesetid === "") {
-      this.setSnackBar(
-        "This feature does not have a tileset on Mapbox. See <a href='" +
-          CONSTANTS.ERRORS_PAGE +
-          "#the-tileset-from-source-source-was-not-found' target='blank'>here</a>"
-      );
-      return;
-    }
-    // this.closeFeatureMenu();
-    let layerName = feature.tilesetid.split(".")[1];
-    let layerId = "marxan_feature_layer_" + layerName;
-    if (this.map.getLayer(layerId)) {
-      this.removeMapLayer(layerId);
-      this.map.removeSource(layerId);
-      this.updateFeature(feature, { feature_layer_loaded: false });
-    } else {
-      //if a planning units layer for a feature is visible then we need to add the feature layer before it - first get the feature puid layer
-      var layers = this.getLayers([
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
-      ]);
-      //get the before layer
-      let beforeLayer = layers.length > 0 ? layers[0].id : "";
-      //get the paint property
-      let paintProperty, typeProperty;
-      if (feature.source !== "Imported shapefile (points)") {
-        paintProperty = {
-          "fill-color": feature.color,
-          "fill-opacity": CONSTANTS.FEATURE_LAYER_OPACITY,
-          "fill-outline-color": "rgba(0, 0, 0, 0.2)",
-        };
-        typeProperty = "fill";
-      } else {
-        paintProperty = {
-          "circle-color": feature.color,
-          "circle-opacity": CONSTANTS.FEATURE_LAYER_OPACITY,
-          "circle-stroke-color": "rgba(0, 0, 0, 0.7)",
-          "circle-radius": 3,
-        };
-        typeProperty = "circle";
-      }
-      this.addMapLayer(
-        {
-          id: layerId,
-          metadata: {
-            name: feature.alias,
-            type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-          },
-          type: typeProperty,
-          source: {
-            type: "vector",
-            url: "mapbox://" + feature.tilesetid,
-          },
-          layout: {
-            visibility: "visible",
-          },
-          "source-layer": layerName,
-          paint: paintProperty,
+//toggles the feature layer on the map
+const toggleFeatureLayer = (feature) => {
+  if (feature.tilesetid === "") {
+    setSnackBar(`This feature does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE} #the-tileset-from-source-source-was-not-found' target='blank'>here</a>`);
+    return;
+  }
+  // closeFeatureMenu();
+  const layerId = `marxan_feature_layer_${feature.tilesetid.split(".")[1]}`
+  
+  if (this.map.getLayer(layerId)) {
+    removeMapLayer(layerId);
+    this.map.removeSource(layerId);
+    updateFeature(feature, { feature_layer_loaded: false });
+  } else {
+    // If a planning units layer for a feature is visible then we need to add the feature layer before it - first get the feature puid layer
+    const layers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER]);
+    let beforeLayer = layers.length > 0 ? layers[0].id : "";
+    const paintProperty = getPaintProperty(feature);
+    const typeProperty = getTypeProperty(feature);
+    addMapLayer(
+      {
+        id: layerId,
+        metadata: {
+          name: feature.alias,
+          type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
         },
-        beforeLayer
-      ); //add it before the layer that shows the planning unit outlines for the feature
-      this.updateFeature(feature, { feature_layer_loaded: true });
-    }
+        type: typeProperty,
+        source: {
+          type: "vector",
+          url: "mapbox://" + feature.tilesetid,
+        },
+        layout: {
+          visibility: "visible",
+        },
+        "source-layer": layerName,
+        paint: paintProperty,
+      },
+      beforeLayer
+    ); //add it before the layer that shows the planning unit outlines for the feature
+    updateFeature(feature, { feature_layer_loaded: true });
   }
+}
 
-  //toggles the planning unit feature layer on the map
-  toggleFeaturePUIDLayer(feature) {
-    // this.closeFeatureMenu();
-    let layerName = "marxan_puid_" + feature.id;
-    if (this.map.getLayer(layerName)) {
-      this.removeMapLayer(layerName);
-      this.updateFeature(feature, { feature_puid_layer_loaded: false });
-    } else {
-      //get the planning units where the feature occurs
-      this._get(
-        "getFeaturePlanningUnits?user=" +
-          this.state.owner +
-          "&project=" +
-          this.state.project +
-          "&oid=" +
-          feature.id
-      ).then((response) => {
-        //ids retrieved - add the layer
-        this.addMapLayer({
-          id: layerName,
-          metadata: {
-            name: feature.alias,
-            type: CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
-            lineColor: feature.color,
-          },
-          type: "line",
-          source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
-          "source-layer": this.state.tileset.name,
-          layout: {
-            visibility: "visible",
-          },
-          paint: {
-            "line-opacity": CONSTANTS.FEATURE_PLANNING_GRID_LAYER_OPACITY,
-          },
-        });
-        //update the paint property for the layer
-        var line_color_expression = this.initialiseFillColorExpression("puid");
-        response.data.forEach((puid) => {
-          line_color_expression.push(puid, feature.color);
-        });
-        // Last value is the default, used where there is no data
-        line_color_expression.push("rgba(0,0,0,0)");
-        this.map.setPaintProperty(
-          layerName,
-          "line-color",
-          line_color_expression
-        );
-        //show the layer
-        this.showLayer(layerName);
-      });
-      this.updateFeature(feature, { feature_puid_layer_loaded: true });
-    }
+//toggles the planning unit feature layer on the map
+const toggleFeaturePUIDLayer = async (feature) => {
+  // closeFeatureMenu();
+  let layerName = `marxan_puid_${feature.id}`;
+  
+  if (this.map.getLayer(layerName)) {
+    removeMapLayer(layerName);
+    updateFeature(feature, { feature_puid_layer_loaded: false });
+  } else {
+    //get the planning units where the feature occurs
+    const response = await _get(`getFeaturePlanningUnits?user=${dialogsSate.owner}&project=${dialogsState.project}&oid=${feature.id}`)
+    
+    addMapLayer({
+      id: layerName,
+      metadata: {
+        name: feature.alias,
+        type: CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+        lineColor: feature.color,
+      },
+      type: "line",
+      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      "source-layer": dialogsState.tileset.name,
+      layout: {
+        visibility: "visible",
+      },
+      paint: {
+        "line-opacity": CONSTANTS.FEATURE_PLANNING_GRID_LAYER_OPACITY,
+      },
+    });
+    //update the paint property for the layer
+    const line_color_expression = initialiseFillColorExpression("puid");
+    
+    response.data.forEach((puid) => line_color_expression.push(puid, feature.color));
+    // Last value is the default, used where there is no data
+    line_color_expression.push("rgba(0,0,0,0)");
+    this.map.setPaintProperty(layerName, "line-color", line_color_expression);
+    //show the layer
+    showLayer(layerName);
+    updateFeature(feature, { feature_puid_layer_loaded: true });
   }
+}
 
   //removes the current feature from the project
-  removeFromProject(feature) {
-    this.closeFeatureMenu();
-    this.unselectItem(feature);
-  }
+const removeFromProject = (feature) => {
+  closeFeatureMenu();
+  unselectItem(feature);
+}
 
-  //zooms to a features extent
-  zoomToFeature(feature) {
-    this.closeFeatureMenu();
-    //transform from BOX(-174.173506487 -18.788241791,-173.86528589 -18.5190063499999) to [[-73.9876, 40.7661], [-73.9397, 40.8002]]
-    let points = feature.extent
-      .substr(4, feature.extent.length - 5)
-      .replace(/ /g, ",")
-      .split(",");
-    //get the points as numbers
-    let nums = points.map((item) => {
-      return Number(item);
-    });
-    //zoom to the feature
-    this.map.fitBounds(
-      [
-        [nums[0], nums[1]],
-        [nums[2], nums[3]],
-      ],
-      { padding: 100 }
-    );
-  }
-
-
-
+//zooms to a features extent
+const zoomToFeature = (feature) => {
+  closeFeatureMenu();
+  //transform from BOX(-174.173506487 -18.788241791,-173.86528589 -18.5190063499999) to [[-73.9876, 40.7661], [-73.9397, 40.8002]]
+  const points = feature.extent
+    .substr(4, feature.extent.length - 5)
+    .replace(/ /g, ",")
+    .split(",");
+  //get the points as numbers
+  const nums = points.map((item) => Number(item));
+  this.map.fitBounds(
+    [
+      [nums[0], nums[1]],
+      [nums[2], nums[3]],
+    ],
+    { padding: 100 }
+  );
+}
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -5526,7 +5363,7 @@ const hideFeatureLayer = () => {
           features={this.state.allFeatures}
           updateState={this.updateState.bind(this)}
           selectedCosts={this.state.selectedCosts}
-          createNewProject={this.createNewProject.bind(this)}
+          createNewProject={createNewProject}
           previewFeature={this.previewFeature.bind(this)}
         />
         <NewProjectWizardDialog
@@ -5564,7 +5401,7 @@ const hideFeatureLayer = () => {
           createNewPlanningUnitGrid={this.createNewMarinePlanningUnitGrid.bind(
             this
           )}
-          fileUpload={this.uploadFileToFolder.bind(this)}
+          fileUpload={uploadFileToFolder}
           setSnackBar={this.setSnackBar.bind(this)}
         />
         <ImportPlanningGridDialog
@@ -5574,7 +5411,7 @@ const hideFeatureLayer = () => {
             this.updateState({ importPlanningGridDialogOpen: false })
           }
           loading={this.state.loading || this.state.uploading}
-          fileUpload={this.uploadFileToFolder.bind(this)}
+          fileUpload={uploadFileToFolder}
         />
         <FeaturesDialog
           open={this.state.featuresDialogOpen}
@@ -5625,7 +5462,7 @@ const hideFeatureLayer = () => {
           }
           updateState={this.updateState.bind(this)}
           filename={this.state.featureDatasetFilename}
-          fileUpload={this.uploadFileToFolder.bind(this)}
+          fileUpload={uploadFileToFolder}
           unzipShapefile={this.unzipShapefile.bind(this)}
           getShapefileFieldnames={this.getShapefileFieldnames.bind(this)}
           deleteShapefile={this.deleteShapefile.bind(this)}
@@ -5709,7 +5546,7 @@ const hideFeatureLayer = () => {
           updateState={this.updateState.bind(this)}
           deleteCostFileThenClose={this.deleteCostFileThenClose.bind(this)}
           loading={this.state.loading}
-          fileUpload={this.uploadFileToProject.bind(this)}
+          fileUpload={uploadFileToProject}
         />
         <RunSettingsDialog
           open={this.state.settingsDialogOpen}
@@ -5757,7 +5594,7 @@ const hideFeatureLayer = () => {
           onOk={() => this.updateState({ importProjectDialogOpen: false })}
           loading={this.state.loading || this.state.uploading}
           importProject={this.importProject.bind(this)}
-          fileUpload={this.uploadFileToFolder.bind(this)}
+          fileUpload={uploadFileToFolder}
           log={this.log.bind(this)}
           setSnackBar={this.setSnackBar.bind(this)}
         />
@@ -5766,7 +5603,7 @@ const hideFeatureLayer = () => {
           onOk={() => this.updateState({ importMXWDialogOpen: false })}
           loading={this.state.loading || this.state.preprocessing}
           importMXWProject={this.importMXWProject.bind(this)}
-          fileUpload={this.uploadFileToFolder.bind(this)}
+          fileUpload={uploadFileToFolder}
           log={this.log.bind(this)}
           setSnackBar={this.setSnackBar.bind(this)}
         />
@@ -5832,12 +5669,12 @@ const hideFeatureLayer = () => {
         <Popover
           open={this.state.featureMenuOpen}
           anchorEl={this.state.menuAnchor}
-          onClose={this.closeFeatureMenu.bind(this)}
+          onClose={closeFeatureMenu.bind(this)}
           style={{ width: "307px" }}
         >
           <Menu
             style={{ width: "207px" }}
-            onMouseLeave={this.closeFeatureMenu.bind(this)}
+            onMouseLeave={closeFeatureMenu.bind(this)}
           >
             <MenuItemWithButton
               leftIcon={<Properties style={{ margin: "1px" }} />}

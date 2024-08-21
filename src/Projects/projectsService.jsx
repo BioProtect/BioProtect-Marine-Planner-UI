@@ -1,6 +1,7 @@
 // Import necessary dependencies (adjust the path as needed)
 import {
   _get,
+  _post,
   getProjectsForPlanningGrid,
   showProjectListDialog,
 } from "../App";
@@ -34,4 +35,29 @@ export const getProjectsForFeature = async (feature) => {
     `listProjectsForFeature?feature_class_id=${feature.id}`
   );
   return response.projects;
+};
+
+// Helper function to prepare form data
+const prepareFormDataNewProject = (project, user) => {
+  const formData = new FormData();
+  formData.append("user", user);
+  formData.append("project", project.name);
+  formData.append("description", project.description);
+  formData.append("planning_grid_name", project.planning_grid_name);
+  formData.append(
+    "interest_features",
+    project.features.map((item) => item.id).join(",")
+  );
+  formData.append("target_values", project.features.map(() => 17).join(","));
+  formData.append("spf_values", project.features.map(() => 40).join(","));
+
+  return formData;
+};
+
+//REST call to create a new import project from the wizard
+const createImportProject = async (project) => {
+  const formData = new FormData();
+  formData.append("user", dialogsState.user);
+  formData.append("project", project);
+  return await _post("createImportProject", formData);
 };
