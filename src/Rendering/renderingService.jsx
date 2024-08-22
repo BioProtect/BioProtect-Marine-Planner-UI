@@ -179,3 +179,100 @@ export const changeShowTopClasses = async (numClasses) => {
   // Call the async function after the state has been updated
   await rendererStateUpdated("TOPCLASSES", numClasses);
 };
+
+// Helper function to get visible value based on renderer settings
+export const getVisibleValue = (renderer, brew) => {
+  if (renderer.TOPCLASSES < renderer.NUMCLASSES) {
+    const breaks = brew.getBreaks();
+    return breaks[renderer.NUMCLASSES - renderer.TOPCLASSES + 1];
+  }
+  return 0;
+};
+
+// Helper function to update expressions based on value
+const updateExpressions = (row, value, color, visibleValue, expressions) => {
+  const [fillColorExpr, fillOutlineColorExpr] = expressions;
+  if (value >= visibleValue) {
+    fillColorExpr.push(row[1], color);
+    fillOutlineColorExpr.push(row[1], "rgba(150, 150, 150, 0.6)"); // gray outline
+  } else {
+    fillColorExpr.push(row[1], "rgba(0, 0, 0, 0)");
+    fillOutlineColorExpr.push(row[1], "rgba(0, 0, 0, 0)");
+  }
+};
+
+//initialises the fill color expression for matching on attributes values
+export const initialiseFillColorExpression = (attribute) => [
+  "match",
+  ["get", attribute],
+];
+
+//gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
+export const getPaintProperties = (data, sum, setRenderer) => {
+  // Get the matching puids with different numbers of 'numbers' in the marxan results
+  const fill_color_expression = initialiseFillColorExpression("puid");
+  const fill_outline_color_expression = initialiseFillColorExpression("puid");
+
+  if (data.length > 0) {
+    let color, visibleValue, value;
+    // Create renderer using classybrew library - https://github.com/tannerjt/classybrew
+
+    if (setRenderer) {
+      classifyData(
+        data,
+        Number(dialogsState.renderer.NUMCLASSES),
+        dialogsState.renderer.COLORCODE,
+        dialogsState.renderer.CLASSIFICATION
+      );
+    }
+
+    //if only the top n classes will be rendered then get the visible value at the boundary
+    visibleValue = getVisibleValue(dialogsState.renderer, dialogsState.brew);
+
+    // the rest service sends the data grouped by the 'number', e.g. [1,[23,34,36,43,98]],[2,[16,19]]
+    data.forEach((row) => {
+      value = row[0];
+      // For each row add the puids and the color to the expression, e.g. [35,36,37],"rgba(255, 0, 136,0.1)"
+      if (sum) {
+        // Multi-value rendering
+        color = dialogsState.brew.getColorInRange(value);
+        updateExpressions(row, value, color, visibleValue, [
+          fillColorExpression,
+          fillOutlineColorExpression,
+        ]);
+      } else {
+        // Single-value rendering
+        fillColorExpression.push(row[1], "rgba(255, 0, 136,1)");
+        fillOutlineColorExpression.push(row[1], "rgba(150, 150, 150, 0.6)"); // gray outline
+      }
+    });
+
+    // Add default color for missing data
+    fill_color_expression.push("rgba(0,0,0,0)");
+    fill_outline_color_expression.push("rgba(0,0,0,0)");
+  } else {
+    // No data case
+    return {
+      fillColor: "rgba(0, 0, 0, 0)",
+      outlineColor: "rgba(0, 0, 0, 0)",
+    };
+  }
+
+  return {
+    fillColor: fillColorExpression,
+    outlineColor: fillOutlineColorExpression,
+  };
+};
+
+export const getColorForStatus = (val) => {
+  switch (val) {
+    case 1: //The PU will be included in the initial reserve system but may or may not be in the final solution.
+      return "rgba(63, 191, 63, 1)";
+    case 2: // Locked in
+      return "rgba(63, 63, 191, 1)";
+    case 3: // Locked out
+      return "rgba(191, 63, 63, 1)";
+    default:
+      return "rgba(150, 150, 150, 0)"; // Default color
+  }
+};

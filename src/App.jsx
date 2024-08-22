@@ -97,7 +97,7 @@ import { createNewUser, updateUser, deleteUser, getUsers} from "./User/userServi
 import { getProjectList, getProjectsForFeature, prepareFormDataNewProject, createImportProject } from "./Projects/projectsService";
 import { uploadFileToFolder, uploadFiles, uploadFileToProject } from "./ImportComponents/importService";
 import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
-import { classifyData, changeRenderer, changeNumClasses, changeColorCode, changeShowTopClasses  } from "./Rendering/renderingService";
+import { classifyData, changeRenderer, changeNumClasses, changeColorCode, changeShowTopClasses, initialiseFillColorExpression, getPaintProperties, getColorForStatus} from "./Rendering/renderingService";
 
 
 //GLOBAL VARIABLES
@@ -1660,164 +1660,62 @@ const renderSolution = (data, sum) => {
   );
 }
 
-  //gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
-const getPaintProperties = (data, sum, setRenderer) => {
-  // Get the matching puids with different numbers of 'numbers' in the marxan results
-  const fill_color_expression = initialiseFillColorExpression("puid");
-  const fill_outline_color_expression = initialiseFillColorExpression("puid");
-    
-  if (data.length > 0) {
-    let color, visibleValue, value;
-    // Create renderer using classybrew library - https://github.com/tannerjt/classybrew
-    
-    if (setRenderer)
-      classifyData(
-        data,
-        Number(dialogsState.renderer.NUMCLASSES),
-        dialogsState.renderer.COLORCODE,
-        dialogsState.renderer.CLASSIFICATION
-      );
-      //if only the top n classes will be rendered then get the visible value at the boundary
-      if (dialogsState.renderer.TOPCLASSES < dialogsState.renderer.NUMCLASSES) {
-        let breaks = dialogsState.brew.getBreaks();
-        visibleValue =
-          breaks[
-            dialogsState.renderer.NUMCLASSES - dialogsState.renderer.TOPCLASSES + 1
-          ];
-      } else {
-        visibleValue = 0;
-      }
-      // the rest service sends the data grouped by the 'number', e.g. [1,[23,34,36,43,98]],[2,[16,19]]
-      data.forEach((row, index) => {
-        if (sum) {
-          //multi value rendering
-          value = row[0];
-          //for each row add the puids and the color to the expression, e.g. [35,36,37],"rgba(255, 0, 136,0.1)"
-          color = dialogsState.brew.getColorInRange(value);
-          //add the color to the expression - transparent if the value is less than the visible value
-          if (value >= visibleValue) {
-            fill_color_expression.push(row[1], color);
-            fill_outline_color_expression.push(
-              row[1],
-              "rgba(150, 150, 150, 0.6)"
-            ); //gray outline
-          } else {
-            fill_color_expression.push(row[1], "rgba(0, 0, 0, 0)");
-            fill_outline_color_expression.push(row[1], "rgba(0, 0, 0, 0)");
-          }
-        } else {
-          //single value rendering
-          fill_color_expression.push(row[1], "rgba(255, 0, 136,1)");
-          fill_outline_color_expression.push(
-            row[1],
-            "rgba(150, 150, 150, 0.6)"
-          ); //gray outline
-        }
-      });
-      // Last value is the default, used where there is no data
-      fill_color_expression.push("rgba(0,0,0,0)");
-      fill_outline_color_expression.push("rgba(0,0,0,0)");
-    } else {
-      fill_color_expression = "rgba(0, 0, 0, 0)";
-      fill_outline_color_expression = "rgba(0, 0, 0, 0)";
+//renders the planning units edit layer according to the type of layer and pu status
+const renderPuEditLayer = () => {
+  const buildExpression = (units) => {
+    if (units.length === 0) {
+      return "rgba(150, 150, 150, 0)"; // Default color when no data
     }
-    return {
-      fillColor: fill_color_expression,
-      oulineColor: fill_outline_color_expression,
-    };
-  }
 
-//initialises the fill color expression for matching on attributes values
-const initialiseFillColorExpression = (attribute) => ["match", ["get", attribute]];
+    const expression = ["match", ["get", "puid"]];
+    units.forEach((row, index) => expression.push(row[1], getColorForStatus(row[0])));
+    // Default color for planning units not explicitly mentioned
+    expression.push("rgba(150, 150, 150, 0)");
+    return expression;
+  };
 
-  //renders the planning units edit layer according to the type of layer and pu status
-  renderPuEditLayer() {
-    let expression;
-    if (this.state.planning_units.length > 0) {
-      //build an expression to get the matching puids with different statuses in the planning units data
-      expression = ["match", ["get", "puid"]];
-      // the rest service sends the data grouped by the status, e.g. [1,[23,34,36,43,98]],[2,[16,19]]
-      this.state.planning_units.forEach((row, index) => {
-        var color;
-        //get the status
-        switch (row[0]) {
-          // case 1: //The PU will be included in the initial reserve system but may or may not be in the final solution.
-          //   color = "rgba(63, 191, 63, 1)";
-          //   break;
-          case 2: //The PU is fixed in the reserve system (“locked in”). It starts in the initial reserve system and cannot be removed.
-            color = "rgba(63, 63, 191, 1)";
-            break;
-          case 3: //The PU is fixed outside the reserve system (“locked out”). It is not included in the initial reserve system and cannot be added.
-            color = "rgba(191, 63, 63, 1)";
-            break;
-          default:
-            break;
-        }
-        //add the color to the expression
-        expression.push(row[1], color);
-      });
-      // Last value is the default, used where there is no data - i.e. for all the planning units with a status of 0
-      expression.push("rgba(150, 150, 150, 0)");
-    } else {
-      //there are no statuses apart from the default 0 status so have a single renderer
-      expression = "rgba(150, 150, 150, 0)";
+  const expression = buildExpression(dialogsState.planning_units);
+
+  //set the render paint property
+  this.map.setPaintProperty(
+    CONSTANTS.STATUS_LAYER_NAME,
+    "line-color",
+    expression
+  );
+  this.map.setPaintProperty(
+    CONSTANTS.STATUS_LAYER_NAME,
+    "line-width",
+    CONSTANTS.STATUS_LAYER_LINE_WIDTH
+  );
+}
+
+//renders the planning units cost layer according to the cost for each planning unit
+const renderPuCostLayer = (cost_data) => {
+  const buildExpression = (data) => {
+    if (data.length === 0) {
+      return "rgba(150, 150, 150, 0.7)"; // Default color if no cost data
     }
-    //set the render paint property
-    this.map.setPaintProperty(
-      CONSTANTS.STATUS_LAYER_NAME,
-      "line-color",
-      expression
-    );
-    this.map.setPaintProperty(
-      CONSTANTS.STATUS_LAYER_NAME,
-      "line-width",
-      CONSTANTS.STATUS_LAYER_LINE_WIDTH
-    );
-  }
 
-  //renders the planning units cost layer according to the cost for each planning unit
-  renderPuCostLayer(cost_data) {
-    return new Promise((resolve, reject) => {
-      let expression;
-      if (cost_data.data.length > 0) {
-        //build an expression to get the matching puids with different costs
-        expression = ["match", ["get", "puid"]];
-        //iterate through the cost data and set the expressions
-        cost_data.data.forEach((row, index) => {
-          //get the branch labels, i.e. the puids for this histogram bin - they could be empty
-          if (row[1].length > 0)
-            expression.push(row[1], CONSTANTS.COST_COLORS[index]);
-        });
-        // Last value is the default
-        expression.push("rgba(150, 150, 150, 0)");
-      } else {
-        //there are no costs apart from the default 0 status so have a single renderer
-        expression = "rgba(150, 150, 150, 0.7)";
+    const expression = ["match", ["get", "puid"]];
+    data.forEach((row, index) => {
+      if (row[1].length > 0) {
+        expression.push(row[1], CONSTANTS.COST_COLORS[index]);
       }
-      //set the render paint property
-      this.map.setPaintProperty(
-        CONSTANTS.COSTS_LAYER_NAME,
-        "fill-color",
-        expression
-      );
-      //set the min/max properties in the layer as metadata
-      this.setLayerMetadata(CONSTANTS.COSTS_LAYER_NAME, {
-        min: cost_data.min,
-        max: cost_data.max,
-      });
-      //show the layer
-      this.showLayer(CONSTANTS.COSTS_LAYER_NAME);
-      resolve("Costs rendered");
     });
-  }
+    expression.push("rgba(150, 150, 150, 0)"); // Default color for missing data
+    return expression;
+  };
+  
+  const expression = buildExpression(cost_data.data);
+  this.map.setPaintProperty(CONSTANTS.COSTS_LAYER_NAME, "fill-color", expression);
+  setLayerMetadata(CONSTANTS.COSTS_LAYER_NAME, { min: cost_data.min, max: cost_data.max });
+  showLayer(CONSTANTS.COSTS_LAYER_NAME);
+  return "Costs rendered";
+}
 
-  //convenience method to get the rendered features safely and not to show and error message if the layer doesnt exist in the map style
-  getRenderedFeatures(pt, layers) {
-    let features = [];
-    if (this.map.getLayer(layers[0]))
-      features = this.map.queryRenderedFeatures(pt, { layers: layers });
-    return features;
-  }
+// Convenience method to get rendered features safely & not show error message if the layer doesnt exist in the map style
+const getRenderedFeatures = (pt, layers) => (this.map.getLayer(layers[0])) ?  this.map.queryRenderedFeatures(pt, { layers: layers }):  [];
+
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -1828,642 +1726,536 @@ const initialiseFillColorExpression = (attribute) => ["match", ["get", attribute
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 
+//instantiates the mapboxgl map
+const createMap = (url) => {
+  this.map = new mapboxgl.Map({
+    container: this.mapContainer,
+    style: url,
+    center: [0, 0],
+    zoom: 2,
+  });
+  //add event handlers for the load and error events
+  this.map.on("load", mapLoaded.bind(this));
+  this.map.on("error", mapError.bind(this));
+  //click event
+  this.map.on("click", mapClick.bind(this));
+  //style change, this includes adding/removing layers and showing/hiding layers
+  this.map.on("styledata", mapStyleChanged.bind(this));
+}
 
-  //instantiates the mapboxgl map
-  createMap(url) {
-    this.map = new mapboxgl.Map({
-      container: this.mapContainer,
-      style: url,
-      center: [0, 0],
-      zoom: 2,
-    });
-    //add event handlers for the load and error events
-    this.map.on("load", this.mapLoaded.bind(this));
-    this.map.on("error", this.mapError.bind(this));
-    //click event
-    this.map.on("click", this.mapClick.bind(this));
-    //style change, this includes adding/removing layers and showing/hiding layers
-    this.map.on("styledata", this.mapStyleChanged.bind(this));
+const mapLoaded = (e) => {
+  // this.map.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // currently full screen hides the info panel and setting position:absolute and z-index: 10000000000 doesnt work properly
+  this.map.addControl(new mapboxgl.ScaleControl());
+  this.map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+  this.map.addControl(new HomeButton());
+  //create the draw controls for the map
+  this.mapboxDrawControls = new MapboxDraw({
+    displayControlsDefault: false,
+    controls: {
+      polygon: true,
+      trash: true,
+    },
+    defaultMode: "draw_polygon",
+  });
+  this.map.on("moveend", (evt) => {
+    if (dialogsState.clumpingDialogOpen) updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
+  });
+  this.map.on("draw.create", this.polygonDrawn.bind(this));
+}
+
+const updateMapCentreAndZoom = () => setDialogsState(prevState => ({ ...prevState, mapCentre: this.map.getCenter(), mapZoom: this.map.getZoom()}));
+
+//catch all event handler for map errors
+const mapError = useCallback((e) => {
+  let message = "";
+
+  switch (e.error.message) {
+    case "Not Found":
+      message = `The tileset '${e.source.url}' was not found`;
+      break;
+    case "Bad Request":
+      message = `The tileset from source '${e.sourceId}' was not found. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='blank'>here</a>`;
+      break;
+    default:
+      message = e.error.message;
+      break;
   }
 
-  mapLoaded(e) {
-    // this.map.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // currently full screen hides the info panel and setting position:absolute and z-index: 10000000000 doesnt work properly
-    this.map.addControl(new mapboxgl.ScaleControl());
-    this.map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
-    this.map.addControl(new HomeButton());
-    //create the draw controls for the map
-    this.mapboxDrawControls = new MapboxDraw({
-      displayControlsDefault: false,
-      controls: {
-        polygon: true,
-        trash: true,
-      },
-      defaultMode: "draw_polygon",
-    });
-    this.map.on("moveend", (evt) => {
-      if (this.state.clumpingDialogOpen) this.updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
-    });
-    this.map.on("draw.create", this.polygonDrawn.bind(this));
+  if (message !== "http status 200 returned without content.") {
+    setSnackBar(`MapError: ${message}`);
+    console.error(message);
   }
+}, [setSnackBar]);
 
-  updateMapCentreAndZoom() {
+const mapClick = async (e) => {
+  //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
+  if (!dialogsState.puEditing && !this.map.getSource("mapbox-gl-draw-cold")) {
+    //get a list of the layers that we want to query for features
+    const featureLayers = getLayers([
+      CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
+      CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
+      CONSTANTS.LAYER_TYPE_PROTECTED_AREAS,
+      CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
+    ]);
+    // Get the feature layer ids, get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
+    // Set the popup point, get any planning unit features under the mouse
+    const featureLayerIds = featureLayers.map((item) => item.id);
+    const clickedFeatures = getRenderedFeatures(e.point, featureLayerIds);
+    const puFeatures = getFeaturesByLayerStartsWith(clickedFeatures, "marxan_pu_");
+    if (puFeatures.length && puFeatures[0].properties.puid){
+      await getPUData(puFeatures[0].properties.puid);
+    }
+    setDialogsState(prevState => ({ ...prevState, popup_point: e.point }));
+
+    // Get any conservation features under the mouse
+    // Might be dupliate conservation features (e.g. with GBIF data) so get a unique list of sourceLayers
+    // Get the full features data from the state.projectFeatures array
+
+    let identifyFeatures = getFeaturesByLayerStartsWith(clickedFeatures, "marxan_feature_layer_");
+    const uniqueSourceLayers = Array.from(new Set(identifyFeatures.map(item => item.sourceLayer)));   
+    identifyFeatures = uniqueSourceLayers.map(sourceLayer => 
+      dialogsState.projectFeatures.find(feature => feature.feature_class_name === sourceLayer)
+    );
+
+    //get any protected area features under the mouse
+    const identifyProtectedAreas = getFeaturesByLayerStartsWith(clickedFeatures, "marxan_wdpa_");
+    
+    //set the state to populate the identify popup
     setDialogsState(prevState => ({ ...prevState,
-      mapCentre: this.map.getCenter(),
-      mapZoom: this.map.getZoom(),
-    });
+      identifyVisible: true,
+      identifyFeatures: identifyFeatures,
+      identifyProtectedAreas: identifyProtectedAreas,
+    }));
   }
+}
 
-  //catch all event handler for map errors
-  mapError(e) {
-    var message = "";
-    switch (e.error.message) {
-      case "Not Found":
-        message = "The tileset '" + e.source.url + "' was not found";
-        break;
-      case "Bad Request":
-        message =
-          "The tileset from source '" +
-          e.sourceId +
-          "' was not found. See <a href='" +
-          CONSTANTS.ERRORS_PAGE +
-          "#the-tileset-from-source-source-was-not-found' target='blank'>here</a>";
-        break;
-      default:
-        message = e.error.message;
-        break;
+//called when layers are added/removed or shown/hidden
+const mapStyleChanged = (e) => updateLegend();
+  
+//after a layer has been added/removed/shown/hidden update the legend items
+const updateLegend = () => {
+  // Get the visible Marxan layers
+  const visibleLayers = this.map.getStyle().layers
+    .filter(layer => layer.id.startsWith("marxan_") && layer.layout.visibility === "visible");
+  setDialogsState(prevState => ({ ...prevState, visibleLayers: visibleLayers }));
+};
+
+//gets a set of features that have a layerid that starts with the passed text
+const getFeaturesByLayerStartsWith = (features, startsWith) => features.filter(item => item.layer.id.startsWith(startsWith));
+
+//gets a list of features for the planning unit
+const getPUData = async (puid) => {
+  const response = await _get(`getPUData?user=${dialogsState.owner}&project=${dialogsState.project}&puid=${puid}`);
+  if (response.data.features.length) {
+    //if there are some features for the planning unit join the ids onto the full feature data from the state.projectFeatures array
+    joinArrays(response.data.features, dialogsState.projectFeatures, "species", "id");
+  }
+  //set the state to update the identify popup
+  setDialogsState(prevState => ({ ...prevState,
+    identifyPlanningUnits: {
+      puData: response.data.pu_data,
+      features: response.data.features,
+    },
+  }));
+}
+
+//joins a set of data from one object array to another
+const joinArrays = (arr1, arr2, leftId, rightId) => {
+  return arr1.map(item1 => {
+    // Find the matching item in the second array
+    const matchingItem = arr2.find(item2 => item2[rightId] === item1[leftId]);
+    // Merge the items if a match is found
+    return matchingItem ? { ...item1, ...matchingItem } : item1;
+  });
+};
+
+//hides the identify popup
+const hideIdentifyPopup = (e) => setDialogsState(prevState => ({ ...prevState, identifyVisible: false, identifyPlanningUnits: {} }));
+
+//gets a Mapbox Style Specification JSON object from the passed ESRI style endpoint
+const getESRIStyle = async (styleUrl) => {
+  // Fetch the style JSON
+  const response = await fetch(styleUrl);
+  const style = await response.json();
+  
+  // Fetch metadata for the raw tiles
+  const TileJSON = style.sources.esri.url;
+  const metadataResponse = await fetch(TileJSON);
+  const metadata = await metadataResponse.json();
+  
+  // Construct the tiles URL
+  const tilesurl = metadata.tiles[0].startsWith("/") ? TileJSON + metadata.tiles[0] : TileJSON + "/" + metadata.tiles[0];
+  
+  // Update the style with the fetched metadata
+  style.sources.esri = {
+    type: "vector",
+    scheme: "xyz",
+    tilejson: metadata.tilejson || "2.0.0",
+    format: metadata.tileInfo?.format || "pbf",
+    maxzoom: 15,
+    tiles: [tilesurl],
+    description: metadata.description,
+    name: metadata.name,
+  };
+  return style;
+}
+
+//sets the basemap either on project load, or if the user changes it
+const setBasemap = async (basemap) => {
+  try {
+      console.log("setBasemap ", basemap);
+  setDialogsState(prevState => ({...prevState, basemap: basemap.name}));
+  // Get a valid map style
+  const style = await getValidStyle(basemap);
+  await loadMapStyle(style);
+  // Add the WDPA layer
+  addWDPASource();
+  addWDPALayer();
+  
+  // Add the planning unit layers (if a project has already been loaded)
+  if (dialogsState.tileset) {
+    addPlanningGridLayers(dialogsState.tileset);
+    
+    // Get the results, if any
+    if (dialogsState.owner) {
+      await getResults(dialogsState.owner, dialogsState.project);
     }
-    if (message !== "http status 200 returned without content.") {
-      this.setSnackBar("MapError: " + message);
-      console.error(message);
+    
+    // Turn on/off layers depending on which tab is selected
+    if (dialogsState.activeTab === "planning_units") {
+      pu_tab_active();
     }
   }
-
-  //
-  mapClick(e) {
-    //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
-    if (!this.state.puEditing && !this.map.getSource("mapbox-gl-draw-cold")) {
-      //get a list of the layers that we want to query for features
-      var featureLayers = this.getLayers([
-        CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
-        CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
-        CONSTANTS.LAYER_TYPE_PROTECTED_AREAS,
-        CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-      ]);
-      //get the feature layer ids
-      let featureLayerIds = featureLayers.map((item) => item.id);
-      //get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
-      var clickedFeatures = this.getRenderedFeatures(e.point, featureLayerIds);
-      //set the popup point
-      setDialogsState(prevState => ({ ...prevState, popup_point: e.point });
-      //get any planning unit features under the mouse
-      let planningUnitFeatures = this.getFeaturesByLayerStartsWith(
-        clickedFeatures,
-        "marxan_pu_"
-      );
-      if (
-        planningUnitFeatures.length &&
-        planningUnitFeatures[0].properties.puid
-      )
-        this.getPUData(planningUnitFeatures[0].properties.puid);
-      //get any conservation features under the mouse
-      let identifyFeatures = this.getFeaturesByLayerStartsWith(
-        clickedFeatures,
-        "marxan_feature_layer_"
-      );
-      //there may be dupliate conservation features (e.g. with GBIF data) so get a unique list of sourceLayers
-      let sourceLayers = identifyFeatures.map((item) => item.sourceLayer);
-      let uniqueSourceLayers = Array.from(new Set(sourceLayers));
-      //get the full features data from the state.projectFeatures array
-      identifyFeatures = uniqueSourceLayers.map((item) => {
-        let matchingItem = this.state.projectFeatures.filter((item2) => {
-          return item2.feature_class_name === item; //the features feature_class_name is the name of the sourcelayer in the vector tile
-        })[0];
-        return matchingItem;
-      });
-      //get any protected area features under the mouse
-      let identifyProtectedAreas = this.getFeaturesByLayerStartsWith(
-        clickedFeatures,
-        "marxan_wdpa_"
-      );
-      //set the state to populate the identify popup
-      setDialogsState(prevState => ({ ...prevState,
-        identifyVisible: true,
-        identifyFeatures: identifyFeatures,
-        identifyProtectedAreas: identifyProtectedAreas,
-      });
-    }
+  } catch (error) {
+    console.error("Error setting basemap:", error);
   }
-
-  //called when layers are added/removed or shown/hidden
-  mapStyleChanged(e) {
-    //update legend items
-    this.updateLegend();
-  }
-  //after a layer has been added/removed/shown/hidden update the legend items
-  updateLegend() {
-    let layers = this.map.getStyle().layers;
-    //get the visible marxan layers
-    let visibleLayers = layers.filter((item) => {
-      if (item.id.substr(0, 7) === "marxan_") {
-        return item.layout.visibility === "visible";
-      } else {
-        return false;
-      }
-    });
-    //set the state
-    setDialogsState(prevState => ({ ...prevState, visibleLayers: visibleLayers });
-  }
-  //gets a set of features that have a layerid that starts with the passed text
-  getFeaturesByLayerStartsWith(features, startsWith) {
-    let matchedFeatures = features.filter((item) => {
-      return item.layer.id.substr(0, startsWith.length) === startsWith;
-    });
-    return matchedFeatures;
-  }
-
-  //gets a list of features for the planning unit
-  getPUData(puid) {
-    this._get(
-      "getPUData?user=" +
-        this.state.owner +
-        "&project=" +
-        this.state.project +
-        "&puid=" +
-        puid
-    ).then((response) => {
-      if (response.data.features.length) {
-        //if there are some features for the planning unit join the ids onto the full feature data from the state.projectFeatures array
-        this.joinArrays(
-          response.data.features,
-          this.state.projectFeatures,
-          "species",
-          "id"
-        );
-      }
-      //set the state to update the identify popup
-      setDialogsState(prevState => ({ ...prevState,
-        identifyPlanningUnits: {
-          puData: response.data.pu_data,
-          features: response.data.features,
+}
+ 
+//gets the style JSON either as a valid TileJSON object or as a url to a valid TileJSON object
+const getValidStyle = async (basemap) => {
+  switch (basemap.provider) {
+    case "esri":
+      // Load the ESRI style dynamically and return the parsed TileJSON object
+      return await getESRIStyle(basemap.id);
+    case "local":
+      // Return a blank background style
+      return {
+        version: 8,
+        name: "blank",
+        sources: {
+          openmaptiles: {
+            type: "vector",
+            url: "",
+          },
         },
-      });
-    });
-  }
-
-  //joins a set of data from one object array to another
-  joinArrays(arr1, arr2, leftId, rightId) {
-    let outputArr = [];
-    arr1.forEach((item) => {
-      //get the matching item in the second array
-      let matchingItem = arr2.filter(
-        (arr2item) => arr2item[rightId] === item[leftId]
-      );
-      if (matchingItem.length)
-        outputArr.push(Object.assign(item, matchingItem[0]));
-    });
-    return outputArr;
-  }
-
-  //hides the identify popup
-  hideIdentifyPopup(e) {
-    setDialogsState(prevState => ({ ...prevState, identifyVisible: false, identifyPlanningUnits: {} });
-  }
-
-  //gets a Mapbox Style Specification JSON object from the passed ESRI style endpoint
-  getESRIStyle(styleUrl) {
-    return new Promise((resolve, reject) => {
-      fetch(styleUrl) //fetch the style json
-        .then((response) => {
-          return response.json().then((style) => {
-            // next fetch metadata for the raw tiles
-            const TileJSON = style.sources.esri.url;
-            fetch(TileJSON).then((response) => {
-              return response.json().then((metadata) => {
-                let tilesurl =
-                  metadata.tiles[0].substr(0, 1) === "/"
-                    ? TileJSON + metadata.tiles[0]
-                    : TileJSON + "/" + metadata.tiles[0];
-                style.sources.esri = {
-                  type: "vector",
-                  scheme: "xyz",
-                  tilejson: metadata.tilejson || "2.0.0",
-                  format:
-                    (metadata.tileInfo && metadata.tileInfo.format) || "pbf",
-                  /* mapbox-gl-js does not respect the indexing of esri tiles because we cache to different zoom levels depending on feature density, in rural areas 404s will still be encountered. more info: https://github.com/mapbox/mapbox-gl-js/pull/1377*/
-                  // index: metadata.tileMap ? style.sources.esri.url + '/' + metadata.tileMap : null,
-                  maxzoom: 15,
-                  tiles: [tilesurl],
-                  description: metadata.description,
-                  name: metadata.name,
-                };
-                resolve(style);
-              });
-            });
-          });
-        });
-    });
-  }
-
-  //sets the basemap either on project load, or if the user changes it
-  setBasemap(basemap) {
-    console.log("setBasemap ", basemap);
-    return new Promise((resolve, reject) => {
-      //change the state
-      setDialogsState(prevState => ({ ...prevState, basemap: basemap.name });
-      //get a valid map style
-      this.getValidStyle(basemap).then((style) => {
-        //load the style
-        this.loadMapStyle(style).then((evt) => {
-          //add the WDPA layer
-          this.addWDPASource();
-          this.addWDPALayer();
-          //add the planning unit layers (if a project has already been loaded)
-          if (this.state.tileset) {
-            this.addPlanningGridLayers(this.state.tileset);
-            //get the results, if any
-            if (this.state.owner)
-              this.getResults(this.state.owner, this.state.project);
-            //filter the wdpa vector tiles - NO LONGER USED
-            // this.filterWdpaByIucnCategory(this.state.metadata.IUCN_CATEGORY);
-            //turn on/off layers depending on which tab is selected
-            if (this.state.activeTab === "planning_units") this.pu_tab_active();
-            resolve();
-          } else {
-            resolve();
-          }
-        });
-      });
-    });
-  }
-
-  //gets the style JSON either as a valid TileJSON object or as a url to a valid TileJSON object
-  getValidStyle(basemap) {
-    return new Promise((resolve, reject) => {
-      switch (basemap.provider) {
-        case "esri":
-          //the style json will be loaded dynamically from an esri endpoint and parsed to produce a valid TileJSON object
-          this.getESRIStyle(basemap.id).then((styleJson) => {
-            resolve(styleJson);
-          });
-          break;
-        case "local":
-          //blank background
-          resolve({
-            version: 8,
-            name: "blank",
-            sources: {
-              openmaptiles: {
-                type: "vector",
-                url: "",
-              },
+        layers: [
+          {
+            id: "background",
+            type: "background",
+            paint: {
+              "background-color": "#ffffff",
             },
-            layers: [
-              {
-                id: "background",
-                type: "background",
-                paint: {
-                  "background-color": "#ffffff",
-                },
-              },
-            ],
-          });
-          break;
-        default:
-          // the style is a url - just return the url - either mapbox or jrc provided
-          resolve(CONSTANTS.MAPBOX_STYLE_PREFIX + basemap.id);
-          break;
-      }
-    });
+          },
+        ],
+      };
+    default:
+      // Return the style URL for either Mapbox or JRC
+      return CONSTANTS.MAPBOX_STYLE_PREFIX + basemap.id;
+  }
+};
+
+//loads the maps style using either a url to a Mapbox Style Specification file or a JSON object
+const loadMapStyle = async (style) => {
+  if (!this.map) {
+    createMap(style);
+  } else {
+    // Request the style
+    this.map.setStyle(style, { diff: false });
   }
 
-  //loads the maps style using either a url to a Mapbox Style Specification file or a JSON object
-  loadMapStyle(style) {
-    return new Promise((resolve, reject) => {
-      if (!this.map) {
-        this.createMap(style);
-      } else {
-        //request the style
-        this.map.setStyle(style, { diff: false });
-      }
-      this.map.on("style.load", (evt) => {
-        resolve("Map style loaded");
-      });
+  return new Promise((resolve) => {
+    this.map.on("style.load", () => {
+      resolve("Map style loaded");
     });
-  }
+  });
+};
 
-  //called when the planning grid layer has changed, i.e. the project has changed
-  changePlanningGrid(tilesetid) {
-    return new Promise((resolve, reject) => {
-      //get the tileset metadata
-      this.getMetadata(tilesetid)
-        .then((tileset) => {
-          //remove the results layer, planning unit layer etc.
-          this.removePlanningGridLayers();
-          //add the results layer, planning unit layer etc.
-          this.addPlanningGridLayers(tileset);
-          //zoom to the layers extent
-          if (tileset.bounds != null) zoomToBounds(this.map, tileset.bounds);
-          //set the state
-          setDialogsState(prevState => ({ ...prevState, tileset: tileset });
-          //filter the wdpa vector tiles as the map doesn't respond to state changes - NO LONGER USED
-          // this.filterWdpaByIucnCategory(this.state.metadata.IUCN_CATEGORY);
-          resolve();
-        })
-        .catch((error) => {
-          this.setSnackBar(error);
-          reject(error);
-        });
-    });
-  }
+const changePlanningGrid = async (tilesetid) => {
+  try {
+    // Get the tileset metadata
+    const tileset = await getMetadata(tilesetid);
 
-  //gets all of the metadata for the tileset
-  getMetadata(tilesetId) {
-    console.log("getMetadata ");
-    return new Promise((resolve, reject) => {
-      fetch(
-        "https://api.mapbox.com/v4/" +
-          tilesetId +
-          ".json?secure&access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg" // +
-        // this.state.registry.MBAT_PUBLIC
-      )
-        .then((response) => response.json())
-        .then((response2) => {
-          if (
-            response2.message != null &&
-            response2.message.indexOf("does not exist") > 0
-          ) {
-            reject(
-              "The tileset '" +
-                tilesetId +
-                "' was not found. See <a href='" +
-                CONSTANTS.ERRORS_PAGE +
-                "#the-tileset-from-source-source-was-not-found' target='blank'>here</a>"
-            );
-          } else {
-            resolve(response2);
-          }
-        });
-    });
-  }
+    // Remove the existing layers (e.g., results layer, planning unit layer)
+    removePlanningGridLayers();
 
-  //adds the results, planning unit, planning unit edit etc layers to the map
-  addPlanningGridLayers(tileset) {
-    //add the source for the planning unit layers
-    this.map.addSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME, {
-      type: "vector",
-      url: "mapbox://" + tileset.id,
-    });
-    //add the results layer
-    addMapLayer({
-      id: CONSTANTS.RESULTS_LAYER_NAME,
-      metadata: {
-        name: "Results",
-        type: CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
-      },
-      type: "fill",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
-      layout: {
-        visibility: "visible",
-      },
-      "source-layer": tileset.name,
-      paint: {
-        "fill-color": "rgba(0, 0, 0, 0)",
-        "fill-outline-color": "rgba(0, 0, 0, 0)",
-        "fill-opacity": CONSTANTS.RESULTS_LAYER_OPACITY,
-      },
-    });
-    //add the planning units costs layer
-    addMapLayer({
-      id: CONSTANTS.COSTS_LAYER_NAME,
-      metadata: {
-        name: "Planning Unit Cost",
-        type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST,
-      },
-      type: "fill",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
-      layout: {
-        visibility: "none",
-      },
-      "source-layer": tileset.name,
-      paint: {
-        "fill-color": "rgba(255, 0, 0, 0)",
-        "fill-outline-color": "rgba(150, 150, 150, 0)",
-        "fill-opacity": CONSTANTS.PU_COSTS_LAYER_OPACITY,
-      },
-    });
-    //set the result layer in app state so that it can update the Legend component and its opacity control
-    setDialogsState(prevState => ({ ...prevState,
-      resultsLayer: this.map.getLayer(CONSTANTS.RESULTS_LAYER_NAME),
-    });
-    //add the planning unit layer
-    addMapLayer({
-      id: CONSTANTS.PU_LAYER_NAME,
-      metadata: {
-        name: "Planning Unit",
-        type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
-      },
-      type: "fill",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
-      layout: {
-        visibility: "none",
-      },
-      "source-layer": tileset.name,
-      paint: {
-        "fill-color": "rgba(0, 0, 0, 0)",
-        "fill-outline-color":
-          "rgba(150, 150, 150, " + CONSTANTS.PU_LAYER_OPACITY + ")",
-        "fill-opacity": CONSTANTS.PU_LAYER_OPACITY,
-      },
-    });
-    //add the planning units manual edit layer - this layer shows which individual planning units have had their status changed
-    addMapLayer({
-      id: CONSTANTS.STATUS_LAYER_NAME,
-      metadata: {
-        name: "Planning Unit Status",
-        type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS,
-      },
-      type: "line",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
-      layout: {
-        visibility: "none",
-      },
-      "source-layer": tileset.name,
-      paint: {
-        "line-color": "rgba(150, 150, 150, 0)",
-        "line-width": CONSTANTS.STATUS_LAYER_LINE_WIDTH,
-      },
-    });
-  }
+    // Add the new planning grid layers using the obtained tileset
+    addPlanningGridLayers(tileset);
 
-  removePlanningGridLayers() {
-    let layers = this.map.getStyle().layers;
-    //get the dynamically added layers
-    let dynamicLayers = layers.filter((item) => {
-      return item.source === CONSTANTS.PLANNING_UNIT_SOURCE_NAME;
-    });
-    //remove them from the map
-    dynamicLayers.forEach((item) => {
-      this.removeMapLayer(item.id);
-    });
-    //remove the sources if present
-    if (this.map.getSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME) !== undefined)
-      this.map.removeSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME);
-  }
-
-  //adds the WDPA vector tile layer source - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
-  addWDPASource() {
-    //add the source for the wdpa
-    let yr = this.state.marxanServer.wdpa_version.substr(-4); //get the year from the wdpa_version
-    let attribution =
-      "IUCN and UNEP-WCMC (" +
-      yr +
-      "), The World Database on Protected Areas (WDPA) " +
-      this.state.marxanServer.wdpa_version +
-      ", Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>";
-    let tiles = [
-      this.state.registry.WDPA.tilesUrl +
-        "layer=marxan:" +
-        wdpaVectorTileLayer +
-        "&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}",
-    ];
-    setDialogsState(prevState => ({ ...prevState, wdpaAttribution: attribution });
-    this.map.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
-      attribution: attribution,
-      type: "vector",
-      tiles: tiles,
-    });
-  }
-
-  //adds the WDPA vector tile layer - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
-  addWDPALayer() {
-    addMapLayer({
-      id: CONSTANTS.WDPA_LAYER_NAME,
-      metadata: {
-        name: "Protected Areas",
-        type: CONSTANTS.LAYER_TYPE_PROTECTED_AREAS,
-      },
-      type: "fill",
-      source: CONSTANTS.WDPA_SOURCE_NAME,
-      "source-layer": wdpaVectorTileLayer,
-      layout: {
-        visibility: "visible",
-      },
-      // "filter": ["==", "wdpaid", -1],
-      paint: {
-        "fill-color": {
-          type: "categorical",
-          property: "marine",
-          stops: [
-            ["0", "rgb(99,148,69)"],
-            ["1", "rgb(63,127,191)"],
-            ["2", "rgb(63,127,191)"],
-          ],
-        },
-        "fill-outline-color": {
-          type: "categorical",
-          property: "marine",
-          stops: [
-            ["0", "rgb(99,148,69)"],
-            ["1", "rgb(63,127,191)"],
-            ["2", "rgb(63,127,191)"],
-          ],
-        },
-        "fill-opacity": CONSTANTS.WDPA_FILL_LAYER_OPACITY,
-      },
-    });
-    //set the wdpa layer in app state so that it can update the Legend component and its opacity control
-    setDialogsState(prevState => ({ ...prevState, wdpaLayer: this.map.getLayer(CONSTANTS.WDPA_LAYER_NAME) });
-  }
-
-  showLayer(id) {
-    if (this.map && this.map.getLayer(id))
-      this.map.setLayoutProperty(id, "visibility", "visible");
-  }
-  hideLayer(id) {
-    if (this.map && this.map.getLayer(id))
-      this.map.setLayoutProperty(id, "visibility", "none");
-  }
-  //centralised code to add a layer to the maps current style
-  addMapLayer(mapLayer, beforeLayer) {
-    //if a beforeLayer is not passed get the first symbol layer (i.e. label layer) and we will add all fill or line layers before this
-    if (!beforeLayer) {
-      var allLayers = this.map.getStyle().layers;
-      //get the symbol layers
-      let symbollayers = allLayers.filter((item) => item.type === "symbol");
-      //get the first symbol layer if there are some, otherwise an empty string
-      beforeLayer = symbollayers.length ? symbollayers[0].id : "";
+    // Zoom to the layers' extent if bounds are available
+    if (tileset.bounds) {
+      zoomToBounds(map, tileset.bounds);
     }
-    //add the layer
-    this.map.addLayer(mapLayer, beforeLayer);
+
+    // Update the state with the new tileset information
+    setDialogsState((prevState) => ({
+      ...prevState,
+      tileset: tileset,
+    }));
+
+    return tileset;
+  } catch (error) {
+    setSnackBar(error);
+    throw error;
   }
+};
+
+//gets all of the metadata for the tileset
+const getMetadata = async (tilesetId) => {
+  try {
+    const response = await fetch(
+      `https://api.mapbox.com/v4/${tilesetId}.json?secure&access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg`
+    );
+
+    const data = await response.json();
+
+    if (data.message && data.message.includes("does not exist")) {
+      throw new Error(
+        `The tileset '${tilesetId}' was not found. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='_blank'>here</a>`
+      );
+    }
+    return data;
+  } catch (error) {
+    console.error("Error fetching metadata:", error);
+    throw error;
+  }
+};
+
+//adds the results, planning unit, planning unit edit etc layers to the map
+const addPlanningGridLayers = (tileset) => {
+  //add the source for the planning unit layers
+  this.map.addSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME, {
+    type: "vector",
+    url: "mapbox://" + tileset.id,
+  });
+  
+  //add the results layer
+  addMapLayer({
+    id: CONSTANTS.RESULTS_LAYER_NAME,
+    metadata: {
+      name: "Results",
+      type: CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
+    },
+    type: "fill",
+    source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+    layout: {
+      visibility: "visible",
+    },
+    "source-layer": tileset.name,
+    paint: {
+      "fill-color": "rgba(0, 0, 0, 0)",
+      "fill-outline-color": "rgba(0, 0, 0, 0)",
+      "fill-opacity": CONSTANTS.RESULTS_LAYER_OPACITY,
+    },
+  });
+  //add the planning units costs layer
+  addMapLayer({
+    id: CONSTANTS.COSTS_LAYER_NAME,
+    metadata: {
+      name: "Planning Unit Cost",
+      type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST,
+    },
+    type: "fill",
+    source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+    layout: {
+      visibility: "none",
+    },
+    "source-layer": tileset.name,
+    paint: {
+      "fill-color": "rgba(255, 0, 0, 0)",
+      "fill-outline-color": "rgba(150, 150, 150, 0)",
+      "fill-opacity": CONSTANTS.PU_COSTS_LAYER_OPACITY,
+    },
+  });
+  //set the result layer in app state so that it can update the Legend component and its opacity control
+  setDialogsState(prevState => ({ ...prevState,
+    resultsLayer: this.map.getLayer(CONSTANTS.RESULTS_LAYER_NAME),
+  }));
+  //add the planning unit layer
+  addMapLayer({
+    id: CONSTANTS.PU_LAYER_NAME,
+    metadata: {
+      name: "Planning Unit",
+      type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
+    },
+    type: "fill",
+    source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+    layout: {
+      visibility: "none",
+    },
+    "source-layer": tileset.name,
+    paint: {
+      "fill-color": "rgba(0, 0, 0, 0)",
+      "fill-outline-color":
+        "rgba(150, 150, 150, " + CONSTANTS.PU_LAYER_OPACITY + ")",
+      "fill-opacity": CONSTANTS.PU_LAYER_OPACITY,
+    },
+  });
+  //add the planning units manual edit layer - this layer shows which individual planning units have had their status changed
+  addMapLayer({
+    id: CONSTANTS.STATUS_LAYER_NAME,
+    metadata: {
+      name: "Planning Unit Status",
+      type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS,
+    },
+    type: "line",
+    source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+    layout: {
+      visibility: "none",
+    },
+    "source-layer": tileset.name,
+    paint: {
+      "line-color": "rgba(150, 150, 150, 0)",
+      "line-width": CONSTANTS.STATUS_LAYER_LINE_WIDTH,
+    },
+  });
+}
+
+const removePlanningGridLayers = () => {
+  const sourceName = CONSTANTS.PLANNING_UNIT_SOURCE_NAME;
+  let layers = this.map.getStyle().layers;
+  // Get dynamically added layers, remove them, and then remove sources
+  const dynamicLayers = layers.filter((item) => item.source === sourceName);
+  dynamicLayers.forEach((item) => removeMapLayer(item.id));
+  if (this.map.getSource(sourceName)){
+    this.map.removeSource(sourceName);
+  }
+}
+
+//adds the WDPA vector tile layer source - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
+const addWDPASource = () => {
+  //add the source for the wdpa
+  const yr = marxanServer.wdpa_version.substr(-4); //get the year from the wdpa_version
+  const attribution =`IUCN and UNEP-WCMC (${yr}), The World Database on Protected Areas (WDPA) ${marxanServer.wdpa_version}, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
+  
+  const tiles = [
+    `${dialogsState.registry.WDPA.tilesUrl}layer=marxan:${layer}&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}`,
+  ];
+  
+  setDialogsState(prevState => ({ ...prevState, wdpaAttribution: attribution }));
+  this.map.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
+    attribution: attribution,
+    type: "vector",
+    tiles: tiles,
+  });
+}
+
+//adds the WDPA vector tile layer - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
+const addWDPALayer = () => {
+  const fills = {
+    type: "categorical",
+    property: "marine",
+    stops: [
+      ["0", "rgb(99,148,69)"],
+      ["1", "rgb(63,127,191)"],
+      ["2", "rgb(63,127,191)"],
+    ],
+  };
+  
+  addMapLayer({
+    id: CONSTANTS.WDPA_LAYER_NAME,
+    metadata: {
+      name: "Protected Areas",
+      type: CONSTANTS.LAYER_TYPE_PROTECTED_AREAS,
+    },
+    type: "fill",
+    source: CONSTANTS.WDPA_SOURCE_NAME,
+    "source-layer": wdpaVectorTileLayer,
+    layout: {
+      visibility: "visible",
+    },
+    // "filter": ["==", "wdpaid", -1],
+    paint: {
+      "fill-color": fills,
+      "fill-outline-color": fills,
+      "fill-opacity": CONSTANTS.WDPA_FILL_LAYER_OPACITY,
+    },
+  });
+  //set the wdpa layer in app state so that it can update the Legend component and its opacity control
+  setDialogsState(prevState => ({ ...prevState, wdpaLayer: this.map.getLayer(CONSTANTS.WDPA_LAYER_NAME) }));
+}
+
+const toggleLayerVisibility = (id, visibility) => {
+  if (this.map?.getLayer(id))
+    this.map.setLayoutProperty(id, "visibility", visibility);
+};
+
+const showLayer =(id) => toggleLayerVisibility(id, "visible");
+
+const hideLayer = (id) =>   toggleLayerVisibility(id, "none");
+
+//centralised code to add a layer to the maps current style
+const addMapLayer = (mapLayer, beforeLayer) => {
+  // If a beforeLayer is not passed get the first symbol layer (i.e. label layer) 
+  const layers = this.map.getStyle().layers;
+  const beforeLayer = beforeLayerId || layers.find(layer => layer.type === "symbol")?.id || null;
+
+  // Add the layer to the map
+  this.map.addLayer(mapLayer, beforeLayer);
+}
   
 //centralised code to remove a layer from the maps current style
 const removeMapLayer = (layerid) => this.map.removeLayer(layerid);
 
-  isLayerVisible(layername) {
-    return (
-      this.map &&
-      this.map.getLayer(layername) &&
-      this.map.getLayoutProperty(layername, "visibility") === "visible"
-    );
-  }
+const isLayerVisible = (layername) =>(
+  this.map &&
+  this.map.getLayer(layername) &&
+  this.map.getLayoutProperty(layername, "visibility") === "visible"
+);
 
-  //changes the layers opacity
-  changeOpacity(layerId, opacity) {
-    if (this.map) {
-      let layer = this.map.getLayer(layerId);
-      switch (layer.type) {
-        case "circle":
-          this.map.setPaintProperty(layerId, "circle-opacity", opacity);
-          break;
-        case "fill":
-          this.map.setPaintProperty(layerId, "fill-opacity", opacity);
-          break;
-        case "line":
-          this.map.setPaintProperty(layerId, "line-opacity", opacity);
-          break;
-        default:
+//changes the layers opacity
+const changeOpacity = (layerId, opacity) => {
+  if (this.map) {
+    let layer = this.map.getLayer(layerId);
+    switch (layer.type) {
+      case "circle":
+        this.map.setPaintProperty(layerId, "circle-opacity", opacity);
+        break;
+      case "fill":
+        this.map.setPaintProperty(layerId, "fill-opacity", opacity);
+        break;
+      case "line":
+        this.map.setPaintProperty(layerId, "line-opacity", opacity);
+        break;
+      default:
         // code
-      }
     }
   }
+}
 
-  //sets the metadata for the layer
-  setLayerMetadata(layerId, metadata) {
-    let layer = this.map.getLayer(layerId);
-    //merge the metadata with the existing metadata
-    if (layer) layer.metadata = Object.assign(layer.metadata, metadata);
+//sets the metadata for the layer
+const setLayerMetadata = (layerId, metadata) => {
+  const layer = this.map.getLayer(layerId);
+  if (layer) {
+    // Use spread operator to merge metadata
+    layer.metadata = { ...layer.metadata, ...metadata };
   }
+};
 
-  //gets a particular set of layers based on the layer types (layerTypes is an array of layer types)
-  getLayers(layerTypes) {
-    //get the map layers
-    var allLayers = this.map.getStyle().layers;
-    //iterate through the layers to get the matching ones
-    return allLayers.filter((layer) => {
-      if (
-        layer.hasOwnProperty("metadata") &&
-        layer.metadata.hasOwnProperty("type")
-      ) {
-        return layerTypes.includes(layer.metadata.type);
-      } else {
-        return false;
-      }
-    });
-  }
 
-  //shows/hides layers of a particular type (layerTypes is an array of layer types)
-  showHideLayerTypes(layerTypes, show) {
-    //get the marxan layers
-    let layers = this.getLayers(layerTypes);
-    layers.forEach((layer) => {
-      if (show) {
-        this.showLayer(layer.id);
-      } else {
-        this.hideLayer(layer.id);
-      }
-    });
-  }
+//gets a particular set of layers based on the layer types (layerTypes is an array of layer types)
+const getLayers = (layerTypes) => {
+  const allLayers = this.map.getStyle().layers;
+
+  return allLayers.filter(({ metadata }) => 
+    metadata?.type && layerTypes.includes(metadata.type)
+  );
+};
+
+//shows/hides layers of a particular type (layerTypes is an array of layer types)
+const showHideLayerTypes = (layerTypes, show) => {
+  const layers = getLayers(layerTypes);
+  layers.forEach((layer) => (show) ? showLayer(layer.id) : hideLayer(layer.id));
+}
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -2481,65 +2273,47 @@ const removeMapLayer = (layerid) => this.map.removeLayer(layerid);
     pu_tab_inactive();
   }
 
-  //fired when the features tab is selected
-  features_tab_active() {
-    if (this.state.activeTab !== "features") {
-      setDialogsState(prevState => ({ ...prevState, activeTab: "features" });
-      //render the sum solution map
-      // this.renderSolution(this.runMarxanResponse.ssoln, true);
-      //hide the planning unit layers
-      this.pu_tab_inactive();
-    }
+//fired when the features tab is selected
+const features_tab_active = () => {
+  if (dialogsState.activeTab !== "features") {
+    setDialogsState(prevState => ({ ...prevState, activeTab: "features" }));
+    //render the sum solution map
+    // this.renderSolution(this.runMarxanResponse.ssoln, true);
+    //hide the planning unit layers
+    pu_tab_inactive();
   }
+}
 
-  //fired when the planning unit tab is selected
-  pu_tab_active() {
-    setDialogsState(prevState => ({ ...prevState, activeTab: "planning_units" });
-    //show the planning units layer
-    this.showLayer(CONSTANTS.PU_LAYER_NAME);
-    //show the planning units status layer
-    this.showLayer(CONSTANTS.STATUS_LAYER_NAME);
-    //show the planning units costs layer
-    this.loadCostsLayer();
-    //hide the results layer
-    this.hideLayer(CONSTANTS.RESULTS_LAYER_NAME);
-    //hide the feature layer and feature puid layers
-    this.showHideLayerTypes(
-      [
-        CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
-      ],
-      false
-    );
-    //render the planning units status layer_edit layer
-    this.renderPuEditLayer(CONSTANTS.STATUS_LAYER_NAME);
-  }
+//fired when the planning unit tab is selected
+const pu_tab_active = async () => {
+  setDialogsState(prevState => ({ ...prevState, activeTab: "planning_units" }));
+  //show the planning units layer, status layer, and costs layer
+  showLayer(CONSTANTS.PU_LAYER_NAME);
+  showLayer(CONSTANTS.STATUS_LAYER_NAME);
+  await loadCostsLayer();
+  //hide the results layer, feature layer, and feature puid layers
+  hideLayer(CONSTANTS.RESULTS_LAYER_NAME);
+  showHideLayerTypes([
+      CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
+      CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+  ], false);
+  //render the planning units status layer_edit layer
+  renderPuEditLayer(CONSTANTS.STATUS_LAYER_NAME);
+}
 
-  //fired whenever another tab is selected
-  const pu_tab_inactive = () => {
-    //show the results layer
-    this.showLayer(CONSTANTS.RESULTS_LAYER_NAME);
-    //show the feature layer and feature puid layers
-    this.showHideLayerTypes(
-      [
-        CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
-      ],
-      true
-    );
-    //hide the planning units layer
-    this.hideLayer(CONSTANTS.PU_LAYER_NAME);
-    //hide the planning units edit layer
-    this.hideLayer(CONSTANTS.STATUS_LAYER_NAME);
-    //hide the planning units cost layer
-    this.hideLayer(CONSTANTS.COSTS_LAYER_NAME);
-  }
-
-  // fired when a new tab is selected
-  setActiveTab(newValue) {
-    setDialogsState(prevState => ({ ...prevState, activeResultsTab: newValue });
-  }
-
+//fired whenever another tab is selected
+const pu_tab_inactive = () => {
+  //show the results layer, eature layer, and feature puid layers
+  showLayer(CONSTANTS.RESULTS_LAYER_NAME);
+  showHideLayerTypes([
+    CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
+    CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+  ], true);
+  //hide the planning units layer, edit layer, and cost layer
+  hideLayer(CONSTANTS.PU_LAYER_NAME);
+  hideLayer(CONSTANTS.STATUS_LAYER_NAME);
+  hideLayer(CONSTANTS.COSTS_LAYER_NAME);
+}
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -2551,9 +2325,9 @@ const removeMapLayer = (layerid) => this.map.removeLayer(layerid);
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 
-  startPuEditSession() {
+const startPuEditSession = () => {
     //set the state
-    setDialogsState(prevState => ({ ...prevState, puEditing: true });
+    setDialogsState(prevState => ({ ...prevState, puEditing: true }));
     //set the cursor to a crosshair
     this.map.getCanvas().style.cursor = "crosshair";
     //add the left mouse click event to the planning unit layer
@@ -2583,7 +2357,7 @@ const removeMapLayer = (layerid) => this.map.removeLayer(layerid);
     setDialogsState(prevState => ({ ...prevState, planning_units: [] }, () => {
       //get the puids for the current iucn category
       let puids = this.getPuidsFromIucnCategory(
-        this.state.metadata.IUCN_CATEGORY
+        dialogsState.metadata.IUCN_CATEGORY
       );
       //update the planning units
       this.updatePlanningUnits([], puids);
@@ -2595,12 +2369,12 @@ const removeMapLayer = (layerid) => this.map.removeLayer(layerid);
     //initialise the form data
     let formData = new FormData();
     //add the current user
-    formData.append("user", this.state.owner);
+    formData.append("user", dialogsState.owner);
     //add the current project
-    formData.append("project", this.state.project);
+    formData.append("project", dialogsState.project);
     //add the planning unit manual exceptions
-    if (this.state.planning_units.length > 0) {
-      this.state.planning_units.forEach((item) => {
+    if (dialogsState.planning_units.length > 0) {
+      dialogsState.planning_units.forEach((item) => {
         //get the name of the status parameter
         let param_name = "status" + item[0];
         //add the planning units
@@ -2614,133 +2388,113 @@ const removeMapLayer = (layerid) => this.map.removeLayer(layerid);
   }
 
   //fired when the user left clicks on a planning unit to move its status up
-  moveStatusUp(e) {
-    this.changeStatus(e, "up");
-  }
+const moveStatusUp = (e) => changeStatus(e, "up");
 
-  //fired when the user left clicks on a planning unit to reset its status
-  resetStatus(e) {
-    this.changeStatus(e, "reset");
-  }
+//fired when the user left clicks on a planning unit to reset its status
+const resetStatus = (e) => changeStatus(e, "reset");
 
-  changeStatus(e, direction) {
-    //get the feature that the user has clicked
-    var features = this.getRenderedFeatures(e.point, [CONSTANTS.PU_LAYER_NAME]);
-    //get the featureid
-    if (features.length > 0) {
-      //get the puid
-      let puid = features[0].properties.puid;
-      //get its current status
-      let status = this.getStatusLevel(puid);
-      //get the next status level
-      let next_status = this.getNextStatusLevel(status, direction);
-      //copy the current planning unit statuses
-      let statuses = this.state.planning_units;
-      //if the planning unit is not at level 0 (in which case it will not be in the planning_units state) - then remove it from the puids array for that status
-      if (status !== 0) this.removePuidFromArray(statuses, status, puid);
-      //add it to the new status array
-      if (next_status !== 0) this.addPuidToArray(statuses, next_status, puid);
-      //set the state
-      setDialogsState(prevState => ({ ...prevState, planning_units: statuses });
-      //re-render the planning unit edit layer
-      this.renderPuEditLayer();
+const changeStatus = (e, direction) => {
+  //get the feature that the user has clicked
+  var features = getRenderedFeatures(e.point, [CONSTANTS.PU_LAYER_NAME]);
+  //get the featureid
+  if (features.length > 0) {
+    //get the puid
+    let puid = features[0].properties.puid;
+    //get its current status
+    let status = getStatusLevel(puid);
+    //get the next status level
+    let next_status = getNextStatusLevel(status, direction);
+    //copy the current planning unit statuses
+    let statuses = dialogsState.planning_units;
+    //if the planning unit is not at level 0 (in which case it will not be in the planning_units state) - then remove it from the puids array for that status
+    if (status !== 0) removePuidFromArray(statuses, status, puid);
+    //add it to the new status array
+    if (next_status !== 0) addPuidToArray(statuses, next_status, puid);
+    //set the state
+    setDialogsState(prevState => ({ ...prevState, planning_units: statuses }));
+    //re-render the planning unit edit layer
+    renderPuEditLayer();
+  }
+}
+
+const getStatusLevel = (puid) => {
+  //iterate through the planning unit statuses to see which status the clicked planning unit belongs to, i.e. 1, 2 or 3
+  let status_level = 0; //default level as the getPlanningUnits REST call only returns the planning units with non-default values
+  CONSTANTS.PLANNING_UNIT_STATUSES.forEach((item) => {
+    let planning_units = getPlanningUnitsByStatus(item);
+    if (planning_units.indexOf(puid) > -1) {
+      status_level = item;
     }
-  }
+  });
+  return status_level;
+}
 
-  getStatusLevel(puid) {
-    //iterate through the planning unit statuses to see which status the clicked planning unit belongs to, i.e. 1, 2 or 3
-    let status_level = 0; //default level as the getPlanningUnits REST call only returns the planning units with non-default values
-    CONSTANTS.PLANNING_UNIT_STATUSES.forEach((item) => {
-      let planning_units = this.getPlanningUnitsByStatus(item);
-      if (planning_units.indexOf(puid) > -1) {
-        status_level = item;
-      }
-    });
-    return status_level;
-  }
+//gets the array index position for the passed status in the planning_units state
+const getStatusPosition = (status) => dialogsState.planning_units.findIndex(item => item[0] === status);
 
-  //gets the array index position for the passed status in the planning_units state
-  getStatusPosition(status) {
-    let position = -1;
-    this.state.planning_units.forEach((item, index) => {
-      if (item[0] === status) position = index;
-    });
-    return position;
-  }
+//returns the planning units with a particular status, e.g. 1,2,3
+const getPlanningUnitsByStatus = (status) => {
+  //get the position of the status items in the this.state.planning_units
+  let position = getStatusPosition(status);
+  //get the array of planning units
+  return (position > -1) ? dialogsState.planning_units[position][1] : [];
+}
 
-  //returns the planning units with a particular status, e.g. 1,2,3
-  getPlanningUnitsByStatus(status) {
-    //get the position of the status items in the this.state.planning_units
-    let position = this.getStatusPosition(status);
-    //get the array of planning units
-    let returnValue =
-      position > -1 ? this.state.planning_units[position][1] : [];
-    return returnValue;
+//returns the next status level for a planning unit depending on the direction
+const getNextStatusLevel = (status, direction) => {
+  let nextStatus;
+  switch (status) {
+    case 0:
+      nextStatus = direction === "up" ? 3 : 0;
+      break;
+    case 1: //no longer used
+      nextStatus = direction === "up" ? 0 : 0;
+      break;
+    case 2:
+      nextStatus = direction === "up" ? 0 : 0; //used to be 1 going down
+      break;
+    case 3:
+      nextStatus = direction === "up" ? 2 : 0;
+      break;
+    default:
+      break;
   }
+  return nextStatus;
+}
 
-  //returns the next status level for a planning unit depending on the direction
-  getNextStatusLevel(status, direction) {
-    let nextStatus;
-    switch (status) {
-      case 0:
-        nextStatus = direction === "up" ? 3 : 0;
-        break;
-      case 1: //no longer used
-        nextStatus = direction === "up" ? 0 : 0;
-        break;
-      case 2:
-        nextStatus = direction === "up" ? 0 : 0; //used to be 1 going down
-        break;
-      case 3:
-        nextStatus = direction === "up" ? 2 : 0;
-        break;
-      default:
-        break;
-    }
-    return nextStatus;
+// removes in individual puid value from an array of puid statuses
+const removePuidFromArray = (statuses, status, puid) => removePuidsFromArray(statuses, status, [puid]);
+
+const addPuidToArray = (statuses, status, puid) => appPuidsToPlanningUnits(statuses, status, [puid]);
+
+//adds all the passed puids to the planning_units state
+const appPuidsToPlanningUnits = (statuses, status, puids) => {
+  //get the position of the status items in the this.state.planning_units, i.e. the index
+  const position = getStatusPosition(status);
+  if (position === -1) {
+    //create a new status and empty puid array
+    statuses.push([status, []]);
   }
+  // add the puids to the puid array ensuring that they are unique
+  statuses[position][1] = Array.from(
+    new Set(statuses[position][1].concat(puids))
+  );
+  return statuses;
+}
 
-  //removes in individual puid value from an array of puid statuses
-  removePuidFromArray(statuses, status, puid) {
-    return this.removePuidsFromArray(statuses, status, [puid]);
+//removes all the passed puids from the planning_units state
+const removePuidsFromArray = (statuses, status, puids) => {
+  //get the position of the status items in the this.state.planning_units
+  const position = getStatusPosition(status);
+  if (position > -1) {
+    let puidArray = statuses[position][1];
+    let filteredArray = puidArray.filter((item) => puids.indexOf(item) < 0);
+    statuses[position][1] = filteredArray 
+    //if there are no more items in the puid array then remove it
+    if (filteredArray.length === 0) statuses.splice(position, 1);
   }
-
-  addPuidToArray(statuses, status, puid) {
-    return this.appPuidsToPlanningUnits(statuses, status, [puid]);
-  }
-
-  //adds all the passed puids to the planning_units state
-  appPuidsToPlanningUnits(statuses, status, puids) {
-    //get the position of the status items in the this.state.planning_units, i.e. the index
-    let position = this.getStatusPosition(status);
-    if (position === -1) {
-      //create a new status and empty puid array
-      statuses.push([status, []]);
-      position = statuses.length - 1;
-    }
-    //add the puids to the puid array ensuring that they are unique
-    statuses[position][1] = Array.from(
-      new Set(statuses[position][1].concat(puids))
-    );
-    return statuses;
-  }
-
-  //removes all the passed puids from the planning_units state
-  removePuidsFromArray(statuses, status, puids) {
-    //get the position of the status items in the this.state.planning_units
-    let position = this.getStatusPosition(status);
-    if (position > -1) {
-      let puid_array = statuses[position][1];
-      let new_array = puid_array.filter((item) => {
-        return puids.indexOf(item) < 0;
-      });
-      statuses[position][1] = new_array;
-      //if there are no more items in the puid array then remove it
-      if (new_array.length === 0) statuses.splice(position, 1);
-    }
-    return statuses;
-  }
-
+  return statuses;
+}
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -2752,45 +2506,23 @@ const removeMapLayer = (layerid) => this.map.removeLayer(layerid);
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 
-  //previews the planning grid
-  previewPlanningGrid(planning_grid_metadata) {
-    setDialogsState(prevState => ({ ...prevState,
-      planning_grid_metadata: planning_grid_metadata,
-      planningGridDialogOpen: true,
-    });
-  }
+//previews the planning grid
+const previewPlanningGrid = (planning_grid_metadata) => setDialogsState(prevState => ({ 
+  ...prevState,
+  planning_grid_metadata: planning_grid_metadata,
+  planningGridDialogOpen: true,
+}));
 
-  //creates a new planning grid unit
-  createNewPlanningUnitGrid(iso3, domain, areakm2, shape) {
-    return new Promise((resolve, reject) => {
-      this.startLogging();
-      this._ws(
-        "createPlanningUnitGrid?iso3=" +
-          iso3 +
-          "&domain=" +
-          domain +
-          "&areakm2=" +
-          areakm2 +
-          "&shape=" +
-          shape,
-        this.wsMessageCallback.bind(this)
-      )
-        .then((message) => {
-          this.newPlanningGridCreated(message).then(() => {
-            this.updateState({ NewPlanningGridDialogOpen: false });
-            //websocket has finished
-            resolve(message);
-          });
-        })
-        .catch((error) => {
-          //do something
-          reject(error);
-        });
-    });
-  }
+//creates a new planning grid unit
+const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
+  startLogging();
+  const message = await _ws(`createPlanningUnitGrid?iso3=${iso3}&domain=${domain}&areakm2=${areakm2}&shape=${shape}`, wsMessageCallback);
+  await newPlanningGridCreated(message);
+  setDialogsState(prevState => ({ ...prevState, NewPlanningGridDialogOpen: false }));
+}
 
-  //creates a new planning grid unit
-  createNewMarinePlanningUnitGrid(filename, planningGridName, areakm2, shape) {
+//creates a new planning grid unit
+const createNewMarinePlanningUnitGrid = (filename, planningGridName, areakm2, shape) => {
     return new Promise((resolve, reject) => {
       this.startLogging();
       this._ws(
@@ -3287,7 +3019,7 @@ const removeMapLayer = (layerid) => this.map.removeLayer(layerid);
       this.updateImpact(impact, { impact_layer_loaded: false });
     } else {
       //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
-      var layers = this.getLayers([
+      var layers = getLayers([
         CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
       ]);
       //get the before layer
@@ -4389,7 +4121,7 @@ const zoomToFeature = (feature) => {
     //update the state
     setDialogsState(prevState => ({ ...prevState, planning_units: statuses });
     //re-render the layer
-    this.renderPuEditLayer();
+    renderPuEditLayer();
     //update the pu.dat file
     this.updatePuDatFile();
   }
@@ -4800,15 +4532,15 @@ const resetPaintProperties = () => {
   }
 
   //loads the costs layer
-  loadCostsLayer(forceReload = false) {
-    setDialogsState(prevState => ({ ...prevState, costsLoading: true });
-    this.getPlanningUnitsCostData(forceReload).then((cost_data) => {
-      this.renderPuCostLayer(cost_data).then(() => {
-        setDialogsState(prevState => ({ ...prevState, costsLoading: false });
-        //do something
-      });
+const loadCostsLayer = async (forceReload = false) => {
+  setDialogsState(prevState => ({ ...prevState, costsLoading: true });
+  this.getPlanningUnitsCostData(forceReload).then((cost_data) => {
+    renderPuCostLayer(cost_data).then(() => {
+      setDialogsState(prevState => ({ ...prevState, costsLoading: false });
+      //do something
     });
-  }
+  });
+}
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
   getPlanningUnitsCostData(forceReload) {
@@ -5105,7 +4837,7 @@ const resetPaintProperties = () => {
           resultsLayer={this.state.resultsLayer}
           wdpaLayer={this.state.wdpaLayer}
           pa_layer_visible={this.state.pa_layer_visible}
-          changeOpacity={this.changeOpacity.bind(this)}
+          changeOpacity={changeOpacity}
           userRole={this.state.userData.ROLE}
           visibleLayers={this.state.visibleLayers}
           metadata={this.state.metadata}
@@ -5128,7 +4860,7 @@ const resetPaintProperties = () => {
           identifyProtectedAreas={this.state.identifyProtectedAreas}
           identifyFeatures={this.state.identifyFeatures}
           loading={this.state.loading}
-          hideIdentifyPopup={this.hideIdentifyPopup.bind(this)}
+          hideIdentifyPopup={hideIdentifyPopup}
           reportUnits={this.state.userData.REPORTUNITS}
           metadata={this.state.metadata}
         />
@@ -5305,7 +5037,7 @@ const resetPaintProperties = () => {
           openNewPlanningGridDialog={this.openNewPlanningGridDialog.bind(this)}
           exportPlanningGrid={this.exportPlanningGrid.bind(this)}
           deletePlanningGrid={this.deletePlanningUnitGrid.bind(this)}
-          previewPlanningGrid={this.previewPlanningGrid.bind(this)}
+          previewPlanningGrid={previewPlanningGrid}
           marxanServer={this.state.marxanServer}
           fullWidth={true}
           maxWidth="false"
