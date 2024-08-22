@@ -91,10 +91,14 @@ import classyBrew from "classybrew";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
+
+// SERVICES
 import { createNewUser, updateUser, deleteUser, getUsers} from "./User/userService";
 import { getProjectList, getProjectsForFeature, prepareFormDataNewProject, createImportProject } from "./Projects/projectsService";
 import { uploadFileToFolder, uploadFiles, uploadFileToProject } from "./ImportComponents/importService";
 import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
+import { classifyData, changeRenderer, changeNumClasses, changeColorCode, changeShowTopClasses  } from "./Rendering/renderingService";
+
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -1560,49 +1564,16 @@ const importProject = async (project, description, zipFilename, files, planning_
   }
 };
 
+//pads a number with zeros to a specific size, e.g. pad(9,5) => 00009
+const pad = (num, size) => num.toString().padStart(size, '0');
 
-
-
-
-
-
-
-  //pads a number with zeros to a specific size, e.g. pad(9,5) => 00009
-  pad(num, size) {
-    var s = num + "";
-    while (s.length < size) s = "0" + s;
-    return s;
-  }
-
-  //imports a project from an mxd file
-  importMXWProject(project, description, filename) {
-    return new Promise((resolve, reject) => {
-      this.startLogging();
-      this._ws(
-        "importProject?user=" +
-          this.state.user +
-          "&project=" +
-          project +
-          "&filename=" +
-          filename +
-          "&description=" +
-          description,
-        this.wsMessageCallback.bind(this)
-      )
-        .then((message) => {
-          //websocket has finished
-          resolve(message);
-          //refresh the project features as there may be new ones
-          this.refreshFeatures();
-          //load the project
-          this.loadProject(project, this.state.user);
-        })
-        .catch((error) => {
-          //do something
-          reject(error);
-        });
-    });
-  }
+//imports a project from an mxd file
+const importMXWProject = async (project, description, filename)=> {
+  startLogging();
+  await _ws(`importProject?user=${dialogsState.user}&project=${project}&filename=${filename}&description=$description}`, wsMessageCallback);
+  refreshFeatures()
+  loadProject(project, dialogsState.user);
+}
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -1613,106 +1584,53 @@ const importProject = async (project, description, zipFilename, files, planning_
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
+//load a specific solution for the current project
+const loadSolution = async (solution) => {
+  if (solution === "Sum") {
+    updateProtectedAmount(this.runMarxanResponse.mvbest);
+    //load the sum of solutions which will already be loaded
+    renderSolution(this.runMarxanResponse.ssoln, true);
+  } else {
+    const response = await getSolution(dialogsSate.owner, dialogsSate.project, solution);
+    updateProtectedAmount(response.mv);
+    renderSolution(response.solution, false);
+  }
+}
 
-  //load a specific solution for the current project
-  loadSolution(solution) {
-    if (solution === "Sum") {
-      this.updateProtectedAmount(this.runMarxanResponse.mvbest);
-      //load the sum of solutions which will already be loaded
-      this.renderSolution(this.runMarxanResponse.ssoln, true);
-    } else {
-      this.getSolution(this.state.owner, this.state.project, solution).then(
-        (response) => {
-          this.updateProtectedAmount(response.mv);
-          this.renderSolution(response.solution, false);
-        }
-      );
+// Load a solution from another project - used in the clumping dialog - when the solution is loaded the paint properties are set on the individual maps through state changes
+const loadOtherSolution = async (user, project, solution) => {
+  const response =  await getSolution(user, project, solution)
+  const paintProperties =getPaintProperties(response.solution, false, false);
+  // Get the project that matches the project name from the this.projects property - this was set when the projectGroup was created
+  if (this.projects) {
+    const _projects = this.projects.filter((item) => item.projectName === project);
+    // Get which clump it is
+    const clump = _projects[0].clump;
+    switch (clump) {
+      case 0:
+        setDialogsState(prevState => ({ ...prevState, map0_paintProperty: paintProperties }));
+        break;
+      case 1:
+        setDialogsState(prevState => ({ ...prevState, map1_paintProperty: paintProperties }));
+        break;
+      case 2:
+        setDialogsState(prevState => ({ ...prevState, map2_paintProperty: paintProperties }));
+        break;
+      case 3:
+        setDialogsState(prevState => ({ ...prevState, map3_paintProperty: paintProperties }));
+        break;
+      case 4:
+        setDialogsState(prevState => ({ ...prevState, map4_paintProperty: paintProperties }));
+        break;
+      default:
+        break;
     }
   }
+}
 
-  //load a solution from another project - used in the clumping dialog - when the solution is loaded the paint properties are set on the individual maps through state changes
-  loadOtherSolution(user, project, solution) {
-    this.getSolution(user, project, solution).then((response) => {
-      var paintProperties = this.getPaintProperties(
-        response.solution,
-        false,
-        false
-      );
-      //get the project that matches the project name from the this.projects property - this was set when the projectGroup was created
-      if (this.projects) {
-        var _projects = this.projects.filter((item) => {
-          return item.projectName === project;
-        });
-        //get which clump it is
-        var clump = _projects[0].clump;
-        switch (clump) {
-          case 0:
-            setDialogsState(prevState => ({ ...prevState, map0_paintProperty: paintProperties });
-            break;
-          case 1:
-            setDialogsState(prevState => ({ ...prevState, map1_paintProperty: paintProperties });
-            break;
-          case 2:
-            setDialogsState(prevState => ({ ...prevState, map2_paintProperty: paintProperties });
-            break;
-          case 3:
-            setDialogsState(prevState => ({ ...prevState, map3_paintProperty: paintProperties });
-            break;
-          case 4:
-            setDialogsState(prevState => ({ ...prevState, map4_paintProperty: paintProperties });
-            break;
-          default:
-            break;
-        }
-      }
-    });
-  }
+// Gets a solution
+const getSolution = async (user, project, solution) => await _get(`getSolution?user=${user}&project=${project}&solution=${solution}`);
 
-  //gets a solution and returns a promise
-  getSolution(user, project, solution) {
-    return this._get(
-      "getSolution?user=" +
-        user +
-        "&project=" +
-        project +
-        "&solution=" +
-        solution
-    );
-  }
-
-  //gets the total number of planning units in the ssoln and outputs the statistics of the distribution to state, e.g. 2 PUs with a value of 1, 3 with a value of 2 etc.
-  getssolncount(data) {
-    let total = 0;
-    let summaryStats = [];
-    data.map((item) => {
-      summaryStats.push({ number: item[0], count: item[1].length });
-      total += item[1].length;
-      return null;
-    });
-    setDialogsState(prevState => ({ ...prevState, summaryStats: summaryStats });
-    return total;
-  }
-  //gets a sample of the data to be able to do a classification, e.g. natural breaks, jenks etc.
-  getssolnSample(data, sampleSize) {
-    let sample = [],
-      num = 0;
-    let ssolnLength = this.getssolncount(data);
-    data.map((item) => {
-      //use the ceiling function to force outliers to be in the classification, i.e. those planning units that were only selected in 1 solution
-      num = Math.ceil((item[1].length / ssolnLength) * sampleSize);
-      sample.push(Array(num).fill(item[0]));
-      return null;
-    });
-    return [].concat.apply([], sample);
-  }
-
-  //get all data from the ssoln arrays
-  getSsolnData(data) {
-    let arrays = data.map((item) => {
-      return item[1];
-    });
-    return [].concat.apply([], arrays);
-  }
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -1723,163 +1641,48 @@ const importProject = async (project, description, zipFilename, files, planning_
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
+// MOST FUNCTIONALITY MOVED TO Rendering/renderingServce.jsx
 
-  //gets the classification and colorbrewer object for doing the rendering
-  classifyData(data, numClasses, colorCode, classification) {
-    //get a sample of the data to make the renderer classification
-    let sample = this.getssolnSample(data, 1000); //samples dont work
-    // let sample = this.getSsolnData(data); //get all the ssoln data
-    //set the data
-    this.state.brew.setSeries(sample);
-    //if the colorCode is opacity then calculate the rgba values dynamically and add them to the color schemes
-    if (colorCode === "opacity") {
-      //see if we have already created a brew color scheme for opacity with NUMCLASSES
-      if (
-        this.state.brew.colorSchemes.opacity === undefined ||
-        (this.state.brew.colorSchemes.opacity &&
-          !this.state.brew.colorSchemes.opacity[this.state.renderer.NUMCLASSES])
-      ) {
-        //get a copy of the brew state
-        let brewCopy = this.state.brew;
-        let newBrewColorScheme = Array(Number(this.state.renderer.NUMCLASSES))
-          .fill("rgba(255,0,136,")
-          .map((item, index) => {
-            return item + (1 / this) * (index + 1) + ")";
-          }, this.state.renderer.NUMCLASSES);
-        //add the new color scheme
-        if (brewCopy.colorSchemes.opacity === undefined)
-          brewCopy.colorSchemes.opacity = [];
-        brewCopy.colorSchemes.opacity[this.state.renderer.NUMCLASSES] =
-          newBrewColorScheme;
-        //set the state
-        setDialogsState(prevState => ({ ...prevState, brew: brewCopy });
-      }
-    }
-    //set the color code - see the color theory section on Joshua Tanners page here https://github.com/tannerjt/classybrew - for all the available colour codes
-    this.state.brew.setColorCode(colorCode);
-    //get the maximum number of colors in this scheme
-    let colorSchemeLength = getMaxNumberOfClasses(this.state.brew, colorCode);
-    //check the color scheme supports the passed number of classes
-    if (numClasses > colorSchemeLength) {
-      //set the numClasses to the max for the color scheme
-      numClasses = colorSchemeLength;
-      //reset the renderer
-      setDialogsState(prevState => ({ ...prevState,
-        renderer: Object.assign(this.state.renderer, {
-          NUMCLASSES: numClasses,
-        }),
-      });
-    }
-    //set the number of classes
-    this.state.brew.setNumClasses(numClasses);
-    //set the classification method - one of equal_interval, quantile, std_deviation, jenks (default)
-    this.state.brew.classify(classification);
-    setDialogsState(prevState => ({ ...prevState, dataBreaks: this.state.brew.getBreaks() });
-  }
-
-  //called when the renderer state has been updated - renders the solution and saves the renderer back to the server
-  rendererStateUpdated(parameter, value) {
-    this.renderSolution(this.runMarxanResponse.ssoln, true);
-    if (this.state.userData.ROLE !== "ReadOnly")
-      this.updateProjectParameter(parameter, value);
-  }
-  //change the renderer, e.g. jenks, natural_breaks etc.
-  changeRenderer(renderer) {
-    setDialogsState(
-      {
-        renderer: Object.assign(this.state.renderer, {
-          CLASSIFICATION: renderer,
-        }),
-      },
-      () => {
-        this.rendererStateUpdated("CLASSIFICATION", renderer);
-      }
-    );
-  }
-  //change the number of classes of the renderer
-  changeNumClasses(numClasses) {
-    setDialogsState(
-      {
-        renderer: Object.assign(this.state.renderer, {
-          NUMCLASSES: numClasses,
-        }),
-      },
-      () => {
-        this.rendererStateUpdated("NUMCLASSES", numClasses);
-      }
-    );
-  }
-  //change the color code of the renderer
-  changeColorCode(colorCode) {
-    //set the maximum number of classes that can be selected in the other select boxes
-    if (this.state.renderer.NUMCLASSES > this.state.brew.getNumClasses()) {
-      setDialogsState(prevState => ({ ...prevState,
-        renderer: Object.assign(this.state.renderer, {
-          NUMCLASSES: this.state.brew.getNumClasses(),
-        }),
-      });
-    }
-    setDialogsState(
-      {
-        renderer: Object.assign(this.state.renderer, { COLORCODE: colorCode }),
-      },
-      () => {
-        this.rendererStateUpdated("COLORCODE", colorCode);
-      }
-    );
-  }
-  //change how many of the top classes only to show
-  changeShowTopClasses(numClasses) {
-    setDialogsState(
-      {
-        renderer: Object.assign(this.state.renderer, {
-          TOPCLASSES: numClasses,
-        }),
-      },
-      () => {
-        this.rendererStateUpdated("TOPCLASSES", numClasses);
-      }
-    );
-  }
-  //renders the solution - data is the REST response and sum is a flag to indicate if the data is the summed solution (true) or an individual solution (false)
-  renderSolution(data, sum) {
-    if (!data) return;
-    var paintProperties = this.getPaintProperties(data, sum, true);
-    //set the render paint property
-    this.map.setPaintProperty(
-      CONSTANTS.RESULTS_LAYER_NAME,
-      "fill-color",
-      paintProperties.fillColor
-    );
-    this.map.setPaintProperty(
-      CONSTANTS.RESULTS_LAYER_NAME,
-      "fill-outline-color",
-      paintProperties.oulineColor
-    );
-  }
+//renders the solution - data is the REST response and sum is a flag to indicate if the data is the summed solution (true) or an individual solution (false)
+const renderSolution = (data, sum) => {
+  if (!data) return;
+  const paintProperties = getPaintProperties(data, sum, true);
+  //set the render paint property
+  this.map.setPaintProperty(
+    CONSTANTS.RESULTS_LAYER_NAME,
+    "fill-color",
+    paintProperties.fillColor
+  );
+  this.map.setPaintProperty(
+    CONSTANTS.RESULTS_LAYER_NAME,
+    "fill-outline-color",
+    paintProperties.oulineColor
+  );
+}
 
   //gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
-  getPaintProperties(data, sum, setRenderer) {
-    //build an expression to get the matching puids with different numbers of 'numbers' in the marxan results
-    var fill_color_expression = initialiseFillColorExpression("puid");
-    var fill_outline_color_expression =
-      initialiseFillColorExpression("puid");
-    if (data.length > 0) {
-      var color, visibleValue, value;
-      //create the renderer using Joshua Tanners excellent library classybrew - available here https://github.com/tannerjt/classybrew
-      if (setRenderer)
-        this.classifyData(
-          data,
-          Number(this.state.renderer.NUMCLASSES),
-          this.state.renderer.COLORCODE,
-          this.state.renderer.CLASSIFICATION
-        );
+const getPaintProperties = (data, sum, setRenderer) => {
+  // Get the matching puids with different numbers of 'numbers' in the marxan results
+  const fill_color_expression = initialiseFillColorExpression("puid");
+  const fill_outline_color_expression = initialiseFillColorExpression("puid");
+    
+  if (data.length > 0) {
+    let color, visibleValue, value;
+    // Create renderer using classybrew library - https://github.com/tannerjt/classybrew
+    
+    if (setRenderer)
+      classifyData(
+        data,
+        Number(dialogsState.renderer.NUMCLASSES),
+        dialogsState.renderer.COLORCODE,
+        dialogsState.renderer.CLASSIFICATION
+      );
       //if only the top n classes will be rendered then get the visible value at the boundary
-      if (this.state.renderer.TOPCLASSES < this.state.renderer.NUMCLASSES) {
-        let breaks = this.state.brew.getBreaks();
+      if (dialogsState.renderer.TOPCLASSES < dialogsState.renderer.NUMCLASSES) {
+        let breaks = dialogsState.brew.getBreaks();
         visibleValue =
           breaks[
-            this.state.renderer.NUMCLASSES - this.state.renderer.TOPCLASSES + 1
+            dialogsState.renderer.NUMCLASSES - dialogsState.renderer.TOPCLASSES + 1
           ];
       } else {
         visibleValue = 0;
@@ -1890,7 +1693,7 @@ const importProject = async (project, description, zipFilename, files, planning_
           //multi value rendering
           value = row[0];
           //for each row add the puids and the color to the expression, e.g. [35,36,37],"rgba(255, 0, 136,0.1)"
-          color = this.state.brew.getColorInRange(value);
+          color = dialogsState.brew.getColorInRange(value);
           //add the color to the expression - transparent if the value is less than the visible value
           if (value >= visibleValue) {
             fill_color_expression.push(row[1], color);
@@ -4817,7 +4620,7 @@ const zoomToFeature = (feature) => {
     }
   }
 
-  runProjects(projects) {
+const runProjects = async (projects) => {
     //reset the counter
     this.projectsRun = 0;
     //set the intitial state
@@ -4828,7 +4631,7 @@ const zoomToFeature = (feature) => {
         (response) => {
           if (!this.checkForErrors(response, false)) {
             //run completed - get a single solution
-            this.loadOtherSolution(response.user, response.project, 1);
+            await loadOtherSolution(response.user, response.project, 1);
           }
           //increment the project counter
           this.projectsRun = this.projectsRun + 1;
@@ -4839,40 +4642,38 @@ const zoomToFeature = (feature) => {
     });
   }
 
-  rerunProjects(blmChanged, blmValues) {
-    //reset the paint properties in the clumping dialog
-    this.resetPaintProperties();
-    //if the blmValues have changed then recreate the project group and run
-    if (blmChanged) {
-      this.createProjectGroupAndRun(blmValues);
-    } else {
-      //rerun the projects
-      this.runProjects(this.projects);
-    }
+const rerunProjects = async (blmChanged, blmValues)=> {
+  //reset the paint properties in the clumping dialog
+  resetPaintProperties();
+  //if the blmValues have changed then recreate the project group and run
+  if (blmChanged) {
+    await createProjectGroupAndRun(blmValues);
+  } else {
+    //rerun the projects
+    await runProjects(this.projects);
   }
+}
 
-  setBlmValue(blmValue) {
-    var newRunParams = [],
-      value;
-    //iterate through the run parameters and update the value for the blm
-    this.state.runParams.forEach((item) => {
-      value = item.key === "BLM" ? String(blmValue) : item.value;
-      newRunParams.push({ key: item.key, value: value });
-    });
-    //update this run parameters
-    this.updateRunParams(newRunParams);
-  }
+const setBlmValue = (blmValue)=> {
+  const newRunParams = dialogsSate.runParams.map((item) => ({
+    key: item.key,
+    value: item.key === "BLM" ? String(blmValue) : item.value,
+  }));
+  
+  // Update the run parameters
+  this.updateRunParams(newRunParams);
+}
 
-  resetPaintProperties() {
-    //reset the paint properties
-    setDialogsState(prevState => ({ ...prevState,
-      map0_paintProperty: [],
-      map1_paintProperty: [],
-      map2_paintProperty: [],
-      map3_paintProperty: [],
-      map4_paintProperty: [],
-    });
-  }
+const resetPaintProperties = () => {
+  //reset the paint properties
+  setDialogsState(prevState => ({ ...prevState,
+    map0_paintProperty: [],
+    map1_paintProperty: [],
+    map2_paintProperty: [],
+    map3_paintProperty: [],
+    map4_paintProperty: [],
+  }));
+}
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -5293,7 +5094,7 @@ const zoomToFeature = (feature) => {
           open={this.state.resultsPanelOpen}
           preprocessing={this.state.preprocessing}
           solutions={this.state.solutions}
-          loadSolution={this.loadSolution.bind(this)}
+          loadSolution={loadSolution}
           openClassificationDialog={this.openClassificationDialog.bind(this)}
           brew={this.state.brew}
           messages={this.state.logMessages}
@@ -5564,10 +5365,10 @@ const zoomToFeature = (feature) => {
           onCancel={this.closeClassificationDialog.bind(this)}
           loading={this.state.loading}
           renderer={this.state.renderer}
-          changeColorCode={this.changeColorCode.bind(this)}
-          changeRenderer={this.changeRenderer.bind(this)}
-          changeNumClasses={this.changeNumClasses.bind(this)}
-          changeShowTopClasses={this.changeShowTopClasses.bind(this)}
+          changeColorCode={changeColorCode}
+          changeRenderer={changeRenderer}
+          changeNumClasses={changeNumClasses}
+          changeShowTopClasses={changeShowTopClasses}
           summaryStats={this.state.summaryStats}
           brew={this.state.brew}
           dataBreaks={this.state.dataBreaks}
