@@ -479,7 +479,7 @@ const validateUser = async (user, password) => {
   }, [setSnackBar]);
 
   //called when any websocket message is received - this logic removes duplicate messages
-  const wsMessageCallback = (message) =>  {
+  const wsMessageCallback = async (message) =>  {
     //dont log any clumping projects
     if (message.user === "_clumping") return;
     //log the message
@@ -495,7 +495,7 @@ const validateUser = async (user, password) => {
       case "FeatureCreated":
         //remove all preprocessing messages
         removeMessageFromLog("Preprocessing");
-        newFeatureCreated(message.id);
+        await newFeatureCreated(message.id);
         break;
       case "Finished": //from the close method of all MarxanWebSocketHandler subclasses
         //reset the pid
@@ -703,7 +703,7 @@ const changeEmail = (value) => setDialogsState(prevState => ({ ...prevState, res
   //the user is validated so login
 const login = async () => {
   try {
-    const response = await _get(`getUser?user=${this.state.user}`);
+    const response = await _get(`getUser?user=${dialogsState.user}`);
     setDialogsState({
       userData: response.userData,
       unauthorisedMethods: response.unauthorisedMethods,
@@ -1457,7 +1457,7 @@ const updateProtectedAmount = (mvData) => {
   });
 
   // Update state with the updated features
-  this.setFeaturesState(updatedFeatures);
+  setFeaturesState(updatedFeatures);
 };
 
 
@@ -1735,12 +1735,12 @@ const createMap = (url) => {
     zoom: 2,
   });
   //add event handlers for the load and error events
-  this.map.on("load", mapLoaded.bind(this));
-  this.map.on("error", mapError.bind(this));
+  this.map.on("load", mapLoaded);
+  this.map.on("error", mapError);
   //click event
-  this.map.on("click", mapClick.bind(this));
+  this.map.on("click", mapClick);
   //style change, this includes adding/removing layers and showing/hiding layers
-  this.map.on("styledata", mapStyleChanged.bind(this));
+  this.map.on("styledata", mapStyleChanged);
 }
 
 const mapLoaded = (e) => {
@@ -1760,7 +1760,7 @@ const mapLoaded = (e) => {
   this.map.on("moveend", (evt) => {
     if (dialogsState.clumpingDialogOpen) updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
   });
-  this.map.on("draw.create", this.polygonDrawn.bind(this));
+  this.map.on("draw.create", polygonDrawn);
 }
 
 const updateMapCentreAndZoom = () => setDialogsState(prevState => ({ ...prevState, mapCentre: this.map.getCenter(), mapZoom: this.map.getZoom()}));
@@ -2267,11 +2267,11 @@ const showHideLayerTypes = (layerTypes, show) => {
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 
-  //fired when the projects tab is selected
-  const project_tab_active = () => {
-    setDialogsState(prevState => ({ ...prevState, activeTab: "project" }));
-    pu_tab_inactive();
-  }
+//fired when the projects tab is selected
+const project_tab_active = () => {
+  setDialogsState(prevState => ({ ...prevState, activeTab: "project" }));
+  pu_tab_inactive();
+}
 
 //fired when the features tab is selected
 const features_tab_active = () => {
@@ -2331,63 +2331,51 @@ const startPuEditSession = () => {
     //set the cursor to a crosshair
     this.map.getCanvas().style.cursor = "crosshair";
     //add the left mouse click event to the planning unit layer
-    this.onClickRef = this.moveStatusUp.bind(this); //using bind creates a new function instance so we need to get a reference to that to be able to remove it later
+    this.onClickRef = moveStatusUp; //using bind creates a new function instance so we need to get a reference to that to be able to remove it later
     this.map.on("click", CONSTANTS.PU_LAYER_NAME, this.onClickRef);
     //add the mouse right click event to the planning unit layer
-    this.onContextMenu = this.resetStatus.bind(this); //using bind creates a new function instance so we need to get a reference to that to be able to remove it later
+    this.onContextMenu = resetStatus; //using bind creates a new function instance so we need to get a reference to that to be able to remove it later
     this.map.on("contextmenu", CONSTANTS.PU_LAYER_NAME, this.onContextMenu);
   }
 
-  stopPuEditSession() {
-    //set the state
-    setDialogsState(prevState => ({ ...prevState, puEditing: false });
-    //reset the cursor
-    this.map.getCanvas().style.cursor = "pointer";
-    //remove the mouse left click event
-    this.map.off("click", CONSTANTS.PU_LAYER_NAME, this.onClickRef);
-    //remove the mouse right click event
-    this.map.off("contextmenu", CONSTANTS.PU_LAYER_NAME, this.onContextMenu);
-    //update the pu.dat file
-    this.updatePuDatFile();
-  }
+const stopPuEditSession = () => {
+  //set the state
+  setDialogsState(prevState => ({ ...prevState, puEditing: false }));
+  //reset the cursor
+  this.map.getCanvas().style.cursor = "pointer";
+  //remove the mouse left click event
+  this.map.off("click", CONSTANTS.PU_LAYER_NAME, onClickRef);
+  //remove the mouse right click event
+  this.map.off("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenu);
+  //update the pu.dat file
+  updatePuDatFile();
+}
 
-  //clears all of the manual edits from the pu edit layer (except the protected area units)
-  clearManualEdits() {
-    //clear all the planning unit statuses
-    setDialogsState(prevState => ({ ...prevState, planning_units: [] }, () => {
-      //get the puids for the current iucn category
-      let puids = this.getPuidsFromIucnCategory(
-        dialogsState.metadata.IUCN_CATEGORY
-      );
-      //update the planning units
-      this.updatePlanningUnits([], puids);
-    });
-  }
+//clears all of the manual edits from the pu edit layer (except the protected area units)
+const clearManualEdits = () => {
+  // Clear all the planning unit statuses
+  setDialogsState(prevState => ({ ...prevState, planning_units: [] }));
+  // Get the puids for the current IUCN category
+  const puids = getPuidsFromIucnCategory(dialogsState.metadata.IUCN_CATEGORY);
+  // Update the planning units
+  updatePlanningUnits([], puids);
+};
 
-  //sends a list of puids that should be excluded from the run to upddate the pu.dat file
-  updatePuDatFile() {
-    //initialise the form data
-    let formData = new FormData();
-    //add the current user
-    formData.append("user", dialogsState.owner);
-    //add the current project
-    formData.append("project", dialogsState.project);
-    //add the planning unit manual exceptions
-    if (dialogsState.planning_units.length > 0) {
-      dialogsState.planning_units.forEach((item) => {
-        //get the name of the status parameter
-        let param_name = "status" + item[0];
-        //add the planning units
-        formData.append(param_name, item[1]);
-      });
-    }
-    //post to the server
-    this._post("updatePUFile", formData).then((response) => {
-      //do something
-    });
-  }
+//sends a list of puids that should be excluded from the run to upddate the pu.dat file
+const updatePuDatFile = async () => {
+  //initialise the form data
+  let formData = new FormData();
+  formData.append("user", dialogsState.owner);
+  formData.append("project", dialogsState.project);
+  //add the planning unit manual exceptions
+  if (dialogsState.planning_units.length > 0) {
+    dialogsState.planning_units.forEach((item) => formData.append(`status${item[0]}`, item[1]));
+  }  
+  //post to the server
+  await _post("updatePUFile", formData);
+}
 
-  //fired when the user left clicks on a planning unit to move its status up
+//fired when the user left clicks on a planning unit to move its status up
 const moveStatusUp = (e) => changeStatus(e, "up");
 
 //fired when the user left clicks on a planning unit to reset its status
@@ -2398,15 +2386,13 @@ const changeStatus = (e, direction) => {
   var features = getRenderedFeatures(e.point, [CONSTANTS.PU_LAYER_NAME]);
   //get the featureid
   if (features.length > 0) {
-    //get the puid
-    let puid = features[0].properties.puid;
-    //get its current status
-    let status = getStatusLevel(puid);
-    //get the next status level
-    let next_status = getNextStatusLevel(status, direction);
+    //get the puid, its current status, and next status level
+    const puid = features[0].properties.puid;
+    const status = getStatusLevel(puid);
+    const next_status = getNextStatusLevel(status, direction);
     //copy the current planning unit statuses
-    let statuses = dialogsState.planning_units;
-    //if the planning unit is not at level 0 (in which case it will not be in the planning_units state) - then remove it from the puids array for that status
+    const statuses = [...dialogsState.planning_units];
+    // If planning unit is not level 0 (in which case it will not be in the planning_units state) - remove it from the puids array for that status
     if (status !== 0) removePuidFromArray(statuses, status, puid);
     //add it to the new status array
     if (next_status !== 0) addPuidToArray(statuses, next_status, puid);
@@ -2419,14 +2405,10 @@ const changeStatus = (e, direction) => {
 
 const getStatusLevel = (puid) => {
   //iterate through the planning unit statuses to see which status the clicked planning unit belongs to, i.e. 1, 2 or 3
-  let status_level = 0; //default level as the getPlanningUnits REST call only returns the planning units with non-default values
-  CONSTANTS.PLANNING_UNIT_STATUSES.forEach((item) => {
-    let planning_units = getPlanningUnitsByStatus(item);
-    if (planning_units.indexOf(puid) > -1) {
-      status_level = item;
-    }
-  });
-  return status_level;
+  return (
+    CONSTANTS.PLANNING_UNIT_STATUSES.find((status) => 
+      getPlanningUnitsByStatus(status).includes(puid)
+    ) || 0)
 }
 
 //gets the array index position for the passed status in the planning_units state
@@ -2434,7 +2416,7 @@ const getStatusPosition = (status) => dialogsState.planning_units.findIndex(item
 
 //returns the planning units with a particular status, e.g. 1,2,3
 const getPlanningUnitsByStatus = (status) => {
-  //get the position of the status items in the this.state.planning_units
+  //get the position of the status items in the dialogsState.planning_units
   let position = getStatusPosition(status);
   //get the array of planning units
   return (position > -1) ? dialogsState.planning_units[position][1] : [];
@@ -2469,7 +2451,7 @@ const addPuidToArray = (statuses, status, puid) => appPuidsToPlanningUnits(statu
 
 //adds all the passed puids to the planning_units state
 const appPuidsToPlanningUnits = (statuses, status, puids) => {
-  //get the position of the status items in the this.state.planning_units, i.e. the index
+  //get the position of the status items in the dialogsState.planning_units, i.e. the index
   const position = getStatusPosition(status);
   if (position === -1) {
     //create a new status and empty puid array
@@ -2484,7 +2466,7 @@ const appPuidsToPlanningUnits = (statuses, status, puids) => {
 
 //removes all the passed puids from the planning_units state
 const removePuidsFromArray = (statuses, status, puids) => {
-  //get the position of the status items in the this.state.planning_units
+  //get the position of the status items in the dialogsState.planning_units
   const position = getStatusPosition(status);
   if (position > -1) {
     let puidArray = statuses[position][1];
@@ -2522,291 +2504,215 @@ const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
 }
 
 //creates a new planning grid unit
-const createNewMarinePlanningUnitGrid = (filename, planningGridName, areakm2, shape) => {
-    return new Promise((resolve, reject) => {
-      this.startLogging();
-      this._ws(
-        "createMarinePlanningUnitGrid?filename=" +
-          filename +
-          "&planningGridName=" +
-          planningGridName +
-          "&areakm2=" +
-          areakm2 +
-          "&shape=" +
-          shape,
-        this.wsMessageCallback.bind(this)
-      )
-        .then((message) => {
-          this.newMarinePlanningGridCreated(message).then(() => {
-            this.updateState({ NewMarinePlanningGridDialogOpen: false });
-            //websocket has finished
-            resolve(message);
-          });
-        })
-        .catch((error) => {
-          //do something
-          reject(error);
-        });
-    });
-  }
+const createNewMarinePlanningUnitGrid = async (filename, planningGridName, areakm2, shape) => {
+  startLogging();
+  const message = await _ws(`createMarinePlanningUnitGrid?filename=${filename}&planningGridName=${planningGridName}&areakm2=${areakm2}&shape=${shape}`, wsMessageCallback)
+  await newMarinePlanningGridCreated(message);
+  setDialogsState(prevState => ({ ...prevState, NewMarinePlanningGridDialogOpen: false }));
+}
 
-  //imports a zipped shapefile as a new planning grid
-  importPlanningUnitGrid(zipFilename, alias, description) {
-    return new Promise((resolve, reject) => {
-      this.startLogging();
-     messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Started",
-        info: "Importing planning grid..",
-      });
-      this.importZippedShapefileAsPu(zipFilename, alias, description)
-        .then((response) => {
-         messageLogger({
-            method: "importPlanningUnitGrid",
-            status: "Finished",
-            info: response.info,
-          });
-          this.newPlanningGridCreated(response).then(() => {
-            this.updateState({ importPlanningGridDialogOpen: false });
-          });
-        })
-        .catch((error) => {
-          //importZippedShapefileAsPu error
-          this.deletePlanningUnitGrid(alias, true);
-         messageLogger({
-            method: "importPlanningUnitGrid",
-            status: "Finished",
-            error: error,
-          });
-          reject(error);
-        });
+//imports a zipped shapefile as a new planning grid
+const importPlanningUnitGrid = async (zipFilename, alias, description) => {
+  try {
+    startLogging();
+    messageLogger({
+      method: "importPlanningUnitGrid",
+      status: "Started",
+      info: "Importing planning grid..",
     });
-  }
-
-  //called when a new planning grid has been created
-  newPlanningGridCreated(response) {
-    return new Promise((resolve, reject) => {
-      //start polling to see when the upload is done
-      this.pollMapbox(response.uploadId).then((response) => {
-        //update the planning unit items
-        this.getPlanningUnitGrids();
-        resolve("Planning grid created");
-      });
+    const response = await importZippedShapefileAsPu(zipFilename, alias, description)
+    messageLogger({
+      method: "importPlanningUnitGrid",
+      status: "Finished",
+      info: response.info,
     });
+    await newPlanningGridCreated(response);
+    setDialogsState(prevState => ({ ...prevState, importPlanningGridDialogOpen: false }));
+  } catch (error) {
+    deletePlanningUnitGrid(alias, true);
+    messageLogger({
+      method: "importPlanningUnitGrid",
+      status: "Finished",
+      error: error,
+    });
+    throw error;
   }
+}
 
-  //deletes a planning unit grid
-  deletePlanningUnitGrid(feature_class_name, silent = false) {
-    if (silent) {
-      //used to roll back failed imports of planning grids
-      this.deletePlanningGrid(feature_class_name, true);
+//called when a new planning grid has been created
+const newPlanningGridCreated = (response) => {
+  await pollMapbox(response.uploadId);
+  await getPlanningUnitGrids();
+}
+
+//deletes a planning unit grid
+const deletePlanningUnitGrid = async (feature_class_name, silent = false) => {
+  if (silent) {
+    //used to roll back failed imports of planning grids
+    await deletePlanningGrid(feature_class_name, true);
+  } else {
+    //get a list of the projects for the planning grid
+    const projects = await getProjectsForPlanningGrid(feature_class_name);
+    //if the planning grid is not being used then delete it
+    if (projects.length === 0) {
+      await deletePlanningGrid(feature_class_name, false);
     } else {
-      //get a list of the projects for the planning grid
-      this.getProjectsForPlanningGrid(feature_class_name).then((projects) => {
-        //if the planning grid is not being used then delete it
-        if (projects.length === 0) {
-          this.deletePlanningGrid(feature_class_name, false);
-        } else {
-          //show the projects list dialog
-          this.showProjectListDialog(
-            projects,
-            "Failed to delete planning grid",
-            "The planning grid is used in the following projects"
-          );
-        }
-      });
+      //show the projects list dialog
+      showProjectListDialog(
+        projects,
+        "Failed to delete planning grid",
+        "The planning grid is used in the following projects"
+      );
     }
   }
+}
 
-  //deletes a planning grid
-  deletePlanningGrid(feature_class_name, silent) {
-    this._get("deletePlanningUnitGrid?planning_grid_name=" + feature_class_name)
-      .then((response) => {
-        //update the planning unit grids
-        this.getPlanningUnitGrids();
-        this.setSnackBar(response.info, silent);
-      })
-      .catch((error) => {
-        //additional stuff
-      });
-  }
+//deletes a planning grid
+const deletePlanningGrid = async (feature_class_name, silent) => {
+  const response = await _get(`deletePlanningUnitGrid?planning_grid_name=${feature_class_name}`);
+  //update the planning unit grids
+  await getPlanningUnitGrids();
+  setSnackBar(response.info, silent);
+}
 
-  //exports a planning grid to a zipped shapefile
-  exportPlanningGrid(feature_class_name) {
-    return new Promise((resolve, reject) => {
-      this._get("exportPlanningUnitGrid?name=" + feature_class_name)
-        .then((response) => {
-          resolve(
-            this.state.marxanServer.endpoint + "exports/" + response.filename
-          );
-        })
-        .catch((error) => {
-          reject();
-        });
-    });
+//exports a planning grid to a zipped shapefile
+const exportPlanningGrid = async (feature_class_name) => {
+  try {
+    const response = await _get(`exportPlanningUnitGrid?name=${feature_class_name}`);
+    return `${dialogsState.marxanServer.endpoint}exports/${response.filename}`;
+  } catch (error) {
+    throw new Error("Failed to export planning grid");
   }
+}
 
-  //gets a list of projects that use a particular planning grid
-  getProjectsForPlanningGrid(feature_class_name) {
-    return new Promise((resolve, reject) => {
-      //get a list of the projects for the planning grid
-      this._get(
-        "listProjectsForPlanningGrid?feature_class_name=" + feature_class_name
-      ).then((response) => {
-        resolve(response.projects);
-      });
-    });
-  }
 
-  getCountries() {
-    this._get("getCountries").then((response) => {
-      setDialogsState(prevState => ({ ...prevState, countries: response.records });
-    });
-  }
+//gets a list of projects that use a particular planning grid
+const getProjectsForPlanningGrid = async (feature_class_name) => await _get(`listProjectsForPlanningGrid?feature_class_name=${feature_class_name}`);
 
-  //uploads the named feature class to mapbox on the server
-  uploadToMapBox(feature_class_name, mapbox_layer_name) {
-    return new Promise((resolve, reject) => {
-      this._get(
-        "uploadTilesetToMapBox?feature_class_name=" +
-          feature_class_name +
-          "&mapbox_layer_name=" +
-          mapbox_layer_name,
-        300000
-      )
-        .then((response) => {
-          setDialogsState(prevState => ({ ...prevState, loading: true });
-          //poll mapbox to see when the upload has finished
-          this.pollMapbox(response.uploadid).then((response2) => {
-            resolve(response2);
-          });
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
+const getCountries= async () =>  {
+  const response = await _get("getCountries")
+  setDialogsState(prevState => ({ ...prevState, countries: response.records }));
+}
 
-  //polls mapbox to see when an upload has finished - returns as promise
-  pollMapbox(uploadid) {
-    setDialogsState(prevState => ({ ...prevState, uploading: true });
-   messageLogger({ info: "Uploading to Mapbox..", status: "Uploading" });
-    return new Promise((resolve, reject) => {
-      if (uploadid === "0") {
-       messageLogger({
-          info: "Tileset already exists on Mapbox",
-          status: "UploadComplete",
-        });
-        //reset state
-        setDialogsState(prevState => ({ ...prevState, uploading: false });
-        resolve("Uploaded to Mapbox");
-      } else {
-        let timer = setInterval(() => {
-          console.log(
-            "sk.eyJ1IjoiYmxpc2h0ZW4iLCJhIjoiY2piNm1tOGwxMG9lajMzcXBlZDR4aWVjdiJ9.Z1Jq4UAgGpXukvnUReLO1g ",
-            this.state.registry.MBAT ===
-              "sk.eyJ1IjoiYmxpc2h0ZW4iLCJhIjoiY2piNm1tOGwxMG9lajMzcXBlZDR4aWVjdiJ9.Z1Jq4UAgGpXukvnUReLO1g"
-          );
-          fetch(
-            "https://api.mapbox.com/uploads/v1/" +
-              CONSTANTS.MAPBOX_USER +
-              "/" +
-              uploadid +
-              "?access_token=" +
-              this.state.registry.MBAT
-            // should be this - sk.eyJ1IjoiYmxpc2h0ZW4iLCJhIjoiY2piNm1tOGwxMG9lajMzcXBlZDR4aWVjdiJ9.Z1Jq4UAgGpXukvnUReLO1g
-          )
-            .then((response) => response.json())
-            .then((response) => {
-              if (response.complete) {
-                resolve("Uploaded to Mapbox");
-               messageLogger({ info: "Uploaded", status: "UploadComplete" });
-                //clear the timer
-                this.clearMapboxTimer(uploadid);
-              }
-              //if there is an error from mapbox then raise it
-              if (response.error) {
-                reject(response.error);
-                let err =
-                  "Mapbox upload error: " +
-                  response.error +
-                  ". See <a href='" +
-                  CONSTANTS.ERRORS_PAGE +
-                  "#mapbox-upload-error' target='blank'>here</a>";
-                //log the error
-               messageLogger({ error: err, status: "UploadFailed" });
-                //set the snackbox
-                this.setSnackBar(err);
-                //clear the timer
-                this.clearMapboxTimer(uploadid);
-              }
-            })
-            .catch((error) => {
-              setDialogsState(prevState => ({ ...prevState, uploading: false });
-              reject(error);
-            });
-        }, 3000);
-        timers.push({ uploadid: uploadid, timer: timer });
-      }
-    });
+//uploads the named feature class to mapbox on the server
+const uploadToMapBox = async (feature_class_name, mapbox_layer_name) => {
+  try {
+    const response = _get(`uploadTilesetToMapBox?feature_class_name=${feature_class_name}&mapbox_layer_name=${mapbox_layer_name}`,300000)
+    setDialogsState(prevState => ({ ...prevState, loading: true }));
+    const poll = await pollMapbox(response.uploadid);
+    return poll;
+  } catch (error) {
+    console.error();
+    throw error;
   }
-  //resets a timer for a mapbox upload poll
-  clearMapboxTimer(uploadid) {
-    //clear the timer
-    let _timer = timers.find((timer) => timer.uploadid === uploadid);
-    clearInterval(_timer.timer);
-    //remove the timer from the timers array
-    timers = timers.filter((timer) => timer.uploadid !== uploadid);
-    //reset state
-    if (timers.length === 0) setDialogsState(prevState => ({ ...prevState, uploading: false });
-  }
+}
 
-  openWelcomeDialog() {
-    parseNotifications();
-    setDialogsState(prevState => ({ ...prevState, welcomeDialogOpen: true }));
-  }
-  openFeaturesDialog(showClearSelectAll) {
-    //refresh the features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
-    if (
-      this.state.marxanServer.system !== "Windows" &&
-      !this.state.metadata.OLDVERSION
-    )
-      this.refreshFeatures();
-    setDialogsState(prevState => ({ ...prevState,
-      featuresDialogOpen: true,
-      addingRemovingFeatures: showClearSelectAll,
-    });
-    if (showClearSelectAll) this.getSelectedFeatureIds();
-  }
-
-  updateState(state_obj) {
-    setDialogsState(state_obj);
-  }
-
-  closeNewFeatureDialog() {
-    setDialogsState(prevState => ({ ...prevState, NewFeatureDialogOpen: false });
-    //finalise digitising
-    this.finaliseDigitising();
-  }
-  openPlanningGridsDialog() {
-    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
-    if (this.state.marxanServer.system !== "Windows")
-      this.getPlanningUnitGrids();
-    setDialogsState(prevState => ({ ...prevState, planningGridsDialogOpen: true });
-  }
-
-  //used by the import wizard to import a users zipped shapefile as the planning units
-  importZippedShapefileAsPu(zipname, alias, description) {
-    //the zipped shapefile has been uploaded to the MARXAN folder - it will be imported to PostGIS and a record will be entered in the metadata_planning_units table
-    return this._get(
-      "importPlanningUnitGrid?filename=" +
-        zipname +
-        "&name=" +
-        alias +
-        "&description=" +
-        description
+const pollStatus = async (uploadid) => {
+  try {
+    const response = await fetch(
+      `https://api.mapbox.com/uploads/v1/${CONSTANTS.MAPBOX_USER}/${uploadid}?access_token=${dialogsState.registry.MBAT}`
     );
+    const result = await response.json();
+
+    if (result.complete) {
+      messageLogger({ info: "Uploaded", status: "UploadComplete" });
+      clearMapboxTimer(uploadid);
+      return "Uploaded to Mapbox";
+    }
+
+    if (result.error) {
+      const errorMsg = `Mapbox upload error: ${result.error}. See <a href='${CONSTANTS.ERRORS_PAGE}#mapbox-upload-error' target='blank'>here</a>`;
+      messageLogger({ error: errorMsg, status: "UploadFailed" });
+      setSnackBar(errorMsg);
+      clearMapboxTimer(uploadid);
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    setDialogsState(prevState => ({ ...prevState, uploading: false }));
+    throw error;
   }
+};
+//polls mapbox to see when an upload has finished - returns as promise
+const pollMapbox = async (uploadid) => {
+  setDialogsState(prevState => ({ ...prevState, uploading: true }));
+  messageLogger({ info: "Uploading to Mapbox..", status: "Uploading" });
+  
+  if (uploadid === "0") {
+    messageLogger({
+      info: "Tileset already exists on Mapbox",
+      status: "UploadComplete",
+    });
+    //reset state
+    setDialogsState(prevState => ({ ...prevState, uploading: false }));
+    return "Uploaded to Mapbox";
+  } 
+  
+  return new Promise((resolve, reject) => {
+    const timer = setInterval(async () => {
+      try {
+        const result = await pollStatus();
+        if (result) {
+          resolve(result);
+          clearInterval(timer);
+        }
+      } catch (error) {
+        reject(error);
+        clearInterval(timer);
+      }
+    }, 3000);
+
+    timers.push({ uploadid, timer });
+  });
+}
+//resets a timer for a mapbox upload poll
+const clearMapboxTimer = (uploadid) => {
+  //clear the timer
+  const timerToClear = timers.find((timer) => timer.uploadid === uploadid);
+  clearInterval(timerToClear.timer);
+  //remove the timer from the timers array
+  timers = timers.filter((timer) => timer.uploadid !== uploadid);
+  if (timers.length === 0) setDialogsState(prevState => ({ ...prevState, uploading: false }));
+}
+
+const openWelcomeDialog =() => {
+  parseNotifications();
+  setDialogsState(prevState => ({ ...prevState, welcomeDialogOpen: true }));
+}
+
+const openFeaturesDialog = async (showClearSelectAll) => {
+  // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
+  if (dialogsState.marxanServer.system !== "Windows" && !dialogsState.metadata.OLDVERSION) {
+    await refreshFeatures();
+  }
+  setDialogsState(prevState => ({ ...prevState,
+    featuresDialogOpen: true,
+    addingRemovingFeatures: showClearSelectAll,
+  }));
+  if (showClearSelectAll) {
+    getSelectedFeatureIds();
+  }
+}
+
+const updateState = (state_obj) => setDialogsState(prevState => ({...prevState, ...state_obj}));
+
+const closeNewFeatureDialog = ()=> {
+  setDialogsState(prevState => ({ ...prevState, NewFeatureDialogOpen: false }));
+  //finalise digitising
+  finaliseDigitising();
+}
+
+const openPlanningGridsDialog = () => {
+  //refresh planning grids if using a hosted service - other users could have created/deleted items
+  if (dialogsState.marxanServer.system !== "Windows") {
+    getPlanningUnitGrids();
+  }
+  setDialogsState(prevState => ({ ...prevState, planningGridsDialogOpen: true }));
+}
+
+//used by the import wizard to import a users zipped shapefile as the planning units
+//the zipped shapefile has been uploaded to the MARXAN folder - it will be imported to PostGIS and a record will be entered in the metadata_planning_units table
+const importZippedShapefileAsPu = async (zipname, alias, description) => await _get(`importPlanningUnitGrid?filename=${zipname}&name=${alias}&description=${description}`);
+
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -2816,425 +2722,289 @@ const createNewMarinePlanningUnitGrid = (filename, planningGridName, areakm2, sh
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
-  openAtlasLayersDialog() {
-    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
-    if (this.state.atlasLayers.length < 1) {
-      this.getAtlasLayers();
-    }
-    setDialogsState(prevState => ({ ...prevState, atlasLayersDialogOpen: true });
+const openAtlasLayersDialog = () => {
+  if (dialogsState.atlasLayers.length < 1) {
+    getAtlasLayers();
   }
-  openCumulativeImpactDialog() {
-    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
-    // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
-    this.getImpacts();
-    setDialogsState(prevState => ({ ...prevState, cumulativeImpactDialogOpen: true });
-  }
-  //makes a call to get the impacts from the server and returns them
-  getImpacts() {
-    console.log("getting impacts...");
-    return new Promise((resolve, reject) => {
-      this._get("getAllImpacts")
-        .then((response) => {
-          console.log("response ", response);
+  setDialogsState(prevState => ({ ...prevState, atlasLayersDialogOpen: true }));
+}
 
-          setDialogsState(prevState => ({ ...prevState,
-            allImpacts: response.data,
-          });
-          resolve();
-        })
-        .catch((error) => {
-          //do something
-        });
-    });
-  }
+const openCumulativeImpactDialog = async () => {
+  await getImpacts();
+  setDialogsState(prevState => ({ ...prevState, cumulativeImpactDialogOpen: true }));
+}
 
-  getOceanBaseMap() {
-    this.map.addSource("Ocean Base", {
-      type: "raster",
-      tiles: [
-        "http://atlas.marine.ie/mapserver/?map=C:/MapServer/apps/miatlas/AdministrativeUnits_wms.map&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}",
-      ],
-      tileSize: 256,
-    });
-    this.map.addLayer({
-      id: "Ocean Base",
-      type: "raster",
-      source: "Ocean Base",
-      layout: {
-        // make layer visible by default
-        visibility: "none",
-      },
-    });
-    // setDialogsState(prevState => ({ ...prevState, map: map });
-  }
+//makes a call to get the impacts from the server and returns them
+const getImpacts = async () => {
+  console.log("getting impacts...");
+  const response = await _get("getAllImpacts");
+  setDialogsState(prevState => ({ ...prevState, allImpacts: response.data}));
+}
 
-  getAtlasLayers() {
-    fetch(this.state.marxanServer.endpoint + "getAtlasLayers", {
-      credentials: "include",
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        let parseddata = data.map(JSON.parse);
-        parseddata.forEach((layer) => {
-          this.map.addSource(layer.layer, {
-            type: "raster",
-            tiles: [
-              "http://www.atlas-horizon2020.eu/gs/ows?layers=" +
-                layer.layer +
-                "&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}",
-            ],
-            tileSize: 256,
-          });
-          this.map.addLayer({
-            id: layer.layer,
-            type: "raster",
-            source: layer.layer,
-            layout: {
-              // make layer visible by default
-              visibility: "none",
-            },
-          });
-          // setDialogsState(prevState => ({ ...prevState, map: map });
-        });
-        setDialogsState(prevState => ({ ...prevState, atlasLayers: parseddata });
-      })
-      .catch((error) => console.error("Error:", error));
-  }
+const getOceanBaseMap = () => {
+  this.map.addSource("Ocean Base", {
+    type: "raster",
+    tiles: [
+      "http://atlas.marine.ie/mapserver/?map=C:/MapServer/apps/miatlas/AdministrativeUnits_wms.map&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}",
+    ],
+    tileSize: 256,
+  });
+  this.map.addLayer({
+    id: "Ocean Base",
+    type: "raster",
+    source: "Ocean Base",
+    layout: {
+      // make layer visible by default
+      visibility: "none",
+    },
+  });
+  // setDialogsState(prevState => ({ ...prevState, map: map });
+}
 
-  getActivities() {
-    return new Promise((resolve, reject) => {
-      this._get("getActivities")
-        .then((response) => JSON.parse(response.data))
-        .then((data) => {
-          setDialogsState(prevState => ({ ...prevState,
-            activities: data,
-            fetched: true,
-          });
-          resolve();
-        })
-        .catch((error) => {
-          //do something
-        });
-    });
-  }
+const getAtlasLayers = async () => {
+  try {
+    const response = await fetch(
+      dialogsState.marxanServer.endpoint + "getAtlasLayers",
+      { credentials: "include" }
+    );
+    const data = await response.json();
+    
+    const parseddata = data.map(JSON.parse);
+    
+    parsedData.forEach(layer => {
+      const sourceName = layer.layer;
+      const tileUrl = `http://www.atlas-horizon2020.eu/gs/ows?layers=${sourceName}&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}`;
 
-  openImportedActivitesDialog() {
-    this.getUploadedActivities();
-    setDialogsState(prevState => ({ ...prevState, importedActivitiesDialogOpen: true });
-  }
-
-  openCostsDialog() {
-    this.getImpacts();
-    setDialogsState(prevState => ({ ...prevState, costsDialogOpen: true });
-  }
-
-  getUploadedActivities() {
-    return new Promise((resolve, reject) => {
-      this._get("getUploadedActivities")
-        .then((response) => {
-          console.log("response ", response);
-          setDialogsState(prevState => ({ ...prevState,
-            uploadedActivities: response.data,
-            fetched: true,
-          });
-          resolve();
-        })
-        .catch((error) => {
-          //do something
-        });
-    });
-  }
-
-  clearSelactedLayers() {
-    let layers = [...this.state.selectedLayers];
-    layers.forEach((layer) => {
-      this.setselectedLayers(layer);
-    });
-    this.closeAtlasLayersDialog();
-  }
-
-  setselectedLayers(layer) {
-    // Check if the layer is visibile or not. Toggle it based on this check
-    // Check if this layer is in the seletced layers. If it is remove it else add it
-    let visibility =
-      this.map.getLayoutProperty(layer, "visibility") === "visible"
-        ? "none"
-        : "visible";
-    this.map.setLayoutProperty(layer, "visibility", visibility);
-    this.state.selectedLayers.includes(layer)
-      ? setDialogsState((prevState) => ({
-          selectedLayers: [...prevState.selectedLayers].filter(
-            (item) => item !== layer
-          ),
-        }))
-      : setDialogsState((prevState) => ({
-          selectedLayers: [...prevState.selectedLayers, layer],
-        }));
-  }
-
-  closeAtlasLayersDialog() {
-    setDialogsState(prevState => ({ ...prevState, atlasLayersDialogOpen: false });
-  }
-
-  //when a user clicks a impact in the ImpactsDialog
-  clickImpact(impact, event, previousRow) {
-    this.state.selectedImpactIds.includes(impact.id)
-      ? this.removeImpact(impact)
-      : this.addImpact(impact);
-    this.toggleImpactLayer(impact);
-  }
-
-  //adds a impact to the selectedImpactIds array
-  addImpact(impact, callback) {
-    setDialogsState((prevState) => ({
-      selectedImpactIds: [...prevState.selectedImpactIds, impact.id],
-    }));
-  }
-
-  //removes a impact from the selectedImpactIds array
-  removeImpact(impact) {
-    setDialogsState((prevState) => ({
-      selectedImpactIds: prevState.selectedImpactIds.filter(
-        (imp) => imp !== impact.id
-      ),
-    }));
-  }
-
-  //toggles the impact layer on the map
-  toggleImpactLayer(impact) {
-    if (impact.tilesetid === "") {
-      this.setSnackBar(
-        "This impact does not have a tileset on Mapbox. See <a href='" +
-          CONSTANTS.ERRORS_PAGE +
-          "#the-tileset-from-source-source-was-not-found' target='blank'>here</a>"
-      );
-      return;
-    }
-    // this.closeImpactMenu();
-    let layerName = impact.tilesetid.split(".")[1];
-    let layerId = "marxan_impact_layer_" + layerName;
-    if (this.map.getLayer(layerId)) {
-      this.removeMapLayer(layerId);
-      this.map.removeSource(layerId);
-      this.updateImpact(impact, { impact_layer_loaded: false });
-    } else {
-      //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
-      var layers = getLayers([
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
-      ]);
-      //get the before layer
-      let beforeLayer = layers.length > 0 ? layers[0].id : "";
-      let rasterLayer = {
-        id: layerId,
-        metadata: {
-          name: impact.alias,
-          type: "impact",
-        },
+      // Add the source to the map
+      this.map.addSource(sourceName, {
         type: "raster",
-        source: {
-          type: "raster",
-          tiles: [
-            "https://api.mapbox.com/v4/" +
-              impact.tilesetid +
-              "/{z}/{x}/{y}.png256?access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg",
-          ],
-        },
+        tiles: [tileUrl],
+        tileSize: 256,
+      });
+
+      // Add the layer to the map
+      this.map.addLayer({
+        id: sourceName,
+        type: "raster",
+        source: sourceName,
         layout: {
-          visibility: "visible",
+          visibility: "none", // make layer invisible by default
         },
-        "source-layer": layerName,
-        paint: { "raster-opacity": 0.85 },
-      };
-      addMapLayer(rasterLayer, beforeLayer);
-      this.updateImpact(impact, { impact_layer_loaded: true });
-    }
-  }
-
-  //gets the ids of the selected impacts
-  getSelectedImpactIds() {
-    let ids = [];
-    this.state.allImpacts.forEach((impact) => {
-      if (impact.selected) ids.push(impact.id);
+      });
     });
-    setDialogsState(prevState => ({ ...prevState, selectedImpactIds: ids });
+    setDialogsState(prevState => ({ ...prevState, atlasLayers: parseddata }));
+  } catch (error) {
+    console.error("Failed to fetch and add Atlas layers:", error);
   }
+}
 
-  //updates the properties of a impact and then updates the impacts state
-  updateImpact(impact, newProps) {
-    let impacts = this.state.allImpacts;
-    //get the position of the impact
-    var index = impacts.findIndex((element) => {
-      return element.id === impact.id;
-    });
-    if (index !== -1) {
-      Object.assign(impacts[index], newProps);
-      //update allImpacts and projectImpacts with the new value
-      this.setImpactsState(impacts);
-    }
+const openImportedActivitesDialog = async () => {
+  await getUploadedActivities();
+  setDialogsState(prevState => ({ ...prevState, importedActivitiesDialogOpen: true }));
+}
+
+const openCostsDialog = () => {
+  getImpacts();
+  setDialogsState(prevState => ({ ...prevState, costsDialogOpen: true }));
+}
+
+const getUploadedActivities = async () => {
+  const response = await _get("getUploadedActivities")
+  setDialogsState(prevState => ({ ...prevState, uploadedActivities: response.data, fetched: true }));
+}
+
+const clearSelactedLayers = () => {
+  const layers = [...dialogsState.selectedLayers];
+  layers.forEach((layer) => setselectedLayers(layer));
+  closeAtlasLayersDialog();
+}
+
+const setselectedLayers = (layer) => {
+  // Determine the new visibility
+  const currentVisibility = this.map.getLayoutProperty(layer, "visibility");
+  const newVisibility = currentVisibility === "visible" ? "none" : "visible";
+  
+  // Update the layer's visibility
+  this.map.setLayoutProperty(layer, "visibility", newVisibility);
+  
+  // Update the selectedLayers state
+  setDialogsState(prevState => {
+    const isLayerSelected = prevState.selectedLayers.includes(layer);
+    return {
+      selectedLayers: isLayerSelected
+        ? prevState.selectedLayers.filter(item => item !== layer)
+        : [...prevState.selectedLayers, layer],
+    };
+  });
+}
+
+const closeAtlasLayersDialog = () => setDialogsState(prevState => ({ ...prevState, atlasLayersDialogOpen: false }));
+
+//when a user clicks a impact in the ImpactsDialog
+const clickImpact = (impact, event, previousRow) => {
+  dialogsState.selectedImpactIds.includes(impact.id)
+    ? removeImpact(impact)
+    : addImpact(impact);
+  toggleImpactLayer(impact);
+}
+
+//adds a impact to the selectedImpactIds array
+const addImpact = (impact) => setDialogsState((prevState) => ({selectedImpactIds: [...prevState.selectedImpactIds, impact.id]}));
+
+//removes a impact from the selectedImpactIds array
+const removeImpact = (impact) => {
+  setDialogsState((prevState) => ({
+    selectedImpactIds: prevState.selectedImpactIds.filter(
+      (imp) => imp !== impact.id
+    ),
+  }));
+}
+
+//toggles the impact layer on the map
+const toggleImpactLayer = (impact) => {
+  if (impact.tilesetid === "") {
+    setSnackBar(`This impact does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='blank'>here</a>`);
+    return;
   }
-
-  //the callback is optional and will be called when the state has updated
-  setImpactsState(newImpacts, callback) {
-    //update allImpacts and projectImpacts with the new value
-    setDialogsState(
-      {
-        allImpacts: newImpacts,
-        projectImpacts: newImpacts.filter((item) => {
-          return item.selected;
-        }),
+  // this.closeImpactMenu();
+  const layerName = impact.tilesetid.split(".")[1];
+  const layerId = "marxan_impact_layer_" + layerName;
+  
+  if (this.map.getLayer(layerId)) {
+    removeMapLayer(layerId);
+    this.map.removeSource(layerId);
+    updateImpact(impact, { impact_layer_loaded: false });
+  } else {
+    //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
+    const layers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER]);
+    //get the before layer
+    const beforeLayer = layers.length > 0 ? layers[0].id : "";
+    const rasterLayer = {
+      id: layerId,
+      metadata: {
+        name: impact.alias,
+        type: "impact",
       },
-      callback
-    );
+      type: "raster",
+      source: {
+        type: "raster",
+        tiles: [
+          `https://api.mapbox.com/v4/${impact.tilesetid}/{z}/{x}/{y}.png256?access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg`
+        ],
+      },
+      layout: {
+        visibility: "visible",
+      },
+      "source-layer": layerName,
+      paint: { "raster-opacity": 0.85 },
+    };
+    addMapLayer(rasterLayer, beforeLayer);
+    updateImpact(impact, { impact_layer_loaded: true });
   }
+}
 
-  openHumanActivitiesDialog() {
-    if (this.state.activities.length < 1) {
-      this.getActivities();
-    }
-    setDialogsState(prevState => ({ ...prevState, humanActivitiesDialogOpen: true });
+//gets the ids of the selected impacts
+const getSelectedImpactIds = () => {
+  // Use map and filter to get selected impact IDs in one line
+  const ids = dialogsState.allImpacts
+    .filter(impact => impact.selected)
+    .map(impact => impact.id);
+
+  // Update the state with the selected impact IDs
+  setDialogsState(prevState => ({ ...prevState, selectedImpactIds: ids }));
+};
+
+//updates the properties of a impact and then updates the impacts state
+const updateImpact = (impact, newProps) => {
+  const impacts = [...dialogsState.allImpacts];
+  //get the position of the impact
+  const index = impacts.findIndex((element) => element.id === impact.id);
+  
+  if (index !== -1) {
+    allImpacts[index] = { ...allImpacts[index], ...newProps };
+    //update allImpacts and projectImpacts with the new value
+    setDialogsState(prevState => ({ 
+      ...prevState, 
+      allImpacts: newImpacts, 
+      projectImpacts: newImpacts.filter((item) => item.selected)
+    }));
   }
+}
 
-  closeHumanActivitiesDialog() {
-    setDialogsState(prevState => ({ ...prevState, humanActivitiesDialogOpen: false });
+const openHumanActivitiesDialog = async () => {
+  if (dialogsState.activities.length < 1) {
+    const response = await _get("getActivities");
+    const data = await JSON.parse(response.data)
+    setDialogsState(prevState => ({ ...prevState, activities: data, fetched: true }));
   }
+  setDialogsState(prevState => ({ ...prevState, humanActivitiesDialogOpen: true }));
+}
 
-  //create new impact from the created pressures
-  importImpacts(filename, selectedActivity, description) {
-    //start the logging
-    setDialogsState(prevState => ({ ...prevState, loading: true });
-    this.startLogging();
-    return new Promise((resolve, reject) => {
-      //get the request url
-      let url =
-        "runCumumlativeImpact?filename=" +
-        filename +
-        "&activity=" +
-        selectedActivity +
-        "&description=" +
-        description;
-      //get the message and pass it to the msgCallback function
-      this._ws(url, this.wsMessageCallback.bind(this))
-        .then((message) => {
-          this.pollMapbox(message.uploadId).then((response) => {
-            setDialogsState(prevState => ({ ...prevState, loading: false }));
-            resolve("Cumulative Impact Layer uploaded");
-          });
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    }); //return
-  }
+const closeHumanActivitiesDialog =() => setDialogsState(prevState => ({ ...prevState, humanActivitiesDialogOpen: false }));
 
-  runCumulativeImpact(selectedUploadedActivityIds) {
-    setDialogsState(prevState => ({ ...prevState, loading: true });
-    this.startLogging();
-    return new Promise((resolve, reject) => {
-      this._ws(
-        "runCumumlativeImpact?selectedIds=" + selectedUploadedActivityIds,
-        this.wsMessageCallback.bind(this)
-      )
-        .then((message) => {
-          // this.pollMapbox(message.uploadId).then((response) => {
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
-          resolve("Cumulative Impact Layer uploaded");
-          // });
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
+//create new impact from the created pressures
+const importImpacts = async(filename, selectedActivity, description) => {
+  //start the logging
+  setDialogsState(prevState => ({ ...prevState, loading: true }));
+  startLogging();
+  
+  const url = `runCumumlativeImpact?filename=${filename}&activity=${selectedActivity}&description=${description}`;
+  const message = await _ws(url, wsMessageCallback);
+  await pollMapbox(message.uploadId)
+  setDialogsState(prevState => ({ ...prevState, loading: false }));
+  return "Cumulative Impact Layer uploaded";
+}
 
-  uploadRaster(data) {
-    console.log("upload raster ata ", data);
-    return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, loading: true });
-     messageLogger({
-        method: "uploadRaster",
-        status: "In Progress",
-        info: "Uploading Raster...",
-      });
-      const formData = new FormData();
-      Object.keys(data).forEach((key) => {
-        formData.append(key, data[key]);
-      });
-      console.log("formData ", formData);
+const runCumulativeImpact = async (selectedUploadedActivityIds) => {
+  setDialogsState(prevState => ({ ...prevState, loading: true }));
+  startLogging();
+  
+  await _ws(`runCumumlativeImpact?selectedIds=${selectedUploadedActivityIds}`, wsMessageCallback);
+  setDialogsState(prevState => ({ ...prevState, loading: false }));
+  return "Cumulative Impact Layer uploaded";
+}
 
-      //the binary data for the file
-      //the filename
-      this._post("uploadRaster", formData).then(function (response) {
-        console.log("response ", response);
-        resolve(response);
-      });
-    });
-  }
+const uploadRaster = async (data) => {
+  setDialogsState(prevState => ({ ...prevState, loading: true }));
+  messageLogger({
+    method: "uploadRaster",
+    status: "In Progress",
+    info: "Uploading Raster...",
+  });
+  const formData = new FormData();
+  Object.keys(data).forEach((key) => formData.append(key, data[key]));
+  
+  //the binary data for the file, the filename
+  const response = await _post("uploadRaster", formData);
+  console.log("response ", response);
+  return response;
+}
 
-  openActivitiesDialog() {
-    //refresh the planning grids if we are using a hosted service - other users could have created/deleted items
-    // if (this.state.marxanServer.system !== "Windows") this.getPlanningUnitGrids();
-    this.getUploadedActivities();
-    setDialogsState(prevState => ({ ...prevState, activitiesDialogOpen: true });
-  }
+const openActivitiesDialog = async () => {
+  await getUploadedActivities();
+  setDialogsState(prevState => ({ ...prevState, activitiesDialogOpen: true }));
+}
 
-  //create new impact from the created pressures
-  saveActivityToDb(filename, selectedActivity, description) {
-    //start the logging
-    setDialogsState(prevState => ({ ...prevState, loading: true });
-    this.startLogging();
-    return new Promise((resolve, reject) => {
-      //get the request url
-      let url =
-        "saveRaster?filename=" +
-        filename +
-        "&activity=" +
-        selectedActivity +
-        "&description=" +
-        description;
-      //get the message and pass it to the msgCallback function
-      this._ws(url, this.wsMessageCallback.bind(this))
-        .then((message) => {
-          console.log("message ", message);
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
-          resolve("Raster saved to db");
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    }); //return
-  }
+//create new impact from the created pressures
+const saveActivityToDb = async (filename, selectedActivity, description) => {
+  //start the logging
+  setDialogsState(prevState => ({ ...prevState, loading: true }));
+  startLogging();
+  const url =`saveRaster?filename=${filename}&activity=${selectedActivity}&description=${description}`;
+  await _ws(url, wsMessageCallback);
+  setDialogsState(prevState => ({ ...prevState, loading: false }));
+  return "Raster saved to db";
+}
 
-  createCostsFromImpact(data) {
-    console.log(
-      "this.state.metadata.PLANNING_UNIT_NAME ",
-      this.state.metadata.PLANNING_UNIT_NAME
-    );
-    setDialogsState(prevState => ({ ...prevState, loading: true });
-    this.startLogging();
-    return new Promise((resolve, reject) => {
-      let url =
-        "createCostsFromImpact?user=" +
-        this.state.owner +
-        "&project=" +
-        this.state.project +
-        "&pu_filename=" +
-        this.state.metadata.PLANNING_UNIT_NAME +
-        "&impact_filename=" +
-        data.feature_class_name +
-        "&impact_type=" +
-        data.alias;
-      this._ws(url, this.wsMessageCallback.bind(this))
-        .then((message) => {
-          console.log("message ", message);
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
-          this.addCost(data.alias);
-          resolve("Costs created from Cumulative impact");
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
+const createCostsFromImpact = async (data) => {
+  setDialogsState(prevState => ({ ...prevState, loading: true }));
+  startLogging();
+  const url =`createCostsFromImpact?user=${dialogsState.owner}&project=${dialogsState.project}&pu_filename=${dialogsState.metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`;
+  await _ws(url, wsMessageCallback)
+  setDialogsState(prevState => ({ ...prevState, loading: false }));
+  addCost(data.alias);
+  return "Costs created from Cumulative impact";
+}
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -3246,395 +3016,251 @@ const createNewMarinePlanningUnitGrid = (filename, planningGridName, areakm2, sh
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 
-  //updates the properties of a feature and then updates the features state
-  updateFeature(feature, newProps) {
-    let features = this.state.allFeatures;
-    //get the position of the feature
-    var index = features.findIndex((element) => {
-      return element.id === feature.id;
-    });
-    if (index !== -1) {
-      Object.assign(features[index], newProps);
-      //update allFeatures and projectFeatures with the new value
-      this.setFeaturesState(features);
-    }
+//updates the properties of a feature and then updates the features state
+const updateFeature = (feature, newProps) => {
+  let features = [...dialogsState.allFeatures];
+  const index = features.findIndex(element => element.id === feature.id);
+  if (index !== -1) {
+    features[index] = { ...features[index], ...newProps };
+    setFeaturesState(features);
   }
+}
 
-  //gets the ids of the selected features
-  const getSelectedFeatureIds = () => {
-    const selectedFeatureIds = dialogsState.allFeatures
-      .filter((feature) => feature.selected)
-      .map((feature) => feature.id);
+//gets the ids of the selected features
+const getSelectedFeatureIds = () => {
+  const selectedFeatureIds = dialogsState.allFeatures
+    .filter((feature) => feature.selected)
+    .map((feature) => feature.id);
 
-    setDialogsState((prevState) => ({
-      ...prevState,
-      selectedFeatureIds: selectedFeatureIds,
-    }));
-  };
+  setDialogsState((prevState) => ({
+    ...prevState,
+    selectedFeatureIds: selectedFeatureIds,
+  }));
+};
 
-  //when a user clicks a feature in the FeaturesDialog
-  clickFeature(feature) {
-    let ids = this.state.selectedFeatureIds;
-    if (ids.includes(feature.id)) {
-      //remove the feature if it is already selected
-      this.removeFeature(feature);
-    } else {
-      //add the feature to the selected feature array
-      this.addFeature(feature);
-    }
-  }
+//when a user clicks a feature in the FeaturesDialog
+const clickFeature = (feature) => {
+  return ([...dialogsState.selectedFeatureIds].includes(feature.id)) ? removeFeature(feature) : addFeature(feature);
+}
 
-  //removes a feature from the selectedFeatureIds array  
+//removes a feature from the selectedFeatureIds array  
 const removeFeature = (feature) => {
-  return new Promise((resolve, reject) => {
-    const updatedFeatureIds = dialogsState.selectedFeatureIds.filter(id => id !== feature.id);
-    setDialogsState(prevState => {
-      return { ...prevState, selectedFeatureIds: updatedFeatureIds };
-    }, () => {
-      // State update callback
-      resolve("Feature removed");
+  const updatedFeatureIds = dialogsState.selectedFeatureIds.filter(id => id !== feature.id);
+  setDialogsState(prevState => ({
+    ...prevState,
+    selectedFeatureIds: updatedFeatureIds
+  }));
+};
+
+//adds a feature to the selectedFeatureIds array
+const addFeature = (feature) => setDialogsState(prevState => ({ ...prevState, selectedFeatureIds: [...dialogsState.selectedFeatureIds, feature.id] }));
+
+//starts a digitising session
+const initialiseDigitising = () => {
+  // Show digitising controls if not already present, mapbox-gl-draw-cold + mapbox-gl-draw-hot
+  if (!this.map.getSource("mapbox-gl-draw-cold"))
+    this.map.addControl(this.mapboxDrawControls);
+}
+
+//finalises the digitising
+const finaliseDigitising = () => this.map.removeControl(this.mapboxDrawControls);
+
+//called when the user has drawn a polygon on screen
+const polygonDrawn = (evt) => {
+  //open the new feature dialog for the metadata
+  updateState({ NewFeatureDialogOpen: true });
+  //save the feature in a local variable
+  this.digitisedFeatures = evt.features;
+}
+
+//selects all the features
+const selectAllFeatures = () =>  updateState({ selectedFeatureIds: dialogsState.allFeatures.map((feature) => feature.id) });
+
+//updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
+const updateSelectedFeatures= async ()=> {
+  //delete the gap analysis as the features within the project have changed
+  await deleteGapAnalysis();
+  const allFeatures = dialogsState.allFeatures.map(feature => {
+    // Update feature selection status
+    if (dialogsState.selectedFeatureIds.includes(feature.id)) {
+      return { ...feature, selected: true };
+    }
+
+    // Handle features based on version
+    if (dialogsState.metadata.OLDVERSION) {
+      return { ...feature, selected: false };
+    } else {
+      // For non-old version features, set additional properties
+      return {
+        ...feature,
+        selected: false,
+        preprocessed: false,
+        protected_area: -1,
+        pu_area: -1,
+        pu_count: -1,
+        target_area: -1,
+        occurs_in_planning_grid: false,
+      };
+    }
+  });
+
+  // Apply updates to state
+  setFeaturesState(allFeatures, () => {
+    // Persist changes to the server if the user is not read-only
+    if (dialogsState.userData.ROLE !== "ReadOnly") {
+      updateSpecFile();
+    }
+    // Close dialogs
+    updateState({
+      featuresDialogOpen: false,
+      newFeaturePopoverOpen: false,
+      importFeaturePopoverOpen: false,
     });
+  });
+
+  // Remove layers if loaded
+  allFeatures.forEach(feature => {
+    if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
+    if (feature.feature_puid_layer_loaded) toggleFeaturePUIDLayer(feature);
+  });
+}
+
+//updates the target values for all features in the project to the passed value
+const updateTargetValueForFeatures = (target_value) => {
+  const allFeatures = dialogsState.allFeatures.map(feature => ({
+    ...feature,
+    target_value
+  }));
+
+  // Set the features in app state
+  setFeaturesState(allFeatures, () => {
+    // Persist the changes to the server
+    if (dialogsState.userData.ROLE !== "ReadOnly") {
+      this.updateSpecFile();
+    }
   });
 };
 
 
+//the callback is optional and will be called when the state has updated
+const setFeaturesState = (newFeatures) => {
+  setDialogsState(prevState => ({
+    ...prevState,
+    allFeatures: newFeatures,
+    projectFeatures: newFeatures.filter(item => item.selected),
+  }));
+};
 
-  //adds a feature to the selectedFeatureIds array
-  addFeature(feature, callback) {
-    let ids = this.state.selectedFeatureIds;
-    //add the feautre to the selected feature array
-    ids.push(feature.id);
-    setDialogsState(prevState => ({ ...prevState, selectedFeatureIds: ids }, callback);
-  }
 
-  //starts a digitising session
-  initialiseDigitising() {
-    //show the digitising controls if they are not already present, mapbox-gl-draw-cold and mapbox-gl-draw-hot
-    if (!this.map.getSource("mapbox-gl-draw-cold"))
-      this.map.addControl(this.mapboxDrawControls);
-  }
+//unselects a single Conservation feature
+const unselectItem = async (feature) => {
+  removeFeature(feature)
+  await updateSelectedFeatures();
+}
 
-  //finalises the digitising
-  finaliseDigitising() {
-    //hide the drawing controls
-    this.map.removeControl(this.mapboxDrawControls);
-  }
-  //called when the user has drawn a polygon on screen
-  polygonDrawn(evt) {
-    //open the new feature dialog for the metadata
-    this.updateState({ NewFeatureDialogOpen: true });
-    //save the feature in a local variable
-    this.digitisedFeatures = evt.features;
-  }
+//previews the feature
+const previewFeature = (feature_metadata) => {
+  setDialogsState(prevState => ({ ...prevState,
+    feature_metadata: feature_metadata,
+    featureDialogOpen: true,
+  }));
+}
 
-  //selects all the features
-  selectAllFeatures() {
-    let ids = [];
-    this.state.allFeatures.forEach((feature) => {
-      ids.push(feature.id);
+//unzips a shapefile on the server
+const unzipShapefile = async (filename) => await _get(`unzipShapefile?filename=${filename}`)
+
+//deletes a zip file and shapefile (with the *.shp extension)
+const deleteShapefile = async (zipfile, shapefile) => await _get(`deleteShapefile?zipfile=${zipfile}&shapefile=${shapefile}`);
+
+//gets a list of fieldnames from the passed shapefile - this must exist in the servers root directory
+const getShapefileFieldnames = async (filename) => await _get(`getShapefileFieldnames?filename=${filename}`);
+
+//create new features from the already uploaded zipped shapefile
+const importFeatures = (zipfile, name, description, shapefile, spiltfield) => {
+  //start the logging
+  startLogging();
+  const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}`;
+  const url = name !== ""
+    ? `${baseUrl}&name=${name}&description=${description}`
+    : `${baseUrl}&splitfield=${splitfield}`;
+  const message = await _ws(url, wsMessageCallback);
+  //get the uploadIds, get a promise array to see when all of the uploads are done
+  const promiseArray = message.uploadIds.map(uploadId => await pollMapbox(uploadId));
+  await Promise.all(promiseArray);
+  return "All features uploaded";
+}
+
+//imports features from a web resource
+const importFeaturesFromWeb = async (name, description, endpoint, srs, featureType) => {
+  startLogging();
+  const url = `createFeaturesFromWFS?name=${name}&description=${description}&endpoint=${endpoint}&srs=${srs}&featuretype=${featureType}`;
+
+  const message = await _ws(url, wsMessageCallback);
+  const uploadId = message.uploadId;
+  return await pollMapbox(uploadId)
+}
+
+//import features from GBIF
+const importGBIFData = async (item) => {
+  startLogging();
+  _ws(`importGBIFData?taxonKey=${item.key}&scientificName=${item.scientificName}`, wsMessageCallback);
+  return await pollMapbox(message.uploadId);
+}
+
+//requests matching species names in GBIF
+const gbifSpeciesSuggest = async (q) => {
+  setDialogsState(prevState => ({ ...prevState, loading: true }));
+  const response = await new Promise((resolve, reject) => {
+      jsonp(`https://api.gbif.org/v1/species/suggest?q=${q}&rank=SPECIES`)
+        .promise
+        .then(resolve)
+        .catch(reject);
     });
-    this.updateState({ selectedFeatureIds: ids });
-  }
 
-  //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
-  updateSelectedFeatures() {
-    //delete the gap analysis as the features within the project have changed
-    this.deleteGapAnalysis();
-    let allFeatures = this.state.allFeatures;
-    allFeatures.forEach((feature) => {
-      if (this.state.selectedFeatureIds.includes(feature.id)) {
-        Object.assign(feature, { selected: true });
-      } else {
-        if (this.state.metadata.OLDVERSION) {
-          //for imported projects we cannot preprocess them any longer as we dont have access to the features spatial data - therefore dont set preprocessed to false or any of the other stats fields
-          Object.assign(feature, { selected: false });
-        } else {
-          Object.assign(feature, {
-            selected: false,
-            preprocessed: false,
-            protected_area: -1,
-            pu_area: -1,
-            pu_count: -1,
-            target_area: -1,
-            occurs_in_planning_grid: false,
-          });
-        }
-        //remove the feature layer if it is loaded
-        if (feature.feature_layer_loaded) this.toggleFeatureLayer(feature);
-        //remove the planning unit layer if it is loaded
-        if (feature.feature_puid_layer_loaded)
-          this.toggleFeaturePUIDLayer(feature);
-      }
-    });
-    //when the project features have been saved to state, update the spec.dat file
-    this.setFeaturesState(allFeatures, () => {
-      //persist the changes to the server
-      if (this.state.userData.ROLE !== "ReadOnly") this.updateSpecFile();
-      //close the dialog
-      this.updateState({
-        featuresDialogOpen: false,
-        newFeaturePopoverOpen: false,
-        importFeaturePopoverOpen: false,
-      });
-    });
-  }
+    // Update state and return the response
+    setDialogsState(prevState => ({ ...prevState, loading: false }));
+    return response;
+}
 
-  //updates the target values for all features in the project to the passed value
-  updateTargetValueForFeatures(target_value) {
-    let allFeatures = this.state.allFeatures;
-    //iterate through all features
-    allFeatures.forEach((feature) => {
-      Object.assign(feature, { target_value: target_value });
-    });
-    //set the features in app state
-    this.setFeaturesState(allFeatures, () => {
-      //persist the changes to the server
-      if (this.state.userData.ROLE !== "ReadOnly") this.updateSpecFile();
-    });
-  }
-
-  //the callback is optional and will be called when the state has updated
-  setFeaturesState(newFeatures, callback) {
-    //update allFeatures and projectFeatures with the new value
-    setDialogsState(
-      {
-        allFeatures: newFeatures,
-        projectFeatures: newFeatures.filter((item) => {
-          return item.selected;
-        }),
-      },
-      callback
-    );
-  }
-
-  //unselects a single Conservation feature
-  unselectItem(feature) {
-    //remove it from the selectedFeatureIds array
-    this.removeFeature(feature).then(() => {
-      //refresh the selected features
-      this.updateSelectedFeatures();
-    });
-  }
-
-  //previews the feature
-  previewFeature(feature_metadata) {
-    setDialogsState(prevState => ({ ...prevState,
-      feature_metadata: feature_metadata,
-      featureDialogOpen: true,
-    });
-  }
-
-  //unzips a shapefile on the server
-  unzipShapefile(filename) {
-    return new Promise((resolve, reject) => {
-      this._get("unzipShapefile?filename=" + filename)
-        .then((response) => {
-          resolve(response);
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
-
-  //deletes a zip file and shapefile (with the *.shp extension)
-  deleteShapefile(zipfile, shapefile) {
-    return new Promise((resolve, reject) => {
-      this._get(
-        "deleteShapefile?zipfile=" + zipfile + "&shapefile=" + shapefile
-      )
-        .then((response) => {
-          resolve(response);
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
-
-  //gets a list of fieldnames from the passed shapefile - this must exist in the servers root directory
-  getShapefileFieldnames(filename) {
-    return new Promise((resolve, reject) => {
-      this._get("getShapefileFieldnames?filename=" + filename)
-        .then((response) => {
-          resolve(response);
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
-
-  //create new features from the already uploaded zipped shapefile
-  importFeatures(zipfile, name, description, shapefile, spiltfield) {
-    //start the logging
-    this.startLogging();
-    return new Promise((resolve, reject) => {
-      //get the request url
-      let url =
-        name !== ""
-          ? "importFeatures?zipfile=" +
-            zipfile +
-            "&shapefile=" +
-            shapefile +
-            "&name=" +
-            name +
-            "&description=" +
-            description
-          : "importFeatures?zipfile=" +
-            zipfile +
-            "&shapefile=" +
-            shapefile +
-            "&splitfield=" +
-            spiltfield;
-      this._ws(url, this.wsMessageCallback.bind(this))
-        .then((message) => {
-          //get the uploadIds
-          let uploadIds = message.uploadIds;
-          //get a promise array to see when all of the uploads are done
-          let promiseArray = [];
-          //iterate through the uploadIds to see when they are done
-          for (var i = 0; i < uploadIds.length; ++i) {
-            promiseArray.push(this.pollMapbox(uploadIds[i]));
-          }
-          //see when they're done
-          Promise.all(promiseArray).then((response) => {
-            resolve("All features uploaded");
-          });
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    }); //return
-  }
-
-  //imports features from a web resource
-  importFeaturesFromWeb(name, description, endpoint, srs, featureType) {
-    //start the logging
-    this.startLogging();
-    return new Promise((resolve, reject) => {
-      //get the request url
-      this._ws(
-        "createFeaturesFromWFS?name=" +
-          name +
-          "&description=" +
-          description +
-          "&endpoint=" +
-          endpoint +
-          "&srs=" +
-          srs +
-          "&featuretype=" +
-          featureType,
-        this.wsMessageCallback.bind(this)
-      )
-        .then((message) => {
-          //get the uploadId
-          let uploadId = message.uploadId;
-          this.pollMapbox(uploadId).then((response) => {
-            resolve(response);
-          });
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    }); //return
-  }
-
-  //import features from GBIF
-  importGBIFData(item) {
-    //start the logging
-    this.startLogging();
-    return new Promise((resolve, reject) => {
-      //get the request url
-      this._ws(
-        "importGBIFData?taxonKey=" +
-          item.key +
-          "&scientificName=" +
-          item.scientificName,
-        this.wsMessageCallback.bind(this)
-      )
-        .then((message) => {
-          //get the uploadId
-          let uploadId = message.uploadId;
-          this.pollMapbox(uploadId).then((response) => {
-            resolve(response);
-          });
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    }); //return
-  }
-
-  //requests matching species names in GBIF
-  gbifSpeciesSuggest(q) {
-    return new Promise((resolve, reject) => {
-      setDialogsState(prevState => ({ ...prevState, loading: true });
-      jsonp(
-        "https://api.gbif.org/v1/species/suggest?q=" + q + "&rank=SPECIES"
-      ).promise.then(
-        (response) => {
-          resolve(response);
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
-        },
-        (err) => {
-          reject(err);
-          setDialogsState(prevState => ({ ...prevState, loading: false }));
-        }
-      );
-    });
-  }
-
-  //create the new feature from the feature that has been digitised on the map
-  createNewFeature(name, description) {
-    //start the logging
-    this.startLogging();
-   messageLogger({
-      method: "createNewFeature",
-      status: "Started",
-      info: "Creating feature..",
-    });
-    //post the geometry to the server with the metadata
-    let formData = new FormData();
-    formData.append("name", name);
-    formData.append("description", description);
-    //convert the coordinates into a linestring to create the polygon in postgis
-    let coords = this.digitisedFeatures[0].geometry.coordinates[0]
-      .map((coordinate) => {
-        return coordinate[0] + " " + coordinate[1];
-      })
-      .join(",");
-    formData.append("linestring", "Linestring(" + coords + ")");
-    this._post("createFeatureFromLinestring", formData)
-      .then((response) => {
-       messageLogger({
-          method: "createNewFeature",
-          status: "Finished",
-          info: response.info,
-        });
-        //start polling to see when the upload is done
-        this.pollMapbox(response.uploadId).then(() => {
-          this.newFeatureCreated(response.id);
-          //close the dialog
-          this.closeNewFeatureDialog();
-        });
-      })
-      .catch((error) => {
-       messageLogger({ status: "Finished", error: error });
-      });
-  }
+//create the new feature from the feature that has been digitised on the map
+const createNewFeature = async (name, description) => {
+  startLogging();
+  messageLogger({
+    method: "createNewFeature",
+    status: "Started",
+    info: "Creating feature..",
+  });
+  //post the geometry to the server with the metadata
+  let formData = new FormData();
+  formData.append("name", name);
+  formData.append("description", description);
+  
+  //convert the coordinates into a linestring to create the polygon in postgis
+  let coords = this.digitisedFeatures[0].geometry.coordinates[0]
+    .map((coordinate) =>  coordinate[0] + " " + coordinate[1]).join(",");
+  
+  formData.append("linestring", "Linestring(" + coords + ")");
+  const response = await _post("createFeatureFromLinestring", formData);
+  messageLogger({
+    method: "createNewFeature",
+    status: "Finished",
+    info: response.info,
+  });
+  const mbResponse = await pollMapbox(response.uploadId);
+  await newFeatureCreated(mbResponse.id);
+  closeNewFeatureDialog();
+}
 
 //gets the new feature information and updates the state
 const newFeatureCreated = async (id) => {
-  const response = await this._get(`getFeature?oid=${id}&format=json`);
+  const response = await _get(`getFeature?oid=${id}&format=json`);
   const feature = response.data[0];
   initialiseNewFeature(feature); // Add the required attributes and update the allFeatures array
 
   // If 'addToProject' is set, add the feature to the project
   if (dialogsState.addToProject) {
-    addFeature(feature, () => {
-      updateSelectedFeatures();
-    });
+    addFeature(feature)
+    await updateSelectedFeatures();
   }
 };
 
@@ -3655,28 +3281,28 @@ const addNewFeature = (feature) => {
 
 //attempts to delete a feature - if the feature is in use in a project then it will not be deleted and the list of projects will be shown
 const deleteFeature = async (feature) => {
-  try {
-    // Fetch projects associated with the feature
-    const projects = await getProjectsForFeature(feature);
+try {
+  // Fetch projects associated with the feature
+  const projects = await getProjectsForFeature(feature);
 
-    // Check if there are any projects using the feature
-    if (projects.length === 0) {
-      // No projects using the feature, proceed with deletion
-      await _deleteFeature(feature);
-    } else {
-      // Projects using the feature, show dialog to the user
-      showProjectListDialog(
-        projects,
-        "Failed to delete planning feature",
-        "The feature is used in the following projects"
-      );
-    }
-  } catch (error) {
-    // Handle any errors that occur during the process
-    console.error("Error deleting feature:", error);
-    // Optionally: show error feedback to the user
-    setSnackBar("Failed to delete feature due to an error.");
+  // Check if there are any projects using the feature
+  if (projects.length === 0) {
+    // No projects using the feature, proceed with deletion
+    await _deleteFeature(feature);
+  } else {
+    // Projects using the feature, show dialog to the user
+    showProjectListDialog(
+      projects,
+      "Failed to delete planning feature",
+      "The feature is used in the following projects"
+    );
   }
+} catch (error) {
+  // Handle any errors that occur during the process
+  console.error("Error deleting feature:", error);
+  // Optionally: show error feedback to the user
+  setSnackBar("Failed to delete feature due to an error.");
+}
 };
 
 //deletes a feature
@@ -3689,10 +3315,10 @@ const _deleteFeature = async (feature) => {
 
 //removes a feature from the allFeatures array
 const removeFeatureFromAllFeatures = (feature) => {
-  setDialogsState(prevState => ({
-    ...prevState,
-    allFeatures: prevState.allFeatures.filter(item => item.id !== feature.id),
-  }));
+setDialogsState(prevState => ({
+  ...prevState,
+  allFeatures: prevState.allFeatures.filter(item => item.id !== feature.id),
+}));
 };
 
 //makes a call to get the features from the server and returns them
@@ -3700,8 +3326,8 @@ const getFeatures = async () => await _get("getAllSpeciesData");
 
 // Gets all the features from the server and updates the state
 const getAllFeatures = async () => {
-  const response = await getFeatures();
-  setDialogsState(prevState => ({ ...prevState, allFeatures: response.data }));
+const response = await getFeatures();
+setDialogsState(prevState => ({ ...prevState, allFeatures: response.data }));
 }
 
 //gets the feature ids as a set from the allFeatures array
@@ -3709,144 +3335,144 @@ const getFeatureIds = (_features) => new Set(_features.map((item) => item.id));
 
 //refreshes the allFeatures state
 const refreshFeatures = async () => {
-  // Fetch the latest features
-  const response = await getFeatures();
-  const newFeatures = response.data;
+// Fetch the latest features
+const response = await getFeatures();
+const newFeatures = response.data;
 
-  // Extract existing and new feature IDs
-  const existingFeatureIds = getFeatureIds(dialogsState.allFeatures);
-  const newFeatureIds = getFeatureIds(newFeatures);
+// Extract existing and new feature IDs
+const existingFeatureIds = getFeatureIds(dialogsState.allFeatures);
+const newFeatureIds = getFeatureIds(newFeatures);
 
-  // Determine which features have been removed or added
-  const removedFeatureIds = [...existingFeatureIds].filter(id => !newFeatureIds.has(id));
-  const addedFeatureIds = [...newFeatureIds].filter(id => !existingFeatureIds.has(id));
+// Determine which features have been removed or added
+const removedFeatureIds = [...existingFeatureIds].filter(id => !newFeatureIds.has(id));
+const addedFeatureIds = [...newFeatureIds].filter(id => !existingFeatureIds.has(id));
 
-  // Remove features that are no longer present
-  removedFeatureIds.forEach(id => removeFeatureFromAllFeatures({ id }));
+// Remove features that are no longer present
+removedFeatureIds.forEach(id => removeFeatureFromAllFeatures({ id }));
 
-  // Initialize new features
-  const addedFeatures = newFeatures.filter(feature => addedFeatureIds.includes(feature.id));
-  addedFeatures.forEach(feature => initialiseNewFeature(feature));
+// Initialize new features
+const addedFeatures = newFeatures.filter(feature => addedFeatureIds.includes(feature.id));
+addedFeatures.forEach(feature => initialiseNewFeature(feature));
 };
 
 const openFeatureMenu = (evt, feature) => setDialogsState(prevState => ({ ...prevState, featureMenuOpen: true, currentFeature: feature, menuAnchor: evt.currentTarget }));
-  
+
 const closeFeatureMenu = (evt) => setDialogsState(prevState => ({ ...prevState, featureMenuOpen: false }));
 
 //hides the feature layer
 const hideFeatureLayer = () => {
-  dialogsState.projectFeatures.forEach((feature) => {
-    if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
-  });
+dialogsState.projectFeatures.forEach((feature) => {
+  if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
+});
 }
 
 //toggles the feature layer on the map
 const toggleFeatureLayer = (feature) => {
-  if (feature.tilesetid === "") {
-    setSnackBar(`This feature does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE} #the-tileset-from-source-source-was-not-found' target='blank'>here</a>`);
-    return;
-  }
-  // closeFeatureMenu();
-  const layerId = `marxan_feature_layer_${feature.tilesetid.split(".")[1]}`
-  
-  if (this.map.getLayer(layerId)) {
-    removeMapLayer(layerId);
-    this.map.removeSource(layerId);
-    updateFeature(feature, { feature_layer_loaded: false });
-  } else {
-    // If a planning units layer for a feature is visible then we need to add the feature layer before it - first get the feature puid layer
-    const layers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER]);
-    let beforeLayer = layers.length > 0 ? layers[0].id : "";
-    const paintProperty = getPaintProperty(feature);
-    const typeProperty = getTypeProperty(feature);
-    addMapLayer(
-      {
-        id: layerId,
-        metadata: {
-          name: feature.alias,
-          type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        },
-        type: typeProperty,
-        source: {
-          type: "vector",
-          url: "mapbox://" + feature.tilesetid,
-        },
-        layout: {
-          visibility: "visible",
-        },
-        "source-layer": layerName,
-        paint: paintProperty,
+if (feature.tilesetid === "") {
+  setSnackBar(`This feature does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE} #the-tileset-from-source-source-was-not-found' target='blank'>here</a>`);
+  return;
+}
+// closeFeatureMenu();
+const layerId = `marxan_feature_layer_${feature.tilesetid.split(".")[1]}`
+
+if (this.map.getLayer(layerId)) {
+  removeMapLayer(layerId);
+  this.map.removeSource(layerId);
+  updateFeature(feature, { feature_layer_loaded: false });
+} else {
+  // If a planning units layer for a feature is visible then we need to add the feature layer before it - first get the feature puid layer
+  const layers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER]);
+  let beforeLayer = layers.length > 0 ? layers[0].id : "";
+  const paintProperty = getPaintProperty(feature);
+  const typeProperty = getTypeProperty(feature);
+  addMapLayer(
+    {
+      id: layerId,
+      metadata: {
+        name: feature.alias,
+        type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
       },
-      beforeLayer
-    ); //add it before the layer that shows the planning unit outlines for the feature
-    updateFeature(feature, { feature_layer_loaded: true });
-  }
+      type: typeProperty,
+      source: {
+        type: "vector",
+        url: "mapbox://" + feature.tilesetid,
+      },
+      layout: {
+        visibility: "visible",
+      },
+      "source-layer": layerName,
+      paint: paintProperty,
+    },
+    beforeLayer
+  ); //add it before the layer that shows the planning unit outlines for the feature
+  updateFeature(feature, { feature_layer_loaded: true });
+}
 }
 
 //toggles the planning unit feature layer on the map
 const toggleFeaturePUIDLayer = async (feature) => {
-  // closeFeatureMenu();
-  let layerName = `marxan_puid_${feature.id}`;
+// closeFeatureMenu();
+let layerName = `marxan_puid_${feature.id}`;
+
+if (this.map.getLayer(layerName)) {
+  removeMapLayer(layerName);
+  updateFeature(feature, { feature_puid_layer_loaded: false });
+} else {
+  //get the planning units where the feature occurs
+  const response = await _get(`getFeaturePlanningUnits?user=${dialogsSate.owner}&project=${dialogsState.project}&oid=${feature.id}`)
   
-  if (this.map.getLayer(layerName)) {
-    removeMapLayer(layerName);
-    updateFeature(feature, { feature_puid_layer_loaded: false });
-  } else {
-    //get the planning units where the feature occurs
-    const response = await _get(`getFeaturePlanningUnits?user=${dialogsSate.owner}&project=${dialogsState.project}&oid=${feature.id}`)
-    
-    addMapLayer({
-      id: layerName,
-      metadata: {
-        name: feature.alias,
-        type: CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
-        lineColor: feature.color,
-      },
-      type: "line",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
-      "source-layer": dialogsState.tileset.name,
-      layout: {
-        visibility: "visible",
-      },
-      paint: {
-        "line-opacity": CONSTANTS.FEATURE_PLANNING_GRID_LAYER_OPACITY,
-      },
-    });
-    //update the paint property for the layer
-    const line_color_expression = initialiseFillColorExpression("puid");
-    
-    response.data.forEach((puid) => line_color_expression.push(puid, feature.color));
-    // Last value is the default, used where there is no data
-    line_color_expression.push("rgba(0,0,0,0)");
-    this.map.setPaintProperty(layerName, "line-color", line_color_expression);
-    //show the layer
-    showLayer(layerName);
-    updateFeature(feature, { feature_puid_layer_loaded: true });
-  }
+  addMapLayer({
+    id: layerName,
+    metadata: {
+      name: feature.alias,
+      type: CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+      lineColor: feature.color,
+    },
+    type: "line",
+    source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+    "source-layer": dialogsState.tileset.name,
+    layout: {
+      visibility: "visible",
+    },
+    paint: {
+      "line-opacity": CONSTANTS.FEATURE_PLANNING_GRID_LAYER_OPACITY,
+    },
+  });
+  //update the paint property for the layer
+  const line_color_expression = initialiseFillColorExpression("puid");
+  
+  response.data.forEach((puid) => line_color_expression.push(puid, feature.color));
+  // Last value is the default, used where there is no data
+  line_color_expression.push("rgba(0,0,0,0)");
+  this.map.setPaintProperty(layerName, "line-color", line_color_expression);
+  //show the layer
+  showLayer(layerName);
+  updateFeature(feature, { feature_puid_layer_loaded: true });
+}
 }
 
-  //removes the current feature from the project
+//removes the current feature from the project
 const removeFromProject = (feature) => {
-  closeFeatureMenu();
-  unselectItem(feature);
+closeFeatureMenu();
+unselectItem(feature);
 }
 
 //zooms to a features extent
 const zoomToFeature = (feature) => {
-  closeFeatureMenu();
-  //transform from BOX(-174.173506487 -18.788241791,-173.86528589 -18.5190063499999) to [[-73.9876, 40.7661], [-73.9397, 40.8002]]
-  const points = feature.extent
-    .substr(4, feature.extent.length - 5)
-    .replace(/ /g, ",")
-    .split(",");
-  //get the points as numbers
-  const nums = points.map((item) => Number(item));
-  this.map.fitBounds(
-    [
-      [nums[0], nums[1]],
-      [nums[2], nums[3]],
-    ],
-    { padding: 100 }
+closeFeatureMenu();
+//transform from BOX(-174.173506487 -18.788241791,-173.86528589 -18.5190063499999) to [[-73.9876, 40.7661], [-73.9397, 40.8002]]
+const points = feature.extent
+  .substr(4, feature.extent.length - 5)
+  .replace(/ /g, ",")
+  .split(",");
+//get the points as numbers
+const nums = points.map((item) => Number(item));
+this.map.fitBounds(
+  [
+    [nums[0], nums[1]],
+    [nums[2], nums[3]],
+  ],
+  { padding: 100 }
   );
 }
 
@@ -3887,12 +3513,12 @@ const zoomToFeature = (feature) => {
   }
 
   openNewProjectWizardDialog() {
-    this.getCountries();
+    getCountries();
     setDialogsState(prevState => ({ ...prevState, newProjectWizardDialogOpen: true }));
   }
 
   openNewPlanningGridDialog() {
-    this.getCountries();
+    getCountries();
     setDialogsState(prevState => ({ ...prevState, NewPlanningGridDialogOpen: true }));
   }
 
@@ -3924,10 +3550,10 @@ const zoomToFeature = (feature) => {
   }
 
   toggleInfoPanel() {
-    setDialogsState(prevState => ({ ...prevState, infoPanelOpen: !this.state.infoPanelOpen }));
+    setDialogsState(prevState => ({ ...prevState, infoPanelOpen: !dialogsState.infoPanelOpen }));
   }
   toggleResultsPanel() {
-    setDialogsState(prevState => ({ ...prevState, resultsPanelOpen: !this.state.resultsPanelOpen }));
+    setDialogsState(prevState => ({ ...prevState, resultsPanelOpen: !dialogsState.resultsPanelOpen }));
   }
 
   openRunLogDialog() {
@@ -3973,7 +3599,7 @@ const zoomToFeature = (feature) => {
         projectListDialogHeading: projectListDialogHeading,
       },
       () => {
-        this.updateState({ ProjectsListDialogOpen: true });
+        updateState({ ProjectsListDialogOpen: true });
       }
     );
   }
@@ -3995,7 +3621,7 @@ const zoomToFeature = (feature) => {
 
   changeIucnCategory(iucnCategory) {
     //update the state
-    let _metadata = this.state.metadata;
+    let _metadata = dialogsState.metadata;
     _metadata.IUCN_CATEGORY = iucnCategory;
     setDialogsState(prevState => ({ ...prevState, metadata: _metadata });
     //update the input.dat file
@@ -4011,7 +3637,7 @@ const zoomToFeature = (feature) => {
     let iucnCategories = this.getIndividualIucnCategories(iucnCategory);
     //TODO FILTER THE WDPA CLIENT SIDE BY INTERSECTING IT WITH THE PLANNING GRID
     //filter the vector tiles for those iucn categories - and if the planning unit name has an iso3 country code - then use that as well. e.g. pu_ton_marine_hexagon_50 (has iso3 code) or pu_a4402723a92444ff829e9411f07e7 (no iso3 code)
-    //let filterExpr = (this.state.metadata.PLANNING_UNIT_NAME.match(/_/g).length> 1) ? ['all', ['in', 'IUCN_CAT'].concat(iucnCategories), ['==', 'PARENT_ISO', this.state.metadata.PLANNING_UNIT_NAME.substr(3, 3).toUpperCase()]] : ['all', ['in', 'IUCN_CAT'].concat(iucnCategories)];
+    //let filterExpr = (dialogsState.metadata.PLANNING_UNIT_NAME.match(/_/g).length> 1) ? ['all', ['in', 'IUCN_CAT'].concat(iucnCategories), ['==', 'PARENT_ISO', dialogsState.metadata.PLANNING_UNIT_NAME.substr(3, 3).toUpperCase()]] : ['all', ['in', 'IUCN_CAT'].concat(iucnCategories)];
     let filterExpr = ["all", ["in", "iucn_cat"].concat(iucnCategories)]; // no longer filter by ISO code
     this.map.setFilter(CONSTANTS.WDPA_LAYER_NAME, filterExpr);
     //turn on/off the protected areas legend
@@ -4107,7 +3733,7 @@ const zoomToFeature = (feature) => {
   //updates the planning units by reconciling the passed arrays of puids
   updatePlanningUnits(previousPuids, puids) {
     //copy the current planning units state
-    let statuses = this.state.planning_units;
+    let statuses = dialogsState.planning_units;
     //get the new puids that need to be added
     let newPuids = this.getNewPuids(previousPuids, puids);
     if (newPuids.length === 0) {
@@ -4134,8 +3760,8 @@ const zoomToFeature = (feature) => {
 
   preprocessProtectedAreas(iucnCategory) {
     //have the intersections already been calculated
-    if (this.state.protected_area_intersections.length > 0) {
-      return Promise.resolve(this.state.protected_area_intersections);
+    if (dialogsState.protected_area_intersections.length > 0) {
+      return Promise.resolve(dialogsState.protected_area_intersections);
     } else {
       //do the intersection on the server
       return new Promise((resolve, reject) => {
@@ -4144,12 +3770,12 @@ const zoomToFeature = (feature) => {
         //call the websocket
         this._ws(
           "preprocessProtectedAreas?user=" +
-            this.state.owner +
+            dialogsState.owner +
             "&project=" +
-            this.state.project +
+            dialogsState.project +
             "&planning_grid_name=" +
-            this.state.metadata.PLANNING_UNIT_NAME,
-          this.wsMessageCallback.bind(this)
+            dialogsState.metadata.PLANNING_UNIT_NAME,
+          this.wsMessageCallback
         )
           .then((message) => {
             //set the state
@@ -4170,7 +3796,7 @@ const zoomToFeature = (feature) => {
     //get the individual iucn categories
     let _iucn_categories = this.getIndividualIucnCategories(iucnCategory);
     //get the planning units that intersect the protected areas with the passed iucn category
-    return this.state.protected_area_intersections.filter((item) => {
+    return dialogsState.protected_area_intersections.filter((item) => {
       return _iucn_categories.indexOf(item[0]) > -1;
     });
   }
@@ -4183,21 +3809,21 @@ const zoomToFeature = (feature) => {
     return new Promise((resolve, reject) => {
       this._ws(
         "updateWDPA?downloadUrl=" +
-          this.state.registry.WDPA.downloadUrl +
+          dialogsState.registry.WDPA.downloadUrl +
           "&wdpaVersion=" +
-          this.state.registry.WDPA.latest_version,
-        this.wsMessageCallback.bind(this)
+          dialogsState.registry.WDPA.latest_version,
+        this.wsMessageCallback
       )
         .then((message) => {
           //websocket has finished - set the new version of the wdpa
-          let obj = Object.assign(this.state.marxanServer, {
-            wdpa_version: this.state.registry.WDPA.latest_version,
+          let obj = Object.assign(dialogsState.marxanServer, {
+            wdpa_version: dialogsState.registry.WDPA.latest_version,
           });
           //update the state and when it is finished, re-add the wdpa source and layer
           setDialogsState(prevState => ({ ...prevState, newWDPAVersion: false, marxanServer: obj }, () => {
             //set the source for the WDPA layer to the new vector tiles
             this.setWDPAVectorTilesLayerName(
-              this.state.registry.WDPA.latest_version
+              dialogsState.registry.WDPA.latest_version
             );
             //remove the existing WDPA layer and source
             this.removeMapLayer(CONSTANTS.WDPA_LAYER_NAME);
@@ -4212,9 +3838,9 @@ const zoomToFeature = (feature) => {
             //reset the protected area intersections on the client
             setDialogsState(prevState => ({ ...prevState, protected_area_intersections: [] });
             //recalculate the protected area intersections and refilter the vector tiles
-            this.changeIucnCategory(this.state.metadata.IUCN_CATEGORY);
+            this.changeIucnCategory(dialogsState.metadata.IUCN_CATEGORY);
             //close the dialog
-            this.updateState({ updateWDPADialogOpen: false });
+            updateState({ updateWDPADialogOpen: false });
           });
           resolve(message);
         })
@@ -4235,7 +3861,7 @@ const zoomToFeature = (feature) => {
 // ----------------------------------------------------------------------------------------------- //
 
   async preprocessBoundaryLengths(iucnCategory) {
-    if (this.state.files.BOUNDNAME) {
+    if (dialogsState.files.BOUNDNAME) {
       //if the bounds.dat file already exists
       return Promise.resolve();
     } else {
@@ -4246,14 +3872,14 @@ const zoomToFeature = (feature) => {
         //call the websocket
         this._ws(
           "preprocessPlanningUnits?user=" +
-            this.state.owner +
+            dialogsState.owner +
             "&project=" +
-            this.state.project,
-          this.wsMessageCallback.bind(this)
+            dialogsState.project,
+          this.wsMessageCallback
         )
           .then((message) => {
             //update the state
-            var currentFiles = this.state.files;
+            var currentFiles = dialogsState.files;
             currentFiles.BOUNDNAME = "bounds.dat";
             setDialogsState(prevState => ({ ...prevState, files: currentFiles });
             //return a value to the then() call
@@ -4312,9 +3938,9 @@ const zoomToFeature = (feature) => {
     return new Promise((resolve, reject) => {
       this._get(
         "createProjectGroup?user=" +
-          this.state.owner +
+          dialogsState.owner +
           "&project=" +
-          this.state.project +
+          dialogsState.project +
           "&copies=5&blmValues=" +
           blmValues.join(",")
       )
@@ -4430,7 +4056,7 @@ const resetPaintProperties = () => {
   }
   //returns the log of all of the runs from the server
   getRunLogs() {
-    if (!this.state.unauthorisedMethods.includes("getRunLogs")) {
+    if (!dialogsState.unauthorisedMethods.includes("getRunLogs")) {
       this._get("getRunLogs").then((response) => {
         setDialogsState(prevState => ({ ...prevState, runLogs: response.data });
       });
@@ -4445,7 +4071,7 @@ const resetPaintProperties = () => {
   }
 
   getShareableLink() {
-    this.updateState({ shareableLinkDialogOpen: true });
+    updateState({ shareableLinkDialogOpen: true });
   }
 
 // ----------------------------------------------------------------------------------------------- //
@@ -4465,10 +4091,10 @@ const resetPaintProperties = () => {
       //call the websocket
       this._ws(
         "runGapAnalysis?user=" +
-          this.state.owner +
+          dialogsState.owner +
           "&project=" +
-          this.state.project,
-        this.wsMessageCallback.bind(this)
+          dialogsState.project,
+        this.wsMessageCallback
       )
         .then((message) => {
           setDialogsState(prevState => ({ ...prevState, gapAnalysis: message.data });
@@ -4484,9 +4110,9 @@ const resetPaintProperties = () => {
   deleteGapAnalysis() {
     this._get(
       "deleteGapAnalysis?user=" +
-        this.state.owner +
+        dialogsState.owner +
         "&project=" +
-        this.state.project
+        dialogsState.project
     ).then((response) => {
       console.log(response);
     });
@@ -4512,16 +4138,16 @@ const resetPaintProperties = () => {
     return new Promise((resolve, reject) => {
       this._get(
         "updateCosts?user=" +
-          this.state.owner +
+          dialogsState.owner +
           "&project=" +
-          this.state.project +
+          dialogsState.project +
           "&costname=" +
           costname
       )
         .then((response) => {
           //update the state
           setDialogsState(prevState => ({ ...prevState,
-            metadata: Object.assign(this.state.metadata, { COSTS: costname }),
+            metadata: Object.assign(dialogsState.metadata, { COSTS: costname }),
           });
           resolve();
         })
@@ -4544,9 +4170,9 @@ const loadCostsLayer = async (forceReload = false) => {
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
   getPlanningUnitsCostData(forceReload) {
-    let owner = this.state.owner === "" ? this.state.user : this.state.owner;
-    console.log("this.state.user ", this.state.user);
-    console.log("this.state.owner ", this.state.owner);
+    let owner = dialogsState.owner === "" ? dialogsState.user : dialogsState.owner;
+    console.log("dialogsState.user ", dialogsState.user);
+    console.log("dialogsState.owner ", dialogsState.owner);
     return new Promise((resolve, reject) => {
       //if the cost data has already been loaded
       if (this.cost_data && !forceReload) {
@@ -4555,12 +4181,12 @@ const loadCostsLayer = async (forceReload = false) => {
         console.log(
           "getPlanningUnitsCostData --------------------------------------------------- line 5569"
         );
-        console.log("this.state ", this.state);
+        console.log("dialogsState ", dialogsState);
         this._get(
           "getPlanningUnitsCostData?user=" +
             owner +
             "&project=" +
-            this.state.project
+            dialogsState.project
         )
           .then((response) => {
             //save the cost data to a local variable
@@ -4581,7 +4207,7 @@ const loadCostsLayer = async (forceReload = false) => {
         //delete the cost file
         this.deleteCost(costname).then((_) => {
           //close the import costs dialog
-          this.updateState({ importCostsDialogOpen: false });
+          updateState({ importCostsDialogOpen: false });
           resolve();
         });
       } else {
@@ -4590,27 +4216,27 @@ const loadCostsLayer = async (forceReload = false) => {
     });
   }
   //adds a cost in application state
-  addCost(costname) {
-    //update the state
-    let _costnames = this.state.costnames;
-    //add the cost profile
-    _costnames.push(costname);
-    setDialogsState(prevState => ({ ...prevState, costnames: _costnames });
-  }
+const addCost = (costname) => {
+  setDialogsState(prevState => ({
+    ...prevState,
+    costnames: [...prevState.costnames, costname]
+  }));
+};
+
   //deletes a cost file on the server
   deleteCost(costname) {
     return new Promise((resolve, reject) => {
       this._get(
         "deleteCost?user=" +
-          this.state.owner +
+          dialogsState.owner +
           "&project=" +
-          this.state.project +
+          dialogsState.project +
           "&costname=" +
           costname
       )
         .then((response) => {
           //update the state
-          let _costnames = this.state.costnames;
+          let _costnames = dialogsState.costnames;
           //remove the deleted cost profile
           _costnames = _costnames.filter((item) => item !== costname);
           setDialogsState(prevState => ({ ...prevState, costnames: _costnames });
@@ -4627,15 +4253,15 @@ const loadCostsLayer = async (forceReload = false) => {
       //switches the results pane to the log tab
       this.setActiveTab("log");
       //call the websocket
-      this._ws("resetDatabase", this.wsMessageCallback.bind(this))
+      this._ws("resetDatabase", this.wsMessageCallback)
         .then((message) => {
           //websocket has finished
           resolve(message);
-          this.updateState({ resetDialogOpen: false });
+          updateState({ resetDialogOpen: false });
         })
         .catch((error) => {
           reject(error);
-          this.updateState({ resetDialogOpen: false });
+          updateState({ resetDialogOpen: false });
         });
     });
   }
@@ -4657,7 +4283,7 @@ const loadCostsLayer = async (forceReload = false) => {
     const message = (
       <span
         id="snackbar-message-id"
-        dangerouslySetInnerHTML={{ __html: this.state.snackbarMessage }}
+        dangerouslySetInnerHTML={{ __html: dialogsState.snackbarMessage }}
       />
     );
     return (
@@ -4667,552 +4293,550 @@ const loadCostsLayer = async (forceReload = false) => {
           ref={(el) => (this.mapContainer = el)}
           className="absolute top right left bottom"
         />
-        <LoadingDialog open={this.state.shareableLink} />
+        <LoadingDialog open={dialogsState.shareableLink} />
         <LoginDialog
-          open={!this.state.loggedIn}
-          validateUser={this.validateUser.bind(this)}
-          // onCancel={() => this.updateState({ registerDialogOpen: true })}
-          loading={this.state.loading}
-          user={this.state.user}
-          password={this.state.password}
+          open={!dialogsState.loggedIn}
+          validateUser={validateUser}
+          // onCancel={() => updateState({ registerDialogOpen: true })}
+          loading={dialogsState.loading}
+          user={dialogsState.user}
+          password={dialogsState.password}
           changeUserName={changeUserName}
           changePassword={changePassword}
-          updateState={this.updateState.bind(this)}
-          marxanServers={this.state.marxanServers}
-          selectServer={this.selectServer.bind(this)}
-          marxanServer={this.state.marxanServer}
+          updateState={updateState}
+          marxanServers={dialogsState.marxanServers}
+          selectServer={selectServer}
+          marxanServer={dialogsState.marxanServer}
           marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
         />
         <RegisterDialog
-          open={this.state.registerDialogOpen}
+          open={dialogsState.registerDialogOpen}
           onOk={handleCreateUser}
-          updateState={this.updateState.bind(this)}
-          loading={this.state.loading}
+          updateState={updateState}
+          loading={dialogsState.loading}
         />
         <ResendPasswordDialog
-          open={this.state.resendPasswordDialogOpen}
-          onOk={this.resendPassword.bind(this)}
-          onCancel={() => this.updateState({ resendPasswordDialogOpen: false })}
-          loading={this.state.loading}
-          changeEmail={this.changeEmail.bind(this)}
-          email={this.state.resendEmail}
+          open={dialogsState.resendPasswordDialogOpen}
+          onOk={resendPassword}
+          onCancel={() => updateState({ resendPasswordDialogOpen: false })}
+          loading={dialogsState.loading}
+          changeEmail={changeEmail}
+          email={dialogsState.resendEmail}
         />
         <Welcome
           open={
-            this.state.userData.SHOWWELCOMESCREEN &&
-            this.state.welcomeDialogOpen
+            dialogsState.userData.SHOWWELCOMESCREEN &&
+            dialogsState.welcomeDialogOpen
           }
-          onOk={this.updateState.bind(this)}
-          onCancel={() => this.updateState({ welcomeDialogOpen: false })}
-          userData={this.state.userData}
-          saveOptions={this.saveOptions.bind(this)}
-          notifications={this.state.notifications}
-          resetNotifications={this.resetNotifications.bind(this)}
-          removeNotification={this.removeNotification.bind(this)}
-          openNewProjectDialog={this.openNewProjectWizardDialog.bind(this)}
+          onOk={updateState}
+          onCancel={() => updateState({ welcomeDialogOpen: false })}
+          userData={dialogsState.userData}
+          saveOptions={saveOptions}
+          notifications={dialogsState.notifications}
+          resetNotifications={resetNotifications}
+          removeNotification={removeNotification}
+          openNewProjectDialog={openNewProjectWizardDialog}
         />
         <ToolsMenu
-          open={this.state.toolsMenuOpen}
-          menuAnchor={this.state.menuAnchor}
-          hideToolsMenu={this.hideToolsMenu.bind(this)}
-          openUsersDialog={this.openUsersDialog.bind(this)}
-          openRunLogDialog={this.openRunLogDialog.bind(this)}
-          openGapAnalysisDialog={this.openGapAnalysisDialog.bind(this)}
-          updateState={this.updateState.bind(this)}
-          userRole={this.state.userData.ROLE}
-          marxanServer={this.state.marxanServer}
-          metadata={this.state.metadata}
-          cleanup={this.cleanup.bind(this)}
+          open={dialogsState.toolsMenuOpen}
+          menuAnchor={dialogsState.menuAnchor}
+          hideToolsMenu={hideToolsMenu}
+          openUsersDialog={openUsersDialog}
+          openRunLogDialog={openRunLogDialog}
+          openGapAnalysisDialog={openGapAnalysisDialog}
+          updateState={updateState}
+          userRole={dialogsState.userData.ROLE}
+          marxanServer={dialogsState.marxanServer}
+          metadata={dialogsState.metadata}
+          cleanup={cleanup}
         />
         <UserMenu
-          open={this.state.userMenuOpen}
-          menuAnchor={this.state.menuAnchor}
-          user={this.state.user}
-          userRole={this.state.userData.ROLE}
-          hideUserMenu={this.hideUserMenu.bind(this)}
-          openUserSettingsDialog={this.openUserSettingsDialog.bind(this)}
-          openProfileDialog={this.openProfileDialog.bind(this)}
-          logout={this.logout.bind(this)}
-          marxanServer={this.state.marxanServer}
-          openChangePasswordDialog={this.openChangePasswordDialog.bind(this)}
+          open={dialogsState.userMenuOpen}
+          menuAnchor={dialogsState.menuAnchor}
+          user={dialogsState.user}
+          userRole={dialogsState.userData.ROLE}
+          hideUserMenu={hideUserMenu}
+          openUserSettingsDialog={openUserSettingsDialog}
+          openProfileDialog={openProfileDialog}
+          logout={logout}
+          marxanServer={dialogsState.marxanServer}
+          openChangePasswordDialog={openChangePasswordDialog}
         />
         <HelpMenu
-          open={this.state.helpMenuOpen}
-          menuAnchor={this.state.menuAnchor}
-          hideHelpMenu={this.hideHelpMenu.bind(this)}
-          openAboutDialog={this.openAboutDialog.bind(this)}
+          open={dialogsState.helpMenuOpen}
+          menuAnchor={dialogsState.menuAnchor}
+          hideHelpMenu={hideHelpMenu}
+          openAboutDialog={openAboutDialog}
         />
         <UserSettingsDialog
-          open={this.state.UserSettingsDialogOpen}
-          onOk={() => this.updateState({ UserSettingsDialogOpen: false })}
-          onCancel={() => this.updateState({ UserSettingsDialogOpen: false })}
-          loading={this.state.loading}
-          userData={this.state.userData}
-          saveOptions={this.saveOptions.bind(this)}
-          changeBasemap={this.setBasemap.bind(this)}
-          basemaps={this.state.basemaps}
-          basemap={this.state.basemap}
+          open={dialogsState.UserSettingsDialogOpen}
+          onOk={() => updateState({ UserSettingsDialogOpen: false })}
+          onCancel={() => updateState({ UserSettingsDialogOpen: false })}
+          loading={dialogsState.loading}
+          userData={dialogsState.userData}
+          saveOptions={saveOptions}
+          changeBasemap={setBasemap}
+          basemaps={dialogsState.basemaps}
+          basemap={dialogsState.basemap}
         />
         <UsersDialog
-          open={this.state.usersDialogOpen}
-          onOk={() => this.updateState({ usersDialogOpen: false })}
-          onCancel={() => this.updateState({ usersDialogOpen: false })}
-          loading={this.state.loading}
-          user={this.state.user}
-          users={this.state.users}
+          open={dialogsState.usersDialogOpen}
+          onOk={() => updateState({ usersDialogOpen: false })}
+          onCancel={() => updateState({ usersDialogOpen: false })}
+          loading={dialogsState.loading}
+          user={dialogsState.user}
+          users={dialogsState.users}
           deleteUser={handleDeleteUser}
-          changeRole={this.changeRole.bind(this)}
-          guestUserEnabled={this.state.marxanServer.guestUserEnabled}
-          toggleEnableGuestUser={this.toggleEnableGuestUser.bind(this)}
+          changeRole={changeRole}
+          guestUserEnabled={dialogsState.marxanServer.guestUserEnabled}
+          toggleEnableGuestUser={toggleEnableGuestUser}
         />
         <ProfileDialog
-          open={this.state.profileDialogOpen}
-          onOk={() => this.updateState({ profileDialogOpen: false })}
-          onCancel={() => this.updateState({ profileDialogOpen: false })}
-          loading={this.state.loading}
-          userData={this.state.userData}
+          open={dialogsState.profileDialogOpen}
+          onOk={() => updateState({ profileDialogOpen: false })}
+          onCancel={() => updateState({ profileDialogOpen: false })}
+          loading={dialogsState.loading}
+          userData={dialogsState.userData}
           updateUser={handleUserUpdate}
         />
         <AboutDialog
-          open={this.state.aboutDialogOpen}
-          onOk={() => this.updateState({ aboutDialogOpen: false })}
+          open={dialogsState.aboutDialogOpen}
+          onOk={() => updateState({ aboutDialogOpen: false })}
           marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
-          wdpaAttribution={this.state.wdpaAttribution}
+          wdpaAttribution={dialogsState.wdpaAttribution}
         />
         <InfoPanel
-          open={this.state.infoPanelOpen}
-          activeTab={this.state.activeTab}
-          user={this.state.user}
-          owner={this.state.owner}
-          project={this.state.project}
-          metadata={this.state.metadata}
-          runMarxan={this.runMarxan.bind(this)}
-          stopProcess={this.stopProcess.bind(this)}
-          pid={this.state.pid}
-          renameProject={this.renameProject.bind(this)}
-          renameDescription={this.renameDescription.bind(this)}
-          features={this.state.projectFeatures}
-          project_tab_active={this.project_tab_active.bind(this)}
-          features_tab_active={this.features_tab_active.bind(this)}
-          pu_tab_active={this.pu_tab_active.bind(this)}
-          startPuEditSession={this.startPuEditSession.bind(this)}
-          stopPuEditSession={this.stopPuEditSession.bind(this)}
-          puEditing={this.state.puEditing}
-          clearManualEdits={this.clearManualEdits.bind(this)}
-          openFeatureMenu={this.openFeatureMenu.bind(this)}
-          preprocessing={this.state.preprocessing}
-          openFeaturesDialog={this.openFeaturesDialog.bind(this)}
-          changeIucnCategory={this.changeIucnCategory.bind(this)}
-          updateFeature={this.updateFeature.bind(this)}
-          userRole={this.state.userData.ROLE}
-          toggleProjectPrivacy={this.toggleProjectPrivacy.bind(this)}
-          openTargetDialog={this.openTargetDialog.bind(this)}
-          getShareableLink={this.getShareableLink.bind(this)}
-          marxanServer={this.state.marxanServer}
-          toggleFeatureLayer={this.toggleFeatureLayer.bind(this)}
-          toggleFeaturePUIDLayer={this.toggleFeaturePUIDLayer.bind(this)}
-          useFeatureColors={this.state.userData.USEFEATURECOLORS}
-          smallLinearGauge={this.state.smallLinearGauge}
-          openCostsDialog={this.openCostsDialog.bind(this)}
-          costname={this.state.metadata.COSTS}
-          costnames={this.state.costnames}
-          changeCostname={this.changeCostname.bind(this)}
-          loadCostsLayer={this.loadCostsLayer.bind(this)}
-          loading={this.state.loading}
-          updateState={this.updateState.bind(this)}
-          protected_area_intersections={this.state.protected_area_intersections}
+          open={dialogsState.infoPanelOpen}
+          activeTab={dialogsState.activeTab}
+          user={dialogsState.user}
+          owner={dialogsState.owner}
+          project={dialogsState.project}
+          metadata={dialogsState.metadata}
+          runMarxan={runMarxan}
+          stopProcess={stopProcess}
+          pid={dialogsState.pid}
+          renameProject={renameProject}
+          renameDescription={renameDescription}
+          features={dialogsState.projectFeatures}
+          project_tab_active={project_tab_active}
+          features_tab_active={features_tab_active}
+          pu_tab_active={pu_tab_active}
+          startPuEditSession={startPuEditSession}
+          stopPuEditSession={stopPuEditSession}
+          puEditing={dialogsState.puEditing}
+          clearManualEdits={clearManualEdits}
+          openFeatureMenu={openFeatureMenu}
+          preprocessing={dialogsState.preprocessing}
+          openFeaturesDialog={openFeaturesDialog}
+          changeIucnCategory={changeIucnCategory}
+          updateFeature={updateFeature}
+          userRole={dialogsState.userData.ROLE}
+          toggleProjectPrivacy={toggleProjectPrivacy}
+          openTargetDialog={openTargetDialog}
+          getShareableLink={getShareableLink}
+          marxanServer={dialogsState.marxanServer}
+          toggleFeatureLayer={toggleFeatureLayer}
+          toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
+          useFeatureColors={dialogsState.userData.USEFEATURECOLORS}
+          smallLinearGauge={dialogsState.smallLinearGauge}
+          openCostsDialog={openCostsDialog}
+          costname={dialogsState.metadata.COSTS}
+          costnames={dialogsState.costnames}
+          changeCostname={changeCostname}
+          loadCostsLayer={loadCostsLayer}
+          loading={dialogsState.loading}
+          updateState={updateState}
+          protected_area_intersections={dialogsState.protected_area_intersections}
         />
         <ResultsPanel
-          open={this.state.resultsPanelOpen}
-          preprocessing={this.state.preprocessing}
-          solutions={this.state.solutions}
+          open={dialogsState.resultsPanelOpen}
+          preprocessing={dialogsState.preprocessing}
+          solutions={dialogsState.solutions}
           loadSolution={loadSolution}
-          openClassificationDialog={this.openClassificationDialog.bind(this)}
-          brew={this.state.brew}
-          messages={this.state.logMessages}
-          activeResultsTab={this.state.activeResultsTab}
-          setActiveTab={this.setActiveTab.bind(this)}
-          clearLog={this.clearLog.bind(this)}
-          owner={this.state.owner}
-          resultsLayer={this.state.resultsLayer}
-          wdpaLayer={this.state.wdpaLayer}
-          pa_layer_visible={this.state.pa_layer_visible}
+          openClassificationDialog={openClassificationDialog}
+          brew={dialogsState.brew}
+          messages={dialogsState.logMessages}
+          activeResultsTab={dialogsState.activeResultsTab}
+          setActiveTab={setActiveTab}
+          clearLog={clearLog}
+          owner={dialogsState.owner}
+          resultsLayer={dialogsState.resultsLayer}
+          wdpaLayer={dialogsState.wdpaLayer}
+          pa_layer_visible={dialogsState.pa_layer_visible}
           changeOpacity={changeOpacity}
-          userRole={this.state.userData.ROLE}
-          visibleLayers={this.state.visibleLayers}
-          metadata={this.state.metadata}
-          costsLoading={this.state.costsLoading}
+          userRole={dialogsState.userData.ROLE}
+          visibleLayers={dialogsState.visibleLayers}
+          metadata={dialogsState.metadata}
+          costsLoading={dialogsState.costsLoading}
         />
         <FeatureInfoDialog
-          open={this.state.openInfoDialogOpen}
-          onOk={() => this.updateState({ openInfoDialogOpen: false })}
-          onCancel={() => this.updateState({ openInfoDialogOpen: false })}
-          loading={this.state.loading}
-          feature={this.state.currentFeature}
-          updateFeature={this.updateFeature.bind(this)}
-          userRole={this.state.userData.ROLE}
-          reportUnits={this.state.userData.REPORTUNITS}
+          open={dialogsState.openInfoDialogOpen}
+          onOk={() => updateState({ openInfoDialogOpen: false })}
+          onCancel={() => updateState({ openInfoDialogOpen: false })}
+          loading={dialogsState.loading}
+          feature={dialogsState.currentFeature}
+          updateFeature={updateFeature}
+          userRole={dialogsState.userData.ROLE}
+          reportUnits={dialogsState.userData.REPORTUNITS}
         />
         <IdentifyPopup
-          visible={this.state.identifyVisible}
-          xy={this.state.popup_point}
-          identifyPlanningUnits={this.state.identifyPlanningUnits}
-          identifyProtectedAreas={this.state.identifyProtectedAreas}
-          identifyFeatures={this.state.identifyFeatures}
-          loading={this.state.loading}
+          visible={dialogsState.identifyVisible}
+          xy={dialogsState.popup_point}
+          identifyPlanningUnits={dialogsState.identifyPlanningUnits}
+          identifyProtectedAreas={dialogsState.identifyProtectedAreas}
+          identifyFeatures={dialogsState.identifyFeatures}
+          loading={dialogsState.loading}
           hideIdentifyPopup={hideIdentifyPopup}
-          reportUnits={this.state.userData.REPORTUNITS}
-          metadata={this.state.metadata}
+          reportUnits={dialogsState.userData.REPORTUNITS}
+          metadata={dialogsState.metadata}
         />
         <ProjectsDialog
-          open={this.state.projectsDialogOpen}
+          open={dialogsState.projectsDialogOpen}
           onCancel={() =>
-            this.updateState({
+            updateState({
               projectsDialogOpen: false,
               importProjectPopoverOpen: false,
             })
           }
-          loading={this.state.loading}
-          projects={this.state.projects}
-          oldVersion={this.state.metadata.OLDVERSION}
-          updateState={this.updateState.bind(this)}
-          deleteProject={this.deleteProject.bind(this)}
-          loadProject={this.loadProject.bind(this)}
-          exportProject={this.exportProject.bind(this)}
-          cloneProject={this.cloneProject.bind(this)}
-          unauthorisedMethods={this.state.unauthorisedMethods}
-          userRole={this.state.userData.ROLE}
-          getAllFeatures={this.getAllFeatures.bind(this)}
-          importProjectPopoverOpen={this.state.importProjectPopoverOpen}
-          importMXWDialogOpen={this.state.importMXWDialogOpen}
+          loading={dialogsState.loading}
+          projects={dialogsState.projects}
+          oldVersion={dialogsState.metadata.OLDVERSION}
+          updateState={updateState}
+          deleteProject={deleteProject}
+          loadProject={loadProject}
+          exportProject={exportProject}
+          cloneProject={cloneProject}
+          unauthorisedMethods={dialogsState.unauthorisedMethods}
+          userRole={dialogsState.userData.ROLE}
+          getAllFeatures={getAllFeatures}
+          importProjectPopoverOpen={dialogsState.importProjectPopoverOpen}
+          importMXWDialogOpen={dialogsState.importMXWDialogOpen}
         />
         <NewProjectDialog
-          open={this.state.newProjectDialogOpen}
-          registry={this.state.registry}
-          loading={this.state.loading}
-          getPlanningUnitGrids={this.getPlanningUnitGrids.bind(this)}
-          planning_unit_grids={this.state.planning_unit_grids}
-          openFeaturesDialog={this.openFeaturesDialog.bind(this)}
-          features={this.state.allFeatures}
-          updateState={this.updateState.bind(this)}
-          selectedCosts={this.state.selectedCosts}
+          open={dialogsState.newProjectDialogOpen}
+          registry={dialogsState.registry}
+          loading={dialogsState.loading}
+          getPlanningUnitGrids={getPlanningUnitGrids}
+          planning_unit_grids={dialogsState.planning_unit_grids}
+          openFeaturesDialog={openFeaturesDialog}
+          features={dialogsState.allFeatures}
+          updateState={updateState}
+          selectedCosts={dialogsState.selectedCosts}
           createNewProject={createNewProject}
-          previewFeature={this.previewFeature.bind(this)}
+          previewFeature={previewFeature}
         />
         <NewProjectWizardDialog
-          open={this.state.newProjectWizardDialogOpen}
-          onOk={() => this.updateState({ newProjectWizardDialogOpen: false })}
+          open={dialogsState.newProjectWizardDialogOpen}
+          onOk={() => updateState({ newProjectWizardDialogOpen: false })}
           okDisabled={true}
-          countries={this.state.countries}
-          updateState={this.updateState.bind(this)}
+          countries={dialogsState.countries}
+          updateState={updateState}
           createNewNationalProject={createNewNationalProject}
         />
         <NewPlanningGridDialog
-          open={this.state.NewPlanningGridDialogOpen}
+          open={dialogsState.NewPlanningGridDialogOpen}
           onCancel={() =>
-            this.updateState({ NewPlanningGridDialogOpen: false })
+            updateState({ NewPlanningGridDialogOpen: false })
           }
           loading={
-            this.state.loading ||
-            this.state.preprocessing ||
-            this.state.uploading
+            dialogsState.loading ||
+            dialogsState.preprocessing ||
+            dialogsState.uploading
           }
-          createNewPlanningUnitGrid={this.createNewPlanningUnitGrid.bind(this)}
-          countries={this.state.countries}
-          setSnackBar={this.setSnackBar.bind(this)}
+          createNewPlanningUnitGrid={createNewPlanningUnitGrid}
+          countries={dialogsState.countries}
+          setSnackBar={setSnackBar}
         />
         <NewMarinePlanningGridDialog
-          open={this.state.NewMarinePlanningGridDialogOpen}
+          open={dialogsState.NewMarinePlanningGridDialogOpen}
           onCancel={() =>
-            this.updateState({ NewMarinePlanningGridDialogOpen: false })
+            updateState({ NewMarinePlanningGridDialogOpen: false })
           }
           loading={
-            this.state.loading ||
-            this.state.preprocessing ||
-            this.state.uploading
+            dialogsState.loading ||
+            dialogsState.preprocessing ||
+            dialogsState.uploading
           }
-          createNewPlanningUnitGrid={this.createNewMarinePlanningUnitGrid.bind(
-            this
-          )}
+          createNewPlanningUnitGrid={createNewMarinePlanningUnitGrid}
           fileUpload={uploadFileToFolder}
-          setSnackBar={this.setSnackBar.bind(this)}
+          setSnackBar={setSnackBar}
         />
         <ImportPlanningGridDialog
-          open={this.state.importPlanningGridDialogOpen}
-          onOk={this.importPlanningUnitGrid.bind(this)}
+          open={dialogsState.importPlanningGridDialogOpen}
+          onOk={importPlanningUnitGrid}
           onCancel={() =>
-            this.updateState({ importPlanningGridDialogOpen: false })
+            updateState({ importPlanningGridDialogOpen: false })
           }
-          loading={this.state.loading || this.state.uploading}
+          loading={dialogsState.loading || dialogsState.uploading}
           fileUpload={uploadFileToFolder}
         />
         <FeaturesDialog
-          open={this.state.featuresDialogOpen}
-          onOk={this.updateSelectedFeatures.bind(this)}
-          loading={this.state.loading || this.state.uploading}
-          metadata={this.state.metadata}
-          allFeatures={this.state.allFeatures}
-          deleteFeature={this.deleteFeature.bind(this)}
-          updateState={this.updateState.bind(this)}
-          selectAllFeatures={this.selectAllFeatures.bind(this)}
-          userRole={this.state.userData.ROLE}
-          clickFeature={this.clickFeature.bind(this)}
-          addingRemovingFeatures={this.state.addingRemovingFeatures}
-          selectedFeatureIds={this.state.selectedFeatureIds}
-          initialiseDigitising={this.initialiseDigitising.bind(this)}
-          newFeaturePopoverOpen={this.state.newFeaturePopoverOpen}
-          importFeaturePopoverOpen={this.state.importFeaturePopoverOpen}
-          previewFeature={this.previewFeature.bind(this)}
-          marxanServer={this.state.marxanServer}
-          refreshFeatures={this.refreshFeatures.bind(this)}
+          open={dialogsState.featuresDialogOpen}
+          onOk={updateSelectedFeatures}
+          loading={dialogsState.loading || dialogsState.uploading}
+          metadata={dialogsState.metadata}
+          allFeatures={dialogsState.allFeatures}
+          deleteFeature={deleteFeature}
+          updateState={updateState}
+          selectAllFeatures={selectAllFeatures}
+          userRole={dialogsState.userData.ROLE}
+          clickFeature={clickFeature}
+          addingRemovingFeatures={dialogsState.addingRemovingFeatures}
+          selectedFeatureIds={dialogsState.selectedFeatureIds}
+          initialiseDigitising={initialiseDigitising}
+          newFeaturePopoverOpen={dialogsState.newFeaturePopoverOpen}
+          importFeaturePopoverOpen={dialogsState.importFeaturePopoverOpen}
+          previewFeature={previewFeature}
+          marxanServer={dialogsState.marxanServer}
+          refreshFeatures={refreshFeatures}
         />
         <FeatureDialog
-          open={this.state.featureDialogOpen}
-          onOk={() => this.updateState({ featureDialogOpen: false })}
-          loading={this.state.loading}
-          feature_metadata={this.state.feature_metadata}
-          getTilesetMetadata={this.getMetadata.bind(this)}
-          setSnackBar={this.setSnackBar.bind(this)}
-          reportUnits={this.state.userData.REPORTUNITS}
+          open={dialogsState.featureDialogOpen}
+          onOk={() => updateState({ featureDialogOpen: false })}
+          loading={dialogsState.loading}
+          feature_metadata={dialogsState.feature_metadata}
+          getTilesetMetadata={getMetadata}
+          setSnackBar={setSnackBar}
+          reportUnits={dialogsState.userData.REPORTUNITS}
           getProjectList={getProjectList}
         />
         <NewFeatureDialog
-          open={this.state.NewFeatureDialogOpen}
-          onOk={this.closeNewFeatureDialog.bind(this)}
-          onCancel={this.closeNewFeatureDialog.bind(this)}
-          loading={this.state.loading || this.state.uploading}
-          createNewFeature={this.createNewFeature.bind(this)}
-          addToProject={this.state.addToProject}
-          setAddToProject={this.setAddToProject.bind(this)}
+          open={dialogsState.NewFeatureDialogOpen}
+          onOk={closeNewFeatureDialog}
+          onCancel={closeNewFeatureDialog}
+          loading={dialogsState.loading || dialogsState.uploading}
+          createNewFeature={createNewFeature}
+          addToProject={dialogsState.addToProject}
+          setAddToProject={setAddToProject}
         />
         <ImportFeaturesDialog
-          open={this.state.importFeaturesDialogOpen}
-          importFeatures={this.importFeatures.bind(this)}
+          open={dialogsState.importFeaturesDialogOpen}
+          importFeatures={importFeatures}
           loading={
-            this.state.loading ||
-            this.state.preprocessing ||
-            this.state.uploading
+            dialogsState.loading ||
+            dialogsState.preprocessing ||
+            dialogsState.uploading
           }
-          updateState={this.updateState.bind(this)}
-          filename={this.state.featureDatasetFilename}
+          updateState={updateState}
+          filename={dialogsState.featureDatasetFilename}
           fileUpload={uploadFileToFolder}
-          unzipShapefile={this.unzipShapefile.bind(this)}
-          getShapefileFieldnames={this.getShapefileFieldnames.bind(this)}
-          deleteShapefile={this.deleteShapefile.bind(this)}
-          addToProject={this.state.addToProject}
-          setAddToProject={this.setAddToProject.bind(this)}
+          unzipShapefile={unzipShapefile}
+          getShapefileFieldnames={getShapefileFieldnames}
+          deleteShapefile={deleteShapefile}
+          addToProject={dialogsState.addToProject}
+          setAddToProject={setAddToProject}
         />
         <ImportFromWebDialog
-          open={this.state.importFromWebDialogOpen}
-          onCancel={this.updateState.bind(this)}
+          open={dialogsState.importFromWebDialogOpen}
+          onCancel={updateState}
           loading={
-            this.state.loading ||
-            this.state.preprocessing ||
-            this.state.uploading
+            dialogsState.loading ||
+            dialogsState.preprocessing ||
+            dialogsState.uploading
           }
-          importFeatures={this.importFeaturesFromWeb.bind(this)}
-          addToProject={this.state.addToProject}
-          setAddToProject={this.setAddToProject.bind(this)}
+          importFeatures={importFeaturesFromWeb}
+          addToProject={dialogsState.addToProject}
+          setAddToProject={setAddToProject}
         />
         <ImportGBIFDialog
-          open={this.state.importGBIFDialogOpen}
-          updateState={this.updateState.bind(this)}
+          open={dialogsState.importGBIFDialogOpen}
+          updateState={updateState}
           loading={
-            this.state.loading ||
-            this.state.preprocessing ||
-            this.state.uploading
+            dialogsState.loading ||
+            dialogsState.preprocessing ||
+            dialogsState.uploading
           }
-          importGBIFData={this.importGBIFData.bind(this)}
-          gbifSpeciesSuggest={this.gbifSpeciesSuggest.bind(this)}
-          addToProject={this.state.addToProject}
-          setAddToProject={this.setAddToProject.bind(this)}
+          importGBIFData={importGBIFData}
+          gbifSpeciesSuggest={gbifSpeciesSuggest}
+          addToProject={dialogsState.addToProject}
+          setAddToProject={setAddToProject}
         />
         <PlanningGridsDialog
-          open={this.state.planningGridsDialogOpen}
-          updateState={this.updateState.bind(this)}
-          loading={this.state.loading}
-          getPlanningUnitGrids={this.getPlanningUnitGrids.bind(this)}
-          unauthorisedMethods={this.state.unauthorisedMethods}
-          planningGrids={this.state.planning_unit_grids}
-          openNewPlanningGridDialog={this.openNewPlanningGridDialog.bind(this)}
-          exportPlanningGrid={this.exportPlanningGrid.bind(this)}
-          deletePlanningGrid={this.deletePlanningUnitGrid.bind(this)}
+          open={dialogsState.planningGridsDialogOpen}
+          updateState={updateState}
+          loading={dialogsState.loading}
+          getPlanningUnitGrids={getPlanningUnitGrids}
+          unauthorisedMethods={dialogsState.unauthorisedMethods}
+          planningGrids={dialogsState.planning_unit_grids}
+          openNewPlanningGridDialog={openNewPlanningGridDialog}
+          exportPlanningGrid={exportPlanningGrid}
+          deletePlanningGrid={deletePlanningUnitGrid}
           previewPlanningGrid={previewPlanningGrid}
-          marxanServer={this.state.marxanServer}
+          marxanServer={dialogsState.marxanServer}
           fullWidth={true}
           maxWidth="false"
         />
         <PlanningGridDialog
-          open={this.state.planningGridDialogOpen}
-          onOk={() => this.updateState({ planningGridDialogOpen: false })}
-          updateState={this.updateState.bind(this)}
-          loading={this.state.loading}
-          planning_grid_metadata={this.state.planning_grid_metadata}
-          getTilesetMetadata={this.getMetadata.bind(this)}
-          setSnackBar={this.setSnackBar.bind(this)}
+          open={dialogsState.planningGridDialogOpen}
+          onOk={() => updateState({ planningGridDialogOpen: false })}
+          updateState={updateState}
+          loading={dialogsState.loading}
+          planning_grid_metadata={dialogsState.planning_grid_metadata}
+          getTilesetMetadata={getMetadata}
+          setSnackBar={setSnackBar}
           getProjectList={getProjectList}
         />
         <ProjectsListDialog
-          open={this.state.ProjectsListDialogOpen}
-          projects={this.state.projectList}
-          userRole={this.state.userData.ROLE}
-          onOk={() => this.updateState({ ProjectsListDialogOpen: false })}
-          title={this.state.projectListDialogTitle}
-          heading={this.state.projectListDialogHeading}
+          open={dialogsState.ProjectsListDialogOpen}
+          projects={dialogsState.projectList}
+          userRole={dialogsState.userData.ROLE}
+          onOk={() => updateState({ ProjectsListDialogOpen: false })}
+          title={dialogsState.projectListDialogTitle}
+          heading={dialogsState.projectListDialogHeading}
         />
         <CostsDialog
-          open={this.state.costsDialogOpen}
-          onOk={() => this.updateState({ costsDialogOpen: false })}
-          onCancel={() => this.updateState({ costsDialogOpen: false })}
-          updateState={this.updateState.bind(this)}
-          unauthorisedMethods={this.state.unauthorisedMethods}
-          costname={this.state.metadata.COSTS}
-          deleteCost={this.deleteCost.bind(this)}
-          data={this.state.costnames}
-          allImpacts={this.state.allImpacts}
-          planningUnitName={this.state.metadata.PLANNING_UNIT_NAME}
-          createCostsFromImpact={this.createCostsFromImpact.bind(this)}
+          open={dialogsState.costsDialogOpen}
+          onOk={() => updateState({ costsDialogOpen: false })}
+          onCancel={() => updateState({ costsDialogOpen: false })}
+          updateState={updateState}
+          unauthorisedMethods={dialogsState.unauthorisedMethods}
+          costname={dialogsState.metadata.COSTS}
+          deleteCost={deleteCost}
+          data={dialogsState.costnames}
+          allImpacts={dialogsState.allImpacts}
+          planningUnitName={dialogsState.metadata.PLANNING_UNIT_NAME}
+          createCostsFromImpact={createCostsFromImpact}
         />
         <ImportCostsDialog
-          open={this.state.importCostsDialogOpen}
-          addCost={this.addCost.bind(this)}
-          updateState={this.updateState.bind(this)}
-          deleteCostFileThenClose={this.deleteCostFileThenClose.bind(this)}
-          loading={this.state.loading}
+          open={dialogsState.importCostsDialogOpen}
+          addCost={addCost}
+          updateState={updateState}
+          deleteCostFileThenClose={deleteCostFileThenClose}
+          loading={dialogsState.loading}
           fileUpload={uploadFileToProject}
         />
         <RunSettingsDialog
-          open={this.state.settingsDialogOpen}
-          onOk={() => this.updateState({ settingsDialogOpen: false })}
-          onCancel={() => this.updateState({ settingsDialogOpen: false })}
-          loading={this.state.loading || this.state.preprocessing}
-          updateRunParams={this.updateRunParams.bind(this)}
-          runParams={this.state.runParams}
-          showClumpingDialog={this.showClumpingDialog.bind(this)}
-          userRole={this.state.userData.ROLE}
+          open={dialogsState.settingsDialogOpen}
+          onOk={() => updateState({ settingsDialogOpen: false })}
+          onCancel={() => updateState({ settingsDialogOpen: false })}
+          loading={dialogsState.loading || dialogsState.preprocessing}
+          updateRunParams={updateRunParams}
+          runParams={dialogsState.runParams}
+          showClumpingDialog={showClumpingDialog}
+          userRole={dialogsState.userData.ROLE}
         />
         <ClassificationDialog
-          open={this.state.classificationDialogOpen}
-          onOk={this.closeClassificationDialog.bind(this)}
-          onCancel={this.closeClassificationDialog.bind(this)}
-          loading={this.state.loading}
-          renderer={this.state.renderer}
+          open={dialogsState.classificationDialogOpen}
+          onOk={closeClassificationDialog}
+          onCancel={closeClassificationDialog}
+          loading={dialogsState.loading}
+          renderer={dialogsState.renderer}
           changeColorCode={changeColorCode}
           changeRenderer={changeRenderer}
           changeNumClasses={changeNumClasses}
           changeShowTopClasses={changeShowTopClasses}
-          summaryStats={this.state.summaryStats}
-          brew={this.state.brew}
-          dataBreaks={this.state.dataBreaks}
+          summaryStats={dialogsState.summaryStats}
+          brew={dialogsState.brew}
+          dataBreaks={dialogsState.dataBreaks}
         />
         <ClumpingDialog
-          open={this.state.clumpingDialogOpen}
-          onOk={this.hideClumpingDialog.bind(this)}
-          onCancel={this.hideClumpingDialog.bind(this)}
-          tileset={this.state.tileset}
-          map0_paintProperty={this.state.map0_paintProperty}
-          map1_paintProperty={this.state.map1_paintProperty}
-          map2_paintProperty={this.state.map2_paintProperty}
-          map3_paintProperty={this.state.map3_paintProperty}
-          map4_paintProperty={this.state.map4_paintProperty}
-          mapCentre={this.state.mapCentre}
-          mapZoom={this.state.mapZoom}
-          createProjectGroupAndRun={this.createProjectGroupAndRun.bind(this)}
-          rerunProjects={this.rerunProjects.bind(this)}
-          setBlmValue={this.setBlmValue.bind(this)}
-          clumpingRunning={this.state.clumpingRunning}
+          open={dialogsState.clumpingDialogOpen}
+          onOk={hideClumpingDialog}
+          onCancel={hideClumpingDialog}
+          tileset={dialogsState.tileset}
+          map0_paintProperty={dialogsState.map0_paintProperty}
+          map1_paintProperty={dialogsState.map1_paintProperty}
+          map2_paintProperty={dialogsState.map2_paintProperty}
+          map3_paintProperty={dialogsState.map3_paintProperty}
+          map4_paintProperty={dialogsState.map4_paintProperty}
+          mapCentre={dialogsState.mapCentre}
+          mapZoom={dialogsState.mapZoom}
+          createProjectGroupAndRun={createProjectGroupAndRun}
+          rerunProjects={rerunProjects}
+          setBlmValue={setBlmValue}
+          clumpingRunning={dialogsState.clumpingRunning}
         />
         <ImportProjectDialog
-          open={this.state.importProjectDialogOpen}
-          onOk={() => this.updateState({ importProjectDialogOpen: false })}
-          loading={this.state.loading || this.state.uploading}
-          importProject={this.importProject.bind(this)}
+          open={dialogsState.importProjectDialogOpen}
+          onOk={() => updateState({ importProjectDialogOpen: false })}
+          loading={dialogsState.loading || dialogsState.uploading}
+          importProject={importProject}
           fileUpload={uploadFileToFolder}
-          log={this.log.bind(this)}
-          setSnackBar={this.setSnackBar.bind(this)}
+          log={log}
+          setSnackBar={setSnackBar}
         />
         <ImportMXWDialog
-          open={this.state.importMXWDialogOpen}
-          onOk={() => this.updateState({ importMXWDialogOpen: false })}
-          loading={this.state.loading || this.state.preprocessing}
-          importMXWProject={this.importMXWProject.bind(this)}
+          open={dialogsState.importMXWDialogOpen}
+          onOk={() => updateState({ importMXWDialogOpen: false })}
+          loading={dialogsState.loading || dialogsState.preprocessing}
+          importMXWProject={importMXWProject}
           fileUpload={uploadFileToFolder}
-          log={this.log.bind(this)}
-          setSnackBar={this.setSnackBar.bind(this)}
+          log={log}
+          setSnackBar={setSnackBar}
         />
         <ResetDialog
-          open={this.state.resetDialogOpen}
-          onOk={this.resetServer.bind(this)}
-          onCancel={() => this.updateState({ resetDialogOpen: false })}
-          onClose={() => this.updateState({ resetDialogOpen: false })}
-          loading={this.state.loading}
+          open={dialogsState.resetDialogOpen}
+          onOk={resetServer}
+          onCancel={() => updateState({ resetDialogOpen: false })}
+          onClose={() => updateState({ resetDialogOpen: false })}
+          loading={dialogsState.loading}
         />
         <RunLogDialog
-          open={this.state.runLogDialogOpen}
-          onOk={this.closeRunLogDialog.bind(this)}
-          onClose={this.closeRunLogDialog.bind(this)}
-          loading={this.state.loading}
-          preprocessing={this.state.preprocessing}
-          unauthorisedMethods={this.state.unauthorisedMethods}
-          runLogs={this.state.runLogs}
-          getRunLogs={this.getRunLogs.bind(this)}
-          clearRunLogs={this.clearRunLogs.bind(this)}
-          stopMarxan={this.stopProcess.bind(this)}
-          userRole={this.state.userData.ROLE}
+          open={dialogsState.runLogDialogOpen}
+          onOk={closeRunLogDialog}
+          onClose={closeRunLogDialog}
+          loading={dialogsState.loading}
+          preprocessing={dialogsState.preprocessing}
+          unauthorisedMethods={dialogsState.unauthorisedMethods}
+          runLogs={dialogsState.runLogs}
+          getRunLogs={getRunLogs}
+          clearRunLogs={clearRunLogs}
+          stopMarxan={stopProcess}
+          userRole={dialogsState.userData.ROLE}
         />
         <ServerDetailsDialog
-          open={this.state.serverDetailsDialogOpen}
-          onOk={this.closeServerDetailsDialog.bind(this)}
-          onCancel={this.closeServerDetailsDialog.bind(this)}
-          onClose={this.closeServerDetailsDialog.bind(this)}
-          updateState={this.updateState.bind(this)}
-          marxanServer={this.state.marxanServer}
-          newWDPAVersion={this.state.newWDPAVersion}
-          registry={this.state.registry}
+          open={dialogsState.serverDetailsDialogOpen}
+          onOk={closeServerDetailsDialog}
+          onCancel={closeServerDetailsDialog}
+          onClose={closeServerDetailsDialog}
+          updateState={updateState}
+          marxanServer={dialogsState.marxanServer}
+          newWDPAVersion={dialogsState.newWDPAVersion}
+          registry={dialogsState.registry}
         />
         <UpdateWDPADialog
-          open={this.state.updateWDPADialogOpen}
-          onOk={() => this.updateState({ updateWDPADialogOpen: false })}
-          onCancel={() => this.updateState({ updateWDPADialogOpen: false })}
-          newWDPAVersion={this.state.newWDPAVersion}
-          updateWDPA={this.updateWDPA.bind(this)}
-          loading={this.state.preprocessing}
-          registry={this.state.registry}
+          open={dialogsState.updateWDPADialogOpen}
+          onOk={() => updateState({ updateWDPADialogOpen: false })}
+          onCancel={() => updateState({ updateWDPADialogOpen: false })}
+          newWDPAVersion={dialogsState.newWDPAVersion}
+          updateWDPA={updateWDPA}
+          loading={dialogsState.preprocessing}
+          registry={dialogsState.registry}
         />
         <ChangePasswordDialog
-          open={this.state.changePasswordDialogOpen}
-          onOk={this.closeChangePasswordDialog.bind(this)}
-          user={this.state.user}
-          onClose={this.closeChangePasswordDialog.bind(this)}
-          checkPassword={this.checkPassword.bind(this)}
-          setSnackBar={this.setSnackBar.bind(this)}
+          open={dialogsState.changePasswordDialogOpen}
+          onOk={closeChangePasswordDialog}
+          user={dialogsState.user}
+          onClose={closeChangePasswordDialog}
+          checkPassword={checkPassword}
+          setSnackBar={setSnackBar}
           updateUser={handleUserUpdate}
         />
         <AlertDialog
-          open={this.state.alertDialogOpen}
-          onOk={() => this.updateState({ alertDialogOpen: false })}
+          open={dialogsState.alertDialogOpen}
+          onOk={() => updateState({ alertDialogOpen: false })}
         />
         <Snackbar
-          open={this.state.snackbarOpen}
+          open={dialogsState.snackbarOpen}
           message={message}
-          onClose={this.closeSnackbar.bind(this)}
+          onClose={closeSnackbar}
           style={{ maxWidth: "800px !important" }}
           bodyStyle={{ maxWidth: "800px !important" }}
         />
         <Popover
-          open={this.state.featureMenuOpen}
-          anchorEl={this.state.menuAnchor}
-          onClose={closeFeatureMenu.bind(this)}
+          open={dialogsState.featureMenuOpen}
+          anchorEl={dialogsState.menuAnchor}
+          onClose={closeFeatureMenu}
           style={{ width: "307px" }}
         >
           <Menu
             style={{ width: "207px" }}
-            onMouseLeave={closeFeatureMenu.bind(this)}
+            onMouseLeave={closeFeatureMenu}
           >
             <MenuItemWithButton
               leftIcon={<Properties style={{ margin: "1px" }} />}
               onClick={() =>
-                this.updateState({
+                updateState({
                   openInfoDialogOpen: true,
                   featureMenuOpen: false,
                 })
@@ -5224,67 +4848,67 @@ const loadCostsLayer = async (forceReload = false) => {
               leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
               style={{
                 display:
-                  this.state.currentFeature.old_version ||
-                  this.state.userData.ROLE === "ReadOnly"
+                  dialogsState.currentFeature.old_version ||
+                  dialogsState.userData.ROLE === "ReadOnly"
                     ? "none"
                     : "block",
               }}
-              onClick={this.removeFromProject.bind(
+              onClick={removeFromProject.bind(
                 this,
-                this.state.currentFeature
+                dialogsState.currentFeature
               )}
             >
               Remove from project
             </MenuItemWithButton>
             <MenuItemWithButton
               leftIcon={
-                this.state.currentFeature.feature_layer_loaded ? (
+                dialogsState.currentFeature.feature_layer_loaded ? (
                   <RemoveFromMap style={{ margin: "1px" }} />
                 ) : (
                   <AddToMap style={{ margin: "1px" }} />
                 )
               }
               style={{
-                display: this.state.currentFeature.tilesetid ? "block" : "none",
+                display: dialogsState.currentFeature.tilesetid ? "block" : "none",
               }}
-              onClick={this.toggleFeatureLayer.bind(
+              onClick={toggleFeatureLayer.bind(
                 this,
-                this.state.currentFeature
+                dialogsState.currentFeature
               )}
             >
-              {this.state.currentFeature.feature_layer_loaded
+              {dialogsState.currentFeature.feature_layer_loaded
                 ? "Remove from map"
                 : "Add to map"}
             </MenuItemWithButton>
             <MenuItemWithButton
               leftIcon={
-                this.state.currentFeature.feature_puid_layer_loaded ? (
+                dialogsState.currentFeature.feature_puid_layer_loaded ? (
                   <RemoveFromMap style={{ margin: "1px" }} />
                 ) : (
                   <AddToMap style={{ margin: "1px" }} />
                 )
               }
-              onClick={this.toggleFeaturePUIDLayer.bind(
+              onClick={toggleFeaturePUIDLayer.bind(
                 this,
-                this.state.currentFeature
+                dialogsState.currentFeature
               )}
               disabled={
                 !(
-                  this.state.currentFeature.preprocessed &&
-                  this.state.currentFeature.occurs_in_planning_grid
+                  dialogsState.currentFeature.preprocessed &&
+                  dialogsState.currentFeature.occurs_in_planning_grid
                 )
               }
             >
-              {this.state.currentFeature.feature_puid_layer_loaded
+              {dialogsState.currentFeature.feature_puid_layer_loaded
                 ? "Remove planning unit outlines"
                 : "Outline planning units where the feature occurs"}
             </MenuItemWithButton>
             <MenuItemWithButton
               leftIcon={<ZoomIn style={{ margin: "1px" }} />}
               style={{
-                display: this.state.currentFeature.extent ? "block" : "none",
+                display: dialogsState.currentFeature.extent ? "block" : "none",
               }}
-              onClick={this.zoomToFeature.bind(this, this.state.currentFeature)}
+              onClick={zoomToFeature.bind(this, dialogsState.currentFeature)}
             >
               Zoom to feature extent
             </MenuItemWithButton>
@@ -5292,18 +4916,18 @@ const loadCostsLayer = async (forceReload = false) => {
               leftIcon={<Preprocess style={{ margin: "1px" }} />}
               style={{
                 display:
-                  this.state.currentFeature.old_version ||
-                  this.state.userData.ROLE === "ReadOnly"
+                  dialogsState.currentFeature.old_version ||
+                  dialogsState.userData.ROLE === "ReadOnly"
                     ? "none"
                     : "block",
               }}
-              onClick={this.preprocessSingleFeature.bind(
+              onClick={preprocessSingleFeature.bind(
                 this,
-                this.state.currentFeature
+                dialogsState.currentFeature
               )}
               disabled={
-                this.state.currentFeature.preprocessed ||
-                this.state.preprocessing
+                dialogsState.currentFeature.preprocessed ||
+                dialogsState.preprocessing
               }
             >
               Pre-process
@@ -5311,125 +4935,119 @@ const loadCostsLayer = async (forceReload = false) => {
           </Menu>
         </Popover>
         <TargetDialog
-          open={this.state.targetDialogOpen}
-          onOk={this.closeTargetDialog.bind(this)}
+          open={dialogsState.targetDialogOpen}
+          onOk={closeTargetDialog}
           showCancelButton={true}
-          onCancel={this.closeTargetDialog.bind(this)}
-          updateTargetValueForFeatures={this.updateTargetValueForFeatures.bind(
+          onCancel={closeTargetDialog}
+          updateTargetValueForFeatures={updateTargetValueForFeatures.bind(
             this
           )}
         />
         <GapAnalysisDialog
-          open={this.state.gapAnalysisDialogOpen}
+          open={dialogsState.gapAnalysisDialogOpen}
           showCancelButton={true}
-          onOk={this.closeGapAnalysisDialog.bind(this)}
-          onCancel={this.closeGapAnalysisDialog.bind(this)}
-          closeGapAnalysisDialog={this.closeGapAnalysisDialog.bind(this)}
-          gapAnalysis={this.state.gapAnalysis}
-          preprocessing={this.state.preprocessing}
-          projectFeatures={this.state.projectFeatures}
-          metadata={this.state.metadata}
-          marxanServer={this.state.marxanServer}
-          reportUnits={this.state.userData.REPORTUNITS}
+          onOk={closeGapAnalysisDialog}
+          onCancel={closeGapAnalysisDialog}
+          closeGapAnalysisDialog={closeGapAnalysisDialog}
+          gapAnalysis={dialogsState.gapAnalysis}
+          preprocessing={dialogsState.preprocessing}
+          projectFeatures={dialogsState.projectFeatures}
+          metadata={dialogsState.metadata}
+          marxanServer={dialogsState.marxanServer}
+          reportUnits={dialogsState.userData.REPORTUNITS}
         />
         <ShareableLinkDialog
-          open={this.state.shareableLinkDialogOpen}
-          onOk={() => this.updateState({ shareableLinkDialogOpen: false })}
+          open={dialogsState.shareableLinkDialogOpen}
+          onOk={() => updateState({ shareableLinkDialogOpen: false })}
           shareableLinkUrl={
             window.location +
             "?server=" +
-            this.state.marxanServer.name +
+            dialogsState.marxanServer.name +
             "&user=" +
-            this.state.user +
+            dialogsState.user +
             "&project=" +
-            this.state.project
+            dialogsState.project
           }
         />
         <AtlasLayersDialog
-          open={this.state.atlasLayersDialogOpen}
-          onOk={this.closeAtlasLayersDialog.bind(this)}
-          onCancel={this.clearSelactedLayers.bind(this)}
-          loading={this.state.loading}
-          atlasLayers={this.state.atlasLayers}
-          marxanServer={this.state.marxanServer}
-          setSnackBar={this.setSnackBar.bind(this)}
-          selectedLayers={this.state.selectedLayers}
-          setselectedLayers={this.setselectedLayers.bind(this)}
+          open={dialogsState.atlasLayersDialogOpen}
+          onOk={closeAtlasLayersDialog}
+          onCancel={clearSelactedLayers}
+          loading={dialogsState.loading}
+          atlasLayers={dialogsState.atlasLayers}
+          marxanServer={dialogsState.marxanServer}
+          setSnackBar={setSnackBar}
+          selectedLayers={dialogsState.selectedLayers}
+          setselectedLayers={setselectedLayers}
         />
         <CumulativeImpactDialog
-          loading={this.state.loading || this.state.uploading}
-          open={this.state.cumulativeImpactDialogOpen}
-          onOk={() => this.updateState({ cumulativeImpactDialogOpen: false })}
+          loading={dialogsState.loading || dialogsState.uploading}
+          open={dialogsState.cumulativeImpactDialogOpen}
+          onOk={() => updateState({ cumulativeImpactDialogOpen: false })}
           onCancel={() =>
-            this.updateState({ cumulativeImpactDialogOpen: false })
+            updateState({ cumulativeImpactDialogOpen: false })
           }
-          openHumanActivitiesDialog={this.openHumanActivitiesDialog.bind(this)}
-          metadata={this.state.metadata}
-          allImpacts={this.state.allImpacts}
-          clickImpact={this.clickImpact.bind(this)}
-          initialiseDigitising={this.initialiseDigitising.bind(this)}
-          updateState={this.updateState.bind(this)}
-          selectedImpactIds={this.state.selectedImpactIds}
-          openImportedActivitesDialog={this.openImportedActivitesDialog.bind(
-            this
-          )}
-          setSnackBar={this.setSnackBar.bind(this)}
-          userRole={this.state.userData.ROLE}
+          openHumanActivitiesDialog={openHumanActivitiesDialog}
+          metadata={dialogsState.metadata}
+          allImpacts={dialogsState.allImpacts}
+          clickImpact={clickImpact}
+          initialiseDigitising={initialiseDigitising}
+          updateState={updateState}
+          selectedImpactIds={dialogsState.selectedImpactIds}
+          openImportedActivitesDialog={openImportedActivitesDialog}
+          setSnackBar={setSnackBar}
+          userRole={dialogsState.userData.ROLE}
         />
         <HumanActivitiesDialog
-          loading={this.state.loading || this.state.uploading}
-          open={this.state.humanActivitiesDialogOpen}
-          onOk={() => this.updateState({ humanActivitiesDialogOpen: false })}
+          loading={dialogsState.loading || dialogsState.uploading}
+          open={dialogsState.humanActivitiesDialogOpen}
+          onOk={() => updateState({ humanActivitiesDialogOpen: false })}
           onCancel={() =>
-            this.updateState({ humanActivitiesDialogOpen: false })
+            updateState({ humanActivitiesDialogOpen: false })
           }
-          updateState={this.updateState.bind(this)}
-          metadata={this.state.metadata}
-          activities={this.state.activities}
-          initialiseDigitising={this.initialiseDigitising.bind(this)}
-          setSnackBar={this.setSnackBar.bind(this)}
-          userRole={this.state.userData.ROLE}
-          fileUpload={this.uploadRaster.bind(this)}
-          saveActivityToDb={this.saveActivityToDb.bind(this)}
-          openImportedActivitesDialog={this.openImportedActivitesDialog.bind(
-            this
-          )}
+          updateState={updateState}
+          metadata={dialogsState.metadata}
+          activities={dialogsState.activities}
+          initialiseDigitising={initialiseDigitising}
+          setSnackBar={setSnackBar}
+          userRole={dialogsState.userData.ROLE}
+          fileUpload={uploadRaster}
+          saveActivityToDb={saveActivityToDb}
+          openImportedActivitesDialog={openImportedActivitesDialog}
         />
         <RunCumuluativeImpactDialog
-          loading={this.state.loading || this.state.uploading}
-          open={this.state.importedActivitiesDialogOpen}
-          onOk={() => this.updateState({ importedActivitiesDialogOpen: false })}
+          loading={dialogsState.loading || dialogsState.uploading}
+          open={dialogsState.importedActivitiesDialogOpen}
+          onOk={() => updateState({ importedActivitiesDialogOpen: false })}
           onCancel={() =>
-            this.updateState({ importedActivitiesDialogOpen: false })
+            updateState({ importedActivitiesDialogOpen: false })
           }
-          updateState={this.updateState.bind(this)}
-          metadata={this.state.metadata}
-          uploadedActivities={this.state.uploadedActivities}
-          setSnackBar={this.setSnackBar.bind(this)}
-          userRole={this.state.userData.ROLE}
-          runCumulativeImpact={this.runCumulativeImpact.bind(this)}
+          updateState={updateState}
+          metadata={dialogsState.metadata}
+          uploadedActivities={dialogsState.uploadedActivities}
+          setSnackBar={setSnackBar}
+          userRole={dialogsState.userData.ROLE}
+          runCumulativeImpact={runCumulativeImpact}
         />
         <MenuBar
-          open={this.state.loggedIn}
-          user={this.state.user}
-          userRole={this.state.userData.ROLE}
-          infoPanelOpen={this.state.infoPanelOpen}
-          resultsPanelOpen={this.state.resultsPanelOpen}
-          toggleInfoPanel={this.toggleInfoPanel.bind(this)}
-          toggleResultsPanel={this.toggleResultsPanel.bind(this)}
-          showToolsMenu={this.showToolsMenu.bind(this)}
-          showUserMenu={this.showUserMenu.bind(this)}
-          showHelpMenu={this.showHelpMenu.bind(this)}
-          marxanServer={this.state.marxanServer.name}
-          openProjectsDialog={this.openProjectsDialog.bind(this)}
-          openServerDetailsDialog={this.openServerDetailsDialog.bind(this)}
-          openActivitiesDialog={this.openActivitiesDialog.bind(this)}
-          openFeaturesDialog={this.openFeaturesDialog.bind(this)}
-          openPlanningGridsDialog={this.openPlanningGridsDialog.bind(this)}
-          openCumulativeImpactDialog={this.openCumulativeImpactDialog.bind(
-            this
-          )}
-          openAtlasLayersDialog={this.openAtlasLayersDialog.bind(this)}
+          open={dialogsState.loggedIn}
+          user={dialogsState.user}
+          userRole={dialogsState.userData.ROLE}
+          infoPanelOpen={dialogsState.infoPanelOpen}
+          resultsPanelOpen={dialogsState.resultsPanelOpen}
+          toggleInfoPanel={toggleInfoPanel}
+          toggleResultsPanel={toggleResultsPanel}
+          showToolsMenu={showToolsMenu}
+          showUserMenu={showUserMenu}
+          showHelpMenu={showHelpMenu}
+          marxanServer={dialogsState.marxanServer.name}
+          openProjectsDialog={openProjectsDialog}
+          openServerDetailsDialog={openServerDetailsDialog}
+          openActivitiesDialog={openActivitiesDialog}
+          openFeaturesDialog={openFeaturesDialog}
+          openPlanningGridsDialog={openPlanningGridsDialog}
+          openCumulativeImpactDialog={openCumulativeImpactDialog}
+          openAtlasLayersDialog={openAtlasLayersDialog}
         />
       </React.Fragment>
       // </ThemeProvider>
