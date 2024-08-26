@@ -2534,7 +2534,7 @@ const importPlanningUnitGrid = async (zipFilename, alias, description) => {
 }
 
 //called when a new planning grid has been created
-const newPlanningGridCreated = (response) => {
+const newPlanningGridCreated = async (response) => {
   await pollMapbox(response.uploadId);
   await getPlanningUnitGrids();
 }
@@ -3074,65 +3074,64 @@ const selectAllFeatures = () =>  updateState({ selectedFeatureIds: dialogsState.
 const updateSelectedFeatures= async ()=> {
   //delete the gap analysis as the features within the project have changed
   await deleteGapAnalysis();
-  const allFeatures = dialogsState.allFeatures.map(feature => {
-    // Update feature selection status
+  
+  // Get the updated features
+  let updatedFeatures = dialogsState.allFeatures.map((feature) => {
     if (dialogsState.selectedFeatureIds.includes(feature.id)) {
+      // Feature is selected
       return { ...feature, selected: true };
-    }
-
-    // Handle features based on version
-    if (dialogsState.metadata.OLDVERSION) {
-      return { ...feature, selected: false };
     } else {
-      // For non-old version features, set additional properties
-      return {
-        ...feature,
-        selected: false,
-        preprocessed: false,
-        protected_area: -1,
-        pu_area: -1,
-        pu_count: -1,
-        target_area: -1,
-        occurs_in_planning_grid: false,
-      };
+      if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
+      if (feature.feature_puid_layer_loaded) toggleFeaturePUIDLayer(feature);
+      // Feature is not selected
+      if (dialogsState.metadata.OLDVERSION) {
+        // For imported projects, only update selection status
+        return { ...feature, selected: false };
+      } else {
+        // For non-old version features, set additional properties
+        return {
+          ...feature,
+          selected: false,
+          preprocessed: false,
+          protected_area: -1,
+          pu_area: -1,
+          pu_count: -1,
+          target_area: -1,
+          occurs_in_planning_grid: false,
+        };
+      }
     }
   });
 
+  
   // Apply updates to state
-  setFeaturesState(allFeatures, () => {
-    // Persist changes to the server if the user is not read-only
-    if (dialogsState.userData.ROLE !== "ReadOnly") {
-      updateSpecFile();
-    }
-    // Close dialogs
-    updateState({
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-    });
-  });
-
-  // Remove layers if loaded
-  allFeatures.forEach(feature => {
-    if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
-    if (feature.feature_puid_layer_loaded) toggleFeaturePUIDLayer(feature);
-  });
+  setFeaturesState(updatedFeatures);
+  // Persist changes to the server if the user is not read-only
+  if (dialogsState.userData.ROLE !== "ReadOnly") {
+    await updateSpecFile();
+  }
+  
+  // Close dialogs
+  updateState({
+    featuresDialogOpen: false,
+    newFeaturePopoverOpen: false,
+    importFeaturePopoverOpen: false,
+  }); 
 }
 
 //updates the target values for all features in the project to the passed value
-const updateTargetValueForFeatures = (target_value) => {
+const updateTargetValueForFeatures = async (target_value) => {
   const allFeatures = dialogsState.allFeatures.map(feature => ({
     ...feature,
     target_value
   }));
 
   // Set the features in app state
-  setFeaturesState(allFeatures, () => {
-    // Persist the changes to the server
-    if (dialogsState.userData.ROLE !== "ReadOnly") {
-      this.updateSpecFile();
-    }
-  });
+  setFeaturesState(allFeatures);
+  // Persist the changes to the server
+  if (dialogsState.userData.ROLE !== "ReadOnly") {
+    await updateSpecFile();
+  }
 };
 
 
@@ -3170,16 +3169,18 @@ const deleteShapefile = async (zipfile, shapefile) => await _get(`deleteShapefil
 const getShapefileFieldnames = async (filename) => await _get(`getShapefileFieldnames?filename=${filename}`);
 
 //create new features from the already uploaded zipped shapefile
-const importFeatures = (zipfile, name, description, shapefile, spiltfield) => {
+const importFeatures = async (zipfile, name, description, shapefile, spiltfield) => {
   //start the logging
   startLogging();
   const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}`;
   const url = name !== ""
     ? `${baseUrl}&name=${name}&description=${description}`
     : `${baseUrl}&splitfield=${splitfield}`;
+    
   const message = await _ws(url, wsMessageCallback);
   //get the uploadIds, get a promise array to see when all of the uploads are done
-  const promiseArray = message.uploadIds.map(uploadId => await pollMapbox(uploadId));
+  const promiseArray = message.uploadIds.map(uploadId => pollMapbox(uploadId));
+  
   await Promise.all(promiseArray);
   return "All features uploaded";
 }
@@ -3676,7 +3677,7 @@ const  renderPAGridIntersections = async (iucnCategory) => {
 }
 
   //updates the planning units by reconciling the passed arrays of puids
-const updatePlanningUnits = (previousPuids, puids) => {
+const updatePlanningUnits = async (previousPuids, puids) => {
     //copy the current planning units state
     const statuses = [...dialogsState.planning_units];
     //get the new puids that need to be added
@@ -3694,44 +3695,40 @@ const updatePlanningUnits = (previousPuids, puids) => {
     //re-render the layer
     renderPuEditLayer();
     //update the pu.dat file
-    updatePuDatFile();
+    await updatePuDatFile();
   }
 
 const getNewPuids = (previousPuids, puids) => puids.filter((i) => previousPuids.indexOf(i) === -1);
 
-  preprocessProtectedAreas(iucnCategory) {
-    //have the intersections already been calculated
+const preprocessProtectedAreas = async (iucnCategory) => {
+    // Have the intersections already been calculated
     if (dialogsState.protected_area_intersections.length > 0) {
-      return Promise.resolve(dialogsState.protected_area_intersections);
+      return dialogsState.protected_area_intersections;
     } else {
-      //do the intersection on the server
-      return new Promise((resolve, reject) => {
-        //start the logging
-        this.startLogging();
-        //call the websocket
-        this._ws(
-          "preprocessProtectedAreas?user=" +
-            dialogsState.owner +
-            "&project=" +
-            dialogsState.project +
-            "&planning_grid_name=" +
-            dialogsState.metadata.PLANNING_UNIT_NAME,
-          this.wsMessageCallback
-        )
-          .then((message) => {
-            //set the state
-            setDialogsState(prevState => ({ ...prevState,
-              protected_area_intersections: message.intersections,
-            });
-            //return a value to the then() call
-            resolve(message);
-          })
-          .catch((error) => {
-            reject(error);
-          });
-      }); //return
+      try {
+      // Start logging
+      startLogging();
+
+      // Call the websocket
+      const message = await _ws(
+        `preprocessProtectedAreas?user=${dialogsState.owner}&project=${dialogsState.project}&planning_grid_name=${dialogsState.metadata.PLANNING_UNIT_NAME}`,
+        wsMessageCallback
+      );
+
+      // Update the state
+      setDialogsState(prevState => ({
+        ...prevState,
+        protected_area_intersections: message.intersections,
+      }));
+
+      // Return the intersections
+      return message.intersections;
+    } catch (error) {
+      throw error;
     }
   }
+};
+
 
 const getIntersections =(iucnCategory)=> {
   //get the individual iucn categories
@@ -3741,52 +3738,35 @@ const getIntersections =(iucnCategory)=> {
 }
 
   //downloads and updates the WDPA on the server
-  updateWDPA() {
-    //start the logging
-    this.startLogging();
+const updateWDPA = async() => {
+    startLogging();
     //call the webservice
-    return new Promise((resolve, reject) => {
-      this._ws(
-        "updateWDPA?downloadUrl=" +
-          dialogsState.registry.WDPA.downloadUrl +
-          "&wdpaVersion=" +
-          dialogsState.registry.WDPA.latest_version,
-        this.wsMessageCallback
-      )
-        .then((message) => {
-          //websocket has finished - set the new version of the wdpa
-          let obj = Object.assign(dialogsState.marxanServer, {
-            wdpa_version: dialogsState.registry.WDPA.latest_version,
-          });
-          //update the state and when it is finished, re-add the wdpa source and layer
-          setDialogsState(prevState => ({ ...prevState, newWDPAVersion: false, marxanServer: obj }, () => {
-            //set the source for the WDPA layer to the new vector tiles
-            this.setWDPAVectorTilesLayerName(
-              dialogsState.registry.WDPA.latest_version
-            );
-            //remove the existing WDPA layer and source
-            this.removeMapLayer(CONSTANTS.WDPA_LAYER_NAME);
-            if (
-              this.map &&
-              this.map.getSource(CONSTANTS.WDPA_SOURCE_NAME) !== undefined
-            )
-              this.map.removeSource(CONSTANTS.WDPA_SOURCE_NAME);
-            //re-add the WDPA source and layer
-            this.addWDPASource();
-            this.addWDPALayer();
-            //reset the protected area intersections on the client
-            setDialogsState(prevState => ({ ...prevState, protected_area_intersections: [] });
-            //recalculate the protected area intersections and refilter the vector tiles
-            await changeIucnCategory(dialogsState.metadata.IUCN_CATEGORY);
-            //close the dialog
-            updateState({ updateWDPADialogOpen: false });
-          });
-          resolve(message);
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    }); //return
+      const message = await _ws(`updateWDPA?downloadUrl=${dialogsState.registry.WDPA.downloadUrl}&wdpaVersion=${dialogsState.registry.WDPA.latest_version}`, wsMessageCallback)
+      // Websocket has finished - set the new version of the wdpa
+      
+      setNewWDPAVersion(false);
+      setMarxanServer({
+        ...prev, 
+        wdpa_version: dialogsState.registry.WDPA.latest_version
+      });
+      await delay(1000);
+      //set the source for the WDPA layer to the new vector tiles
+      setWDPAVectorTilesLayerName(dialogsState.registry.WDPA.latest_version);
+      // Remove the existing WDPA layer and source
+      removeMapLayer(CONSTANTS.WDPA_LAYER_NAME);
+      if (this.map && this.map.getSource(CONSTANTS.WDPA_SOURCE_NAME)) {
+        this.map.removeSource(CONSTANTS.WDPA_SOURCE_NAME);
+      }
+      //re-add the WDPA source and layer
+      addWDPASource();
+      addWDPALayer();
+      //reset the protected area intersections on the client
+      setDialogsState(prevState => ({ ...prevState, protected_area_intersections: [] }));
+      //recalculate the protected area intersections and refilter the vector tiles
+      await changeIucnCategory(dialogsState.metadata.IUCN_CATEGORY);
+      //close the dialog
+      updateState({ updateWDPADialogOpen: false });
+      return message;
   }
 
 // ----------------------------------------------------------------------------------------------- //
@@ -3799,145 +3779,126 @@ const getIntersections =(iucnCategory)=> {
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 
-  async preprocessBoundaryLengths(iucnCategory) {
-    if (dialogsState.files.BOUNDNAME) {
-      //if the bounds.dat file already exists
-      return Promise.resolve();
-    } else {
-      //calculate the boundary lengths on the server
-      return new Promise((resolve, reject) => {
-        //start the logging
-        this.startLogging();
-        //call the websocket
-        this._ws(
-          "preprocessPlanningUnits?user=" +
-            dialogsState.owner +
-            "&project=" +
-            dialogsState.project,
-          this.wsMessageCallback
-        )
-          .then((message) => {
-            //update the state
-            var currentFiles = dialogsState.files;
-            currentFiles.BOUNDNAME = "bounds.dat";
-            setDialogsState(prevState => ({ ...prevState, files: currentFiles });
-            //return a value to the then() call
-            resolve(message);
-          })
-          .catch((error) => {
-            reject(error);
-          });
-      }); //return
-    }
+const preprocessBoundaryLengths = async (iucnCategory) => {
+  if (dialogsState.files.BOUNDNAME) {
+    // If the bounds.dat file already exists, exit the function
+    return;
   }
 
-  showClumpingDialog() {
-    //update the map centre and zoom state which is used by the maps in the clumping dialog
-    this.updateMapCentreAndZoom();
+  try {
+    // Start logging
+    startLogging();
+
+    // Call the websocket and wait for the response
+    const message = await _ws(
+      `preprocessPlanningUnits?user=${dialogsState.owner}&project=${dialogsState.project}`,
+      wsMessageCallback
+    );
+
+    // Update the state with the new file name
+    setDialogsState(prevState => ({
+      ...prevState,
+      files: {
+        ...prevState.files,
+        BOUNDNAME: 'bounds.dat',
+      },
+    }));
+
+    // Return the message from the websocket
+    return message;
+
+  } catch (error) {
+    // Handle any errors that occurred during the websocket call
+    console.error('Error preprocessing boundary lengths:', error);
+    throw error; // Re-throw the error if needed
+  }
+};
+
+const showClumpingDialog = async () => {
+    // Update the map centre and zoom state which is used by the maps in the clumping dialog
+    updateMapCentreAndZoom();
     //when the boundary lengths have been calculated
-    this.preprocessBoundaryLengths()
-      .then((intersections) => {
-        //update the spec.dat file with any that have been added or removed or changed target or spf
-        this.updateSpecFile()
-          .then((value) => {
-            //when the species file has been updated, update the planning unit file
-            this.updatePuFile();
-            //when the planning unit file has been updated, update the PuVSpr file - this does all the preprocessing using web sockets
-            this.updatePuvsprFile().then((value) => {
-              //show the clumping dialog
-              setDialogsState(prevState => ({ ...prevState,
-                clumpingDialogOpen: true,
-                clumpingRunning: true,
-              });
-            });
-          })
-          .catch((error) => {
-            //updateSpecFile error
-          });
-      })
-      .catch((error) => {
-        //preprocessBoundaryLengths error
-        console.log(error);
-      });
-  }
+    await preprocessBoundaryLengths();
+    // Update the spec.dat file with any that have been added or removed or changed target or spf
+    await updateSpecFile();
+    // When the species file has been updated, update the planning unit file
+    updatePuFile(); // not implemented yet
+  
+    // When the planning unit file has been updated, update the PuVSpr file - this does all the preprocessing using web sockets
+    await updatePuvsprFile();
+    //show the clumping dialog
+    setDialogsState(prevState => ({ ...prevState, clumpingDialogOpen: true, clumpingRunning: true}));
+}
 
-  hideClumpingDialog() {
-    //delete the project group
-    this.deleteProjects();
-    //reset the paint properties in the clumping dialog
-    this.resetPaintProperties();
-    //return state to normal
-    setDialogsState(prevState => ({ ...prevState, clumpingDialogOpen: false });
-  }
+const hideClumpingDialog = async () => {
+  //delete the project group
+  await deleteProjects();
+  //reset the paint properties in the clumping dialog
+  resetPaintProperties();
+  //return state to normal
+  setDialogsState(prevState => ({ ...prevState, clumpingDialogOpen: false }));
+}
 
   //creates a group of 5 projects with UUIDs in the _clumping folder
-  createProjectGroupAndRun(blmValues) {
+ const createProjectGroupAndRun = async (blmValues) => {
     //clear any exists projects
-    if (this.projects) this.deleteProjects();
-    return new Promise((resolve, reject) => {
-      this._get(
-        "createProjectGroup?user=" +
-          dialogsState.owner +
-          "&project=" +
-          dialogsState.project +
-          "&copies=5&blmValues=" +
-          blmValues.join(",")
-      )
-        .then((response) => {
-          //set the local variable for the projects
-          this.projects = response.data;
-          //run the projects
-          this.runProjects(response.data);
-          resolve("Project group created");
-        })
-        .catch((error) => {
-          //do something
-          reject(error);
-        });
-    });
+    if (this.projects) {
+      await deleteProjects();
+    }
+    const response = await _get(`createProjectGroup?user=${dialogsState.owner}&project=${dialogsState.project}&copies=5&blmValues=${blmValues.join(",")}`);
+    // Set the local variable for the projects
+    this.projects = response.data;
+    //run the projects
+    await runProjects(response.data);
+    return "Project group created";
   }
 
   //deletes the projects from the _clumping folder
-  deleteProjects() {
-    if (this.projects) {
-      var projectNames = this.projects.map((item) => {
-        return item.projectName;
-      });
-      //clear the local variable
-      this.projects = undefined;
-      return new Promise((resolve, reject) => {
-        this._get("deleteProjects?projectNames=" + projectNames.join(","))
-          .then((response) => {
-            resolve("Projects deleted");
-          })
-          .catch((error) => {
-            reject(error);
-          });
-      });
+  const deleteProjects = async() => {
+  if (this.projects) {
+    const projectNames = this.projects.map((item) =>  item.projectName);
+    //clear the local variable
+    this.projects = undefined;
+    try {
+      await _get(`deleteProjects?projectNames=${projectNames.join(",")}`);
+      return "Projects deleted";
+    } catch (error) {
+      throw error;
     }
   }
+}
 
 const runProjects = async (projects) => {
-    //reset the counter
-    this.projectsRun = 0;
-    //set the intitial state
-    setDialogsState(prevState => ({ ...prevState, clumpingRunning: true });
-    //run the projects
-    projects.forEach((project) => {
-      this.startMarxanJob("_clumping", project.projectName, false).then(
-        (response) => {
-          if (!this.checkForErrors(response, false)) {
-            //run completed - get a single solution
-            await loadOtherSolution(response.user, response.project, 1);
-          }
-          //increment the project counter
-          this.projectsRun = this.projectsRun + 1;
-          //set the state
-          if (this.projectsRun === 5) setDialogsState(prevState => ({ ...prevState, clumpingRunning: false });
-        }
-      );
-    });
+  //reset the counter
+  this.projectsRun = 0;
+  //set the intitial state
+  setDialogsState(prevState => ({ ...prevState, clumpingRunning: true }));
+  // Iterate through projects using a for...of loop to handle async/await correctly
+  try {
+
+    for (const project of projects) {
+      // Start the Marxan job and wait for the response
+      const response = await startMarxanJob("_clumping", project.projectName, false);
+
+      // Check for errors and proceed if no errors are found
+      if (!this.checkForErrors(response, false)) {
+        // Run completed - get a single solution
+        await loadOtherSolution(response.user, response.project, 1);
+      }
+
+      // Increment the project counter
+      this.projectsRun += 1;
+
+      // Update the state when the counter reaches 5
+      if (this.projectsRun === 5) {
+        setDialogsState(prevState => ({ ...prevState, clumpingRunning: false }));
+      }
+    }
+  } catch (error) {
+    // Handle errors if any occur during the process
+    console.error("An error occurred while running projects:", error);
   }
+}
 
 const rerunProjects = async (blmChanged, blmValues)=> {
   //reset the paint properties in the clumping dialog
@@ -3951,14 +3912,14 @@ const rerunProjects = async (blmChanged, blmValues)=> {
   }
 }
 
-const setBlmValue = (blmValue)=> {
+const setBlmValue = async (blmValue)=> {
   const newRunParams = dialogsSate.runParams.map((item) => ({
     key: item.key,
     value: item.key === "BLM" ? String(blmValue) : item.value,
   }));
   
   // Update the run parameters
-  this.updateRunParams(newRunParams);
+  return await updateRunParams(newRunParams);
 }
 
 const resetPaintProperties = () => {
@@ -3983,32 +3944,38 @@ const resetPaintProperties = () => {
 // ----------------------------------------------------------------------------------------------- //
 
   //called when the run log dialog opens and starts polling the run log
-  startPollingRunLogs async() {
-    this.runlogTimer = setInterval(() => {
+const startPollingRunLogs = async () => {
+  // Function to handle the polling
+  const pollLogs = async () => {
+    try {
       await getRunLogs();
-    }, 5000);
-  }
+    } catch (error) {
+      console.error("Error fetching run logs:", error);
+    }
+  };
+
+  // Start polling at a set interval
+  this.runlogTimer = setInterval(pollLogs, 5000);
+};
 
 
   //returns the log of all of the runs from the server
-  getRunLogs() {
-    if (!dialogsState.unauthorisedMethods.includes("getRunLogs")) {
-      this._get("getRunLogs").then((response) => {
-        setDialogsState(prevState => ({ ...prevState, runLogs: response.data });
-      });
-    }
+const   getRunLogs = async ()=> {
+  if (!dialogsState.unauthorisedMethods.includes("getRunLogs")) {
+    const response = await _get("getRunLogs");
+    setDialogsState(prevState => ({ ...prevState, runLogs: response.data }));
   }
+}
 
   //clears the records from the run logs file
-  clearRunLogs() {
-    this._get("clearRunLogs").then((response) => {
-      this.getRunLogs();
-    });
-  }
+const clearRunLogs = async () => {
+  await _get("clearRunLogs");
+  await getRunLogs();
+}
 
-  getShareableLink() {
-    updateState({ shareableLinkDialogOpen: true });
-  }
+ const  getShareableLink = () => {
+  updateState({ shareableLinkDialogOpen: true });
+}
 
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -4775,9 +4742,7 @@ return (
           onOk={closeTargetDialog}
           showCancelButton={true}
           onCancel={closeTargetDialog}
-          updateTargetValueForFeatures={updateTargetValueForFeatures.bind(
-            this
-          )}
+          updateTargetValueForFeatures={updateTargetValueForFeatures}
         />
         <GapAnalysisDialog
           open={dialogsState.gapAnalysisDialogOpen}
