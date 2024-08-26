@@ -672,9 +672,6 @@ const messageLogger = useCallback((message) => {
   }));
 }, []);
 
-  // utiliy method for getting all puids from normalised data, e.g. from [["VI", [7, 8, 9]], ["IV", [0, 1, 2, 3, 4]], ["V", [5, 6]]]
-const getPuidsFromNormalisedData = (normalisedData) =>  normalisedData.flatMap(item => item[1]);
-
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -688,7 +685,6 @@ const handleCreateUser = async (user, password, name, email) => await createNewU
   
 const handleUserUpdate = async (parameters, user=dialogsState.user) =>  await updateUser(parameters, user);
   
-const handleGetUsers = async () =>  await getUsers();
 
 const handleDeleteUser = async (user) => await deleteUser(user);
 
@@ -1230,9 +1226,7 @@ const renameDescription = async (newDesc) => {
 const getProjects = async () => {
   const response = await _get(`getProjects?user=${dialogsState.user}`);
   //filter the projects so that private ones arent shown
-  const projects = response.projects.filter((proj) => {
-    return !((proj.private) && (proj.user !== dialogsState.user) && (dialogsState.userData.ROLE !== "Admin"))
-  })
+  const projects = response.projects.filter((proj) => !((proj.private) && (proj.user !== dialogsState.user) && (dialogsState.userData.ROLE !== "Admin")));
   setDialogsState(prevState => ({ ...prevState, projects: projects }));
 }
 
@@ -1289,11 +1283,11 @@ const stopProcess = async (pid) => {
   } catch (error) {
     console.log(error);
   }
-  getRunLogs();
+  await getRunLogs();
 }
 
   //ui feedback when marxan is stopped by the user
-const marxanStopped = (error) => getRunLogs();
+const marxanStopped = async () => await getRunLogs();
 
 const resetProtectedAreas = () => {
   const updatedFeatures = dialogsState.allFeatures.map(feature => ({
@@ -1708,7 +1702,7 @@ const renderPuCostLayer = (cost_data) => {
   
   const expression = buildExpression(cost_data.data);
   this.map.setPaintProperty(CONSTANTS.COSTS_LAYER_NAME, "fill-color", expression);
-  setLayerMetadata(CONSTANTS.COSTS_LAYER_NAME, { min: cost_data.min, max: cost_data.max });
+  setLayerMetadata(CONSTANTS.COSTS_LAYER_NAME, { min: cost_data.min, max: cost_data.max });  
   showLayer(CONSTANTS.COSTS_LAYER_NAME);
   return "Costs rendered";
 }
@@ -3485,130 +3479,115 @@ this.map.fitBounds(
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
-  showUserMenu(e) {
-    e.preventDefault();
-    setDialogsState(prevState => ({ ...prevState, userMenuOpen: true, menuAnchor: e.currentTarget }));
-  }
-  hideUserMenu(e) {
-    setDialogsState(prevState => ({ ...prevState, userMenuOpen: false }));
-  }
-  showHelpMenu(e) {
-    e.preventDefault();
-    setDialogsState(prevState => ({ ...prevState, helpMenuOpen: true, menuAnchor: e.currentTarget }));
-  }
-  hideHelpMenu(e) {
-    setDialogsState(prevState => ({ ...prevState, helpMenuOpen: false }));
-  }
-  showToolsMenu(e) {
-    e.preventDefault();
-    setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: true, menuAnchor: e.currentTarget }));
-  }
-  hideToolsMenu(e) {
-    setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: false }));
-  }
+const showUserMenu = (e) => {
+  e.preventDefault();
+  setDialogsState(prevState => ({ ...prevState, userMenuOpen: true, menuAnchor: e.currentTarget }));
+}
 
-  openProjectsDialog() {
-    setDialogsState(prevState => ({ ...prevState, projectsDialogOpen: true }));
-    this.getProjects();
-  }
+const hideUserMenu = () => setDialogsState(prevState => ({ ...prevState, userMenuOpen: false }));
+  
+const showHelpMenu =(e)=> {
+  e.preventDefault();
+  setDialogsState(prevState => ({ ...prevState, helpMenuOpen: true, menuAnchor: e.currentTarget }));
+}
+ 
+const hideHelpMenu = () => setDialogsState(prevState => ({ ...prevState, helpMenuOpen: false }));
+  
+const showToolsMenu = (e)=> {
+  e.preventDefault();
+  setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: true, menuAnchor: e.currentTarget }));
+}
+ 
+const hideToolsMenu = () => setDialogsState(prevState => ({ ...prevState, toolsMenuOpen: false }));
 
-  openNewProjectWizardDialog() {
-    getCountries();
+const openProjectsDialog = async () =>{
+  setDialogsState(prevState => ({ ...prevState, projectsDialogOpen: true }));
+  await getProjects();
+}
+
+const openNewProjectWizardDialog = async () => {
+    await getCountries();
     setDialogsState(prevState => ({ ...prevState, newProjectWizardDialogOpen: true }));
   }
 
-  openNewPlanningGridDialog() {
-    getCountries();
-    setDialogsState(prevState => ({ ...prevState, NewPlanningGridDialogOpen: true }));
-  }
+const openNewPlanningGridDialog = async() => {
+  await getCountries();
+  setDialogsState(prevState => ({ ...prevState, NewPlanningGridDialogOpen: true }));
+}
 
-  openUserSettingsDialog() {
-    setDialogsState(prevState => ({ ...prevState, UserSettingsDialogOpen: true }));
-    this.hideUserMenu();
-  }
+ const openUserSettingsDialog = () =>{
+  setDialogsState(prevState => ({ ...prevState, UserSettingsDialogOpen: true }));
+  hideUserMenu();
+}
 
-  openProfileDialog() {
-    setDialogsState(prevState => ({ ...prevState, profileDialogOpen: true }));
-    this.hideUserMenu();
-  }
+const openProfileDialog = () =>{
+  setDialogsState(prevState => ({ ...prevState, profileDialogOpen: true }));
+  hideUserMenu();
+}
 
-  openAboutDialog() {
-    setDialogsState(prevState => ({ ...prevState, aboutDialogOpen: true }));
-    this.hideHelpMenu();
-  }
+const openAboutDialog = () =>{
+  setDialogsState(prevState => ({ ...prevState, aboutDialogOpen: true }));
+  hideHelpMenu();
+}
 
-  openClassificationDialog() {
-    setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: true }));
-  }
-  closeClassificationDialog() {
-    setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: false }));
-  }
+const openClassificationDialog = () => setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: true }));
+  
+const closeClassificationDialog = () => setDialogsState(prevState => ({ ...prevState, classificationDialogOpen: false }));
 
-  openUsersDialog() {
-    handleGetUsers();
+const openUsersDialog = async () => {
+    await getUsers()
     setDialogsState(prevState => ({ ...prevState, usersDialogOpen: true }));
   }
 
-  toggleInfoPanel() {
-    setDialogsState(prevState => ({ ...prevState, infoPanelOpen: !dialogsState.infoPanelOpen }));
-  }
-  toggleResultsPanel() {
-    setDialogsState(prevState => ({ ...prevState, resultsPanelOpen: !dialogsState.resultsPanelOpen }));
-  }
+const toggleInfoPanel = () => setDialogsState(prevState => ({ ...prevState, infoPanelOpen: !dialogsState.infoPanelOpen }));
 
-  openRunLogDialog() {
-    this.getRunLogs();
-    this.startPollingRunLogs();
+const toggleResultsPanel = () => setDialogsState(prevState => ({ ...prevState, resultsPanelOpen: !dialogsState.resultsPanelOpen }));
+
+const openRunLogDialog = async () =>{
+    await getRunLogs();
+    await startPollingRunLogs();
     setDialogsState(prevState => ({ ...prevState, runLogDialogOpen: true }));
   }
-  closeRunLogDialog() {
-    this.stopPollingRunLogs();
+  
+const closeRunLogDialog = () => {
+    clearInterval(this.runlogTimer);
     setDialogsState(prevState => ({ ...prevState, runLogDialogOpen: false }));
   }
-  openGapAnalysisDialog() {
+  
+const  openGapAnalysisDialog = async () => {
     setDialogsState(prevState => ({ ...prevState, gapAnalysisDialogOpen: true, gapAnalysis: [] }));
-    this.runGapAnalysis();
+    return await runGapAnalysis();
   }
-  closeGapAnalysisDialog() {
-    setDialogsState(prevState => ({ ...prevState, gapAnalysisDialogOpen: false, gapAnalysis: [] }));
-  }
-  openServerDetailsDialog() {
+  
+const closeGapAnalysisDialog =() =>setDialogsState(prevState => ({ ...prevState, gapAnalysisDialogOpen: false, gapAnalysis: [] }));
+  
+ const openServerDetailsDialog = () => {
     setDialogsState(prevState => ({ ...prevState, serverDetailsDialogOpen: true }));
-    this.hideHelpMenu();
+    hideHelpMenu();
   }
-  closeServerDetailsDialog() {
-    setDialogsState(prevState => ({ ...prevState, serverDetailsDialogOpen: false }));
-  }
-  openChangePasswordDialog() {
-    this.hideUserMenu();
-    setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: true }));
-  }
-  closeChangePasswordDialog() {
-    setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: false }));
-  }
+const closeServerDetailsDialog = () =>setDialogsState(prevState => ({ ...prevState, serverDetailsDialogOpen: false }));
+  
+const openChangePasswordDialog = ()=> {
+  hideUserMenu();
+  setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: true }));
+}
 
-  showProjectListDialog(
+const closeChangePasswordDialog= () =>setDialogsState(prevState => ({ ...prevState, changePasswordDialogOpen: false }));
+
+const showProjectListDialog = (projectList, projectListDialogTitle, projectListDialogHeading) => {
+  setDialogsState((prevState) => ({
+    ...prevState,
     projectList,
     projectListDialogTitle,
-    projectListDialogHeading
-  ) {
-    setDialogsState(
-      {
-        projectList: projectList,
-        projectListDialogTitle: projectListDialogTitle,
-        projectListDialogHeading: projectListDialogHeading,
-      },
-      () => {
-        updateState({ ProjectsListDialogOpen: true });
-      }
-    );
-  }
-  openTargetDialog() {
-    setDialogsState(prevState => ({ ...prevState, targetDialogOpen: true }));
-  }
-  closeTargetDialog() {
-    setDialogsState(prevState => ({ ...prevState, targetDialogOpen: false }));
-  }
+    projectListDialogHeading,
+  }), () => {
+    updateState({ ProjectsListDialogOpen: true });
+  });
+};
+
+const openTargetDialog = ()=>setDialogsState(prevState => ({ ...prevState, targetDialogOpen: true }));
+
+const closeTargetDialog = () =>setDialogsState(prevState => ({ ...prevState, targetDialogOpen: false }));
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -3619,144 +3598,106 @@ this.map.fitBounds(
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 
-  changeIucnCategory(iucnCategory) {
-    //update the state
-    let _metadata = dialogsState.metadata;
-    _metadata.IUCN_CATEGORY = iucnCategory;
-    setDialogsState(prevState => ({ ...prevState, metadata: _metadata });
-    //update the input.dat file
-    this.updateProjectParameter("IUCN_CATEGORY", iucnCategory);
-    //filter the wdpa vector tiles - NO LONGER USED
-    // this.filterWdpaByIucnCategory(iucnCategory);
-    //render the wdpa intersections on the grid
-    this.renderPAGridIntersections(iucnCategory);
-  }
+const  changeIucnCategory = async (iucnCategory)=> {
+  setDialogsState(prevState => ({
+    ...prevState,
+    metadata: {
+      ...prevState.metadata,
+      IUCN_CATEGORY: iucnCategory,
+    },
+  }));
+  //update the input.dat file
+  await updateProjectParameter("IUCN_CATEGORY", iucnCategory);
+  // Render the wdpa intersections on the grid
+  await renderPAGridIntersections(iucnCategory);
+}
 
-  filterWdpaByIucnCategory(iucnCategory) {
+const  filterWdpaByIucnCategory = (iucnCategory) => {
     //get the individual iucn categories
-    let iucnCategories = this.getIndividualIucnCategories(iucnCategory);
+    const iucnCategories = getIndividualIucnCategories(iucnCategory);
     //TODO FILTER THE WDPA CLIENT SIDE BY INTERSECTING IT WITH THE PLANNING GRID
     //filter the vector tiles for those iucn categories - and if the planning unit name has an iso3 country code - then use that as well. e.g. pu_ton_marine_hexagon_50 (has iso3 code) or pu_a4402723a92444ff829e9411f07e7 (no iso3 code)
     //let filterExpr = (dialogsState.metadata.PLANNING_UNIT_NAME.match(/_/g).length> 1) ? ['all', ['in', 'IUCN_CAT'].concat(iucnCategories), ['==', 'PARENT_ISO', dialogsState.metadata.PLANNING_UNIT_NAME.substr(3, 3).toUpperCase()]] : ['all', ['in', 'IUCN_CAT'].concat(iucnCategories)];
-    let filterExpr = ["all", ["in", "iucn_cat"].concat(iucnCategories)]; // no longer filter by ISO code
+    const filterExpr = ["all", ["in", "iucn_cat", ...iucnCategories]]; // no longer filter by ISO code
     this.map.setFilter(CONSTANTS.WDPA_LAYER_NAME, filterExpr);
-    //turn on/off the protected areas legend
-    let layer = iucnCategory === "None" ? false : true;
-    setDialogsState(prevState => ({ ...prevState, pa_layer_visible: layer });
-  }
 
-  getIndividualIucnCategories(iucnCategory) {
-    let retValue = [];
-    switch (iucnCategory) {
-      case "None":
-        retValue = [""];
-        break;
-      case "IUCN I-II":
-        retValue = ["Ia", "Ib", "II"];
-        break;
-      case "IUCN I-IV":
-        retValue = ["Ia", "Ib", "II", "III", "IV"];
-        break;
-      case "IUCN I-V":
-        retValue = ["Ia", "Ib", "II", "III", "IV", "V"];
-        break;
-      case "IUCN I-VI":
-        retValue = ["Ia", "Ib", "II", "III", "IV", "V", "VI"];
-        break;
-      case "All":
-        retValue = [
-          "Ia",
-          "Ib",
-          "II",
-          "III",
-          "IV",
-          "V",
-          "VI",
-          "Not Reported",
-          "Not Applicable",
-          "Not Assigned",
-        ];
-        break;
-      default:
-    }
-    return retValue;
-  }
+    // Turn on/off the protected areas legend
+    const layerVisible = iucnCategory !== "None";
+    setDialogsState(prevState => ({ ...prevState, pa_layer_visible: layerVisible }));
+}
+
+const getIndividualIucnCategories = (iucnCategory) => {
+  const categoryMap = {
+    "None": [""],
+    "IUCN I-II": ["Ia", "Ib", "II"],
+    "IUCN I-IV": ["Ia", "Ib", "II", "III", "IV"],
+    "IUCN I-V": ["Ia", "Ib", "II", "III", "IV", "V"],
+    "IUCN I-VI": ["Ia", "Ib", "II", "III", "IV", "V", "VI"],
+    "All": [
+      "Ia", "Ib", "II", "III", "IV", "V", "VI",
+      "Not Reported", "Not Applicable", "Not Assigned"
+    ],
+  };
+
+  return categoryMap[iucnCategory] || [];
+};
+
 
   //gets the puids for those protected areas that intersect the planning grid in the passed iucn category
-  getPuidsFromIucnCategory(iucnCategory) {
-    let intersections_by_category = this.getIntersections(iucnCategory);
-    //get all the puids in this iucn category
-    let puids = this.getPuidsFromNormalisedData(intersections_by_category);
-    return puids;
-  }
+const getPuidsFromIucnCategory = (iucnCategory) =>{
+  const intersections_by_category = getIntersections(iucnCategory);
+  //get all the puids in this iucn category
+  return intersections_by_category.flatMap(item => item[1]);
+}
 
   //called when the iucn category changes - gets the puids that need to be added/removed, adds/removes them and updates the PuEdit layer
-  async renderPAGridIntersections(iucnCategory) {
-    await this.preprocessProtectedAreas(iucnCategory)
-      .then((intersections) => {
-        //get all the puids of the intersecting protected areas in this iucn category
-        let puids = this.getPuidsFromIucnCategory(iucnCategory);
-        //see if any of them will overwrite existing manually edited planning units - these will be in status 1 and 3
-        let manuallyEditedPuids = this.getPlanningUnitsByStatus(1).concat(
-          this.getPlanningUnitsByStatus(3)
-        );
-        let clashingPuids = manuallyEditedPuids.filter(
-          (value) => -1 !== puids.indexOf(value)
-        );
-        if (clashingPuids.length > 0) {
-          //remove them from the puids
-          puids = puids.filter((item) => !clashingPuids.includes(item));
-          this.setSnackBar(
-            "Not all planning units have been added. See <a href='" +
-              CONSTANTS.ERRORS_PAGE +
-              "#not-all-planning-units-have-been-added' target='blank'>here</a>"
-          );
-        }
-        //get all the puids for the existing iucn category - these will come from the previousPuids rather than getPuidsFromIucnCategory as there may have been some clashes and not all of the puids from getPuidsFromIucnCategory may actually be renderered
-        //if the previousPuids are undefined then get them from the projects previousIucnCategory
-        let previousPuids =
-          this.previousPuids !== undefined
-            ? this.previousPuids
-            : this.getPuidsFromIucnCategory(this.previousIucnCategory);
-        //set the previously selected puids
-        this.previousPuids = puids;
-        //and previousIucnCategory
-        this.previousIucnCategory = iucnCategory;
-        //rerender
-        this.updatePlanningUnits(previousPuids, puids);
-      })
-      .catch((error) => {
-        this.setSnackBar(error);
-      });
-  }
+const  renderPAGridIntersections = async (iucnCategory) => {
+    await preprocessProtectedAreas(iucnCategory);
+    const puids = getPuidsFromIucnCategory(iucnCategory);
+    //see if any of them will overwrite existing manually edited planning units - these will be in status 1 and 3
+    const manuallyEditedPuids = getPlanningUnitsByStatus(1).concat(getPlanningUnitsByStatus(3));
+    const clashingPuids = manuallyEditedPuids.filter((value) => -1 !== puids.indexOf(value));
+    if (clashingPuids.length > 0) {
+      //remove them from the puids
+      puids = puids.filter((item) => !clashingPuids.includes(item));
+      setSnackBar(
+        `Not all planning units have been added. See <a href='${CONSTANTS.ERRORS_PAGE}#not-all-planning-units-have-been-added' target='blank'>here</a>`
+      );
+    }
+    // Get all puids for existing iucn category - these will come from the previousPuids rather than getPuidsFromIucnCategory as there may have been some clashes and not all of the puids from getPuidsFromIucnCategory may actually be renderered
+    //if the previousPuids are undefined then get them from the projects previousIucnCategory
+    let previousPuids = (this.previousPuids !== undefined) ? this.previousPuids : getPuidsFromIucnCategory(this.previousIucnCategory);
+    //set the previously selected puids
+    this.previousPuids = puids;
+    //and previousIucnCategory
+    this.previousIucnCategory = iucnCategory;
+    //rerender
+    updatePlanningUnits(previousPuids, puids);
+}
 
   //updates the planning units by reconciling the passed arrays of puids
-  updatePlanningUnits(previousPuids, puids) {
+const updatePlanningUnits = (previousPuids, puids) => {
     //copy the current planning units state
-    let statuses = dialogsState.planning_units;
+    const statuses = [...dialogsState.planning_units];
     //get the new puids that need to be added
-    let newPuids = this.getNewPuids(previousPuids, puids);
+    const newPuids = getNewPuids(previousPuids, puids);
     if (newPuids.length === 0) {
       //get the puids that need to be removed
-      let oldPuids = this.getNewPuids(puids, previousPuids);
-      this.removePuidsFromArray(statuses, 2, oldPuids);
+      let oldPuids = getNewPuids(puids, previousPuids);
+      removePuidsFromArray(statuses, 2, oldPuids);
     } else {
       //add all the new protected area intersections into the planning units as status 2
-      this.appPuidsToPlanningUnits(statuses, 2, newPuids);
+      appPuidsToPlanningUnits(statuses, 2, newPuids);
     }
     //update the state
-    setDialogsState(prevState => ({ ...prevState, planning_units: statuses });
+    setDialogsState(prevState => ({ ...prevState, planning_units: statuses }));
     //re-render the layer
     renderPuEditLayer();
     //update the pu.dat file
-    this.updatePuDatFile();
+    updatePuDatFile();
   }
 
-  getNewPuids(previousPuids, puids) {
-    return puids.filter((i) => {
-      return previousPuids.indexOf(i) === -1;
-    });
-  }
+const getNewPuids = (previousPuids, puids) => puids.filter((i) => previousPuids.indexOf(i) === -1);
 
   preprocessProtectedAreas(iucnCategory) {
     //have the intersections already been calculated
@@ -3792,14 +3733,12 @@ this.map.fitBounds(
     }
   }
 
-  getIntersections(iucnCategory) {
-    //get the individual iucn categories
-    let _iucn_categories = this.getIndividualIucnCategories(iucnCategory);
-    //get the planning units that intersect the protected areas with the passed iucn category
-    return dialogsState.protected_area_intersections.filter((item) => {
-      return _iucn_categories.indexOf(item[0]) > -1;
-    });
-  }
+const getIntersections =(iucnCategory)=> {
+  //get the individual iucn categories
+  const _iucn_categories = getIndividualIucnCategories(iucnCategory);
+  //get the planning units that intersect the protected areas with the passed iucn category
+  return dialogsState.protected_area_intersections.filter((item) =>  _iucn_categories.indexOf(item[0]) > -1);
+}
 
   //downloads and updates the WDPA on the server
   updateWDPA() {
@@ -3838,7 +3777,7 @@ this.map.fitBounds(
             //reset the protected area intersections on the client
             setDialogsState(prevState => ({ ...prevState, protected_area_intersections: [] });
             //recalculate the protected area intersections and refilter the vector tiles
-            this.changeIucnCategory(dialogsState.metadata.IUCN_CATEGORY);
+            await changeIucnCategory(dialogsState.metadata.IUCN_CATEGORY);
             //close the dialog
             updateState({ updateWDPADialogOpen: false });
           });
@@ -4044,16 +3983,13 @@ const resetPaintProperties = () => {
 // ----------------------------------------------------------------------------------------------- //
 
   //called when the run log dialog opens and starts polling the run log
-  startPollingRunLogs() {
+  startPollingRunLogs async() {
     this.runlogTimer = setInterval(() => {
-      this.getRunLogs();
+      await getRunLogs();
     }, 5000);
   }
 
-  //called when the run log dialog closes and stops polling the run log
-  stopPollingRunLogs() {
-    clearInterval(this.runlogTimer);
-  }
+
   //returns the log of all of the runs from the server
   getRunLogs() {
     if (!dialogsState.unauthorisedMethods.includes("getRunLogs")) {
@@ -4084,42 +4020,17 @@ const resetPaintProperties = () => {
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 
-  runGapAnalysis() {
-    return new Promise((resolve, reject) => {
-      //switches the results pane to the log tab
-      this.setActiveTab("log");
-      //call the websocket
-      this._ws(
-        "runGapAnalysis?user=" +
-          dialogsState.owner +
-          "&project=" +
-          dialogsState.project,
-        this.wsMessageCallback
-      )
-        .then((message) => {
-          setDialogsState(prevState => ({ ...prevState, gapAnalysis: message.data });
-          resolve(message);
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
+const runGapAnalysis = async () => {
+  setActiveTab("log");
+  const message = await _ws(`runGapAnalysis?user=${dialogsState.owner}&project=${dialogsState.project}`, wsMessageCallback);
+  setDialogsState(prevState => ({ ...prevState, gapAnalysis: message.data }));
+  return message;
+}
 
   //deletes a stored gap analysis on the server
-  deleteGapAnalysis() {
-    this._get(
-      "deleteGapAnalysis?user=" +
-        dialogsState.owner +
-        "&project=" +
-        dialogsState.project
-    ).then((response) => {
-      console.log(response);
-    });
-  }
+ const deleteGapAnalysis = async () => await _get(`deleteGapAnalysis?user=${dialogsState.owner}&project=${dialogsState.project}`);
 
-  setAddToProject(evt, isChecked) {
-    setDialogsState(prevState => ({ ...prevState, addToProject: isChecked });
+const setAddToProject = (evt, isChecked) => setDialogsState(prevState => ({ ...prevState, addToProject: isChecked }));
   }
 
 // ----------------------------------------------------------------------------------------------- //
@@ -4133,88 +4044,55 @@ const resetPaintProperties = () => {
 // ----------------------------------------------------------------------------------------------- //
 
   //changes the cost profile for a project
-  changeCostname(costname) {
-    console.log("costname ", costname);
-    return new Promise((resolve, reject) => {
-      this._get(
-        "updateCosts?user=" +
-          dialogsState.owner +
-          "&project=" +
-          dialogsState.project +
-          "&costname=" +
-          costname
-      )
-        .then((response) => {
-          //update the state
-          setDialogsState(prevState => ({ ...prevState,
-            metadata: Object.assign(dialogsState.metadata, { COSTS: costname }),
-          });
-          resolve();
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
+ const changeCostname = async (costname)=> {
+    await _get(`updateCosts?user=${dialogsState.owner}&project=${dialogsState.project}&costname=${costname}`);
+    setDialogsState(prevState => ({
+    ...prevState,
+    metadata: {
+      ...prevState.metadata, 
+      COSTS: costname
+    }
+  }));
+}
 
   //loads the costs layer
 const loadCostsLayer = async (forceReload = false) => {
-  setDialogsState(prevState => ({ ...prevState, costsLoading: true });
-  this.getPlanningUnitsCostData(forceReload).then((cost_data) => {
-    renderPuCostLayer(cost_data).then(() => {
-      setDialogsState(prevState => ({ ...prevState, costsLoading: false });
-      //do something
-    });
-  });
+  setDialogsState(prevState => ({ ...prevState, costsLoading: true }));
+  const cost_data = await getPlanningUnitsCostData(forceReload);
+  renderPuCostLayer(cost_data);
+  setDialogsState(prevState => ({ ...prevState, costsLoading: false }));
 }
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
-  getPlanningUnitsCostData(forceReload) {
-    let owner = dialogsState.owner === "" ? dialogsState.user : dialogsState.owner;
-    console.log("dialogsState.user ", dialogsState.user);
-    console.log("dialogsState.owner ", dialogsState.owner);
-    return new Promise((resolve, reject) => {
-      //if the cost data has already been loaded
-      if (this.cost_data && !forceReload) {
-        resolve(this.cost_data);
-      } else {
-        console.log(
-          "getPlanningUnitsCostData --------------------------------------------------- line 5569"
-        );
-        console.log("dialogsState ", dialogsState);
-        this._get(
-          "getPlanningUnitsCostData?user=" +
-            owner +
-            "&project=" +
-            dialogsState.project
-        )
-          .then((response) => {
-            //save the cost data to a local variable
-            this.cost_data = response;
-            resolve(response);
-          })
-          .catch((error) => {
-            //do something
-          });
-      }
-    });
+const getPlanningUnitsCostData = async (forceReload) => {
+  const owner = dialogsState.owner === "" ? dialogsState.user : dialogsState.owner;
+
+  try {
+    // If cost data is already loaded and reload is not forced
+    if (this.cost_data && !forceReload) {
+      return this.cost_data;
+    }
+
+    // Fetch the cost data if not already loaded or force reload is requested
+    const response = await _get(`getPlanningUnitsCostData?user=${owner}&project=${dialogsState.project}`);
+        // Save the cost data to a local variable
+    this.cost_data = response;
+    return response;
+  } catch (error) {
+    // Handle the error (this can be customized based on your requirements)
+    console.error("Error loading planning units cost data:", error);
+    throw error; // Re-throw the error if further handling is needed
   }
+};
 
   //after clicking cancel in the ImportCostsDialog
-  deleteCostFileThenClose(costname) {
-    return new Promise((resolve, reject) => {
-      if (costname) {
-        //delete the cost file
-        this.deleteCost(costname).then((_) => {
-          //close the import costs dialog
-          updateState({ importCostsDialogOpen: false });
-          resolve();
-        });
-      } else {
-        resolve();
-      }
-    });
+const deleteCostFileThenClose = async (costname) => {
+  if (costname) {
+    await deleteCost(costname);
+    updateState({ importCostsDialogOpen: false });
   }
+  return;
+}
   //adds a cost in application state
 const addCost = (costname) => {
   setDialogsState(prevState => ({
@@ -4224,75 +4102,33 @@ const addCost = (costname) => {
 };
 
   //deletes a cost file on the server
-  deleteCost(costname) {
-    return new Promise((resolve, reject) => {
-      this._get(
-        "deleteCost?user=" +
-          dialogsState.owner +
-          "&project=" +
-          dialogsState.project +
-          "&costname=" +
-          costname
-      )
-        .then((response) => {
-          //update the state
-          let _costnames = dialogsState.costnames;
-          //remove the deleted cost profile
-          _costnames = _costnames.filter((item) => item !== costname);
-          setDialogsState(prevState => ({ ...prevState, costnames: _costnames });
-          resolve();
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
+const deleteCost = async (costname) => {
+  await _get(`deleteCost?user=${dialogsState.owner}&project=${dialogsState.project}&costname=${costname}`);
+  const _costnames = dialogsState.costnames.filter((item) => item !== costname);
+  setDialogsState(prevState => ({ ...prevState, costnames: _costnames }));
+  return;
+}
   //restores the database back to its original state and runs a git reset on the file system
-  resetServer() {
-    return new Promise((resolve, reject) => {
-      //switches the results pane to the log tab
-      this.setActiveTab("log");
-      //call the websocket
-      this._ws("resetDatabase", this.wsMessageCallback)
-        .then((message) => {
-          //websocket has finished
-          resolve(message);
-          updateState({ resetDialogOpen: false });
-        })
-        .catch((error) => {
-          reject(error);
-          updateState({ resetDialogOpen: false });
-        });
-    });
-  }
+const resetServer = async() => {
+  setActiveTab("log");
+  await _ws("resetDatabase", wsMessageCallback);
+  updateState({ resetDialogOpen: false });
+  return;
+}
 
   //cleans up the server - removes dissolved WDPA feature classes, deletes orphaned feature classes, scratch feature classes and clumping files
-  cleanup() {
-    return new Promise((resolve, reject) => {
-      this._get("cleanup?")
-        .then((response) => {
-          resolve();
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
+const cleanup = async () => await _get("cleanup?");
 
-  render() {
-    const message = (
-      <span
-        id="snackbar-message-id"
-        dangerouslySetInnerHTML={{ __html: dialogsState.snackbarMessage }}
-      />
-    );
-    return (
+const message = (<span id="snackbar-message-id" dangerouslySetInnerHTML={{ __html: dialogsState.snackbarMessage }}/>);
+
+return (
       // <ThemeProvider>
       <React.Fragment>
         <div
           ref={(el) => (this.mapContainer = el)}
           className="absolute top right left bottom"
         />
+        {message}
         <LoadingDialog open={dialogsState.shareableLink} />
         <LoginDialog
           open={!dialogsState.loggedIn}
@@ -5051,8 +4887,7 @@ const addCost = (costname) => {
         />
       </React.Fragment>
       // </ThemeProvider>
-    );
-  }
+);
 }
 
 export default App;
