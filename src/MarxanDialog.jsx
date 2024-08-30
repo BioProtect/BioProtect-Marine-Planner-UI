@@ -69,14 +69,19 @@ const MarxanDialog = (props) => {
       maxWidth={maxW}
       onClose={props.onCancel}
     >
-      <DialogTitle position="static" align="middle">
+      <DialogTitle
+        position="static"
+        align="center"
+        key={`dialogTitle${props.title}`}
+      >
         <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-          <Grid item xs={3}>
+          <Grid item xs={3} key={`itemTitle${props.title}`}>
             {props.title ? props.title : null}
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={6} key={`searchbox${props.title}`}>
             {props.showSearchBox ? (
               <TextField
+                key={`searchKey${props.title}`}
                 size="small"
                 id="outlined-start-adornment"
                 style={{ width: "100%", padding: 0 }}
@@ -104,7 +109,7 @@ const MarxanDialog = (props) => {
               key={"spinner"}
             />
           </Grid>
-          <Grid item xs={2}>
+          <Grid item xs={2} key={`help${props.title}`}>
             {props.helpLink ? (
               <FontAwesomeIcon
                 icon={faQuestionCircle}

@@ -35,12 +35,16 @@ const InfoPanel = (props) => {
   const [showProtectedAreas, setShowProtectedAreas] = useState(false);
   const [showCosts, setShowCosts] = useState(false);
   const [showStatuses, setShowStatuses] = useState(true);
-  const [currentTabIndex, setCurrentTabIndex] = useState(
-    activeTabArr.indexOf(props.activeTab) || 0
-  );
+  const [currentTabIndex, setCurrentTabIndex] = useState(0);
 
   const projectNameRef = useRef(null);
   const descriptionEditRef = useRef(null);
+
+  useEffect(() => {
+    if (props.activeTab) {
+      setCurrentTabIndex(activeTabArr.indexOf(props.activeTab));
+    }
+  }, []);
 
   useEffect(() => {
     if (editingProjectName && projectNameRef.current) {
@@ -288,15 +292,18 @@ const InfoPanel = (props) => {
               pb={2}
               pt={2}
             >
-              <Button
-                variant="contained"
-                startIcon={<FontAwesomeIcon icon={faShareAlt} />}
-                title={"Get a shareable link to this project"}
-                onClick={props.getShareableLink}
-                show={props.marxanServer.type === "remote"}
-              >
-                Share
-              </Button>
+              {props.marxanServer.type === "remote" ? (
+                <Button
+                  variant="contained"
+                  startIcon={<FontAwesomeIcon icon={faShareAlt} />}
+                  title={"Get a shareable link to this project"}
+                  onClick={props.getShareableLink}
+                  key="shareableLinkButton"
+                >
+                  Share
+                </Button>
+              ) : null}
+
               <Button
                 variant="contained"
                 startIcon={
@@ -304,35 +311,41 @@ const InfoPanel = (props) => {
                 }
                 title="Run Settings"
                 onClick={() => props.updateState({ settingsDialogOpen: true })}
+                key="openSettingsButton"
               >
                 Settings
               </Button>
-              <Button
-                variant="contained"
-                label="Stop"
-                title="Click to stop the current run"
-                show={props.userRole !== "ReadOnly"}
-                onClick={() => stopProcess()}
-                disabled={props.pid === 0}
-                secondary="true"
-              >
-                Stop
-              </Button>
-              <Button
-                variant="contained"
-                label="Run"
-                title="Click to run this project"
-                show={props.userRole !== "ReadOnly"}
-                onClick={props.runMarxan}
-                disabled={
-                  props.preprocessing ||
-                  props.features.length === 0 ||
-                  props.puEditing
-                }
-                secondary="true"
-              >
-                Run
-              </Button>
+
+              {props.userRole !== "ReadOnly" ? (
+                <>
+                  <Button
+                    variant="contained"
+                    label="Stop"
+                    title="Click to stop the current run"
+                    onClick={() => stopProcess()}
+                    disabled={props.pid === 0}
+                    secondary="true"
+                    key="stopRunButton"
+                  >
+                    Stop
+                  </Button>
+                  <Button
+                    variant="contained"
+                    label="Run"
+                    title="Click to run this project"
+                    onClick={props.runMarxan}
+                    disabled={
+                      props.preprocessing ||
+                      props.features.length === 0 ||
+                      props.puEditing
+                    }
+                    secondary="true"
+                    key="runButton"
+                  >
+                    Run
+                  </Button>
+                </>
+              ) : null}
             </Stack>
           </Paper>
         </Paper>

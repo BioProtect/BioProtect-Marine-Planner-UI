@@ -14,7 +14,7 @@ const getServerCapabilities = async (server) => {
     endpoint,
     websocketEndpoint,
     offline: true,
-    guestUserEnabled: false,
+    guestUserEnabled: true,
     corsEnabled: false,
   };
 
@@ -36,6 +36,7 @@ const getServerCapabilities = async (server) => {
     }
 
     const json = await response.json();
+    console.log("json ", json);
     if (json.info) {
       // Update server properties based on the response
       const corsEnabled =
@@ -71,7 +72,6 @@ const getServerCapabilities = async (server) => {
   } catch (error) {
     console.error(`Fetch failed with: ${error}`);
   }
-
   return server;
 };
 
@@ -82,7 +82,7 @@ const addLocalServer = (servers) => {
       ? "localhost"
       : window.location.hostname;
 
-  servers.push({
+  return servers.push({
     name: currentDomain,
     protocol: window.location.protocol,
     host: window.location.hostname,
