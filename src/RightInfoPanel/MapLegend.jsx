@@ -44,11 +44,13 @@ const MapLegend = (props) => {
         numClasses <= colorSchemeLength
           ? Array.from({ length: numClasses }, (_, i) => i)
           : Array.from({ length: colorSchemeLength }, (_, i) => i);
+
       let classesToShow = numClassesArray.length;
       items = numClassesArray.map((item) => {
         let range = props.brew.breaks[item + 1] - props.brew.breaks[item] > 1;
         let suffix =
           props.brew.breaks[item + 1] === 1 ? " solution" : " solutions";
+
         let legendLabel = range
           ? `${props.brew.breaks[item] + 1} - ${
               props.brew.breaks[item + 1]

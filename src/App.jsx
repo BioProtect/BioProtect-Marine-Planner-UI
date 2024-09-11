@@ -267,16 +267,6 @@ const App = () => {
     welcomeDialogOpen: false,
   });
 
-  useEffect(() => {
-    if (map.current) return; // initialize map only once
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/streets-v12",
-      center: [lng, lat],
-      zoom: zoom,
-    });
-  });
-
   const initialiseServers = useCallback(async (servers) => {
     try {
       // Add the local machine server to the list
@@ -356,7 +346,6 @@ const App = () => {
       try {
         const response = await fetch(CONSTANTS.MARXAN_REGISTRY);
         const registryData = await response.json();
-
         console.log("registryData ", registryData);
 
         setBrew(new classyBrew());
@@ -470,7 +459,14 @@ const App = () => {
   const validateUser = async (user, password) => {
     try {
       const checkedPass = await checkPassword(user, password);
+      console.log("checkedPass ", checkedPass);
       if (checkedPass) {
+        setDialogsState((prevState) => ({
+          ...prevState,
+          loggedIn: !dialogsState.loggedIn,
+          resultsPanelOpen: !dialogsState.resultsPanelOpen,
+          infoPanelOpen: !dialogsState.infoPanelOpen,
+        }));
         await login(user);
         return "User validated";
       }
@@ -768,12 +764,6 @@ const App = () => {
     }
   }, []);
 
-  useEffect(() => {
-    getAllServerCapabilities(marxanServers);
-  }, [marxanServers, getAllServerCapabilities]);
-
-  // Function to programmatically select a server
-
   const startLogging = (clearLog = false) => {
     //switches the results pane to the log tab and clears log if needs be
     setActiveTab("log");
@@ -952,12 +942,13 @@ const App = () => {
   const login = async (user) => {
     try {
       const response = await _get(`getUser?user=${user}`);
-      setDialogsState({
+      setDialogsState((prevState) => ({
+        ...prevState,
         userData: response.userData,
         unauthorisedMethods: response.unauthorisedMethods,
         project: response.userData.LASTPROJECT,
         dismissedNotifications: response.dismissedNotifications || [],
-      });
+      }));
 
       // Set the basemap
       const basemap = dialogsState.basemaps.find(
@@ -1266,6 +1257,7 @@ const App = () => {
       resetResults();
       // Fetch project data
       const response = await _get(`getProject?user=${user}&project=${project}`);
+      console.log("loading project response ", response);
       // Update state based on the data returned from the server
       setDialogsState((prevState) => ({
         ...prevState,
@@ -2405,12 +2397,12 @@ const App = () => {
     if (!data) return;
     const paintProperties = getPaintProperties(data, sum, true);
     //set the render paint property
-    map.setPaintProperty(
+    map.current.setPaintProperty(
       CONSTANTS.RESULTS_LAYER_NAME,
       "fill-color",
       paintProperties.fillColor
     );
-    map.setPaintProperty(
+    map.current.setPaintProperty(
       CONSTANTS.RESULTS_LAYER_NAME,
       "fill-outline-color",
       paintProperties.oulineColor
@@ -2436,8 +2428,12 @@ const App = () => {
     const expression = buildExpression(dialogsState.planning_units);
 
     //set the render paint property
-    map.setPaintProperty(CONSTANTS.STATUS_LAYER_NAME, "line-color", expression);
-    map.setPaintProperty(
+    map.current.setPaintProperty(
+      CONSTANTS.STATUS_LAYER_NAME,
+      "line-color",
+      expression
+    );
+    map.current.setPaintProperty(
       CONSTANTS.STATUS_LAYER_NAME,
       "line-width",
       CONSTANTS.STATUS_LAYER_LINE_WIDTH
@@ -2462,7 +2458,11 @@ const App = () => {
     };
 
     const expression = buildExpression(cost_data.data);
-    map.setPaintProperty(CONSTANTS.COSTS_LAYER_NAME, "fill-color", expression);
+    map.current.setPaintProperty(
+      CONSTANTS.COSTS_LAYER_NAME,
+      "fill-color",
+      expression
+    );
     setLayerMetadata(CONSTANTS.COSTS_LAYER_NAME, {
       min: cost_data.min,
       max: cost_data.max,
@@ -2473,8 +2473,8 @@ const App = () => {
 
   // Convenience method to get rendered features safely & not show error message if the layer doesnt exist in the map style
   const getRenderedFeatures = (pt, layers) =>
-    map.getLayer(layers[0])
-      ? map.queryRenderedFeatures(pt, { layers: layers })
+    map.current.getLayer(layers[0])
+      ? map.current.queryRenderedFeatures(pt, { layers: layers })
       : [];
 
   // ----------------------------------------------------------------------------------------------- //
@@ -2490,27 +2490,35 @@ const App = () => {
   //instantiates the mapboxgl map
   const createMap = (url) => {
     console.log("should be creating a new map here");
-    const map = new mapboxgl.Map({
-      container: mapContainer,
-      style: url,
-      center: [0, 0],
-      zoom: 2,
+    if (map.current) return; // initialize map only once
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: url || "mapbox://styles/mapbox/streets-v12",
+      center: [lng, lat],
+      zoom: zoom,
     });
-    //add event handlers for the load and error events
-    map.on("load", mapLoaded);
-    map.on("error", mapError);
-    //click event
-    map.on("click", mapClick);
-    //style change, this includes adding/removing layers and showing/hiding layers
-    map.on("styledata", mapStyleChanged);
-    // setMap(map);
+
+    // const map = new mapboxgl.Map({
+    //   container: mapContainer,
+    //   style: url,
+    //   center: [0, 0],
+    //   zoom: 2,
+    // });
+    // //add event handlers for the load and error events
+    map.current.on("load", mapLoaded);
+    map.current.on("error", mapError);
+    // //click event
+    map.current.on("click", mapClick);
+    // //style change, this includes adding/removing layers and showing/hiding layers
+    map.current.on("styledata", mapStyleChanged);
+    // // setMap(map);
   };
 
   const mapLoaded = (e) => {
-    // map.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // currently full screen hides the info panel and setting position:absolute and z-index: 10000000000 doesnt work properly
-    map.addControl(new mapboxgl.ScaleControl());
-    map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
-    map.addControl(new HomeButton());
+    // map.current.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // currently full screen hides the info panel and setting position:absolute and z-index: 10000000000 doesnt work properly
+    map.current.addControl(new mapboxgl.ScaleControl());
+    map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+    map.current.addControl(new HomeButton());
     //create the draw controls for the map
     setMapboxDrawControls(
       new MapboxDraw({
@@ -2522,17 +2530,17 @@ const App = () => {
         defaultMode: "draw_polygon",
       })
     );
-    map.on("moveend", (evt) => {
+    map.current.on("moveend", (evt) => {
       if (dialogsState.clumpingDialogOpen) updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
     });
-    map.on("draw.create", polygonDrawn);
+    map.current.on("draw.create", polygonDrawn);
   };
 
   const updateMapCentreAndZoom = () =>
     setDialogsState((prevState) => ({
       ...prevState,
-      mapCentre: map.getCenter(),
-      mapZoom: map.getZoom(),
+      mapCentre: map.current.getCenter(),
+      mapZoom: map.current.getZoom(),
     }));
 
   //catch all event handler for map errors
@@ -2562,7 +2570,10 @@ const App = () => {
 
   const mapClick = async (e) => {
     //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
-    if (!dialogsState.puEditing && !map.getSource("mapbox-gl-draw-cold")) {
+    if (
+      !dialogsState.puEditing &&
+      !map.current.getSource("mapbox-gl-draw-cold")
+    ) {
       //get a list of the layers that we want to query for features
       const featureLayers = getLayers([
         CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
@@ -2622,7 +2633,7 @@ const App = () => {
   //after a layer has been added/removed/shown/hidden update the legend items
   const updateLegend = () => {
     // Get the visible Marxan layers
-    const visibleLayers = map
+    const visibleLayers = map.current
       .getStyle()
       .layers.filter(
         (layer) =>
@@ -2780,15 +2791,10 @@ const App = () => {
   //loads the maps style using either a url to a Mapbox Style Specification file or a JSON object
   const loadMapStyle = async (style) => {
     console.log("map", map);
-    if (!map) {
-      createMap(style);
-    } else {
-      // Request the style
-      map.setStyle(style, { diff: false });
-    }
+    createMap(style);
 
     return new Promise((resolve) => {
-      map.on("style.load", () => {
+      map.current.on("style.load", () => {
         resolve("Map style loaded");
       });
     });
@@ -2847,7 +2853,7 @@ const App = () => {
   //adds the results, planning unit, planning unit edit etc layers to the map
   const addPlanningGridLayers = (tileset) => {
     //add the source for the planning unit layers
-    map.addSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME, {
+    map.current.addSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME, {
       type: "vector",
       url: "mapbox://" + tileset.id,
     });
@@ -2893,7 +2899,7 @@ const App = () => {
     //set the result layer in app state so that it can update the Legend component and its opacity control
     setDialogsState((prevState) => ({
       ...prevState,
-      resultsLayer: map.getLayer(CONSTANTS.RESULTS_LAYER_NAME),
+      resultsLayer: map.current.getLayer(CONSTANTS.RESULTS_LAYER_NAME),
     }));
     //add the planning unit layer
     addMapLayer({
@@ -2937,12 +2943,12 @@ const App = () => {
 
   const removePlanningGridLayers = () => {
     const sourceName = CONSTANTS.PLANNING_UNIT_SOURCE_NAME;
-    let layers = map.getStyle().layers;
+    let layers = map.current.getStyle().layers;
     // Get dynamically added layers, remove them, and then remove sources
     const dynamicLayers = layers.filter((item) => item.source === sourceName);
     dynamicLayers.forEach((item) => removeMapLayer(item.id));
-    if (map.getSource(sourceName)) {
-      map.removeSource(sourceName);
+    if (map.current.getSource(sourceName)) {
+      map.current.removeSource(sourceName);
     }
   };
 
@@ -2960,7 +2966,7 @@ const App = () => {
       ...prevState,
       wdpaAttribution: attribution,
     }));
-    map.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
+    map.current.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
       attribution: attribution,
       type: "vector",
       tiles: tiles,
@@ -3001,12 +3007,13 @@ const App = () => {
     //set the wdpa layer in app state so that it can update the Legend component and its opacity control
     setDialogsState((prevState) => ({
       ...prevState,
-      wdpaLayer: map.getLayer(CONSTANTS.WDPA_LAYER_NAME),
+      wdpaLayer: map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME),
     }));
   };
 
   const toggleLayerVisibility = (id, visibility) => {
-    if (map?.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility);
+    if (map?.getLayer(id))
+      map.current.setLayoutProperty(id, "visibility", visibility);
   };
 
   const showLayer = (id) => toggleLayerVisibility(id, "visible");
@@ -3017,36 +3024,36 @@ const App = () => {
   const addMapLayer = (mapLayer, beforeLayer) => {
     // If a beforeLayer is not passed get the first symbol layer (i.e. label layer)
     if (!beforeLayer) {
-      const symbolLayers = map
+      const symbolLayers = map.current
         .getStyle()
         .layers.filter((item) => item.type === "symbol");
       beforeLayer = symbolLayers.length ? symbolLayers[0].id : "";
     }
     // Add the layer to the map
-    map.addLayer(mapLayer, beforeLayer);
+    map.current.addLayer(mapLayer, beforeLayer);
   };
 
   //centralised code to remove a layer from the maps current style
   const removeMapLayer = (layerid) => map.removeLayer(layerid);
 
   const isLayerVisible = (layername) =>
-    map &&
-    map.getLayer(layername) &&
-    map.getLayoutProperty(layername, "visibility") === "visible";
+    map.current &&
+    map.current.getLayer(layername) &&
+    map.current.getLayoutProperty(layername, "visibility") === "visible";
 
   //changes the layers opacity
   const changeOpacity = (layerId, opacity) => {
     if (map) {
-      let layer = map.getLayer(layerId);
+      let layer = map.current.getLayer(layerId);
       switch (layer.type) {
         case "circle":
-          map.setPaintProperty(layerId, "circle-opacity", opacity);
+          map.current.setPaintProperty(layerId, "circle-opacity", opacity);
           break;
         case "fill":
-          map.setPaintProperty(layerId, "fill-opacity", opacity);
+          map.current.setPaintProperty(layerId, "fill-opacity", opacity);
           break;
         case "line":
-          map.setPaintProperty(layerId, "line-opacity", opacity);
+          map.current.setPaintProperty(layerId, "line-opacity", opacity);
           break;
         default:
         // code
@@ -3056,7 +3063,7 @@ const App = () => {
 
   //sets the metadata for the layer
   const setLayerMetadata = (layerId, metadata) => {
-    const layer = map.getLayer(layerId);
+    const layer = map.current.getLayer(layerId);
     if (layer) {
       // Use spread operator to merge metadata
       layer.metadata = { ...layer.metadata, ...metadata };
@@ -3065,7 +3072,7 @@ const App = () => {
 
   //gets a particular set of layers based on the layer types (layerTypes is an array of layer types)
   const getLayers = (layerTypes) => {
-    const allLayers = map.getStyle().layers;
+    const allLayers = map.current.getStyle().layers;
 
     return allLayers.filter(
       ({ metadata }) => metadata?.type && layerTypes.includes(metadata.type)
@@ -3158,24 +3165,24 @@ const App = () => {
     //set the state
     setDialogsState((prevState) => ({ ...prevState, puEditing: true }));
     //set the cursor to a crosshair
-    map.getCanvas().style.cursor = "crosshair";
+    map.current.getCanvas().style.cursor = "crosshair";
     //add the left mouse click event to the planning unit layer
     this.onClickRef = moveStatusUp; //using bind creates a new function instance so we need to get a reference to that to be able to remove it later
-    map.on("click", CONSTANTS.PU_LAYER_NAME, this.onClickRef);
+    map.current.on("click", CONSTANTS.PU_LAYER_NAME, this.onClickRef);
     //add the mouse right click event to the planning unit layer
     this.onContextMenu = resetStatus; //using bind creates a new function instance so we need to get a reference to that to be able to remove it later
-    map.on("contextmenu", CONSTANTS.PU_LAYER_NAME, this.onContextMenu);
+    map.current.on("contextmenu", CONSTANTS.PU_LAYER_NAME, this.onContextMenu);
   };
 
   const stopPuEditSession = () => {
     //set the state
     setDialogsState((prevState) => ({ ...prevState, puEditing: false }));
     //reset the cursor
-    map.getCanvas().style.cursor = "pointer";
+    map.current.getCanvas().style.cursor = "pointer";
     //remove the mouse left click event
-    map.off("click", CONSTANTS.PU_LAYER_NAME, onClickRef);
+    map.current.off("click", CONSTANTS.PU_LAYER_NAME, onClickRef);
     //remove the mouse right click event
-    map.off("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenu);
+    map.current.off("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenu);
     //update the pu.dat file
     updatePuDatFile();
   };
@@ -3641,14 +3648,14 @@ const App = () => {
   };
 
   const getOceanBaseMap = () => {
-    map.addSource("Ocean Base", {
+    map.current.addSource("Ocean Base", {
       type: "raster",
       tiles: [
         "http://atlas.marine.ie/mapserver/?map=C:/MapServer/apps/miatlas/AdministrativeUnits_wms.map&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}",
       ],
       tileSize: 256,
     });
-    map.addLayer({
+    map.current.addLayer({
       id: "Ocean Base",
       type: "raster",
       source: "Ocean Base",
@@ -3674,14 +3681,14 @@ const App = () => {
         const tileUrl = `http://www.atlas-horizon2020.eu/gs/ows?layers=${sourceName}&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}`;
 
         // Add the source to the map
-        map.addSource(sourceName, {
+        map.current.addSource(sourceName, {
           type: "raster",
           tiles: [tileUrl],
           tileSize: 256,
         });
 
         // Add the layer to the map
-        map.addLayer({
+        map.current.addLayer({
           id: sourceName,
           type: "raster",
           source: sourceName,
@@ -3729,11 +3736,14 @@ const App = () => {
 
   const setselectedLayers = (layer) => {
     // Determine the new visibility
-    const currentVisibility = map.getLayoutProperty(layer, "visibility");
+    const currentVisibility = map.current.getLayoutProperty(
+      layer,
+      "visibility"
+    );
     const newVisibility = currentVisibility === "visible" ? "none" : "visible";
 
     // Update the layer's visibility
-    map.setLayoutProperty(layer, "visibility", newVisibility);
+    map.current.setLayoutProperty(layer, "visibility", newVisibility);
 
     // Update the selectedLayers state
     setDialogsState((prevState) => {
@@ -3787,9 +3797,9 @@ const App = () => {
     const layerName = impact.tilesetid.split(".")[1];
     const layerId = "marxan_impact_layer_" + layerName;
 
-    if (map.getLayer(layerId)) {
+    if (map.current.getLayer(layerId)) {
       removeMapLayer(layerId);
-      map.removeSource(layerId);
+      map.current.removeSource(layerId);
       updateImpact(impact, { impact_layer_loaded: false });
     } else {
       //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
@@ -4002,12 +4012,13 @@ const App = () => {
   //starts a digitising session
   const initialiseDigitising = () => {
     // Show digitising controls if not already present, mapbox-gl-draw-cold + mapbox-gl-draw-hot
-    if (!map.getSource("mapbox-gl-draw-cold"))
-      map.addControl(mapboxDrawControls);
+    if (!map.current.getSource("mapbox-gl-draw-cold"))
+      map.current.addControl(mapboxDrawControls);
   };
 
   //finalises the digitising
-  const finaliseDigitising = () => map.removeControl(mapboxDrawControls);
+  const finaliseDigitising = () =>
+    map.current.removeControl(mapboxDrawControls);
 
   //called when the user has drawn a polygon on screen
   const polygonDrawn = (evt) => {
@@ -4369,9 +4380,9 @@ const App = () => {
     // closeFeatureMenu();
     const layerId = `marxan_feature_layer_${feature.tilesetid.split(".")[1]}`;
 
-    if (map.getLayer(layerId)) {
+    if (map.current.getLayer(layerId)) {
       removeMapLayer(layerId);
-      map.removeSource(layerId);
+      map.current.removeSource(layerId);
       updateFeature(feature, { feature_layer_loaded: false });
     } else {
       // If a planning units layer for a feature is visible then we need to add the feature layer before it - first get the feature puid layer
@@ -4410,7 +4421,7 @@ const App = () => {
     // closeFeatureMenu();
     let layerName = `marxan_puid_${feature.id}`;
 
-    if (map.getLayer(layerName)) {
+    if (current.getLayer(layerName)) {
       removeMapLayer(layerName);
       updateFeature(feature, { feature_puid_layer_loaded: false });
     } else {
@@ -4444,7 +4455,11 @@ const App = () => {
       );
       // Last value is the default, used where there is no data
       line_color_expression.push("rgba(0,0,0,0)");
-      map.setPaintProperty(layerName, "line-color", line_color_expression);
+      map.current.setPaintProperty(
+        layerName,
+        "line-color",
+        line_color_expression
+      );
       //show the layer
       showLayer(layerName);
       updateFeature(feature, { feature_puid_layer_loaded: true });
@@ -4467,7 +4482,7 @@ const App = () => {
       .split(",");
     //get the points as numbers
     const nums = points.map((item) => Number(item));
-    map.fitBounds(
+    map.current.fitBounds(
       [
         [nums[0], nums[1]],
         [nums[2], nums[3]],
@@ -4700,7 +4715,7 @@ const App = () => {
     //filter the vector tiles for those iucn categories - and if the planning unit name has an iso3 country code - then use that as well. e.g. pu_ton_marine_hexagon_50 (has iso3 code) or pu_a4402723a92444ff829e9411f07e7 (no iso3 code)
     //let filterExpr = (dialogsState.metadata.PLANNING_UNIT_NAME.match(/_/g).length> 1) ? ['all', ['in', 'IUCN_CAT'].concat(iucnCategories), ['==', 'PARENT_ISO', dialogsState.metadata.PLANNING_UNIT_NAME.substr(3, 3).toUpperCase()]] : ['all', ['in', 'IUCN_CAT'].concat(iucnCategories)];
     const filterExpr = ["all", ["in", "iucn_cat", ...iucnCategories]]; // no longer filter by ISO code
-    map.setFilter(CONSTANTS.WDPA_LAYER_NAME, filterExpr);
+    map.current.setFilter(CONSTANTS.WDPA_LAYER_NAME, filterExpr);
 
     // Turn on/off the protected areas legend
     const layerVisible = iucnCategory !== "None";
@@ -4859,8 +4874,8 @@ const App = () => {
     setWDPAVectorTilesLayerName(dialogsState.registry.WDPA.latest_version);
     // Remove the existing WDPA layer and source
     removeMapLayer(CONSTANTS.WDPA_LAYER_NAME);
-    if (map && map.getSource(CONSTANTS.WDPA_SOURCE_NAME)) {
-      map.removeSource(CONSTANTS.WDPA_SOURCE_NAME);
+    if (map.current && map.current.getSource(CONSTANTS.WDPA_SOURCE_NAME)) {
+      map.current.removeSource(CONSTANTS.WDPA_SOURCE_NAME);
     }
     //re-add the WDPA source and layer
     addWDPASource();
@@ -5240,12 +5255,8 @@ const App = () => {
       ) : (
         <React.Fragment>
           <div
-            ref={(el) => setMapContainer(el)}
-            className="absolute top right left bottom"
-          />
-          <span
-            id="snackbar-message-id"
-            dangerouslySetInnerHTML={{ __html: snackbarMessage }}
+            ref={mapContainer}
+            className="map-container absolute top right left bottom"
           />
           <LoadingDialog />
           <LoginDialog
@@ -5394,7 +5405,7 @@ const App = () => {
             useFeatureColors={dialogsState.userData.USEFEATURECOLORS}
             smallLinearGauge={dialogsState.smallLinearGauge}
             openCostsDialog={openCostsDialog}
-            costname={dialogsState.metadata.COSTS}
+            costname={dialogsState.metadata?.COSTS}
             costnames={dialogsState.costnames}
             changeCostname={changeCostname}
             loadCostsLayer={loadCostsLayer}
@@ -5456,7 +5467,7 @@ const App = () => {
             }
             loading={dialogsState.loading}
             projects={dialogsState.projects}
-            oldVersion={dialogsState.metadata.OLDVERSION}
+            oldVersion={dialogsState.metadata?.OLDVERSION}
             updateState={updateState}
             deleteProject={deleteProject}
             loadProject={loadProject}
@@ -5644,11 +5655,11 @@ const App = () => {
             onCancel={() => updateState({ costsDialogOpen: false })}
             updateState={updateState}
             unauthorisedMethods={dialogsState.unauthorisedMethods}
-            costname={dialogsState.metadata.COSTS}
+            costname={dialogsState.metadata?.COSTS}
             deleteCost={deleteCost}
             data={dialogsState.costnames}
             allImpacts={dialogsState.allImpacts}
-            planningUnitName={dialogsState.metadata.PLANNING_UNIT_NAME}
+            planningUnitName={dialogsState.metadata?.PLANNING_UNIT_NAME}
             createCostsFromImpact={createCostsFromImpact}
           />
           <ImportCostsDialog
@@ -5773,7 +5784,7 @@ const App = () => {
           <Snackbar
             open={snackbarOpen}
             message={snackbarMessage}
-            onClose={() => setSnackBarMessageOpen(false)}
+            onClose={() => setSnackBarOpen(false)}
             style={{ maxWidth: "800px !important" }}
             bodyStyle={{ maxWidth: "800px !important" }}
           />
@@ -5799,7 +5810,7 @@ const App = () => {
                 leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
                 style={{
                   display:
-                    dialogsState.currentFeature.old_version ||
+                    dialogsState.currentFeature?.old_version ||
                     dialogsState.userData.ROLE === "ReadOnly"
                       ? "none"
                       : "block",
@@ -5813,14 +5824,14 @@ const App = () => {
               </MenuItemWithButton>
               <MenuItemWithButton
                 leftIcon={
-                  dialogsState.currentFeature.feature_layer_loaded ? (
+                  dialogsState.currentFeature?.feature_layer_loaded ? (
                     <RemoveFromMap style={{ margin: "1px" }} />
                   ) : (
                     <AddToMap style={{ margin: "1px" }} />
                   )
                 }
                 style={{
-                  display: dialogsState.currentFeature.tilesetid
+                  display: dialogsState.currentFeature?.tilesetid
                     ? "block"
                     : "none",
                 }}
@@ -5829,13 +5840,13 @@ const App = () => {
                   dialogsState.currentFeature
                 )}
               >
-                {dialogsState.currentFeature.feature_layer_loaded
+                {dialogsState.currentFeature?.feature_layer_loaded
                   ? "Remove from map"
                   : "Add to map"}
               </MenuItemWithButton>
               <MenuItemWithButton
                 leftIcon={
-                  dialogsState.currentFeature.feature_puid_layer_loaded ? (
+                  dialogsState.currentFeature?.feature_puid_layer_loaded ? (
                     <RemoveFromMap style={{ margin: "1px" }} />
                   ) : (
                     <AddToMap style={{ margin: "1px" }} />
@@ -5847,19 +5858,19 @@ const App = () => {
                 )}
                 disabled={
                   !(
-                    dialogsState.currentFeature.preprocessed &&
+                    dialogsState.currentFeature?.preprocessed &&
                     dialogsState.currentFeature.occurs_in_planning_grid
                   )
                 }
               >
-                {dialogsState.currentFeature.feature_puid_layer_loaded
+                {dialogsState.currentFeature?.feature_puid_layer_loaded
                   ? "Remove planning unit outlines"
                   : "Outline planning units where the feature occurs"}
               </MenuItemWithButton>
               <MenuItemWithButton
                 leftIcon={<ZoomIn style={{ margin: "1px" }} />}
                 style={{
-                  display: dialogsState.currentFeature.extent
+                  display: dialogsState.currentFeature?.extent
                     ? "block"
                     : "none",
                 }}
@@ -5871,7 +5882,7 @@ const App = () => {
                 leftIcon={<Preprocess style={{ margin: "1px" }} />}
                 style={{
                   display:
-                    dialogsState.currentFeature.old_version ||
+                    dialogsState.currentFeature?.old_version ||
                     dialogsState.userData.ROLE === "ReadOnly"
                       ? "none"
                       : "block",
@@ -5881,7 +5892,7 @@ const App = () => {
                   dialogsState.currentFeature
                 )}
                 disabled={
-                  dialogsState.currentFeature.preprocessed ||
+                  dialogsState.currentFeature?.preprocessed ||
                   dialogsState.preprocessing
                 }
               >

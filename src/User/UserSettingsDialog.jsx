@@ -14,6 +14,8 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
 
 const UserSettingsDialog = (props) => {
+  console.log("props in USERSETTINGSDIALOG - ", props);
+  console.log("props in USERSETTINGSDIALOG - ", props.basemaps);
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [options, setOptions] = useState({});
 

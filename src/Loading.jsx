@@ -1,7 +1,7 @@
 import BioProtectLogo from "./images/bioprotect_project_logo.jpeg";
 import CardMedia from "@mui/material/CardMedia";
 import Dialog from "@mui/material/Dialog";
-import { DialogContentText } from "@mui/material";
+import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import React from "react";
 import Typography from "@mui/material/Typography";
@@ -13,7 +13,7 @@ const Loading = () => {
       maxWidth="sm"
       component="form"
       noValidate
-      open={open}
+      open={true}
     >
       <DialogTitle>
         <div style={{ display: "flex", justifyContent: "center" }}>
@@ -27,10 +27,8 @@ const Loading = () => {
           </CardMedia>
         </div>
       </DialogTitle>
-      <DialogContentText>
-        <Typography variant="h1" component="h2">
-          Loading...
-        </Typography>
+      <DialogContentText align="center" variant="h2">
+        Loading...
       </DialogContentText>
     </Dialog>
   );
