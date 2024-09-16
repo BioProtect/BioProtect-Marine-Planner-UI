@@ -6,45 +6,39 @@
  *
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
-import * as React from "react";
-import MarxanTextField from "./MarxanTextField";
+import React, { useState } from "react";
 
-class Metadata extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      validName: undefined,
-    };
-  }
-  changeName(event, newValue) {
-    this.props.setName(newValue);
-  }
-  changeDescription(event, newValue) {
-    this.props.setDescription(newValue);
-  }
-  render() {
-    return (
-      <React.Fragment>
-        <div style={{ marginTop: "-13px" }}>
-          <MarxanTextField
-            style={{ width: "310px" }}
-            errorText={this.state.validName === false ? "Required field" : ""}
-            value={this.props.name}
-            onChange={this.changeName.bind(this)}
-            floatingLabelText="Enter a name for the project"
-          />
-          <MarxanTextField
-            style={{ width: "310px" }}
-            value={this.props.description}
-            onChange={this.changeDescription.bind(this)}
-            multiLine={true}
-            rows={3}
-            floatingLabelText="Enter a description for the project"
-          />
-        </div>
-      </React.Fragment>
-    );
-  }
-}
+import TextField from "@mui/material/TextField";
+
+const Metadata = (props) => {
+  const [validName, setValidName] = useState(undefined);
+
+  const changeName = (event, newValue) => props.setName(newValue);
+  const changeDescription = (event, newValue) => props.setDescription(newValue);
+  return (
+    <React.Fragment>
+      <div style={{ marginTop: "-13px" }}>
+        <TextField
+          margin="normal"
+          required
+          fullWidth
+          style={{ width: "310px" }}
+          errorText={validName === false ? "Required field" : ""}
+          value={props.name}
+          onChange={changeName}
+          floatingLabelText="Enter a name for the project"
+        />
+        <TextField
+          style={{ width: "310px" }}
+          value={props.description}
+          onChange={changeDescription}
+          multiLine={true}
+          rows={3}
+          floatingLabelText="Enter a description for the project"
+        />
+      </div>
+    </React.Fragment>
+  );
+};
 
 export default Metadata;

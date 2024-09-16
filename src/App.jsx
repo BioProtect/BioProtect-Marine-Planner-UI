@@ -181,6 +181,7 @@ const App = () => {
     importMXWDialogOpen: false,
     importPlanningGridDialogOpen: false,
     importProjectDialogOpen: false,
+    importProjectPopoverOpen: false,
     importedActivitiesDialogOpen: false,
     infoPanelOpen: false,
     loading: false,

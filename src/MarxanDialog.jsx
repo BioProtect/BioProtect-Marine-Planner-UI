@@ -16,12 +16,9 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Grid from "@mui/material/Grid";
-import InputAdornment from "@mui/material/InputAdornment";
-import SearchField from "./SearchField";
 import SearchIcon from "@mui/icons-material/Search";
 import Sync from "@mui/icons-material/Sync";
 import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 
 const DOCS_ROOT = "https://docs.marxanweb.org/";
 
@@ -38,6 +35,9 @@ const DOCS_ROOT = "https://docs.marxanweb.org/";
 //showSearchBox - true to show a search box
 
 const MarxanDialog = (props) => {
+  if (props.title === "Import Marxan DOS project") {
+    console.log("props ", props);
+  }
   const fullW = props.fullWidth ? props.fullWidth : false;
   const maxW = props.maxWidth ? props.maxWidth : "lg";
   const openDocumentation = () => {

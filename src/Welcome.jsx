@@ -18,7 +18,6 @@ import { faDraftingCompass } from "@fortawesome/free-solid-svg-icons";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 
 const Welcome = (props) => {
-  console.log("props in Welcome ----- ", props);
   const [checked, setChecked] = useState(true);
 
   const toggleShowWelcomeScreen = (evt, isInputChecked) => {

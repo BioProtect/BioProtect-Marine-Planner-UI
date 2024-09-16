@@ -16,7 +16,6 @@ import ProjectsToolbar from "./ProjectsToolbar";
 const ProjectsDialog = (props) => {
   const [searchText, setSearchText] = useState("");
   const [selectedProject, setSelectedProject] = useState(undefined);
-  const [importProjectAnchor, setImportProjectAnchor] = useState(null);
 
   const _delete = useCallback(() => {
     props.deleteProject(selectedProject.user, selectedProject.name);
@@ -37,14 +36,6 @@ const ProjectsDialog = (props) => {
     props.loadProject(selectedProject.name, selectedProject.user);
     closeDialog();
   }, [props, selectedProject]);
-
-  const showImportProjectPopover = useCallback(
-    (event) => {
-      setImportProjectAnchor(event.currentTarget);
-      props.updateState({ importProjectPopoverOpen: true });
-    },
-    [props]
-  );
 
   const _new = useCallback(() => {
     props.getAllFeatures().then(() => {
@@ -84,7 +75,7 @@ const ProjectsDialog = (props) => {
     setSelectedProject(undefined);
     props.updateState({
       projectsDialogOpen: false,
-      importProjectPopoverOpen: false,
+      // importProjectPopoverOpen: false,
     });
   }, [props]);
 
@@ -154,7 +145,6 @@ const ProjectsDialog = (props) => {
           userRole={props.userRole}
           unauthorisedMethods={props.unauthorisedMethods}
           handleNew={() => _new()}
-          showImportProjectPopover={showImportProjectPopover}
           loading={props.loading}
           importProjectPopoverOpen={props.importProjectPopoverOpen}
           openImportMXWDialog={openImportMXWDialog}

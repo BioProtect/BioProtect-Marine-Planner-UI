@@ -1,163 +1,108 @@
+import React, { useState } from "react";
+
 import MarxanDialog from "../MarxanDialog";
 import Metadata from "../Metadata";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
 import ToolbarButton from "../ToolbarButton";
-import UploadMarxanFiles from "../UploadMarxanFiles";
+import UploadMarxanFiles from "../Uploads/UploadMarxanFiles";
 
-//some of the code in this component should be moved up to app.js like the POSTs but I have limited time
+const ImportProjectDialog = (props) => {
+  console.log("props import project dialog ", props);
+  const [stepIndex, setStepIndex] = useState(0);
+  console.log("stepIndex ", stepIndex);
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [zipFilename, setZipFilename] = useState("");
+  const [files, setFiles] = useState([]);
+  const [planningGridName, setPlanningGridName] = useState("");
 
-class ImportProjectDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      steps: ["Files and planning grid", "Info"],
-      loading: false,
-      stepIndex: 0,
-      name: "",
-      description: "",
-      zipFilename: "",
-      files: [],
-      planning_grid_name: "",
-    };
-  }
-  handleNext = () => {
-    const { stepIndex } = this.state;
+  const steps = ["Files and planning grid", "Info"];
+
+  const handleNext = () => {
     if (stepIndex === 1) {
-      this.setState({ loading: true });
-      //create the new project
-      this.props
-        .importProject(
-          this.state.name,
-          this.state.description,
-          this.state.zipFilename,
-          this.state.files,
-          this.state.planning_grid_name
-        )
-        .then((response) => {
-          //close the import wizard
-          this.onOk();
-        })
+      setLoading(true);
+      props
+        .importProject(name, description, zipFilename, files, planningGridName)
+        .then(() => onOk())
         .catch((error) => {
-          this.setState({ loading: false });
-          this.props.log(error + "Import stopped");
-          this.props.setSnackBar(error);
+          setLoading(false);
+          props.log(error + "Import stopped");
+          props.setSnackBar(error);
         });
-      return;
+    } else {
+      setStepIndex(stepIndex + 1);
     }
-    this.setState({ stepIndex: stepIndex + 1 });
   };
-  handlePrev = () => {
-    const { stepIndex } = this.state;
+
+  const handlePrev = () => {
     if (stepIndex > 0) {
-      this.setState({ stepIndex: stepIndex - 1 });
+      setStepIndex(stepIndex - 1);
     }
   };
-  filesListed(files) {
-    //TODO filter the files to exclude all of the output files - these are unnecessary and will be creating on the first run anyway
-    this.setState({ files: files });
-  }
-  setZipFilename(filename) {
-    this.setState({ zipFilename: filename });
-  }
-  setPlanningGridName(event, planning_grid_name) {
-    this.setState({ planning_grid_name: planning_grid_name });
-  }
-  setName(value) {
-    this.setState({ name: value });
-  }
-  setDescription(value) {
-    this.setState({ description: value });
-  }
-  onOk() {
-    //return the wizard back to zero
-    this.setState({ loading: false, stepIndex: 0 });
-    this.props.onOk();
-  }
-  render() {
-    const { stepIndex } = this.state;
-    const contentStyle = { margin: "0 16px" };
-    const actions = [
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 700,
-          margin: "auto",
-          textAlign: "center",
-        }}
-      >
-        <div style={contentStyle}>
-          <div style={{ marginTop: 12 }}>
-            <ToolbarButton
-              label="Back"
-              disabled={stepIndex === 0}
-              onClick={this.handlePrev}
-            />
-            <ToolbarButton
-              label={
-                stepIndex === this.state.steps.length - 1 ? "Finish" : "Next"
-              }
-              onClick={this.handleNext.bind(this)}
-              primary={true}
-              disabled={
-                this.state.loading ||
-                (stepIndex === 0 &&
-                  (this.state.files.length === 0 ||
-                    this.state.zipFilename === "" ||
-                    this.state.planning_grid_name === "")) ||
-                (stepIndex === 1 &&
-                  (this.state.name === "" || this.state.description === ""))
-              }
-            />
-          </div>
-        </div>
-      </div>,
-    ];
-    let c = (
-      <React.Fragment key="k4">
-        <div>
-          {stepIndex === 0 ? (
-            <UploadMarxanFiles
-              {...this.props}
-              filesListed={this.filesListed.bind(this)}
-              setZipFilename={this.setZipFilename.bind(this)}
-              setPlanningGridName={this.setPlanningGridName.bind(this)}
-              planning_grid_name={this.state.planning_grid_name}
-            />
-          ) : null}
-          {stepIndex === 1 ? (
-            <Metadata
-              name={this.state.name}
-              description={this.state.description}
-              setName={this.setName.bind(this)}
-              setDescription={this.setDescription.bind(this)}
-            />
-          ) : null}
-        </div>
-      </React.Fragment>
-    );
-    return (
-      <MarxanDialog
-        {...this.props}
-        title={"Import Marxan DOS project"}
-        contentWidth={390}
-        okLabel={"Cancel"}
-        actions={actions}
-        onOk={this.onOk.bind(this)}
-        onClose={this.onOk.bind(this)}
-        helpLink={"user.html#importing-marxan-dos-projects"}
-      >
-        {c}
-      </MarxanDialog>
-    );
-  }
-}
+
+  const filesListed = (listedFiles) => {
+    // TODO: filter the files to exclude output files - these are unnecessary and will be creating on the first run anyway
+    setFiles(listedFiles);
+  };
+
+  const onOk = () => {
+    setLoading(false);
+    setStepIndex(0);
+    props.onOk();
+  };
+
+  return (
+    <MarxanDialog
+      {...props}
+      open={props.open}
+      title={"Import Marxan DOS project"}
+      fullWidth={true}
+      onOk={onOk}
+      onCancel={onOk}
+      showCancelButton={true}
+      autoDetectWindowHeight={false}
+      helpLink={"user.html#importing-marxan-dos-projects"}
+      modal={true}
+      actions={[
+        <ToolbarButton
+          label="Back"
+          disabled={stepIndex === 0}
+          onClick={handlePrev}
+        />,
+        <ToolbarButton
+          label={stepIndex === steps.length - 1 ? "Finish" : "Next"}
+          onClick={handleNext}
+          primary={true}
+          disabled={
+            loading ||
+            (stepIndex === 0 &&
+              (files.length === 0 ||
+                zipFilename === "" ||
+                planningGridName === "")) ||
+            (stepIndex === 1 && (name === "" || description === ""))
+          }
+        />,
+      ]}
+    >
+      {stepIndex === 0 ? (
+        <UploadMarxanFiles
+          {...props}
+          filesListed={filesListed}
+          setZipFilename={setZipFilename}
+          setPlanningGridName={(e, value) => setPlanningGridName(value)}
+          planning_grid_name={planningGridName}
+        />
+      ) : null}
+      {stepIndex === 1 && (
+        <Metadata
+          name={name}
+          description={description}
+          setName={setName}
+          setDescription={setDescription}
+        />
+      )}
+    </MarxanDialog>
+  );
+};
 
 export default ImportProjectDialog;
