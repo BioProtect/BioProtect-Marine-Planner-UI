@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import FileUpload from "../FileUpload";
+import FileUpload from "./FileUpload";
 import MarxanTextField from "../MarxanTextField";
 import UploadFolder from "./UploadFolder";
 

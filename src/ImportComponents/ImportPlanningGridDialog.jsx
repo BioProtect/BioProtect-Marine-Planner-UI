@@ -8,7 +8,7 @@
  */
 import * as React from "react";
 
-import FileUpload from "../FileUpload";
+import FileUpload from "../Uploads/FileUpload";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTextField from "../MarxanTextField";
 

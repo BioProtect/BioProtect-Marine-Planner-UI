@@ -9,7 +9,7 @@
 import * as React from "react";
 
 import CONSTANTS from "../constants";
-import FileUpload from "../FileUpload";
+import FileUpload from "../Uploads/FileUpload";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTextField from "../MarxanTextField";
 import MenuItem from "@mui/material/MenuItem";

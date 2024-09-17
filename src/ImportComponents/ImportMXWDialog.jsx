@@ -1,4 +1,4 @@
-import FileUpload from "../FileUpload";
+import FileUpload from "../Uploads/FileUpload";
 import MarxanDialog from "../MarxanDialog";
 import Metadata from "../Metadata";
 /*
