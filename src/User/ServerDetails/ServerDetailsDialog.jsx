@@ -21,7 +21,6 @@ import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
  */
 
 const ServerDetailsDialog = (props) => {
-  console.log("props ", props);
   const renderWithIcon = (cellInfo) => {
     const newServerSoftware =
       cellInfo.key === "Marxan Server version" &&

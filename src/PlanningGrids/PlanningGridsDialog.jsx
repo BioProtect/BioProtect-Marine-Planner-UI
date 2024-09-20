@@ -48,7 +48,6 @@ const PlanningGridsDialog = (props) => {
 
   const preview = useCallback(
     (planning_grid_metadata) => {
-      console.log("planning_grid_metadata ", planning_grid_metadata);
       props.previewPlanningGrid(planning_grid_metadata);
     },
     [props]

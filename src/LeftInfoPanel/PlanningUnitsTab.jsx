@@ -23,7 +23,7 @@ const PlanningUnitsTab = (props) => {
               Planning Grid
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
-              <div className="description">{props.metadata.pu_alias}</div>
+              <p className="description">{props.metadata.pu_alias}</p>
             </Typography>
 
             <Typography variant="h5" component="div">
@@ -43,7 +43,7 @@ const PlanningUnitsTab = (props) => {
                   : "Manually edit"}
               </Typography>
               <Typography variant="subtitle1" color="text.secondary">
-                <div
+                <span
                   style={{
                     display: props.puEditing ? "inline-block" : "none",
                   }}
@@ -58,7 +58,7 @@ const PlanningUnitsTab = (props) => {
                       color: "rgba(255, 64, 129, 0.7)",
                     }}
                   />
-                </div>
+                </span>
               </Typography>
             </Stack>
 

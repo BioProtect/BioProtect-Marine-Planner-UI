@@ -55,7 +55,6 @@ class ImportImpactsDialog extends React.Component {
   }
 
   setSelectedActivity(activity) {
-    console.log("activity ", activity);
     this.setState({ selectedActivity: activity });
   }
 
@@ -87,7 +86,6 @@ class ImportImpactsDialog extends React.Component {
         this.state.description
       )
       .then((response) => {
-        console.log("response from impact ", response);
         this.setMessage(response);
         this.closeDialog();
       });

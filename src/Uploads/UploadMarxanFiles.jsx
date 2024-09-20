@@ -6,7 +6,6 @@ import UploadFolder from "./UploadFolder";
 
 const UploadMarxanFiles = (props) => {
   const [zipFilename, setZipFilename] = useState("");
-  console.log("zipFilename ", zipFilename);
 
   const handleSetZipFilename = (filename) => {
     setZipFilename(filename);

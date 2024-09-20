@@ -1,146 +1,103 @@
+import React, { useState } from "react";
+
 import MarxanDialog from "./MarxanDialog";
 import MarxanTable from "./MarxanTable";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 
-class AtlasLayersDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      searchText: "",
-      planning_grid_name: "",
-      zipFilename: "",
-      description: "",
-      snackbarOpen: false,
-      snackbarMessage: "",
-    };
-  }
+const AtlasLayersDialog = (props) => {
+  const [searchText, setSearchText] = useState("");
+  const [selectedRows, setSelectedRows] = useState([]);
 
-  closeDialog() {
-    this.props.onOk();
-  }
+  const handleClick = (layer, index) => {
+    setSelectedRows((prevSelectedRows) => {
+      if (prevSelectedRows.includes(index)) {
+        // If the row is already selected, remove it
+        return prevSelectedRows.filter((row) => row !== index);
+      } else {
+        // Otherwise, add it to the selected rows
+        return [...prevSelectedRows, index];
+      }
+    });
+    props.setselectedLayers(layer);
+  };
 
-  onCancel() {}
+  const clearLayers = () => {
+    setSelectedRows([]);
+    props.onCancel();
+  };
 
-  onOk() {
-    let _description =
-      this.state.description === ""
-        ? "Imported using the cumulative impact dialog"
-        : this.state.description;
-    this.props
-      .onOk(this.state.zipFilename, this.state.planning_grid_name, _description)
-      .then(function (response) {
-        //reset the state
-        this.setState({
-          planning_grid_name: "",
-          zipFilename: "",
-          description: "",
-        });
-      })
-      .catch(function (ex) {
-        //error uploading the shapefile
-      });
-  }
-
-  renderRow(title) {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={title}
-      >
-        {title}
-      </div>
-    );
-  }
-  renderlayer(row) {
-    return this.renderRow(row.original.layer);
-  }
-  renderTitle(row) {
-    return this.renderRow(row.original.title);
-  }
-  searchTextChanged(value) {
-    this.setState({ searchText: value });
-  }
-  render() {
-    let tableColumns = [
-      {
-        Header: "Layer Title",
-        accessor: "title",
-        width: "100%",
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderTitle.bind(this),
-      },
-    ];
+  const tableColumns = [
+    {
+      accessor: "title",
+      width: "100%",
+      id: "Title",
+    },
+  ];
+  if (props.atlasLayers.length > 0) {
     return (
       <MarxanDialog
-        {...this.props}
-        // titleBarIcon={faBookOpen}
-        onOk={this.closeDialog.bind(this)}
-        onCancel={this.props.onCancel}
-        onClose={this.props.onCancel.bind(this)}
+        {...props}
+        onOk={props.onOk}
+        onCancel={() => clearLayers()}
         helpLink={"user.html#the-planning-grids-window"}
-        bodyStyle={{ padding: "0px 24px 0px 24px" }}
         title="Atlas Layers Selection"
-        searchTextChanged={this.searchTextChanged.bind(this)}
-        showCancelButton="true"
+        searchColumns={["title"]}
+        searchText={searchText}
+        setSearchText={setSearchText}
+        showSearchBox={true}
+        showCancelButton={true}
         cancelLabel="Clear all Layers"
-        showSearchBox="true"
-        autoDetectWindowHeight={false}
       >
-        {
-          <React.Fragment key="k2">
-            <div id="atlasLayertable">
-              <h4>Select a layer to view on map</h4>
-              <MarxanTable
-                data={this.props.atlasLayers}
-                columns={tableColumns}
-                searchColumns={["title"]}
-                searchText={this.state.searchText}
-                selectedLayers={this.props.selectedLayers}
-                getTrProps={(state, rowInfo) => {
-                  return {
-                    style: {
-                      background: this.props.selectedLayers.includes(
-                        rowInfo.original.layer
-                      )
-                        ? "rgb(0, 188, 212)"
-                        : "",
-                      color: this.props.selectedLayers.includes(
-                        rowInfo.original.layer
-                      )
-                        ? "white"
-                        : "",
+        <Table
+          stickyHeader
+          sx={{ minWidth: 650 }}
+          size="small"
+          aria-label="a dense table"
+        >
+          <TableHead>
+            <TableRow>
+              {tableColumns.map((column) => (
+                <TableCell key={column.id} align="left" width={column.width}>
+                  {column.id}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {props.atlasLayers.length > 0 ? (
+              props.atlasLayers.map((layer, idx) => (
+                <TableRow
+                  onClick={() => handleClick(layer.layer, idx)}
+                  key={layer.title + idx}
+                  sx={{
+                    backgroundColor: selectedRows.includes(idx)
+                      ? "#f0f0f0"
+                      : "white",
+                    "&:hover": {
+                      backgroundColor: "#e0e0e0", // Add hover effect
                     },
-                    onClick: (e) => {
-                      this.props.setselectedLayers(rowInfo.original.layer);
-                    },
-                  };
-                }}
-              />
-            </div>
-            <div
-              id="projectsToolbar"
-              style={{
-                display: this.props.userRole === "ReadOnly" ? "none" : "block",
-              }}
-            ></div>
-          </React.Fragment>
-        }
+                    cursor: "pointer", // Change cursor to pointer when hovering
+                  }}
+                >
+                  <TableCell scope="row">{layer.title}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell scope="row">Loading...</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </MarxanDialog>
-    ); //return
+    );
+  } else {
+    return null;
   }
-}
+};
 
 export default AtlasLayersDialog;

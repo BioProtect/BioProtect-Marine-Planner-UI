@@ -29,7 +29,6 @@ class CostsDialog extends React.Component {
     this.setState({ selectedCost: cost });
   }
   costFromImpact(e, data) {
-    console.log("data ", data);
     this.props.createCostsFromImpact(data);
   }
   _delete() {

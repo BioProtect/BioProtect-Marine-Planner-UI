@@ -35,9 +35,6 @@ const DOCS_ROOT = "https://docs.marxanweb.org/";
 //showSearchBox - true to show a search box
 
 const MarxanDialog = (props) => {
-  if (props.title === "Import Marxan DOS project") {
-    console.log("props ", props);
-  }
   const fullW = props.fullWidth ? props.fullWidth : false;
   const maxW = props.maxWidth ? props.maxWidth : "lg";
   const openDocumentation = () => {
@@ -48,23 +45,9 @@ const MarxanDialog = (props) => {
     props.setSearchText(evt.target.value);
   };
 
-  const cancelButton = props.showCancelButton ? (
-    <Button variant="outlined" primary={true} onClick={props.onCancel}>
-      {props.cancelLabel ? props.cancelLabel : "Cancel"}
-    </Button>
-  ) : null;
-
-  const okButton = props.hideOKButton ? null : (
-    <Button variant="outlined" onClick={props.onOk} disabled={props.okDisabled}>
-      {props.okLabel ? props.okLabel : "OK"}
-    </Button>
-  );
-
-  const actions = [props.actions, cancelButton, okButton];
-
   return (
     <Dialog
-      {...props}
+      open={props.open}
       fullWidth={fullW}
       maxWidth={maxW}
       onClose={props.onCancel}
@@ -123,7 +106,23 @@ const MarxanDialog = (props) => {
         </Grid>
       </DialogTitle>
       <DialogContent>{props.children}</DialogContent>
-      <DialogActions>{actions}</DialogActions>
+      <DialogActions>
+        {props.showCancelButton ? (
+          <Button variant="outlined" primary={true} onClick={props.onCancel}>
+            {props.cancelLabel ? props.cancelLabel : "Cancel"}
+          </Button>
+        ) : null}
+        {props.hideOKButton ? null : (
+          <Button
+            variant="outlined"
+            onClick={props.onOk}
+            disabled={props.okDisabled}
+          >
+            {props.okLabel ? props.okLabel : "OK"}
+          </Button>
+        )}
+        {props.actions}
+      </DialogActions>
     </Dialog>
   );
 };

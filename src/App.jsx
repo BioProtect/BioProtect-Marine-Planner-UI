@@ -321,7 +321,6 @@ const App = () => {
 
   const selectServerByName = useCallback(
     (servername) => {
-      console.log("servername ", servername);
       // Remove the search part of the URL
       window.history.replaceState({}, document.title, "/");
       const server = marxanServers.find((item) => item.name === servername);
@@ -334,7 +333,6 @@ const App = () => {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    console.log("searchParams ", searchParams);
     if (searchParams.has("project")) {
       setDialogsState((prevState) => ({
         ...prevState,
@@ -347,7 +345,6 @@ const App = () => {
       try {
         const response = await fetch(CONSTANTS.MARXAN_REGISTRY);
         const registryData = await response.json();
-        console.log("registryData ", registryData);
 
         setBrew(new classyBrew());
         await initialiseServers(registryData.MARXAN_SERVERS);
@@ -360,7 +357,6 @@ const App = () => {
         setInitialLoading(false);
 
         if (searchParams.has("project")) openShareableLink(searchParams);
-        console.log("searchParams ", searchParams);
         if (searchParams.has("server"))
           selectServerByName(searchParams.get("server"));
       } catch (error) {
@@ -368,7 +364,6 @@ const App = () => {
       }
     };
 
-    console.log("USE EFFECT");
     fetchGlobalVariables();
   }, []);
 
@@ -460,7 +455,6 @@ const App = () => {
   const validateUser = async (user, password) => {
     try {
       const checkedPass = await checkPassword(user, password);
-      console.log("checkedPass ", checkedPass);
       if (checkedPass) {
         setDialogsState((prevState) => ({
           ...prevState,
@@ -734,7 +728,6 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   const selectServer = useCallback(
     (server) => {
-      console.log("server ", server);
       setMarxanServer(server);
       // Check if there is a new version of the WDPA
       setNewWDPAVersion(
@@ -2490,7 +2483,6 @@ const App = () => {
 
   //instantiates the mapboxgl map
   const createMap = (url) => {
-    console.log("should be creating a new map here");
     if (map.current) return; // initialize map only once
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -2728,7 +2720,6 @@ const App = () => {
   //sets the basemap either on project load, or if the user changes it
   const setBasemap = async (basemap) => {
     try {
-      console.log("setBasemap ", basemap);
       setDialogsState((prevState) => ({ ...prevState, basemap: basemap.name }));
       // Get a valid map style
       const style = await getValidStyle(basemap);
@@ -2791,7 +2782,6 @@ const App = () => {
 
   //loads the maps style using either a url to a Mapbox Style Specification file or a JSON object
   const loadMapStyle = async (style) => {
-    console.log("map", map);
     createMap(style);
 
     return new Promise((resolve) => {
@@ -3620,14 +3610,27 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
-  const openAtlasLayersDialog = () => {
-    if (dialogsState.atlasLayers.length < 1) {
-      getAtlasLayers();
-    }
+  const openAtlasLayersDialog = async () => {
     setDialogsState((prevState) => ({
       ...prevState,
-      atlasLayersDialogOpen: true,
+      loading: true,
     }));
+    if (dialogsState.atlasLayers.length < 1) {
+      const data = await getAtlasLayers();
+      setDialogsState((prevState) => ({
+        ...prevState,
+        atlasLayersDialogOpen: true,
+        atlasLayers: [...prevState.atlasLayers, ...data], // Spread the data correctly
+        loading: false,
+      }));
+    } else {
+      // Open the dialog if there is data already loaded
+      setDialogsState((prevState) => ({
+        ...prevState,
+        atlasLayersDialogOpen: true,
+        loading: false,
+      }));
+    }
   };
 
   const openCumulativeImpactDialog = async () => {
@@ -3640,7 +3643,6 @@ const App = () => {
 
   //makes a call to get the impacts from the server and returns them
   const getImpacts = async () => {
-    console.log("getting impacts...");
     const response = await _get("getAllImpacts");
     setDialogsState((prevState) => ({
       ...prevState,
@@ -3668,40 +3670,44 @@ const App = () => {
     // setDialogsState(prevState => ({ ...prevState, map: map });
   };
 
+  const addSource = async (sourceName, tileUrl) => {
+    map.current.addSource(sourceName, {
+      type: "raster",
+      tiles: [tileUrl],
+      tileSize: 256,
+    });
+  };
+
+  const addLayer = async (sourceName) => {
+    map.current.addLayer({
+      id: sourceName,
+      type: "raster",
+      source: sourceName,
+      layout: {
+        visibility: "none", // make layer invisible by default
+      },
+    });
+  };
+
   const getAtlasLayers = async () => {
     try {
       const response = await fetch(marxanServer.endpoint + "getAtlasLayers", {
         credentials: "include",
       });
       const data = await response.json();
+      const parsedData = data.map(JSON.parse);
 
-      const parseddata = data.map(JSON.parse);
-
-      parsedData.forEach((layer) => {
+      for (const layer of parsedData) {
         const sourceName = layer.layer;
         const tileUrl = `http://www.atlas-horizon2020.eu/gs/ows?layers=${sourceName}&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}`;
 
-        // Add the source to the map
-        map.current.addSource(sourceName, {
-          type: "raster",
-          tiles: [tileUrl],
-          tileSize: 256,
-        });
+        // Add the source and layer to the map
+        await addSource(sourceName, tileUrl);
+        await addLayer(sourceName);
+      }
 
-        // Add the layer to the map
-        map.current.addLayer({
-          id: sourceName,
-          type: "raster",
-          source: sourceName,
-          layout: {
-            visibility: "none", // make layer invisible by default
-          },
-        });
-      });
-      setDialogsState((prevState) => ({
-        ...prevState,
-        atlasLayers: parseddata,
-      }));
+      console.log("dialogsState.userData 1 ", dialogsState.userData);
+      return parsedData;
     } catch (error) {
       console.error("Failed to fetch and add Atlas layers:", error);
     }
@@ -3749,7 +3755,9 @@ const App = () => {
     // Update the selectedLayers state
     setDialogsState((prevState) => {
       const isLayerSelected = prevState.selectedLayers.includes(layer);
+
       return {
+        ...prevState,
         selectedLayers: isLayerSelected
           ? prevState.selectedLayers.filter((item) => item !== layer)
           : [...prevState.selectedLayers, layer],
@@ -3920,7 +3928,6 @@ const App = () => {
 
     //the binary data for the file, the filename
     const response = await _post("uploadRaster", formData);
-    console.log("response ", response);
     return response;
   };
 
@@ -5289,7 +5296,7 @@ const App = () => {
             changeEmail={changeEmail}
             email={dialogsState.resendEmail}
           />
-          <Welcome
+          {/* <Welcome
             open={
               dialogsState.userData.SHOWWELCOMESCREEN &&
               dialogsState.welcomeDialogOpen
@@ -5302,7 +5309,7 @@ const App = () => {
             resetNotifications={resetNotifications}
             removeNotification={removeNotification}
             openNewProjectDialog={openNewProjectWizardDialog}
-          />
+          /> */}
           <ToolsMenu
             open={dialogsState.toolsMenuOpen}
             menuAnchor={dialogsState.menuAnchor}

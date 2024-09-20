@@ -16,7 +16,6 @@ import TargetIcon from "../TargetIcon";
 import { grey } from "@mui/material/colors";
 
 const FeaturesList = (props) => {
-  console.log("props ", props);
   const iconClick = (feature, evt) => {
     props.openFeatureMenu(evt, feature);
   };
@@ -50,7 +49,6 @@ const FeaturesList = (props) => {
     // }}
     >
       {props.features.map((item) => {
-        console.log("item ", item);
         // Get the total area of the feature in the planning unit
         let pu_area = item.pu_area;
 

@@ -88,12 +88,6 @@ const ProjectsDialog = (props) => {
     return 0;
   }, []);
 
-  // const searchTextChanged = useCallback((value) => {
-  //   console.log("value ", value);
-  //   console.log("searchTextChanged ");
-  //   setSearchText(value);
-  // }, []);
-
   const baseColumns = [
     {
       id: "name",

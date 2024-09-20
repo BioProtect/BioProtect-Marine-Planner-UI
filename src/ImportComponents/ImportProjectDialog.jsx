@@ -6,9 +6,7 @@ import ToolbarButton from "../ToolbarButton";
 import UploadMarxanFiles from "../Uploads/UploadMarxanFiles";
 
 const ImportProjectDialog = (props) => {
-  console.log("props import project dialog ", props);
   const [stepIndex, setStepIndex] = useState(0);
-  console.log("stepIndex ", stepIndex);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");

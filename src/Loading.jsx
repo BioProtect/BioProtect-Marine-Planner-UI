@@ -1,4 +1,4 @@
-import BioProtectLogo from "./images/bioprotect_project_logo.jpeg";
+import BioProtectLogo from "./images/bioprotect_logo.gif";
 import CardMedia from "@mui/material/CardMedia";
 import Dialog from "@mui/material/Dialog";
 import DialogContentText from "@mui/material/DialogContentText";
@@ -27,9 +27,6 @@ const Loading = () => {
           </CardMedia>
         </div>
       </DialogTitle>
-      <DialogContentText align="center" variant="h2">
-        Loading...
-      </DialogContentText>
     </Dialog>
   );
 };

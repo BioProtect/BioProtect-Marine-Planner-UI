@@ -43,17 +43,17 @@ const AboutDialog = (props) => {
         Data providers{" "}
       </Typography>
       <Typography variant="body1" gutterBottom>
-        <div
+        <p
           className="aboutText"
           style={{ marginTop: "10px" }}
           dangerouslySetInnerHTML={{ __html: props.wdpaAttribution }}
-        ></div>
-        <div className="aboutTitle">Funding and in-kind contributions</div>
-        <div className="aboutText" style={{ marginTop: "10px" }}>
+        ></p>
+        <p className="aboutTitle">Funding and in-kind contributions</p>
+        <p className="aboutText" style={{ marginTop: "10px" }}>
           Marxan Web funded by the BIOPAMA project of the European Commission.
           With in-kind contributions from Mapbox.
-        </div>
-        <div className="aboutText" style={{ marginTop: "10px" }}>
+        </p>
+        <p className="aboutText" style={{ marginTop: "10px" }}>
           Marxan funded by a range of donors - see{" "}
           <a
             href="http://marxan.org/credits.html"
@@ -63,8 +63,8 @@ const AboutDialog = (props) => {
             here
           </a>
           .
-        </div>
-        <div className="logos">
+        </p>
+        <p className="logos">
           <a href="https://www.iucn.org/">
             <img
               src={iucn}
@@ -105,7 +105,7 @@ const AboutDialog = (props) => {
               className="aboutLogo"
             />
           </a>
-        </div>
+        </p>
       </Typography>
     </MarxanDialog>
   );

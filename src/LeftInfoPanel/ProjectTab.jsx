@@ -32,24 +32,24 @@ const ProjectTabContent = (props) => {
             />
           )}
           <Typography variant="body2" color="text.secondary">
-            <div
+            <p
               className="description"
               onClick={props.startEditingDescription}
               title={props.userRole === "ReadOnly" ? "" : "Click to edit"}
             >
               {props.metadata.DESCRIPTION}
-            </div>
+            </p>
           </Typography>
           <Typography variant="h5" component="div">
             Created
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            <div className="createDate">{props.metadata.CREATEDATE}</div>
+            <p className="createDate">{props.metadata.CREATEDATE}</p>
             {props.user !== props.owner && (
-              <div>
-                <div className="tabTitle tabTitleTopMargin">Created by</div>
-                <div className="createDate">{props.owner}</div>
-              </div>
+              <p>
+                <p className="tabTitle tabTitleTopMargin">Created by</p>
+                <p className="createDate">{props.owner}</p>
+              </p>
             )}
             {props.metadata.OLDVERSION && (
               <div className="tabTitle tabTitleTopMargin">Imported project</div>

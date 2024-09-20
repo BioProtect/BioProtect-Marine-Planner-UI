@@ -82,9 +82,6 @@ const LoginDialog = (props) => {
         onSubmit={handleSubmit}
         noValidate
         hideOKButton={true}
-        showCancelButton={false}
-        cancelLabel={"Register"}
-        cancelDisabled={cancelDisabled}
       >
         <DialogTitle>
           <div style={{ display: "flex", justifyContent: "center" }}>

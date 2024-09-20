@@ -208,7 +208,6 @@ class ImportImpactsDialog extends React.Component {
               getTdProps={(state, rowInfo, column) => {
                 return {
                   onClick: (e) => {
-                    console.log("event in TD ", e);
                     this.setSelectedActivity(rowInfo.original.activity);
                   },
                 };

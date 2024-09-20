@@ -28,11 +28,6 @@ class ImportCostsDialog extends React.Component {
     this.props.updateState({ importCostsDialogOpen: false });
   }
   setCostsFilename(filename) {
-    console.log("filename ", filename);
-    console.log(
-      "filename.substring(0, filename.length - 5) ",
-      filename.substring(0, filename.length - 5)
-    );
     this.setState({
       costs_filename: filename,
       costname: filename.substring(0, filename.length - 5),

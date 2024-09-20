@@ -47,10 +47,6 @@ class ImportedActivitiesDialog extends React.Component {
   }
 
   runCumulativeImpact() {
-    console.log(
-      "this.state.selectedUploadedActivityIds ",
-      this.state.selectedUploadedActivityIds
-    );
     this.props.runCumulativeImpact(this.state.selectedUploadedActivityIds);
   }
 

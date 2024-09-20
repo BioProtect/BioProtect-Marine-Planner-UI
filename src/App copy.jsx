@@ -245,7 +245,6 @@ class App extends React.Component {
       this.setState({ loggedIn: true, shareableLink: true });
     //parse the application level variables from the Marxan Registry
     this.getGlobalVariables().then(() => {
-      console.log("GETTING GLOBAL VARS...");
       //automatically login if this is a shareable link
       if (searchParams.has("project")) this.openShareableLink(searchParams);
       //select a server if it is passed
@@ -260,10 +259,7 @@ class App extends React.Component {
   getGlobalVariables() {
     return new Promise((resolve, reject) => {
       fetch(CONSTANTS.MARXAN_REGISTRY).then((response) => {
-        console.log("response ", response);
-        console.log("CONSTANTS.MARXAN_REGISTRY ", CONSTANTS.MARXAN_REGISTRY);
         response.json().then((registryData) => {
-          console.log("registryData ", registryData);
           this.setState({ registry: registryData });
           // mapboxgl.accessToken = registryData.MBAT_PUBLIC; //this is my public access token
           mapboxgl.accessToken =
@@ -2775,7 +2771,6 @@ class App extends React.Component {
 
   //sets the basemap either on project load, or if the user changes it
   setBasemap(basemap) {
-    console.log("setBasemap ", basemap);
     return new Promise((resolve, reject) => {
       //change the state
       this.setState({ basemap: basemap.name });
@@ -3792,7 +3787,6 @@ class App extends React.Component {
   }
   //makes a call to get the impacts from the server and returns them
   getImpacts() {
-    console.log("getting impacts...");
     return new Promise((resolve, reject) => {
       this._get("getAllImpacts")
         .then((response) => {
@@ -4108,7 +4102,6 @@ class App extends React.Component {
   }
 
   uploadRaster(data) {
-    console.log("upload raster ata ", data);
     return new Promise((resolve, reject) => {
       this.setState({ loading: true });
       this.log({
@@ -5573,8 +5566,6 @@ class App extends React.Component {
   //gets the cost data either from cache (if it has already been loaded) or from the server
   getPlanningUnitsCostData(forceReload) {
     let owner = this.state.owner === "" ? this.state.user : this.state.owner;
-    console.log("this.state.user ", this.state.user);
-    console.log("this.state.owner ", this.state.owner);
     return new Promise((resolve, reject) => {
       //if the cost data has already been loaded
       if (this.cost_data && !forceReload) {
