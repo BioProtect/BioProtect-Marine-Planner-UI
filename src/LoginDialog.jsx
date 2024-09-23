@@ -3,6 +3,7 @@ import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
 import BioProtectLogo from "./images/bioprotect_project_logo.jpeg";
 import Button from "@mui/material/Button";
 import CardMedia from "@mui/material/CardMedia";
+import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -19,6 +20,7 @@ const LoginDialog = (props) => {
   const [selectOpen, setSelectOpen] = React.useState(false);
 
   const {
+    open,
     validateUser,
     onCancel,
     loading,
@@ -46,6 +48,7 @@ const LoginDialog = (props) => {
     !marxanServer || marxanServer.offline || !marxanServer.corsEnabled;
 
   const handleSubmit = (event) => {
+    console.log("event ", event);
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const name = data.get("username");
@@ -74,8 +77,9 @@ const LoginDialog = (props) => {
 
   return (
     <React.Fragment>
-      <MarxanDialog
-        {...props}
+      <Dialog
+        open={open}
+        loading={loading}
         fullWidth={false}
         maxWidth="sm"
         component="form"
@@ -166,19 +170,14 @@ const LoginDialog = (props) => {
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-          >
+          <Button type="submit" variant="contained" sx={{ mt: 3, mb: 2 }}>
             Sign In
           </Button>
         </DialogActions>
         <div style={{ display: "flex", justifyContent: "center" }}>
           {marxanClientReleaseVersion}
         </div>
-      </MarxanDialog>
+      </Dialog>
     </React.Fragment>
   );
 };

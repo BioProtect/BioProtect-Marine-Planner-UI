@@ -10,9 +10,15 @@ import MarxanDialog from "./MarxanDialog";
 //a dialog box that is shown when the user first logs in to alert them to anything, e.g. A new version of the WDPA is available for admin users
 import React from "react";
 
-const AlertDialog = (props) => {
+const AlertDialog = ({ open, onOk }) => {
   return (
-    <MarxanDialog {...props} contentWidth={500} offsetY={80} title="Alert">
+    <MarxanDialog
+      open={open}
+      onOk={onOk}
+      contentWidth={500}
+      offsetY={80}
+      title="Alert"
+    >
       <div key="k23">
         <div className={"description"}>
           A new version of the WDPA is available. <br />

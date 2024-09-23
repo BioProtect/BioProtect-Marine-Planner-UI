@@ -1,49 +1,35 @@
 import MenuItem from "@mui/material/MenuItem";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
 import React from "react";
 import Select from "@mui/material/Select";
 
-class RendererSelector extends React.Component {
-  handleChange(event, index, value) {
-    this.props.changeValue(value);
-  }
-  render() {
+const RendererSelector = (props) => {
+  const handleChange = (event) => {
+    props.changeValue(event.target.value);
+  };
+
+  const items = props.values.map((item) => {
     let primaryText;
-    let c = this.props.values.map((item) => {
-      if (typeof item === "string") {
-        primaryText = item
-          .substr(0, 1)
-          .toUpperCase()
-          .concat(item.replace("_", " ").substr(1)); // sentence case and replace _ with space
-      } else {
-        primaryText = item.toString();
-      }
-      return <MenuItem value={item} key={item} primaryText={primaryText} />;
-    });
+    typeof item === "string"
+      ? item.charAt(0).toUpperCase() + item.slice(1).replace("_", " ")
+      : item.toString();
+
     return (
-      <Select
-        selectionRenderer={this.props.selectionRenderer}
-        menuItemStyle={{ fontSize: "12px" }}
-        labelStyle={{ fontSize: "12px" }}
-        listStyle={{ fontSize: "12px" }}
-        style={{ width: "150px", margin: "0px 10px" }}
-        autoWidth={true}
-        floatingLabelText={this.props.floatingLabelText}
-        floatingLabelFixed={true}
-        onChange={this.handleChange.bind(this)}
-        value={this.props.property}
-      >
-        {c}
-      </Select>
+      <MenuItem value={item} key={item}>
+        {primaryText}
+      </MenuItem>
     );
-  }
-}
+  });
+
+  return (
+    <Select
+      renderValue={props.selectionRenderer}
+      style={{ width: "150px", margin: "0px 10px" }}
+      onChange={handleChange}
+      value={props.property}
+    >
+      {items}
+    </Select>
+  );
+};
 
 export default RendererSelector;

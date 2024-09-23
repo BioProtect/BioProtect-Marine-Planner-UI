@@ -5266,7 +5266,7 @@ const App = () => {
             ref={mapContainer}
             className="map-container absolute top right left bottom"
           />
-          <LoadingDialog />
+          {/* <LoadingDialog /> */}
           <LoginDialog
             open={!dialogsState.loggedIn}
             validateUser={(name, pass) => validateUser(name, pass)}

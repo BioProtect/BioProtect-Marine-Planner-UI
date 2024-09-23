@@ -40,13 +40,12 @@ const AtlasLayersDialog = (props) => {
   if (props.atlasLayers.length > 0) {
     return (
       <MarxanDialog
-        {...props}
+        open={open}
         onOk={props.onOk}
         onCancel={() => clearLayers()}
+        loading={props.loading}
         helpLink={"user.html#the-planning-grids-window"}
         title="Atlas Layers Selection"
-        searchColumns={["title"]}
-        searchText={searchText}
         setSearchText={setSearchText}
         showSearchBox={true}
         showCancelButton={true}

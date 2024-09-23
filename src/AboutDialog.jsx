@@ -7,10 +7,16 @@ import jrc_logo_color_small from "./images/jrc_logo_color_small.png";
 import mapbox_small from "./images/mapbox_small.png";
 import wcmc from "./images/wcmc.png";
 
-const AboutDialog = (props) => {
+const AboutDialog = ({
+  open,
+  onOk,
+  marxanClientReleaseVersion,
+  wdpaAttribution,
+}) => {
   return (
     <MarxanDialog
-      {...props}
+      open={open}
+      onOk={onOk}
       contentWidth={500}
       offsetY={80}
       title="About"
@@ -27,11 +33,10 @@ const AboutDialog = (props) => {
           modernized, now powered by React 18 and MUI 5.
         </p>
         <p>
-          Marxan Web ({props.marxanClientReleaseVersion}) initially developed by{" "}
+          Marxan Web ({marxanClientReleaseVersion}) initially developed by
           <a href="mailto:andrew.cottam@ec.europa.eu" className="email">
-            {" "}
             Andrew Cottam
-          </a>{" "}
+          </a>
           to whom much gratitude is owed.
         </p>
         <p>
@@ -40,13 +45,13 @@ const AboutDialog = (props) => {
         </p>
       </Typography>
       <Typography variant="h6" gutterBottom>
-        Data providers{" "}
+        Data providers
       </Typography>
       <Typography variant="body1" gutterBottom>
         <p
           className="aboutText"
           style={{ marginTop: "10px" }}
-          dangerouslySetInnerHTML={{ __html: props.wdpaAttribution }}
+          dangerouslySetInnerHTML={{ __html: wdpaAttribution }}
         ></p>
         <p className="aboutTitle">Funding and in-kind contributions</p>
         <p className="aboutText" style={{ marginTop: "10px" }}>
@@ -54,7 +59,7 @@ const AboutDialog = (props) => {
           With in-kind contributions from Mapbox.
         </p>
         <p className="aboutText" style={{ marginTop: "10px" }}>
-          Marxan funded by a range of donors - see{" "}
+          Marxan funded by a range of donors - see
           <a
             href="http://marxan.org/credits.html"
             target="_blank"
