@@ -10,7 +10,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
-import MarxanDialog from "./MarxanDialog";
 import MenuItem from "@mui/material/MenuItem";
 import React from "react";
 import Select from "@mui/material/Select";

@@ -40,7 +40,7 @@ const AtlasLayersDialog = (props) => {
   if (props.atlasLayers.length > 0) {
     return (
       <MarxanDialog
-        open={open}
+        open={props.open}
         onOk={props.onOk}
         onCancel={() => clearLayers()}
         loading={props.loading}

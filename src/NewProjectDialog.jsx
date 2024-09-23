@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 
+import Button from "@mui/material/Button";
 import FeaturesDialog from "./Features/FeaturesDialog";
 import MarxanDialog from "./MarxanDialog";
 import Metadata from "./Metadata";
@@ -23,16 +24,10 @@ const NewProjectDialog = (props) => {
   }, [props.features]);
 
   const handleNext = () => setStepIndex((prev) => prev + 1);
-
   const handlePrev = () => setStepIndex((prev) => Math.max(prev - 1, 0));
 
-  const openFeaturesDialog = () => {
-    setFeaturesDialogOpen(true);
-  };
-
-  const closeFeaturesDialog = () => {
-    setFeaturesDialogOpen(false);
-  };
+  const openFeaturesDialog = () => setFeaturesDialogOpen(true);
+  const closeFeaturesDialog = () => setFeaturesDialogOpen(false);
 
   const updateSelectedFeatures = () => {
     const updatedFeatures = allFeatures.map((feature) => ({
@@ -44,12 +39,23 @@ const NewProjectDialog = (props) => {
   };
 
   const clickFeature = (feature) => {
-    setSelectedFeatureIds((prevIds) =>
-      prevIds.includes(feature.id)
-        ? prevIds.filter((id) => id !== feature.id)
-        : [...prevIds, feature.id]
-    );
+    if (selectedFeatureIds.includes(feature.id)) {
+      removeFeature(feature);
+    } else {
+      addFeature(feature);
+    }
   };
+
+  const addFeature = (feature) =>
+    setSelectedFeatureIds((prevIds) => [...prevIds, feature.id]);
+  const removeFeature = (feature) =>
+    setSelectedFeatureIds((prevIds) =>
+      prevIds.filter((id) => id !== feature.id)
+    );
+
+  const selectAllFeatures = () =>
+    setSelectedFeatureIds(allFeatures.map((feature) => feature.id));
+  const clearAllFeatures = () => setSelectedFeatureIds([]);
 
   const createNewProject = () => {
     props.createNewProject({
@@ -66,37 +72,29 @@ const NewProjectDialog = (props) => {
     props.updateState({ newProjectDialogOpen: false });
   };
 
-  const contentStyle = { margin: "0 16px" };
+  const openCostsDialog = () => props.updateState({ costsDialogOpen: true });
+
   const actions = (
-    <div
-      style={{
-        width: "100%",
-        maxWidth: "500px",
-        margin: "auto",
-        textAlign: "center",
-      }}
-    >
-      <div style={contentStyle}>
-        <div style={{ marginTop: 12 }}>
-          <ToolbarButton
-            label="Back"
-            disabled={stepIndex === 0}
-            onClick={handlePrev}
-          />
-          <ToolbarButton
-            label={stepIndex === steps.length - 1 ? "Finish" : "Next"}
-            onClick={
-              stepIndex === steps.length - 1 ? createNewProject : handleNext
-            }
-            primary
-            disabled={
-              (stepIndex === 0 && (name === "" || description === "")) ||
-              (stepIndex === 1 && pu === "") ||
-              (stepIndex === 2 && selectedFeatureIds.length === 0)
-            }
-          />
-        </div>
-      </div>
+    <div>
+      <Button
+        variant="outlined"
+        disabled={stepIndex === 0}
+        onClick={handlePrev}
+      >
+        Back
+      </Button>
+      <Button
+        variant="outlined"
+        onClick={stepIndex === steps.length - 1 ? createNewProject : handleNext}
+        primary={true}
+        disabled={
+          (stepIndex === 0 && (name === "" || description === "")) ||
+          (stepIndex === 1 && pu === "") ||
+          (stepIndex === 2 && selectedFeatureIds.length === 0)
+        }
+      >
+        {stepIndex === steps.length - 1 ? "Finish" : "Next"}
+      </Button>
     </div>
   );
 
@@ -138,7 +136,7 @@ const NewProjectDialog = (props) => {
               <SelectFeatures
                 features={allFeatures.filter((item) => item.selected)}
                 openFeaturesDialog={openFeaturesDialog}
-                simple
+                simple={true}
                 showTargetButton={false}
                 leftmargin="0px"
                 maxheight="356px"
@@ -147,9 +145,7 @@ const NewProjectDialog = (props) => {
           )}
           {stepIndex === 3 && (
             <SelectCostFeatures
-              openCostsDialog={() =>
-                props.updateState({ costsDialogOpen: true })
-              }
+              openCostsDialog={openCostsDialog}
               selectedCosts={props.selectedCosts}
             />
           )}
@@ -161,10 +157,8 @@ const NewProjectDialog = (props) => {
         onCancel={closeFeaturesDialog}
         loadingFeatures={false} // Update this according to your loading state
         allFeatures={allFeatures}
-        selectAllFeatures={() =>
-          setSelectedFeatureIds(allFeatures.map((feature) => feature.id))
-        }
-        clearAllFeatures={() => setSelectedFeatureIds([])}
+        selectAllFeatures={selectAllFeatures}
+        clearAllFeatures={clearAllFeatures}
         selectFeatures={setSelectedFeatureIds}
         clickFeature={clickFeature}
         addingRemovingFeatures

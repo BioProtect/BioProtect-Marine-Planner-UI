@@ -50,7 +50,7 @@ import NewFeatureDialog from "./NewFeatureDialog";
 import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog";
 import NewPlanningGridDialog from "./NewPlanningGridDialog";
 import NewProjectDialog from "./NewProjectDialog";
-import NewProjectWizardDialog from "./NewProjectWizardDialog";
+import NewProjectWizardDialog from "./Projects/NewProject/NewProjectWizardDialog";
 import PlanningGridDialog from "./PlanningGrids/PlanningGridDialog";
 import PlanningGridsDialog from "./PlanningGrids/PlanningGridsDialog";
 //@mui/material components and icons

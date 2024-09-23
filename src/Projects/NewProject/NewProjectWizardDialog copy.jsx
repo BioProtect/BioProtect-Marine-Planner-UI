@@ -8,12 +8,12 @@
  */
 import * as React from "react";
 
-import CONSTANTS from "./constants";
+import CONSTANTS from "../../constants";
 import Checkbox from "@mui/material/Checkbox";
-import MarxanDialog from "./MarxanDialog";
+import MarxanDialog from "../../MarxanDialog";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import ToolbarButton from "./ToolbarButton";
+import ToolbarButton from "../../ToolbarButton";
 
 class NewProjectWizardDialog extends React.Component {
   constructor(props) {
@@ -200,6 +200,7 @@ class NewProjectWizardDialog extends React.Component {
             </Select>
           </React.Fragment>
         ) : null}
+
         {this.state.stepIndex === 1 ? (
           <React.Fragment key={"_wiz02"}>
             <div>Choose the shape and size of the planning units</div>

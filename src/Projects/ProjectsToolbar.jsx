@@ -34,7 +34,7 @@ const ProjectsToolbar = (props) => {
         display: props.userRole === "ReadOnly" ? "none" : "block",
       }}
     >
-      <ButtonGroup aria-label="Basic button group" fullWidth="true">
+      <ButtonGroup aria-label="Basic button group" fullWidth={true}>
         <Button
           show={!props.unauthorisedMethods.includes("createProject")}
           startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
