@@ -86,7 +86,6 @@ const NewProjectDialog = (props) => {
       <Button
         variant="outlined"
         onClick={stepIndex === steps.length - 1 ? createNewProject : handleNext}
-        primary={true}
         disabled={
           (stepIndex === 0 && (name === "" || description === "")) ||
           (stepIndex === 1 && pu === "") ||
@@ -101,9 +100,11 @@ const NewProjectDialog = (props) => {
   return (
     <>
       <MarxanDialog
-        {...props}
+        open={props.open}
+        loading={props.loading}
+        updateState={props.updateState}
         title="New project"
-        contentWidth={400}
+        fullWidth={true}
         actions={actions}
         okLabel="Cancel"
         onOk={onOk}
@@ -120,6 +121,7 @@ const NewProjectDialog = (props) => {
               setDescription={setDescription}
             />
           )}
+
           {stepIndex === 1 && (
             <PlanningUnitsDialog
               {...props}

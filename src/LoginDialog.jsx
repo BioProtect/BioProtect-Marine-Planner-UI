@@ -78,13 +78,11 @@ const LoginDialog = (props) => {
     <React.Fragment>
       <Dialog
         open={open}
-        loading={loading}
         fullWidth={false}
         maxWidth="sm"
         component="form"
         onSubmit={handleSubmit}
         noValidate
-        hideOKButton={true}
       >
         <DialogTitle>
           <div style={{ display: "flex", justifyContent: "center" }}>

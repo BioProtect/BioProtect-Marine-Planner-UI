@@ -35,27 +35,29 @@ const ProjectsToolbar = (props) => {
       }}
     >
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
-        <Button
-          show={!props.unauthorisedMethods.includes("createProject")}
-          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-          title="New project"
-          onClick={props.handleNew}
-        >
-          New
-        </Button>
+        {props.unauthorisedMethods.includes("createProject") ? null : (
+          <Button
+            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+            title="New project"
+            onClick={props.handleNew}
+          >
+            New
+          </Button>
+        )}
 
-        <Button
-          show={!(props.userRole === "ReadOnly")}
-          title="Import a project from Marxan Web or Marxan DOS"
-          disabled={props.loading}
-          id="basic-button"
-          aria-controls={open ? "basic-menu" : undefined}
-          aria-haspopup="true"
-          aria-expanded={open ? "true" : undefined}
-          onClick={handleClick}
-        >
-          Import
-        </Button>
+        {props.userRole === "ReadOnly" ? null : (
+          <Button
+            title="Import a project from Marxan Web or Marxan DOS"
+            disabled={props.loading}
+            id="basic-button"
+            aria-controls={open ? "basic-menu" : undefined}
+            aria-haspopup="true"
+            aria-expanded={open ? "true" : undefined}
+            onClick={handleClick}
+          >
+            Import
+          </Button>
+        )}
 
         <Menu
           desktop={true}
@@ -76,41 +78,44 @@ const ProjectsToolbar = (props) => {
             Import a project from Marxan DOS
           </MenuItem>
         </Menu>
-
-        <Button
-          show={!props.unauthorisedMethods.includes("exportProject")}
-          startIcon={<Export style={{ height: "20px", width: "20px" }} />}
-          title="Export project"
-          onClick={props.exportProject}
-          disabled={
-            !props.selectedProject ||
-            props.loading ||
-            props.selectedProject.oldVersion
-          }
-        >
-          Export
-        </Button>
-
-        <Button
-          show={!props.unauthorisedMethods.includes("cloneProject")}
-          startIcon={<FileCopyIcon style={{ height: "20px", width: "20px" }} />}
-          title="Clone project"
-          onClick={props.cloneProject}
-          disabled={!props.selectedProject || props.loading}
-        >
-          Clone
-        </Button>
-        <Button
-          show={!props.unauthorisedMethods.includes("deleteProject")}
-          startIcon={
-            <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
-          }
-          title="Delete project"
-          disabled={!props.selectedProject || props.loading}
-          onClick={props.handleDelete}
-        >
-          Delete
-        </Button>
+        {props.unauthorisedMethods.includes("exportProject") ? null : (
+          <Button
+            startIcon={<Export style={{ height: "20px", width: "20px" }} />}
+            title="Export project"
+            onClick={props.exportProject}
+            disabled={
+              !props.selectedProject ||
+              props.loading ||
+              props.selectedProject.oldVersion
+            }
+          >
+            Export
+          </Button>
+        )}
+        {props.unauthorisedMethods.includes("cloneProject") ? null : (
+          <Button
+            startIcon={
+              <FileCopyIcon style={{ height: "20px", width: "20px" }} />
+            }
+            title="Clone project"
+            onClick={props.cloneProject}
+            disabled={!props.selectedProject || props.loading}
+          >
+            Clone
+          </Button>
+        )}
+        {props.unauthorisedMethods.includes("deleteProject") ? null : (
+          <Button
+            startIcon={
+              <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
+            }
+            title="Delete project"
+            disabled={!props.selectedProject || props.loading}
+            onClick={props.handleDelete}
+          >
+            Delete
+          </Button>
+        )}
       </ButtonGroup>
     </div>
   );

@@ -8,36 +8,37 @@
  */
 import React, { useState } from "react";
 
+import FormControl from "@mui/material/FormControl";
 import TextField from "@mui/material/TextField";
 
-const Metadata = (props) => {
-  const [validName, setValidName] = useState(undefined);
-
-  const changeName = (event, newValue) => props.setName(newValue);
-  const changeDescription = (event, newValue) => props.setDescription(newValue);
+const Metadata = ({ name, description, setName, setDescription }) => {
+  const changeName = (event) => setName(event.target.value);
+  const changeDescription = (event) => setDescription(event.target.value);
   return (
-    <React.Fragment>
-      <div style={{ marginTop: "-13px" }}>
+    <div>
+      <FormControl fullWidth>
         <TextField
           margin="normal"
-          required
-          fullWidth
-          style={{ width: "310px" }}
-          errorText={validName === false ? "Required field" : ""}
-          value={props.name}
+          required={true}
+          id="projectname"
+          label="Enter a name for the project"
+          name="projectname"
+          autoFocus
           onChange={changeName}
-          floatingLabelText="Enter a name for the project"
+          value={name}
         />
         <TextField
-          style={{ width: "310px" }}
-          value={props.description}
+          margin="normal"
+          fullWidth
+          id="projectdescription"
+          name="projectdescription"
           onChange={changeDescription}
-          multiLine={true}
           rows={3}
-          floatingLabelText="Enter a description for the project"
+          label="Enter a description for the project"
+          value={description}
         />
-      </div>
-    </React.Fragment>
+      </FormControl>
+    </div>
   );
 };
 

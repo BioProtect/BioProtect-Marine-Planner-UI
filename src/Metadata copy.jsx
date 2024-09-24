@@ -7,6 +7,7 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import * as React from "react";
+
 import MarxanTextField from "./MarxanTextField";
 
 class Metadata extends React.Component {

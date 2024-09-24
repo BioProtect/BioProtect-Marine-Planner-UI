@@ -31,29 +31,27 @@ const SelectFeatures = (props) => {
           justifyContent="center"
           alignItems="center"
         >
-          <Button
-            variant="contained"
-            onClick={props.openTargetDialog}
-            show={props.userRole !== "ReadOnly" && props.showTargetButton}
-            startIcon={<FontAwesomeIcon icon={faCrosshairs} />}
-          >
-            Set a target for all features
-          </Button>
-          <Button
-            variant="contained"
-            labelStyle={{ paddingLeft: "6px", paddingRight: "6px" }}
-            label="+/-"
-            onClick={openFeaturesDialog}
-            show={
-              !(
-                (props.metadata && props.metadata.OLDVERSION) ||
-                props.userRole === "ReadOnly"
-              )
-            }
-            title="Add/remove features from the project"
-          >
-            +/-
-          </Button>
+          {props.userRole !== "ReadOnly" && props.showTargetButton ? (
+            <Button
+              variant="contained"
+              onClick={props.openTargetDialog}
+              startIcon={<FontAwesomeIcon icon={faCrosshairs} />}
+            >
+              Set a target for all features
+            </Button>
+          ) : null}
+          {(props.metadata && props.metadata.OLDVERSION) ||
+          props.userRole === "ReadOnly" ? null : (
+            <Button
+              variant="contained"
+              labelStyle={{ paddingLeft: "6px", paddingRight: "6px" }}
+              label="+/-"
+              onClick={openFeaturesDialog}
+              title="Add/remove features from the project"
+            >
+              +/-
+            </Button>
+          )}
         </Stack>
       </div>
     </React.Fragment>

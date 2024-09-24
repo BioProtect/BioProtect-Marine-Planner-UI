@@ -108,7 +108,7 @@ const MarxanDialog = (props) => {
       <DialogContent>{props.children}</DialogContent>
       <DialogActions>
         {props.showCancelButton ? (
-          <Button variant="outlined" primary={true} onClick={props.onCancel}>
+          <Button variant="outlined" onClick={props.onCancel}>
             {props.cancelLabel ? props.cancelLabel : "Cancel"}
           </Button>
         ) : null}

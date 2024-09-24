@@ -170,6 +170,7 @@ class ImportFromWebDialog extends React.Component {
     }
     const actions = [
       <div
+        key="ifwd1"
         style={{
           width: "100%",
           maxWidth: "500px",
@@ -177,14 +178,16 @@ class ImportFromWebDialog extends React.Component {
           textAlign: "center",
         }}
       >
-        <div style={contentStyle}>
-          <div style={{ marginTop: 12 }}>
+        <div style={contentStyle} key="ifwd2">
+          <div style={{ marginTop: 12 }} key="ifwd3">
             <ToolbarButton
+              key="ifwd4"
               label="Back"
               disabled={stepIndex === 0 || this.props.loading}
               onClick={this.handlePrev.bind(this)}
             />
             <ToolbarButton
+              key="ifwd5"
               label={
                 stepIndex === this.state.steps.length - 1 ? "Finish" : "Next"
               }

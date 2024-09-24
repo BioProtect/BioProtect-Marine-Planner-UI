@@ -31,19 +31,18 @@ const FeaturesToolbar = (props) => {
         This is an imported project. Only features from this project are shown.
       </div>
       <ButtonGroup aria-label="Basic button group" fullWidth="true">
-        <Button
-          show={
-            props.userRole !== "ReadOnly" &&
-            !props.metadata.OLDVERSION &&
-            !props.addingRemovingFeatures
-          }
-          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-          title="New feature"
-          disabled={props.loading}
-          onClick={(evt) => props.showNewFeaturePopover(evt)}
-        >
-          New
-        </Button>
+        {props.userRole !== "ReadOnly" &&
+        !props.metadata.OLDVERSION &&
+        !props.addingRemovingFeatures ? (
+          <Button
+            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+            title="New feature"
+            disabled={props.loading}
+            onClick={(evt) => props.showNewFeaturePopover(evt)}
+          >
+            New
+          </Button>
+        ) : null}
         <Popover
           open={props.newFeaturePopoverOpen}
           anchorEl={props.newFeatureAnchor}
@@ -57,19 +56,18 @@ const FeaturesToolbar = (props) => {
             />
           </Menu>
         </Popover>
-        <Button
-          show={
-            !props.metadata.OLDVERSION &&
-            !props.addingRemovingFeatures &&
-            props.userRole !== "ReadOnly"
-          }
-          startIcon={<Import style={{ height: "20px", width: "20px" }} />}
-          title="Create new features from existing data"
-          disabled={props.loading}
-          onClick={() => props.showImportFeaturePopover()}
-        >
-          Import
-        </Button>
+        {!props.metadata.OLDVERSION &&
+        !props.addingRemovingFeatures &&
+        props.userRole !== "ReadOnly" ? (
+          <Button
+            startIcon={<Import style={{ height: "20px", width: "20px" }} />}
+            title="Create new features from existing data"
+            disabled={props.loading}
+            onClick={() => props.showImportFeaturePopover()}
+          >
+            Import
+          </Button>
+        ) : null}
         <Popover
           open={props.importFeaturePopoverOpen}
           anchorEl={props.importFeatureAnchor}
@@ -98,42 +96,44 @@ const FeaturesToolbar = (props) => {
             />
           </Menu>
         </Popover>
-        <Button
-          show={
-            props.userRole === "Admin" &&
-            !props.metadata.OLDVERSION &&
-            !props.addingRemovingFeatures
-          }
-          startIcon={
-            <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
-          }
-          title="Delete feature"
-          disabled={
-            props.selectedFeature === undefined ||
-            props.loading ||
-            (props.selectedFeature &&
-              props.selectedFeature.created_by === "global admin")
-          }
-          onClick={() => props._delete()}
-        >
-          Delete
-        </Button>
-        <Button
-          show={props.addingRemovingFeatures}
-          startIcon={<FontAwesomeIcon icon={faTimesCircle} />}
-          title="Clear all features"
-          onClick={() => props.updateState({ selectedFeatureIds: [] })}
-        >
-          Clear all
-        </Button>
-        <Button
-          show={props.addingRemovingFeatures}
-          startIcon={<FontAwesomeIcon icon={faCheckCircle} />}
-          title="Select all features"
-          onClick={() => props.selectAllFeatures()}
-        >
-          Select all
-        </Button>
+        {props.userRole === "Admin" &&
+        !props.metadata.OLDVERSION &&
+        !props.addingRemovingFeatures ? (
+          <Button
+            startIcon={
+              <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
+            }
+            title="Delete feature"
+            disabled={
+              props.selectedFeature === undefined ||
+              props.loading ||
+              (props.selectedFeature &&
+                props.selectedFeature.created_by === "global admin")
+            }
+            onClick={() => props._delete()}
+          >
+            Delete
+          </Button>
+        ) : null}
+
+        {props.addingRemovingFeatures ? (
+          <Button
+            startIcon={<FontAwesomeIcon icon={faTimesCircle} />}
+            title="Clear all features"
+            onClick={() => props.updateState({ selectedFeatureIds: [] })}
+          >
+            Clear all
+          </Button>
+        ) : null}
+        {props.addingRemovingFeatures ? (
+          <Button
+            startIcon={<FontAwesomeIcon icon={faCheckCircle} />}
+            title="Select all features"
+            onClick={() => props.selectAllFeatures()}
+          >
+            Select all
+          </Button>
+        ) : null}
       </ButtonGroup>
     </div>
   );

@@ -249,6 +249,7 @@ const App = () => {
     shareableLinkUrl: "",
     smallLinearGauge: true,
     targetDialogOpen: false,
+    tileset: null,
     tilesets: [],
     toolsMenuOpen: false,
     unauthorisedMethods: [],
@@ -345,6 +346,7 @@ const App = () => {
       try {
         const response = await fetch(CONSTANTS.MARXAN_REGISTRY);
         const registryData = await response.json();
+        console.log("registryData ", registryData);
 
         setBrew(new classyBrew());
         await initialiseServers(registryData.MARXAN_SERVERS);
@@ -935,7 +937,11 @@ const App = () => {
   //the user is validated so login
   const login = async (user) => {
     try {
+      console.log("login function....");
+      console.log("getting user....");
+
       const response = await _get(`getUser?user=${user}`);
+      console.log("response ", response);
       setDialogsState((prevState) => ({
         ...prevState,
         userData: response.userData,
@@ -945,13 +951,26 @@ const App = () => {
       }));
 
       // Set the basemap
+      console.log("setting basemap....");
+      console.log(dialogsState.basemaps);
+
       const basemap = dialogsState.basemaps.find(
         (item) => item.name === response.userData.BASEMAP
       );
+      console.log("basemap ", basemap);
+
       await setBasemap(basemap);
+      console.log("getting features....");
+
       await getAllFeatures();
+      console.log("loading project....");
+
       await loadProject(response.userData.LASTPROJECT, dialogsState.user);
+      console.log("getting planning grids....");
+
       await getPlanningUnitGrids();
+      console.log("logged in ....");
+
       return "Logged in";
     } catch (error) {
       console.error("Login failed:", error);
@@ -1238,7 +1257,9 @@ const App = () => {
 
   //gets the planning unit grids
   const getPlanningUnitGrids = async () => {
+    console.log("Logged in and getting planning unit grids");
     const response = await _get("getPlanningUnitGrids");
+    console.log("response ", response);
     setDialogsState((prevState) => ({
       ...prevState,
       planning_unit_grids: response.planning_unit_grids,
@@ -2483,28 +2504,37 @@ const App = () => {
 
   //instantiates the mapboxgl map
   const createMap = (url) => {
-    if (map.current) return; // initialize map only once
+    console.log("Map style or URL: ", url);
+
+    // Initialize map only once
+    if (map.current) {
+      console.log("Map already initialized.");
+      return;
+    }
+
+    // Create a new Mapbox map instance
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: url || "mapbox://styles/mapbox/streets-v12",
-      center: [lng, lat],
-      zoom: zoom,
+      style: url || "mapbox://styles/mapbox/streets-v12", // default style if no URL provided
+      center: [lng, lat], // your map's initial coordinates
+      zoom: zoom, // your map's initial zoom level
     });
 
-    // const map = new mapboxgl.Map({
-    //   container: mapContainer,
-    //   style: url,
-    //   center: [0, 0],
-    //   zoom: 2,
-    // });
-    // //add event handlers for the load and error events
-    map.current.on("load", mapLoaded);
-    map.current.on("error", mapError);
-    // //click event
-    map.current.on("click", mapClick);
-    // //style change, this includes adding/removing layers and showing/hiding layers
-    map.current.on("styledata", mapStyleChanged);
-    // // setMap(map);
+    // Event handlers
+    map.current.on("load", mapLoaded); // Triggered when the map loads
+    map.current.on("error", mapError); // Triggered on map errors
+    map.current.on("click", mapClick); // Triggered on map click events
+    map.current.on("styledata", mapStyleChanged); // Triggered when map style changes
+
+    console.log("Map initialized with style: ", url);
+
+    // Return a promise to resolve when the map's style is fully loaded
+    return new Promise((resolve) => {
+      map.current.on("style.load", () => {
+        console.log("Map style loaded.");
+        resolve("Map style loaded");
+      });
+    });
   };
 
   const mapLoaded = (e) => {
@@ -2719,12 +2749,15 @@ const App = () => {
 
   //sets the basemap either on project load, or if the user changes it
   const setBasemap = async (basemap) => {
+    console.log("basemap ", basemap);
     try {
       setDialogsState((prevState) => ({ ...prevState, basemap: basemap.name }));
       // Get a valid map style
       const style = await getValidStyle(basemap);
-      await loadMapStyle(style);
+      console.log("loading map style...");
+      await createMap(style);
       // Add the WDPA layer
+      console.log("adding WDPA stuff...");
       addWDPASource();
       addWDPALayer();
 
@@ -2781,15 +2814,18 @@ const App = () => {
   };
 
   //loads the maps style using either a url to a Mapbox Style Specification file or a JSON object
-  const loadMapStyle = async (style) => {
-    createMap(style);
+  // this seems redundant - why not just do it in createMap.
+  // const loadMapStyle = async (style) => {
+  //   console.log("style ", style);
+  //   createMap(style);
 
-    return new Promise((resolve) => {
-      map.current.on("style.load", () => {
-        resolve("Map style loaded");
-      });
-    });
-  };
+  //   return new Promise((resolve) => {
+  //     console.log("resolving map styles in promise...");
+  //     map.current.on("style.load", () => {
+  //       resolve("Map style loaded");
+  //     });
+  //   });
+  // };
 
   const changePlanningGrid = async (tilesetid) => {
     try {
@@ -5802,7 +5838,11 @@ const App = () => {
             onClose={closeFeatureMenu}
             style={{ width: "307px" }}
           >
-            <Menu style={{ width: "207px" }} onMouseLeave={closeFeatureMenu}>
+            <Menu
+              style={{ width: "207px" }}
+              onMouseLeave={closeFeatureMenu}
+              open={false}
+            >
               <MenuItemWithButton
                 leftIcon={<Properties style={{ margin: "1px" }} />}
                 onClick={() =>

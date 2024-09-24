@@ -123,15 +123,18 @@ class ImportFeaturesDialog extends React.Component {
           margin: "auto",
           textAlign: "center",
         }}
+        key="ifd1"
       >
-        <div style={contentStyle}>
-          <div style={{ marginTop: 12 }}>
+        <div style={contentStyle} key="ifd2">
+          <div style={{ marginTop: 12 }} key="ifd3">
             <ToolbarButton
+              key="ifd4"
               label="Back"
               disabled={stepIndex === 0 || this.props.loading}
               onClick={this.handlePrev.bind(this)}
             />
             <ToolbarButton
+              key="ifd5"
               label={
                 stepIndex === this.state.steps.length - 1 ? "Finish" : "Next"
               }
