@@ -78,7 +78,7 @@ const LoginDialog = (props) => {
     <React.Fragment>
       <Dialog
         open={open}
-        fullWidth={false}
+        fullWidth={true}
         maxWidth="sm"
         component="form"
         onSubmit={handleSubmit}

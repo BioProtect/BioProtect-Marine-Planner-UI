@@ -74,6 +74,7 @@ class ImportMXWDialog extends React.Component {
     const contentStyle = { margin: "0 16px" };
     const actions = [
       <div
+        key="imxwd1"
         style={{
           width: "100%",
           maxWidth: 700,
@@ -84,11 +85,13 @@ class ImportMXWDialog extends React.Component {
         <div style={contentStyle}>
           <div style={{ marginTop: 12 }}>
             <ToolbarButton
+              key="imxwd2"
               label="Back"
               disabled={stepIndex === 0}
               onClick={this.handlePrev}
             />
             <ToolbarButton
+              key="imxwd3"
               label={
                 stepIndex === this.state.steps.length - 1 ? "Finish" : "Next"
               }

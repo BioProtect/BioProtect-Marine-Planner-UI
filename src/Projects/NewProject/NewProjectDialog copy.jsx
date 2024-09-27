@@ -1,7 +1,7 @@
-import FeaturesDialog from "./Features/FeaturesDialog";
-import MarxanDialog from "./MarxanDialog";
-import Metadata from "./Metadata";
-import PlanningUnitsDialog from "./PlanningGrids/PlanningUnitsDialog";
+import FeaturesDialog from "../../Features/FeaturesDialog";
+import MarxanDialog from "../../MarxanDialog";
+import Metadata from "../../Metadata";
+import PlanningUnitsDialog from "../../PlanningGrids/PlanningUnitsDialog";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -11,9 +11,9 @@ import PlanningUnitsDialog from "./PlanningGrids/PlanningUnitsDialog";
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
-import SelectCostFeatures from "./SelectCostFeatures";
-import SelectFeatures from "./SelectFeatures";
-import ToolbarButton from "./ToolbarButton";
+import SelectCostFeatures from "../../SelectCostFeatures";
+import SelectFeatures from "../../SelectFeatures";
+import ToolbarButton from "../../ToolbarButton";
 
 class NewProjectDialog extends React.Component {
   constructor(props) {

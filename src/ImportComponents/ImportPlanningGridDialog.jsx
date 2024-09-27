@@ -1,97 +1,85 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import * as React from "react";
+import React, { useState } from "react";
 
 import FileUpload from "../Uploads/FileUpload";
+import FormControl from "@mui/material/FormControl";
 import MarxanDialog from "../MarxanDialog";
-import MarxanTextField from "../MarxanTextField";
+import TextField from "@mui/material/TextField";
 
-class ImportPlanningGridDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { planning_grid_name: "", zipFilename: "", description: "" };
-  }
-  changeName(event, newValue) {
-    this.setState({ planning_grid_name: newValue });
-  }
-  changeDescription(event, newValue) {
-    this.setState({ description: newValue });
-  }
-  setzipFilename(filename) {
-    this.setState({ zipFilename: filename });
-  }
-  onOk() {
-    let _description =
-      this.state.description === ""
+const ImportPlanningGridDialog = (props) => {
+  const [planningGridName, setPlanningGridName] = useState("");
+  const [zipFilename, setZipFilename] = useState("");
+  const [description, setDescription] = useState("");
+
+  // Handles when OK is clicked
+  const onOk = () => {
+    const _description =
+      description === ""
         ? "Imported using the import planning grid dialog"
-        : this.state.description;
-    this.props
-      .onOk(this.state.zipFilename, this.state.planning_grid_name, _description)
-      .then(function (response) {
-        //reset the state
-        this.setState({
-          planning_grid_name: "",
-          zipFilename: "",
-          description: "",
-        });
+        : description;
+
+    props
+      .onOk(zipFilename, planningGridName, _description)
+      .then(() => {
+        // Reset the state after successful upload
+        setPlanningGridName("");
+        setZipFilename("");
+        setDescription("");
       })
-      .catch(function (ex) {
-        //error uploading the shapefile
+      .catch((ex) => {
+        // Handle any error during upload
+        console.error("Error uploading shapefile:", ex);
       });
-  }
-  render() {
-    return (
-      <MarxanDialog
-        {...this.props}
-        title={"Import planning grid"}
-        contentWidth={390}
-        showCancelButton={true}
-        onOk={this.onOk.bind(this)}
-        okDisabled={
-          this.props.loading ||
-          this.state.planning_grid_name === "" ||
-          this.state.zipFilename === "" ||
-          this.state.description === ""
-        }
-        onClose={this.props.onCancel.bind(this)}
-        helpLink={"user.html#importing-existing-planning-grids"}
-      >
-        {
-          <React.Fragment key="22">
-            <FileUpload
-              {...this.props}
-              fileMatch={".zip"}
-              destFolder="imports"
-              mandatory={true}
-              filename={this.state.zipFilename}
-              setFilename={this.setzipFilename.bind(this)}
-              label="Shapefile"
-            />
-            <MarxanTextField
-              style={{ width: "310px" }}
-              value={this.state.planning_grid_name}
-              onChange={this.changeName.bind(this)}
-              floatingLabelText="Name"
-            />
-            <MarxanTextField
-              style={{ width: "310px" }}
-              value={this.state.description}
-              onChange={this.changeDescription.bind(this)}
-              multiLine={true}
-              rows={2}
-              floatingLabelText="Enter a description"
-            />
-          </React.Fragment>
-        }
-      </MarxanDialog>
-    );
-  }
-}
+  };
+
+  return (
+    <MarxanDialog
+      {...props}
+      fullWidth={true}
+      maxWidth="md"
+      title="Import Planning grid"
+      contentWidth={390}
+      showCancelButton={true}
+      onOk={onOk}
+      okDisabled={
+        props.loading ||
+        planningGridName === "" ||
+        zipFilename === "" ||
+        description === ""
+      }
+      onClose={props.onCancel}
+      helpLink="user.html#importing-existing-planning-grids"
+    >
+      <React.Fragment key="22">
+        <FormControl fullWidth variant="outlined" margin="normal">
+          <FileUpload
+            {...props}
+            fileMatch=".zip"
+            destFolder="imports"
+            mandatory={true}
+            filename={zipFilename}
+            setFilename={setZipFilename}
+            label="Shapefile"
+          />
+          <TextField
+            margin="normal"
+            id="name"
+            label="name"
+            name="name"
+            value={planningGridName}
+            onChange={(e) => setPlanningGridName(e.target.value)}
+          />
+          <TextField
+            margin="normal"
+            id="description"
+            label="description"
+            name="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </FormControl>
+      </React.Fragment>
+    </MarxanDialog>
+  );
+};
 
 export default ImportPlanningGridDialog;

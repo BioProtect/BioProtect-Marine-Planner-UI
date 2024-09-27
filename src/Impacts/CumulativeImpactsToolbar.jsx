@@ -12,31 +12,34 @@ import React from "react";
 const CumulativeImpactsToolbar = (props) => {
   return (
     <div>
-      {props.metadata.OLDVERSION && (
+      {props.metadataOV && (
         <div className="tabTitle">
           This is an imported project. Only features from this project are
           shown.
         </div>
       )}
       <ButtonGroup aria-label="Basic button group" fullWidth="true">
-        <Button
-          show={props.userRole !== "ReadOnly" && !props.metadata.OLDVERSION}
-          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-          title="New CI function"
-          onClick={props.openHumanActivitiesDialog}
-        >
-          Add Activity
-        </Button>
+        {props.userRole !== "ReadOnly" && !props.metadataOV ? (
+          <Button
+            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+            title="New CI function"
+            onClick={props.openHumanActivitiesDialog}
+          >
+            Add Activity
+          </Button>
+        ) : null}
 
-        <Button
-          show={!props.metadata.OLDVERSION && props.userRole !== "ReadOnly"}
-          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-          title="View uploaded activities"
-          onClick={props.openImportedActivitesDialog}
-          disabled={props.loading}
-        >
-          Run Cumulative Impact
-        </Button>
+        {!props.metadataOV && props.userRole !== "ReadOnly" ? (
+          <Button
+            show={!props.metadataOV && props.userRole !== "ReadOnly"}
+            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+            title="View uploaded activities"
+            onClick={props.openImportedActivitesDialog}
+            disabled={props.loading}
+          >
+            Run Cumulative Impact
+          </Button>
+        ) : null}
 
         <Button
           startIcon={

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 
 import Button from "@mui/material/Button";
-import FeaturesDialog from "./Features/FeaturesDialog";
-import MarxanDialog from "./MarxanDialog";
-import Metadata from "./Metadata";
-import PlanningUnitsDialog from "./PlanningGrids/PlanningUnitsDialog";
-import SelectCostFeatures from "./SelectCostFeatures";
-import SelectFeatures from "./SelectFeatures";
-import ToolbarButton from "./ToolbarButton";
+import FeaturesDialog from "../../Features/FeaturesDialog";
+import MarxanDialog from "../../MarxanDialog";
+import Metadata from "../../Metadata";
+import PlanningUnitsDialog from "../../PlanningGrids/PlanningUnitsDialog";
+import SelectCostFeatures from "../../SelectCostFeatures";
+import SelectFeatures from "../../SelectFeatures";
+import ToolbarButton from "../../ToolbarButton";
 
 const NewProjectDialog = (props) => {
   const [steps] = useState(["Info", "Planning units", "Features"]);
@@ -124,7 +124,7 @@ const NewProjectDialog = (props) => {
 
           {stepIndex === 1 && (
             <PlanningUnitsDialog
-              {...props}
+              previewFeature={previewFeature}
               getPlanningUnitGrids={props.getPlanningUnitGrids}
               planning_unit_grids={props.planning_unit_grids}
               changeItem={setPU}

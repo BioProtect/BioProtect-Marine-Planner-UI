@@ -73,90 +73,6 @@ const PlanningGridsDialog = (props) => {
     return dateA > dateB ? 1 : -1;
   }, []);
 
-  const renderRow = useCallback((alias, name) => {
-    const title = name ? `${alias} (${name})` : alias;
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={title}
-      >
-        {alias}
-      </div>
-    );
-  }, []);
-
-  const renderName = useCallback(
-    (row) => renderRow(row.original.alias, row.original.feature_class_name),
-    [renderRow]
-  );
-
-  const renderTitle = useCallback(
-    (row) => renderRow(row.original.description, null),
-    [renderRow]
-  );
-
-  const renderDate = useCallback((row) => {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={row.original.creation_date}
-      >
-        {row.original.creation_date.substr(0, 8)}
-      </div>
-    );
-  }, []);
-
-  const renderCreatedBy = useCallback(
-    (row) => renderRow(row.original.created_by, null),
-    [renderRow]
-  );
-
-  const renderCountry = useCallback(
-    (row) => renderRow(row.original.country, null),
-    [renderRow]
-  );
-
-  const renderArea = useCallback((row) => {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-      >
-        {isNaN(row.original._area) ? "" : row.original._area}
-      </div>
-    );
-  }, []);
-
-  const renderPreview = useCallback((row) => {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title="Click to preview"
-      >
-        ..
-      </div>
-    );
-  }, []);
-
   const searchTextChanged = useCallback((value) => {
     setSearchText(value);
   }, []);
@@ -191,12 +107,13 @@ const PlanningGridsDialog = (props) => {
 
   return (
     <MarxanDialog
-      {...props}
+      open={props.open}
+      loading={props.loading}
+      fullWidth={props.fullWidth}
+      maxWidth={props.maxWidth}
       onOk={closeDialog}
       showCancelButton={false}
       helpLink={"user.html#the-planning-grids-window"}
-      autoDetectWindowHeight={false}
-      bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title="Planning grids"
       showSearchBox={true}
       searchTextChanged={searchTextChanged}
@@ -241,7 +158,6 @@ const PlanningGridsDialog = (props) => {
           />
         </div>
         <PlanningGridsToolbar
-          {...props}
           userRole={props.userRole}
           unauthorisedMethods={props.unauthorisedMethods}
           handleNew={() => handleNew()}

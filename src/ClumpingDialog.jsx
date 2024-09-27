@@ -71,6 +71,7 @@ const ClumpingDialog = (props) => {
       helpLink={"user.html#clumping-window"}
       actions={[
         <ToolbarButton
+          key="cd1"
           label="Refresh"
           primary={true}
           onClick={rerun}

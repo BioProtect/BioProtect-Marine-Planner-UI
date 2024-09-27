@@ -6,9 +6,9 @@ import {
   faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
 
-import CumulativeImpactsTable from "../CumulativeImpactsTable";
 import CumulativeImpactsToolbar from "./CumulativeImpactsToolbar";
 import MarxanDialog from "../MarxanDialog";
+import MarxanTable from "../MarxanTable";
 
 const CumulativeImpactDialog = (props) => {
   const [searchText, setSearchText] = useState("");
@@ -35,8 +35,8 @@ const CumulativeImpactDialog = (props) => {
   }, [props]);
 
   const _newByDigitising = useCallback(() => {
+    onOk();
     props.initialiseDigitising();
-    props.onOk();
   }, [props]);
 
   const clickImpact = useCallback(
@@ -97,12 +97,45 @@ const CumulativeImpactDialog = (props) => {
     props.onOk();
   };
 
+  const onOk = useCallback(() => {
+    props.onOk();
+  }, [props]);
+
   const preview = useCallback(
     (impact_metadata) => {
       props.previewImpact(impact_metadata);
     },
     [props]
   );
+
+  const renderTitle = (row) => {
+    return <TableRow title={row.original.description} />;
+  };
+
+  const renderActivity = (row) => {
+    return <TableRow title={row.original.activity} />;
+  };
+
+  const renderSource = (row) => {
+    return <TableRow title={row.original.source} />;
+  };
+
+  const renderCategory = (row) => {
+    return <TableRow title={row.original.category} />;
+  };
+
+  const renderCreatedBy = (row) => {
+    return <TableRow title={row.original.created_by} />;
+  };
+
+  const renderDate = (row) => {
+    return (
+      <TableRow
+        title={row.original.creation_date}
+        htmlContent={row.original.creation_date.substr(0, 8)}
+      />
+    );
+  };
 
   const dataFiltered = (filteredRows) => {
     setFilteredRows(filteredRows);
@@ -118,33 +151,35 @@ const CumulativeImpactDialog = (props) => {
       id: "description",
       accessor: "description",
       width: 246,
+      Cell: renderTitle,
     },
     {
       id: "source",
       accessor: "source",
       width: 120,
+      Cell: renderSource,
     },
     {
       id: "created by",
       accessor: "created_by",
       width: 70,
+      Cell: renderCreatedBy,
     },
     {
       id: "creation Date",
       accessor: "created_date",
       width: 70,
+      Cell: renderDate,
     },
   ];
 
   return (
     <MarxanDialog
-      open={props.open}
-      loading={props.loading}
-      onOk={props.onOk}
-      onCancel={props.onCancel}
+      {...props}
       autoDetectWindowHeight={false}
       bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title="Impacts"
+      onOk={onOk}
       showSearchBox={true}
       searchText={searchText}
       searchTextChanged={setSearchText}
@@ -152,15 +187,15 @@ const CumulativeImpactDialog = (props) => {
     >
       <React.Fragment key="k10">
         <div id="projectsTable">
-          <CumulativeImpactsTable
+          <MarxanTable
             data={props.allImpacts}
-            columns={columns}
             searchColumns={["alias", "description", "source", "created_by"]}
             searchText={searchText}
             dataFiltered={dataFiltered}
             selectedImpactIds={props.selectedImpactIds}
             clickImpact={clickImpact}
             preview={preview}
+            columns={columns}
             getTrProps={(state, rowInfo) => ({
               style: {
                 background:
@@ -182,14 +217,10 @@ const CumulativeImpactDialog = (props) => {
           />
         </div>
         <CumulativeImpactsToolbar
-          loading={props.loading}
-          metadataOV={props.metadata.OLDVERSION}
-          userRole={props.userRole}
-          openImportedActivitesDialog={props.openImportedActivitesDialog}
+          {...props}
           openHumanActivitiesDialog={openHumanActivitiesDialog}
           deleteImpact={deleteImpact}
           selectedImpact={selectedImpact}
-          selectedProject={props.selectedProject}
         />
       </React.Fragment>
     </MarxanDialog>

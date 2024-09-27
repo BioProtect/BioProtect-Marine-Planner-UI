@@ -75,7 +75,7 @@ const MenuBar = (props) => {
             />
             <AppBarIcon
               icon={faLayerGroup}
-              onClick={props.openCumulativeImpactDialog}
+              onClick={() => props.openCumulativeImpactDialog()}
               title="Impact"
             />
             <span style={{ width: "16px" }} />

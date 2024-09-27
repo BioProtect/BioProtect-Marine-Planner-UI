@@ -49,7 +49,7 @@ import MenuItemWithButton from "./MenuItemWithButton";
 import NewFeatureDialog from "./NewFeatureDialog";
 import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog";
 import NewPlanningGridDialog from "./NewPlanningGridDialog";
-import NewProjectDialog from "./NewProjectDialog";
+import NewProjectDialog from "./Projects/NewProject/NewProjectDialog";
 import NewProjectWizardDialog from "./Projects/NewProject/NewProjectWizardDialog";
 import PlanningGridDialog from "./PlanningGrids/PlanningGridDialog";
 import PlanningGridsDialog from "./PlanningGrids/PlanningGridsDialog";
@@ -2516,8 +2516,8 @@ const App = () => {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: url || "mapbox://styles/mapbox/streets-v12", // default style if no URL provided
-      center: [lng, lat], // your map's initial coordinates
-      zoom: zoom, // your map's initial zoom level
+      center: [-13, 55], // your map's initial coordinates
+      zoom: 4, // your map's initial zoom level
     });
 
     // Event handlers
@@ -3670,16 +3670,27 @@ const App = () => {
   };
 
   const openCumulativeImpactDialog = async () => {
-    await getImpacts();
+    console.log("trying to get cumulative impacts");
+    setDialogsState((prevState) => ({
+      ...prevState,
+      loading: true,
+    }));
+    try {
+      await getImpacts();
+    } catch (e) {
+      setSnackBarMessage("no impacts found");
+    }
     setDialogsState((prevState) => ({
       ...prevState,
       cumulativeImpactDialogOpen: true,
+      loading: false,
     }));
   };
 
   //makes a call to get the impacts from the server and returns them
   const getImpacts = async () => {
     const response = await _get("getAllImpacts");
+    console.log("response ", response);
     setDialogsState((prevState) => ({
       ...prevState,
       allImpacts: response.data,
@@ -3757,8 +3768,10 @@ const App = () => {
     }));
   };
 
-  const openCostsDialog = () => {
-    getImpacts();
+  const openCostsDialog = async () => {
+    if (!dialogsState.allImpacts?.length) {
+      await getImpacts();
+    }
     setDialogsState((prevState) => ({ ...prevState, costsDialogOpen: true }));
   };
 
@@ -3818,12 +3831,14 @@ const App = () => {
   //adds a impact to the selectedImpactIds array
   const addImpact = (impact) =>
     setDialogsState((prevState) => ({
-      selectedImpactIds: [...prevState.selectedImpactIds, impact.id],
+      ...prevState, // Spread the rest of the state
+      selectedImpactIds: [...prevState.selectedImpactIds, impact.id], // Update selectedImpactIds
     }));
 
   //removes a impact from the selectedImpactIds array
   const removeImpact = (impact) => {
     setDialogsState((prevState) => ({
+      ...prevState,
       selectedImpactIds: prevState.selectedImpactIds.filter(
         (imp) => imp !== impact.id
       ),
@@ -5303,6 +5318,7 @@ const App = () => {
             className="map-container absolute top right left bottom"
           />
           {/* <LoadingDialog /> */}
+          {dialogsState.loading ? <Loading /> : null}
           <LoginDialog
             open={!dialogsState.loggedIn}
             validateUser={(name, pass) => validateUser(name, pass)}
@@ -5828,7 +5844,7 @@ const App = () => {
           <Snackbar
             open={snackbarOpen}
             message={snackbarMessage}
-            onClose={() => setSnackBarOpen(false)}
+            onClose={() => setSnackbarOpen(false)}
             style={{ maxWidth: "800px !important" }}
             bodyStyle={{ maxWidth: "800px !important" }}
           />

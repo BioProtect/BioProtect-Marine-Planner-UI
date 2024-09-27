@@ -52,11 +52,7 @@ const MarxanDialog = (props) => {
       maxWidth={maxW}
       onClose={props.onCancel}
     >
-      <DialogTitle
-        position="static"
-        align="center"
-        key={`dialogTitle${props.title}`}
-      >
+      <DialogTitle key={`dialogTitle${props.title}`}>
         <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
           <Grid item xs={3} key={`itemTitle${props.title}`}>
             {props.title ? props.title : null}

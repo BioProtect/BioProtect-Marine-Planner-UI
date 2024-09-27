@@ -63,11 +63,13 @@ const ImportProjectDialog = (props) => {
       modal={true}
       actions={[
         <ToolbarButton
+          key="ipd1"
           label="Back"
           disabled={stepIndex === 0}
           onClick={handlePrev}
         />,
         <ToolbarButton
+          key="ipd1"
           label={stepIndex === steps.length - 1 ? "Finish" : "Next"}
           onClick={handleNext}
           primary={true}
