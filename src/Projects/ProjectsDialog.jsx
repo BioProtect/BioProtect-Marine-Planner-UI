@@ -8,14 +8,15 @@
  */
 import React, { useCallback, useState } from "react";
 
-import Import from "@mui/icons-material/GetApp";
+import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
-import ProjectsTable from "../ProjectsDialogTable";
 import ProjectsToolbar from "./ProjectsToolbar";
 
 const ProjectsDialog = (props) => {
   const [searchText, setSearchText] = useState("");
-  const [selectedProject, setSelectedProject] = useState(undefined);
+  const [selectedProject, setSelectedProject] = useState(
+    props.project || undefined
+  );
 
   const _delete = useCallback(() => {
     props.deleteProject(selectedProject.user, selectedProject.name);
@@ -91,19 +92,22 @@ const ProjectsDialog = (props) => {
   const baseColumns = [
     {
       id: "name",
-      accessor: "name",
-      width: 260,
+      label: "name",
+
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "description",
-      accessor: "description",
-      width: 390,
+      label: "description",
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "created",
-      accessor: "createdate",
-      sortMethod: sortDate,
-      width: 70,
+      label: "createdate",
+      numeric: false,
+      disablePadding: true,
     },
   ];
 
@@ -112,8 +116,9 @@ const ProjectsDialog = (props) => {
         ...baseColumns,
         {
           id: "user",
-          accessor: "user",
-          width: 90,
+          label: "user",
+          numeric: false,
+          disablePadding: true,
         },
       ]
     : baseColumns;
@@ -150,29 +155,12 @@ const ProjectsDialog = (props) => {
           updateState={() => props.updateState()}
         />
         <div id="projectsTable">
-          <ProjectsTable
+          <BioprotectTable
             data={props.projects}
-            columns={tableColumns}
-            searchColumns={["user", "name", "description"]}
-            searchText={searchText}
-            selectedProject={selectedProject}
+            tableColumns={tableColumns}
+            initialSelection={selectedProject}
             changeProject={changeProject}
-            getTrProps={(state, rowInfo, column) => {
-              return {
-                style: {
-                  background:
-                    rowInfo.original.user ===
-                      (state.selectedProject && state.selectedProject.user) &&
-                    rowInfo.original.name ===
-                      (state.selectedProject && state.selectedProject.name)
-                      ? "aliceblue"
-                      : "",
-                },
-                onClick: (e) => {
-                  state.changeProject(e, rowInfo.original);
-                },
-              };
-            }}
+            ableToSelectAll={false}
           />
         </div>
       </MarxanDialog>

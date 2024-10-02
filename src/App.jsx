@@ -3370,6 +3370,7 @@ const App = () => {
 
   //creates a new planning grid unit
   const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
+    console.log("createNewPlanningUnitGrid ");
     startLogging();
     const message = await _ws(
       `createPlanningUnitGrid?iso3=${iso3}&domain=${domain}&areakm2=${areakm2}&shape=${shape}`,
@@ -3671,20 +3672,20 @@ const App = () => {
 
   const openCumulativeImpactDialog = async () => {
     console.log("trying to get cumulative impacts");
+    // setDialogsState((prevState) => ({
+    //   ...prevState,
+    //   loading: true,
+    // }));
     setDialogsState((prevState) => ({
       ...prevState,
-      loading: true,
+      cumulativeImpactDialogOpen: true,
+      // loading: false,
     }));
     try {
       await getImpacts();
     } catch (e) {
       setSnackBarMessage("no impacts found");
     }
-    setDialogsState((prevState) => ({
-      ...prevState,
-      cumulativeImpactDialogOpen: true,
-      loading: false,
-    }));
   };
 
   //makes a call to get the impacts from the server and returns them
@@ -5525,6 +5526,7 @@ const App = () => {
                 importProjectPopoverOpen: false,
               })
             }
+            project={dialogsState.project}
             loading={dialogsState.loading}
             projects={dialogsState.projects}
             oldVersion={dialogsState.metadata?.OLDVERSION}

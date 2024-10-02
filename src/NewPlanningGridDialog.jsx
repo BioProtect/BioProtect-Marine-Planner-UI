@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 
+import BioprotectSelect from "./BPComponents/BioprotectSelect";
 import CONSTANTS from "./constants";
 import MarxanDialog from "./MarxanDialog";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 
 const NewPlanningGridDialog = (props) => {
   const [iso3, setIso3] = useState("");
@@ -26,19 +25,19 @@ const NewPlanningGridDialog = (props) => {
     // Automatically set domain to terrestrial only if no marine area exists
     const filteredCountry = props.countries.filter(
       (country) => country.iso3 === value
-    );
+    )[0];
 
-    if (!filteredCountry.has_marine) {
+    if (filteredCountry.has_marine) {
+      setDomainEnabled(true);
+    } else {
       handleDomainChange(1); // Assuming '1' corresponds to terrestrial
       setDomainEnabled(false);
-    } else {
-      setDomainEnabled(true);
     }
   };
 
-  const handleDomainChange = (value) => setDomain(CONSTANTS.DOMAINS[value]);
-  const handleShapeChange = (value) => setShape(CONSTANTS.SHAPES[value]);
-  const handleAreaKm2Change = (value) => setAreaKm2(CONSTANTS.AREAKM2S[value]);
+  const handleDomainChange = (value) => setDomain(value);
+  const handleShapeChange = (value) => setShape(value);
+  const handleAreaKm2Change = (value) => setAreaKm2(value);
 
   const handleOk = () => {
     props
@@ -51,97 +50,53 @@ const NewPlanningGridDialog = (props) => {
       });
   };
 
-  const dropDownStyle = { width: "240px" };
-
   return (
     <MarxanDialog
       open={props.open}
+      fullWidth={true}
+      maxWidth="sm"
       loading={props.loading}
       onOk={handleOk}
       onClose={props.onCancel}
+      onCancel={props.onCancel}
       okDisabled={!iso3 || !domain || !areakm2 || props.loading}
       cancelLabel="Cancel"
       showCancelButton={true}
       helpLink="user.html#creating-new-planning-grids-using-marxan-web"
       title="New planning grid"
     >
+      <p>{domainEnabled}</p>
       <React.Fragment key="k13">
-        <div>
-          <Select
-            labelId="select-area-of-interest-label"
-            id="select-area-of-interest"
-            value={iso3}
-            onChange={(e) => handleIso3Change(e.target.value)}
-            label="Area of Interest"
-          >
-            {props.countries.map((item) => (
-              <MenuItem value={item.iso3} key={item.iso3}>
-                {item.name_iso31}
-              </MenuItem>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <Select
-            menuItemStyle={{ fontSize: "12px" }}
-            labelStyle={{ fontSize: "12px" }}
-            onChange={(e) => handleDomainChange(e.target.value)}
-            value={domain}
-            style={dropDownStyle}
-            floatingLabelText="Domain"
-            floatingLabelFixed={true}
-            disabled={!domainEnabled}
-          >
-            {CONSTANTS.DOMAINS.map((item) => (
-              <MenuItem
-                style={{ fontSize: "12px" }}
-                value={item}
-                primaryText={item}
-                key={item}
-              />
-            ))}
-          </Select>
-        </div>
-        <div>
-          <Select
-            menuItemStyle={{ fontSize: "12px" }}
-            labelStyle={{ fontSize: "12px" }}
-            onChange={(e) => handleShapeChange(e.target.value)}
-            value={shape}
-            style={dropDownStyle}
-            floatingLabelText="Planning unit shape"
-            floatingLabelFixed={true}
-          >
-            {CONSTANTS.SHAPES.map((item) => (
-              <MenuItem
-                style={{ fontSize: "12px" }}
-                value={item}
-                primaryText={item}
-                key={item}
-              />
-            ))}
-          </Select>
-        </div>
-        <div>
-          <Select
-            menuItemStyle={{ fontSize: "12px" }}
-            labelStyle={{ fontSize: "12px" }}
-            onChange={(e) => handleAreaKm2Change(e.target.value)}
-            value={areakm2}
-            style={dropDownStyle}
-            floatingLabelText="Area of each planning unit"
-            floatingLabelFixed={true}
-          >
-            {CONSTANTS.AREAKM2S.map((item) => (
-              <MenuItem
-                style={{ fontSize: "12px" }}
-                value={item}
-                primaryText={`${item} Km2`}
-                key={item}
-              />
-            ))}
-          </Select>
-        </div>
+        <BioprotectSelect
+          id="area of interest"
+          label="Area of Interest"
+          options={props.countries}
+          changeFunc={handleIso3Change}
+          displayField="name_iso31"
+          value={iso3}
+        />
+        <BioprotectSelect
+          id="select domain"
+          label="Domain"
+          options={CONSTANTS.DOMAINS}
+          changeFunc={handleDomainChange}
+          disabled={!domainEnabled}
+          value={domain}
+        />
+        <BioprotectSelect
+          id="planning-unit"
+          label="Planning Unit Shape"
+          options={CONSTANTS.SHAPES}
+          changeFunc={handleShapeChange}
+          value={shape}
+        />
+        <BioprotectSelect
+          id="planning-area"
+          label="Area of each planning unit"
+          options={CONSTANTS.AREAKM2S}
+          changeFunc={handleAreaKm2Change}
+          value={areakm2}
+        />
       </React.Fragment>
     </MarxanDialog>
   );

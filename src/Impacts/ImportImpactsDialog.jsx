@@ -102,13 +102,18 @@ const ImportImpactsDialog = (props) => {
             textAlign: "center",
           }}
         >
-          <div style={{ margin: "0 16px", marginTop: 12 }}>
+          <div
+            style={{ margin: "0 16px", marginTop: 12 }}
+            key={`action-buttons-${stepIndex}`}
+          >
             <ToolbarButton
+              key={`back-button-${stepIndex}`}
               label="Back"
               disabled={stepIndex === 0 || props.loading}
               onClick={handlePrev}
             />
             <ToolbarButton
+              key={`next-button-${stepIndex}`}
               label={
                 stepIndex === steps.length - 1
                   ? "Start Cumulative Impact"
@@ -125,7 +130,7 @@ const ImportImpactsDialog = (props) => {
       helpLink={"user.html#importing-from-a-shapefile"}
     >
       {stepIndex === 0 && (
-        <div id="activityTable">
+        <div id="activityTable" key="activity-table">
           <h4>Select an activity then upload your raster file...</h4>
           <MarxanTable
             data={props.activities}
@@ -152,6 +157,7 @@ const ImportImpactsDialog = (props) => {
       )}
       {stepIndex === 1 && (
         <FileUpload
+          key={`file-upload-${stepIndex}`}
           {...props}
           selectedActivity={selectedActivity}
           fileMatch={".tif"}
@@ -165,7 +171,7 @@ const ImportImpactsDialog = (props) => {
       )}
       {stepIndex === 2 && (
         <>
-          <div>
+          <div key={`running-impact-message-${stepIndex}`}>
             {props.runningImpactMessage}
             <Sync
               className="spin"
@@ -181,11 +187,13 @@ const ImportImpactsDialog = (props) => {
             />
           </div>
           <MarxanTextField
+            key={`filename-textfield-${stepIndex}`}
             value={filename}
             onChange={(e) => setFilename(e.target.value)}
             floatingLabelText="Enter a name"
           />
           <MarxanTextField
+            key={`description-textfield-${stepIndex}`}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             multiLine={true}

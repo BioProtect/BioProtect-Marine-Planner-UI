@@ -1,13 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  faCircle,
-  faPlayCircle,
-  faPlusCircle,
-  faTrashAlt,
-} from "@fortawesome/free-solid-svg-icons";
 
-import CumulativeImpactsTable from "../CumulativeImpactsTable";
+import BioprotectTable from "../BPComponents/BioprotectTable";
 import CumulativeImpactsToolbar from "./CumulativeImpactsToolbar";
+import LoadingDialog from "../LoadingDialog";
 import MarxanDialog from "../MarxanDialog";
 
 const CumulativeImpactDialog = (props) => {
@@ -111,28 +106,33 @@ const CumulativeImpactDialog = (props) => {
   const columns = [
     {
       id: "name",
-      accessor: "alias",
-      width: 193,
+      numeric: false,
+      disablePadding: true,
+      label: "name",
     },
     {
       id: "description",
-      accessor: "description",
-      width: 246,
+      numeric: false,
+      disablePadding: true,
+      label: "description",
     },
     {
       id: "source",
-      accessor: "source",
-      width: 120,
+      numeric: false,
+      disablePadding: true,
+      label: "source",
     },
     {
       id: "created by",
-      accessor: "created_by",
-      width: 70,
+      numeric: false,
+      disablePadding: true,
+      label: "created by",
     },
     {
       id: "creation Date",
-      accessor: "created_date",
-      width: 70,
+      numeric: false,
+      disablePadding: true,
+      label: "creation date",
     },
   ];
 
@@ -152,34 +152,21 @@ const CumulativeImpactDialog = (props) => {
     >
       <React.Fragment key="k10">
         <div id="projectsTable">
-          <CumulativeImpactsTable
-            data={props.allImpacts}
-            columns={columns}
-            searchColumns={["alias", "description", "source", "created_by"]}
-            searchText={searchText}
-            dataFiltered={dataFiltered}
-            selectedImpactIds={props.selectedImpactIds}
-            clickImpact={clickImpact}
-            preview={preview}
-            getTrProps={(state, rowInfo) => ({
-              style: {
-                background:
-                  state.selectedImpactIds.includes(rowInfo.original.id) ||
-                  (state.selectedImpact &&
-                    state.selectedImpact.id === rowInfo.original.id)
-                    ? "aliceblue"
-                    : "",
-              },
-              onClick: (e) => {
-                clickImpact(e, rowInfo);
-              },
-            })}
-            getTdProps={(state, rowInfo, column) => ({
-              onClick: (e) => {
-                if (column.Header === "") preview(rowInfo.original);
-              },
-            })}
-          />
+          {props.allImpacts ? (
+            <BioprotectTable
+              data={props.allImpacts}
+              tableColumns={columns}
+              ableToSelectAll={false}
+              searchColumns={["alias", "description", "source", "created_by"]}
+              searchText={searchText}
+              dataFiltered={dataFiltered}
+              selectedImpactIds={props.selectedImpactIds}
+              clickImpact={clickImpact}
+              preview={preview}
+            />
+          ) : (
+            <LoadingDialog />
+          )}
         </div>
         <CumulativeImpactsToolbar
           loading={props.loading}
