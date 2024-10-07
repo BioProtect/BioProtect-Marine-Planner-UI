@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from "react";
 
+import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import PlanningGridsToolbar from "./PlanningGridsToolbar";
-import ProjectsDialogTable from "../ProjectsDialogTable";
 
 const PlanningGridsDialog = (props) => {
   const [searchText, setSearchText] = useState("");
@@ -120,7 +120,7 @@ const PlanningGridsDialog = (props) => {
     >
       <React.Fragment key="k2">
         <div id="projectsTable">
-          <ProjectsDialogTable
+          <BioprotectTable
             data={props.planningGrids}
             columns={columns}
             searchColumns={[
@@ -133,28 +133,6 @@ const PlanningGridsDialog = (props) => {
             searchText={searchText}
             selectedPlanningGrid={selectedPlanningGrid}
             changePlanningGrid={changePlanningGrid}
-            getTrProps={(state, rowInfo) => {
-              return {
-                style: {
-                  background:
-                    rowInfo.original.alias ===
-                    (state.selectedPlanningGrid &&
-                      state.selectedPlanningGrid.alias)
-                      ? "aliceblue"
-                      : "",
-                },
-                onClick: (e) => {
-                  state.changePlanningGrid(e, rowInfo.original);
-                },
-              };
-            }}
-            getTdProps={(state, rowInfo, column) => {
-              return {
-                onClick: (e) => {
-                  if (column.Header === "") preview(rowInfo.original);
-                },
-              };
-            }}
           />
         </div>
         <PlanningGridsToolbar

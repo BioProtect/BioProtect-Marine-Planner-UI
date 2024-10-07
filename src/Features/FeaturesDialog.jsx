@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 
+import BioprotectTable from "../BPComponents/BioprotectTable";
 import FeaturesToolbar from "./FeaturesToolbar";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTable from "../MarxanTable";
-import ProjectsTable from "../ProjectsDialogTable";
 import TableRow from "../TableRow";
 import { faAnchor } from "@fortawesome/free-solid-svg-icons";
 
@@ -223,7 +223,7 @@ const FeaturesDialog = (props) => {
     >
       <React.Fragment key="k10">
         <div id="projectsTable">
-          <ProjectsTable
+          <BioprotectTable
             data={props.allFeatures}
             columns={columns}
             searchColumns={["alias", "description", "source", "created_by"]}
@@ -234,26 +234,6 @@ const FeaturesDialog = (props) => {
             selectedFeature={selectedFeature}
             clickFeature={clickFeature}
             preview={preview}
-            getTrProps={(state, rowInfo) => ({
-              style: {
-                background:
-                  (props.addingRemovingFeatures &&
-                    props.selectedFeatureIds.includes(rowInfo.original.id)) ||
-                  (!props.addingRemovingFeatures &&
-                    selectedFeature &&
-                    selectedFeature.id === rowInfo.original.id)
-                    ? "aliceblue"
-                    : "",
-              },
-              onClick: (e) => {
-                clickFeature(e, rowInfo);
-              },
-            })}
-            getTdProps={(state, rowInfo, column) => ({
-              onClick: (e) => {
-                if (column.Header === "") preview(rowInfo.original);
-              },
-            })}
           />
           <MarxanTable
             data={props.allFeatures}

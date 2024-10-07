@@ -136,31 +136,33 @@ const ProjectsDialog = (props) => {
         autoDetectWindowHeight={false}
         bodyStyle={{ padding: "0px 24px 0px 24px" }}
         title="Projects"
-        showSearchBox={true}
-        searchText={searchText}
-        setSearchText={setSearchText}
+        actions={
+          <ProjectsToolbar
+            userRole={props.userRole}
+            unauthorisedMethods={props.unauthorisedMethods}
+            handleNew={() => _new()}
+            loading={props.loading}
+            importProjectPopoverOpen={props.importProjectPopoverOpen}
+            openImportMXWDialog={openImportMXWDialog}
+            openImportProjectDialog={openImportProjectDialog}
+            exportProject={exportProject}
+            selectedProject={selectedProject}
+            cloneProject={cloneProject}
+            handleDelete={() => _delete()}
+            updateState={() => props.updateState()}
+          />
+        }
       >
-        <ProjectsToolbar
-          userRole={props.userRole}
-          unauthorisedMethods={props.unauthorisedMethods}
-          handleNew={() => _new()}
-          loading={props.loading}
-          importProjectPopoverOpen={props.importProjectPopoverOpen}
-          openImportMXWDialog={openImportMXWDialog}
-          openImportProjectDialog={openImportProjectDialog}
-          exportProject={exportProject}
-          selectedProject={selectedProject}
-          cloneProject={cloneProject}
-          handleDelete={() => _delete()}
-          updateState={() => props.updateState()}
-        />
         <div id="projectsTable">
           <BioprotectTable
+            title="Projects"
             data={props.projects}
             tableColumns={tableColumns}
             initialSelection={selectedProject}
             changeProject={changeProject}
             ableToSelectAll={false}
+            showSearchBox={true}
+            searchColumns={["user", "name", "description"]}
           />
         </div>
       </MarxanDialog>

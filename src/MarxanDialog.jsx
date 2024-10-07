@@ -52,57 +52,11 @@ const MarxanDialog = (props) => {
       maxWidth={maxW}
       onClose={props.onCancel}
     >
-      <DialogTitle key={`dialogTitle${props.title}`}>
-        <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-          <Grid item xs={3} key={`itemTitle${props.title}`}>
-            {props.title ? props.title : null}
-          </Grid>
-          <Grid item xs={6} key={`searchbox${props.title}`}>
-            {props.showSearchBox ? (
-              <TextField
-                key={`searchKey${props.title}`}
-                size="small"
-                id="outlined-start-adornment"
-                style={{ width: "100%", padding: 0 }}
-                InputProps={{
-                  startAdornment: <SearchIcon />,
-                  padding: 0,
-                }}
-                onChange={(evt) => searchTextChange(evt)}
-              />
-            ) : null}
-          </Grid>
-          <Grid item xs={1}>
-            <Sync
-              className="spin"
-              style={{
-                display:
-                  props.loading || props.showSpinner ? "inline-block" : "none",
-                color: "rgb(255, 64, 129)",
-                position: "absolute",
-                top: "15px",
-                right: "41px",
-                height: "22px",
-                width: "22px",
-              }}
-              key={"spinner"}
-            />
-          </Grid>
-          <Grid item xs={2} key={`help${props.title}`}>
-            {props.helpLink ? (
-              <FontAwesomeIcon
-                icon={faQuestionCircle}
-                onClick={openDocumentation}
-                title={"Open documentation for this window"}
-                className={"appBarIcon docs"}
-                key="helpLink"
-              />
-            ) : null}
-          </Grid>
-        </Grid>
-      </DialogTitle>
       <DialogContent>{props.children}</DialogContent>
       <DialogActions key={`dialog-actions-${props.title}`}>
+        {props.actions}
+      </DialogActions>
+      <DialogActions key={`dialog-actions-${props.title}2`}>
         {props.showCancelButton ? (
           <Button
             key="cancel-button"
@@ -122,7 +76,6 @@ const MarxanDialog = (props) => {
             {props.okLabel ? props.okLabel : "OK"}
           </Button>
         )}
-        {props.actions}
       </DialogActions>
     </Dialog>
   );

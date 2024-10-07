@@ -5,13 +5,9 @@ import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import FileUpload from "../Uploads/FileUpload";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import HumanActivitiesTable from "../HumanActivitiesTable";
 import MarxanDialog from "../MarxanDialog";
-import MarxanTable from "../MarxanTable";
 import MarxanTextField from "../MarxanTextField";
 import Sync from "@mui/icons-material/Sync";
-import TableRow from "../TableRow";
-import ToolbarButton from "../ToolbarButton";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 
 // Initial state configuration
