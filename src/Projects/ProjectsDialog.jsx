@@ -93,7 +93,6 @@ const ProjectsDialog = (props) => {
     {
       id: "name",
       label: "name",
-
       numeric: false,
       disablePadding: true,
     },
@@ -159,7 +158,6 @@ const ProjectsDialog = (props) => {
             data={props.projects}
             tableColumns={tableColumns}
             initialSelection={selectedProject}
-            changeProject={changeProject}
             ableToSelectAll={false}
             showSearchBox={true}
             searchColumns={["user", "name", "description"]}

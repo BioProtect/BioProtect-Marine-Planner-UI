@@ -11,7 +11,31 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 
+// Props
+// 1. data (Array, Required)
+// Description: An array of objects containing the data to be displayed in the table. Each object should have keys that correspond to the columns defined in tableColumns.
+// 2. tableColumns (Array, Required)
+// Description: Defines the structure and headers of the table. Each item in this array should be an object with id and label properties. The id should match a key from the data array.
+// 3. title (String, Required)
+// Description: A title that will be displayed above the table.
+// 4. showSearchBox (Boolean, Optional)
+// Description: A flag to control whether the search box is displayed above the table. Default is false.
+// 5. searchColumns (Array of Strings, Required if Search is enabled)
+// Description: Defines the columns that will be searched when a search query is entered. The strings should match the keys in data.
+// 6. initialSelection (String, Optional)
+// Description: The initial selection that pre-selects a row based on the value of a specific column (e.g., the name column).
+// 7. ableToSelectAll (Boolean, Optional)
+// Description: If true, the table will support selecting all rows at once. Default is false.
+
 const BioprotectTable = (props) => {
+  // Props
+  // 1. data (Array, Required)
+  // 2. tableColumns (Array, Required)
+  // 3. title (String, Required)
+  // 4. showSearchBox (Boolean, Optional)
+  // 5. searchColumns (Array of Strings, Required if Search is enabled)
+  // 6. initialSelection (String, Optional)
+  // 7. ableToSelectAll (Boolean, Optional)
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("category");
   const [selected, setSelected] = useState([]);
@@ -75,7 +99,9 @@ const BioprotectTable = (props) => {
         ? newSelected.push(id)
         : newSelected.splice(selectedIndex, 1);
     }
+    console.log("newSelected ", newSelected);
     setSelected(newSelected);
+    props.updateSelection(newSelected);
   };
 
   const isSelected = (id) => selected.indexOf(id) !== -1;

@@ -80,28 +80,27 @@ const PlanningGridsDialog = (props) => {
   const columns = [
     {
       id: "name",
-      accessor: "alias",
-      width: 274,
+      label: "alias",
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "description",
-      accessor: "description",
-      width: 269,
+      label: "description",
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "created",
-      accessor: "creation_date",
-      width: 70,
-      sortMethod: sortDate,
+      label: "creation_date",
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "created by",
-      accessor: "created_by",
-      width: 70,
-    },
-    {
-      id: "",
-      width: 8,
+      label: "created_by",
+      numeric: false,
+      disablePadding: true,
     },
   ];
 
@@ -121,8 +120,9 @@ const PlanningGridsDialog = (props) => {
       <React.Fragment key="k2">
         <div id="projectsTable">
           <BioprotectTable
+            title="Planning Grids"
             data={props.planningGrids}
-            columns={columns}
+            tableColumns={columns}
             searchColumns={[
               "country",
               "domain",
@@ -130,9 +130,8 @@ const PlanningGridsDialog = (props) => {
               "description",
               "created_by",
             ]}
-            searchText={searchText}
-            selectedPlanningGrid={selectedPlanningGrid}
-            changePlanningGrid={changePlanningGrid}
+            initialSelection={selectedPlanningGrid}
+            updateSelection={changePlanningGrid}
           />
         </div>
         <PlanningGridsToolbar

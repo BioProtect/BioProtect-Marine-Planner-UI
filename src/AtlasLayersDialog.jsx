@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
+import BioprotectTable from "./BPComponents/BioprotectTable";
 import MarxanDialog from "./MarxanDialog";
-import MarxanTable from "./MarxanTable";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -32,9 +32,10 @@ const AtlasLayersDialog = (props) => {
 
   const tableColumns = [
     {
-      accessor: "title",
-      width: "100%",
-      id: "Title",
+      id: "title",
+      label: "title",
+      numeric: false,
+      disablePadding: true,
     },
   ];
   if (props.atlasLayers.length > 0) {
@@ -51,6 +52,15 @@ const AtlasLayersDialog = (props) => {
         showCancelButton={true}
         cancelLabel="Clear all Layers"
       >
+        <BioprotectTable
+          title="Atlas Layers"
+          data={props.atlasLayers}
+          tableColumns={tableColumns}
+          initialSelection={null}
+          ableToSelectAll={true}
+          showSearchBox={true}
+          searchColumns={["title"]}
+        />
         <Table
           stickyHeader
           sx={{ minWidth: 650 }}

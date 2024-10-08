@@ -29,7 +29,7 @@ import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import IdentifyPopup from "./IdentifyPopup";
 import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
-import ImportFeaturesDialog from "./ImportComponents/ImportFeaturesDialog";
+import ImportFeaturesDialog from "./Features/ImportFeaturesDialog";
 import ImportFromWebDialog from "./ImportComponents/ImportFromWebDialog";
 import ImportGBIFDialog from "./ImportComponents/ImportGBIFDialog";
 import ImportMXWDialog from "./ImportComponents/ImportMXWDialog";
@@ -46,7 +46,7 @@ import Menu from "@mui/material/Menu";
 //project components
 import MenuBar from "./MenuBar/MenuBar";
 import MenuItemWithButton from "./MenuItemWithButton";
-import NewFeatureDialog from "./NewFeatureDialog";
+import NewFeatureDialog from "./Features/NewFeatureDialog";
 import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog";
 import NewPlanningGridDialog from "./NewPlanningGridDialog";
 import NewProjectDialog from "./Projects/NewProject/NewProjectDialog";

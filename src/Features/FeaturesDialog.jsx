@@ -21,11 +21,13 @@ const FeaturesDialog = (props) => {
   };
 
   const showNewFeaturePopover = (event) => {
+    console.log("event ", event);
     setNewFeatureAnchor(event.currentTarget);
     props.updateState({ newFeaturePopoverOpen: true });
   };
 
   const showImportFeaturePopover = (event) => {
+    console.log("event ", event);
     setImportFeatureAnchor(event.currentTarget);
     props.updateState({ importFeaturePopoverOpen: true });
   };
@@ -137,27 +139,6 @@ const FeaturesDialog = (props) => {
     });
   };
 
-  const sortDate = useCallback((a, b) => {
-    return new Date(
-      a.slice(6, 8),
-      a.slice(3, 5) - 1,
-      a.slice(0, 2),
-      a.slice(9, 11),
-      a.slice(12, 14),
-      a.slice(15, 17)
-    ) >
-      new Date(
-        b.slice(6, 8),
-        b.slice(3, 5) - 1,
-        b.slice(0, 2),
-        b.slice(9, 11),
-        b.slice(12, 14),
-        b.slice(15, 17)
-      )
-      ? 1
-      : -1;
-  }, []);
-
   const preview = (feature_metadata) => {
     props.previewFeature(feature_metadata);
   };
@@ -175,33 +156,33 @@ const FeaturesDialog = (props) => {
   const columns = [
     {
       id: "name",
-      accessor: "alias",
-      width: 193,
+      label: "alias",
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "description",
-      accessor: "description",
-      width: 246,
+      label: "description",
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "source",
-      accessor: "source",
-      width: 120,
+      label: "source",
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "created",
-      accessor: "creation_date",
-      width: 70,
-      sortMethod: sortDate,
+      label: "creation_date",
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "created by",
-      accessor: "created_by",
-      width: 70,
-    },
-    {
-      id: "",
-      width: 8,
+      label: "created_by",
+      numeric: false,
+      disablePadding: true,
     },
   ];
 
@@ -225,9 +206,8 @@ const FeaturesDialog = (props) => {
         <div id="projectsTable">
           <BioprotectTable
             data={props.allFeatures}
-            columns={columns}
+            tableColumns={columns}
             searchColumns={["alias", "description", "source", "created_by"]}
-            searchText={searchText}
             dataFiltered={dataFiltered}
             addingRemovingFeatures={props.addingRemovingFeatures}
             selectedFeatureIds={props.selectedFeatureIds}
@@ -235,7 +215,7 @@ const FeaturesDialog = (props) => {
             clickFeature={clickFeature}
             preview={preview}
           />
-          <MarxanTable
+          {/* <MarxanTable
             data={props.allFeatures}
             searchColumns={["alias", "description", "source", "created_by"]}
             searchText={searchText}
@@ -245,36 +225,19 @@ const FeaturesDialog = (props) => {
             selectedFeature={selectedFeature}
             clickFeature={clickFeature}
             preview={preview}
-            columns={columns}
-            getTrProps={(state, rowInfo) => ({
-              style: {
-                background:
-                  (props.addingRemovingFeatures &&
-                    props.selectedFeatureIds.includes(rowInfo.original.id)) ||
-                  (!props.addingRemovingFeatures &&
-                    selectedFeature &&
-                    selectedFeature.id === rowInfo.original.id)
-                    ? "aliceblue"
-                    : "",
-              },
-              onClick: (e) => {
-                clickFeature(e, rowInfo);
-              },
-            })}
-            getTdProps={(state, rowInfo, column) => ({
-              onClick: (e) => {
-                if (column.Header === "") preview(rowInfo.original);
-              },
-            })}
-          />
+          /> */}
         </div>
         <FeaturesToolbar
-          {...props}
-          showNewFeaturePopover={() => showNewFeaturePopover()}
-          anchorEl={newFeatureAnchor}
-          _newByDigitising={() => _newByDigitising()}
+          metadata={props.metadata}
+          userRole={props.userRole}
+          addingRemovingFeatures={props.addingRemovingFeatures}
+          loading={props.loading}
+          newFeaturePopoverOpen={props.newFeaturePopoverOpen}
+          updateState={props.updateState}
+          _newByDigitising={_newByDigitising}
           showImportFeaturePopover={() => showImportFeaturePopover()}
-          importFeatureAnchor={importFeatureAnchor}
+          importFeaturePopoverOpen={props.importFeaturePopoverOpen}
+          showNewFeaturePopover={() => showNewFeaturePopover()}
           _openImportFeaturesDialog={() => _openImportFeaturesDialog()}
           _openImportFromWebDialog={() => _openImportFromWebDialog()}
           openImportGBIFDialog={() => openImportGBIFDialog()}
