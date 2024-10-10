@@ -3,9 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import FeaturesToolbar from "./FeaturesToolbar";
 import MarxanDialog from "../MarxanDialog";
-import MarxanTable from "../MarxanTable";
-import TableRow from "../TableRow";
-import { faAnchor } from "@fortawesome/free-solid-svg-icons";
+import { generateTableCols } from "../Helpers";
 
 const FeaturesDialog = (props) => {
   const [selectedFeature, setSelectedFeature] = useState(undefined);
@@ -153,52 +151,23 @@ const FeaturesDialog = (props) => {
 
   if (!props.allFeatures) return null;
 
-  const columns = [
-    {
-      id: "name",
-      label: "alias",
-      numeric: false,
-      disablePadding: true,
-    },
-    {
-      id: "description",
-      label: "description",
-      numeric: false,
-      disablePadding: true,
-    },
-    {
-      id: "source",
-      label: "source",
-      numeric: false,
-      disablePadding: true,
-    },
-    {
-      id: "created",
-      label: "creation_date",
-      numeric: false,
-      disablePadding: true,
-    },
-    {
-      id: "created by",
-      label: "created_by",
-      numeric: false,
-      disablePadding: true,
-    },
-  ];
+  const columns = generateTableCols([
+    { id: "name", label: "alias" },
+    { id: "description", label: "description" },
+    { id: "source", label: "source" },
+    { id: "created", label: "creation_date" },
+    { id: "created by", label: "created_by" },
+  ]);
 
   return (
     <MarxanDialog
-      {...props}
+      open={props.open}
+      loading={props.loading}
       autoDetectWindowHeight={false}
       bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title="Features"
       onOk={onOk}
       showCancelButton={props.addingRemovingFeatures}
-      helpLink={
-        props.addingRemovingFeatures
-          ? "user.html#adding-and-removing-features"
-          : "user.html#the-features-window"
-      }
       showSearchBox={true}
       searchTextChanged={searchTextChanged}
     >
@@ -215,35 +184,20 @@ const FeaturesDialog = (props) => {
             clickFeature={clickFeature}
             preview={preview}
           />
-          {/* <MarxanTable
-            data={props.allFeatures}
-            searchColumns={["alias", "description", "source", "created_by"]}
-            searchText={searchText}
-            dataFiltered={dataFiltered}
-            addingRemovingFeatures={props.addingRemovingFeatures}
-            selectedFeatureIds={props.selectedFeatureIds}
-            selectedFeature={selectedFeature}
-            clickFeature={clickFeature}
-            preview={preview}
-          /> */}
         </div>
         <FeaturesToolbar
           metadata={props.metadata}
           userRole={props.userRole}
           addingRemovingFeatures={props.addingRemovingFeatures}
           loading={props.loading}
-          newFeaturePopoverOpen={props.newFeaturePopoverOpen}
+          selectedFeature={selectedFeature}
           updateState={props.updateState}
-          _newByDigitising={_newByDigitising}
-          showImportFeaturePopover={() => showImportFeaturePopover()}
-          importFeaturePopoverOpen={props.importFeaturePopoverOpen}
-          showNewFeaturePopover={() => showNewFeaturePopover()}
+          openImportGBIFDialog={() => openImportGBIFDialog()}
+          selectAllFeatures={() => selectAllFeatures()}
           _openImportFeaturesDialog={() => _openImportFeaturesDialog()}
           _openImportFromWebDialog={() => _openImportFromWebDialog()}
-          openImportGBIFDialog={() => openImportGBIFDialog()}
-          selectedFeature={selectedFeature}
           _delete={() => _delete()}
-          selectAllFeatures={() => selectAllFeatures()}
+          _newByDigitising={_newByDigitising}
         />
       </React.Fragment>
     </MarxanDialog>

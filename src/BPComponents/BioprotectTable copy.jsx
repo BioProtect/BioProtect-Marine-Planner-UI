@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  checkObjInArray,
   descendingComparator,
   getComparator,
-  objInArray,
+  indexOfObjInArray,
   stableSort,
 } from "../Helpers";
 
@@ -43,6 +44,7 @@ const BioprotectTable = (props) => {
   // 7. ableToSelectAll (Boolean, Optional)
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("category");
+  const [selected, setSelected] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleRequestSort = (event, property) => {
@@ -50,6 +52,21 @@ const BioprotectTable = (props) => {
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
   };
+
+  const setInitialSelection = useCallback(() => {
+    if (props.initialSelection) {
+      const selectedIndex = props.data.findIndex(
+        (obj) => obj.name === props.initialSelection
+      );
+      if (selectedIndex !== -1) {
+        setSelected([selectedIndex]); // Assuming selected is an array of indices
+      }
+    }
+  }, [props.initialSelection, props.data]);
+
+  useEffect(() => {
+    setInitialSelection();
+  }, [setInitialSelection]);
 
   const filteredData = useMemo(() => {
     if (!searchQuery)
@@ -67,19 +84,47 @@ const BioprotectTable = (props) => {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelected = props.data.map((obj) => obj);
-      props.updateSelection(newSelected);
+      const newSelected = props.data.map((n, idx) => idx);
+      setSelected(newSelected);
       return;
     }
-    props.updateSelection([]);
+    setSelected([]);
   };
 
-  const handleClick = (event, row) => {
+  const handleClick = (event, id) => {
+    console.log("event ", event);
     // handle single select or multiple select depending on the table needs
-    props.updateSelection(row);
+    // Becasue the filter will change the index we need to get the object and then get the index of the object from the initial data
+    // const selectedIndex = selected.indexOf(id);
+    const objSelected = filteredData[id];
+    const selectedIndex = props.data.findIndex(
+      (obj) => obj.layer === objSelected.layer
+    );
+    const itemSelected = selected.indexOf(selectedIndex);
+
+    console.log("objSelected ", objSelected);
+    console.log("selectedIndex ", selectedIndex);
+    let newSelected;
+    if (props.ableToSelectAll) {
+      newSelected = [...selected];
+      itemSelected === -1
+        ? newSelected.push(selectedIndex)
+        : newSelected.splice(selectedIndex, 1);
+    } else {
+      newSelected = [];
+      itemSelected === -1
+        ? newSelected.push(selectedIndex)
+        : newSelected.splice(selectedIndex, 1);
+    }
+    console.log("newSelected ", newSelected);
+    setSelected(newSelected);
+    props.updateSelection(newSelected);
   };
 
-  const isSelected = (objToCheck) => objInArray(objToCheck, props.selected);
+  const isSelected = (objToCheck) => {
+    const getIndexOfObject = indexOfObjInArray(objToCheck, props.data);
+    selected.indexOf(getIndexOfObject) !== -1;
+  };
 
   const visibleRows = useMemo(
     () => stableSort(filteredData, getComparator(order, orderBy)),
@@ -89,7 +134,7 @@ const BioprotectTable = (props) => {
   return (
     <Box sx={{ width: "100%" }}>
       <BPTableTitleWithSearch
-        numSelected={props.selected.length}
+        numSelected={selected.length}
         title={props.title}
         setSearchQuery={setSearchQuery}
         showSearchBox={props.showSearchBox}
@@ -104,7 +149,7 @@ const BioprotectTable = (props) => {
           <BPTableHeadWithSort
             title={props.title}
             tableColumns={props.tableColumns}
-            numSelected={props.selected.length}
+            numSelected={selected.length}
             order={order}
             orderBy={orderBy}
             onSelectAllClick={handleSelectAllClick}
@@ -119,7 +164,7 @@ const BioprotectTable = (props) => {
               return (
                 <TableRow
                   hover
-                  onClick={(event) => handleClick(event, row)}
+                  onClick={(event) => handleClick(event, idx)}
                   role="checkbox"
                   aria-checked={isItemSelected}
                   tabIndex={-1}

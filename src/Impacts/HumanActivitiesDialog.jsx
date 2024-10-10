@@ -2,13 +2,13 @@ import React, { useState } from "react";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
 import FileUpload from "../Uploads/FileUpload";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTextField from "../MarxanTextField";
 import Sync from "@mui/icons-material/Sync";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
+import { generateTableCols } from "../Helpers";
 
 // Initial state configuration
 const INITIAL_STATE = {
@@ -56,20 +56,10 @@ const ImportImpactsDialog = (props) => {
     props.onCancel();
   };
 
-  const tableColumns = [
-    {
-      id: "category",
-      numeric: false,
-      disablePadding: true,
-      label: "category",
-    },
-    {
-      id: "activity",
-      numeric: false,
-      disablePadding: true,
-      label: "activity",
-    },
-  ];
+  const tableColumns = generateTableCols([
+    { id: "category", label: "category" },
+    { id: "activity", label: "activity" },
+  ]);
 
   const isNextDisabled = () => {
     if (stepIndex === 0) return selectedActivity === "";

@@ -3787,20 +3787,20 @@ const App = () => {
 
   const clearSelactedLayers = () => {
     const layers = [...dialogsState.selectedLayers];
-    layers.forEach((layer) => setselectedLayers(layer));
+    console.log("layers ", layers);
+    layers.forEach((layer) => setSelectedLayers(layer));
     closeAtlasLayersDialog();
   };
 
-  const setselectedLayers = (layer) => {
+  const setSelectedLayers = (layer) => {
     // Determine the new visibility
     const currentVisibility = map.current.getLayoutProperty(
-      layer,
+      layer.layer,
       "visibility"
     );
     const newVisibility = currentVisibility === "visible" ? "none" : "visible";
-
     // Update the layer's visibility
-    map.current.setLayoutProperty(layer, "visibility", newVisibility);
+    map.current.setLayoutProperty(layer.layer, "visibility", newVisibility);
 
     // Update the selectedLayers state
     setDialogsState((prevState) => {
@@ -6008,7 +6008,7 @@ const App = () => {
             marxanServer={marxanServer}
             setSnackBarMessage={setSnackBarMessage}
             selectedLayers={dialogsState.selectedLayers}
-            setselectedLayers={setselectedLayers}
+            setSelectedLayers={setSelectedLayers}
           />
           <CumulativeImpactDialog
             loading={dialogsState.loading || dialogsState.uploading}

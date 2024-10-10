@@ -80,7 +80,6 @@ const FeaturesToolbar = (props) => {
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
             onClick={handleImportClick}
-            // onClick={() => props.showImportFeaturePopover()}
           >
             Import
           </Button>

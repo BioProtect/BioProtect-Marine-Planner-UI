@@ -77,6 +77,7 @@ const ImportFeaturesDialog = (props) => {
     props.updateState({
       featureDatasetFilename: "",
       importFeaturesDialogOpen: false,
+      featuresDialogOpen: true,
     });
   };
 

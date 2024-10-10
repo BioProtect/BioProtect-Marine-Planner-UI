@@ -11,6 +11,7 @@ import React, { useCallback, useState } from "react";
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import ProjectsToolbar from "./ProjectsToolbar";
+import { generateTableCols } from "../Helpers";
 
 const ProjectsDialog = (props) => {
   const [searchText, setSearchText] = useState("");
@@ -90,37 +91,16 @@ const ProjectsDialog = (props) => {
   }, []);
 
   const baseColumns = [
-    {
-      id: "name",
-      label: "name",
-      numeric: false,
-      disablePadding: true,
-    },
-    {
-      id: "description",
-      label: "description",
-      numeric: false,
-      disablePadding: true,
-    },
-    {
-      id: "created",
-      label: "createdate",
-      numeric: false,
-      disablePadding: true,
-    },
+    { id: "name", label: "name" },
+    { id: "description", label: "description" },
+    { id: "created", label: "createdate" },
   ];
 
   const tableColumns = ["Admin", "ReadOnly"].includes(props.userRole)
-    ? [
-        ...baseColumns,
-        {
-          id: "user",
-          label: "user",
-          numeric: false,
-          disablePadding: true,
-        },
-      ]
+    ? [...baseColumns, { id: "user", label: "user" }]
     : baseColumns;
+
+  const columns = generateTableCols(tableColumns);
 
   if (props.projects) {
     return (
@@ -156,7 +136,7 @@ const ProjectsDialog = (props) => {
           <BioprotectTable
             title="Projects"
             data={props.projects}
-            tableColumns={tableColumns}
+            tableColumns={columns}
             initialSelection={selectedProject}
             ableToSelectAll={false}
             showSearchBox={true}
