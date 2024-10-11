@@ -61,7 +61,6 @@ class ProjectsListDialog extends React.Component {
           // titleBarIcon={faBookOpen}
           showCancelButton={false}
           autoDetectWindowHeight={false}
-          bodyStyle={{ padding: "0px 24px 0px 24px" }}
           title={this.props.title}
           contentWidth={500}
           helpLink={"user.html#projects-list"}

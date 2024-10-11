@@ -6216,7 +6216,6 @@ class App extends React.Component {
           message={message}
           onClose={this.closeSnackbar.bind(this)}
           style={{ maxWidth: "800px !important" }}
-          bodyStyle={{ maxWidth: "800px !important" }}
         />
         <Popover
           open={this.state.featureMenuOpen}

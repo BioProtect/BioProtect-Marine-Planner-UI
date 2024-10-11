@@ -14,30 +14,25 @@ import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
 
 const ProjectsDialog = (props) => {
-  const [searchText, setSearchText] = useState("");
-  const [selectedProject, setSelectedProject] = useState(
-    props.project || undefined
-  );
-
+  console.log(props.project);
   const _delete = useCallback(() => {
-    props.deleteProject(selectedProject.user, selectedProject.name);
-    setSelectedProject(undefined);
-  }, [props, selectedProject]);
+    props.deleteProject(props.project.user, props.project.name);
+  }, [props.project]);
 
   const load = useCallback(() => {
-    if (props.oldVersion && selectedProject.oldVersion === false) {
+    if (props.oldVersion && props.project.oldVersion === false) {
       props.getAllFeatures().then(() => {
         loadAndClose();
       });
     } else {
       loadAndClose();
     }
-  }, [props, selectedProject]);
+  }, [props]);
 
   const loadAndClose = useCallback(() => {
-    props.loadProject(selectedProject.name, selectedProject.user);
+    props.loadProject(props.project.name, props.project.user);
     closeDialog();
-  }, [props, selectedProject]);
+  }, [props.project]);
 
   const _new = useCallback(() => {
     props.getAllFeatures().then(() => {
@@ -47,39 +42,40 @@ const ProjectsDialog = (props) => {
   }, [props]);
 
   const cloneProject = useCallback(() => {
-    props.cloneProject(selectedProject.user, selectedProject.name);
-  }, [props, selectedProject]);
+    props.cloneProject(props.project.user, props.project.name);
+  }, [props]);
 
   const exportProject = useCallback(() => {
-    props
-      .exportProject(selectedProject.user, selectedProject.name)
-      .then((url) => {
-        window.location = url;
-      });
+    props.exportProject(props.project.user, props.project.name).then((url) => {
+      window.location = url;
+    });
     closeDialog();
-  }, [props, selectedProject]);
+  }, [props]);
 
   const openImportProjectDialog = useCallback(() => {
     props.updateState({ importProjectDialogOpen: true });
     closeDialog();
-  }, [props]);
+  }, [props.updateState]);
 
   const openImportMXWDialog = useCallback(() => {
     props.updateState({ importMXWDialogOpen: true });
     closeDialog();
-  }, [props]);
+  }, [props.updateState]);
 
-  const changeProject = useCallback((event, project) => {
-    setSelectedProject(project);
-  }, []);
+  // const changeProject = useCallback((event, project) => {
+  //   setSelectedProject(project);
+  // }, []);
 
   const closeDialog = useCallback(() => {
-    setSelectedProject(undefined);
+    // setSelectedProject(undefined);
     props.updateState({
       projectsDialogOpen: false,
+      selectedProject: undefined,
       // importProjectPopoverOpen: false,
     });
   }, [props]);
+
+  const handleProjectChange = () => {};
 
   const sortDate = useCallback((a, b, desc) => {
     const dateA = new Date(a.split("/").reverse().join(" "));
@@ -109,11 +105,10 @@ const ProjectsDialog = (props) => {
         okLabel={props.userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
         onOk={load}
         onCancel={closeDialog}
-        okDisabled={!selectedProject}
+        okDisabled={!props.project}
         showCancelButton={true}
         helpLink={"user.html#the-projects-window"}
         autoDetectWindowHeight={false}
-        bodyStyle={{ padding: "0px 24px 0px 24px" }}
         title="Projects"
         actions={
           <ProjectsToolbar
@@ -125,7 +120,7 @@ const ProjectsDialog = (props) => {
             openImportMXWDialog={openImportMXWDialog}
             openImportProjectDialog={openImportProjectDialog}
             exportProject={exportProject}
-            selectedProject={selectedProject}
+            project={props.project}
             cloneProject={cloneProject}
             handleDelete={() => _delete()}
             updateState={() => props.updateState()}
@@ -137,10 +132,11 @@ const ProjectsDialog = (props) => {
             title="Projects"
             data={props.projects}
             tableColumns={columns}
-            initialSelection={selectedProject}
+            selected={props.project}
             ableToSelectAll={false}
             showSearchBox={true}
             searchColumns={["user", "name", "description"]}
+            updateSelection={handleProjectChange}
           />
         </div>
       </MarxanDialog>

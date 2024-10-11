@@ -100,7 +100,6 @@ const ImportImpactsDialog = (props) => {
       {...props}
       onOk={closeDialog}
       okLabel={"Cancel"}
-      bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title={INITIAL_STATE.title[stepIndex]}
       showSearchBox={true}
       searchTextChanged={setSearchText}

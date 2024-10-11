@@ -122,6 +122,10 @@ const App = () => {
   // const [map, setMap] = useState(null);
   // const [mapContainer, setMapContainer] = useState(undefined);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
+  const [runMarxanResponse, setRunMarxanResponse] = useState({});
+  const [costData, setCostData] = useState(null);
+  const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
+  const [previousIucnCategory, setPreviousIucnCategory] = useState(null);
 
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -460,6 +464,7 @@ const App = () => {
       if (checkedPass) {
         setDialogsState((prevState) => ({
           ...prevState,
+          user: user,
           loggedIn: !dialogsState.loggedIn,
           resultsPanelOpen: !dialogsState.resultsPanelOpen,
           infoPanelOpen: !dialogsState.infoPanelOpen,
@@ -938,7 +943,7 @@ const App = () => {
   const login = async (user) => {
     try {
       console.log("login function....");
-      console.log("getting user....");
+      console.log("getting user....", user);
 
       const response = await _get(`getUser?user=${user}`);
       console.log("response ", response);
@@ -965,7 +970,7 @@ const App = () => {
       await getAllFeatures();
       console.log("loading project....");
 
-      await loadProject(response.userData.LASTPROJECT, dialogsState.user);
+      await loadProject(response.userData.LASTPROJECT, user);
       console.log("getting planning grids....");
 
       await getPlanningUnitGrids();
@@ -1267,7 +1272,12 @@ const App = () => {
   };
 
   const loadProject = async (project, user) => {
+    console.log("user ", user);
+    console.log("project ", project);
+    console.log("loadProject function ");
+
     try {
+      console.log("trying");
       // Reset the results from any previous projects
       resetResults();
       // Fetch project data
@@ -1298,9 +1308,12 @@ const App = () => {
       }
 
       // Set a local variable - Dont need to track state with these variables as they are not bound to anything
-      this.feature_preprocessing = response.feature_preprocessing;
-      this.previousIucnCategory = response.metadata.IUCN_CATEGORY;
-      this.protected_area_intersections = response.protected_area_intersections;
+      setFeaturePreprocessing(response.feature_preprocessing);
+      setPreviousIucnCategory(response.metadata.IUCN_CATEGORY);
+      setDialogsState((prevState) => ({
+        ...prevState,
+        protected_area_intersections: response.protected_area_intersections,
+      }));
 
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
@@ -1322,7 +1335,7 @@ const App = () => {
       if (error.toString().includes("does not exist")) {
         // Handle case where project does not exist
         setSnackBarMessage("Loading first available project");
-        await loadProject("", dialogsState.user);
+        await loadProject("", user);
         return;
       }
 
@@ -1350,10 +1363,7 @@ const App = () => {
         ? projectFeatures[projectFeatureIds.indexOf(item.id)]
         : null;
 
-      const preprocessing = getArrayItem(
-        this.feature_preprocessing,
-        feature.id
-      );
+      const preprocessing = getArrayItem(featurePreprocessing, feature.id);
       // Add required attributes
       addFeatureAttributes(feature, oldVersion);
 
@@ -1407,13 +1417,13 @@ const App = () => {
   //resets various variables and state in between users
   const resetResults = () => {
     resetRun(); //reset the run
-    this.cost_data = undefined; //reset the cost data
+    setCostData(undefined); //reset the cost data
     hideFeatureLayer(); //reset any feature layers that are shown
   };
 
   //resets state in between runs
   const resetRun = () => {
-    this.runMarxanResponse = {};
+    setRunMarxanResponse({});
     setDialogsState((prevState) => ({ ...prevState, solutions: [] }));
   };
 
@@ -1525,7 +1535,7 @@ const App = () => {
         );
 
         if (nextProject) {
-          await loadProject(nextProject.name, dialogsState.user);
+          await loadProject(nextProject.name, user);
         }
       }
     } catch (error) {
@@ -1772,12 +1782,12 @@ const App = () => {
 
   //run completed
   const runCompleted = (response) => {
-    this.runMarxanResponse = response;
+    setRunMarxanResponse(response);
 
     // Check if solutions are present
-    if (this.runMarxanResponse.ssoln?.length > 0) {
+    if (response.ssoln?.length > 0) {
       setSnackBarMessage(response.info);
-      renderSolution(this.runMarxanResponse.ssoln, true);
+      renderSolution(response.ssoln, true);
 
       // Map the solutions to the required format
       const solutions = response.summary.map((item) => {
@@ -1799,7 +1809,7 @@ const App = () => {
         Missing_Values: "",
       });
 
-      updateProtectedAmount(reponse.mvbest);
+      updateProtectedAmount(response.mvbest);
       runFinished(solutions);
     } else {
       // No solutions available
@@ -2032,9 +2042,9 @@ const App = () => {
   //load a specific solution for the current project
   const loadSolution = async (solution) => {
     if (solution === "Sum") {
-      updateProtectedAmount(this.runMarxanResponse.mvbest);
+      updateProtectedAmount(runMarxanResponse.mvbest);
       //load the sum of solutions which will already be loaded
-      renderSolution(this.runMarxanResponse.ssoln, true);
+      renderSolution(runMarxanResponse.ssoln, true);
     } else {
       const response = await getSolution(
         dialogsSate.owner,
@@ -2206,7 +2216,7 @@ const App = () => {
 
   //called when the renderer state has been updated - renders the solution and saves the renderer back to the server
   const rendererStateUpdated = async (parameter, value) => {
-    renderSolution(this.runMarxanResponse.ssoln, true);
+    renderSolution(runMarxanResponse.ssoln, true);
     if (dialogsState.userData.ROLE !== "ReadOnly")
       await updateProjectParameter(parameter, value);
   };
@@ -4839,11 +4849,11 @@ const App = () => {
     let previousPuids =
       this.previousPuids !== undefined
         ? this.previousPuids
-        : getPuidsFromIucnCategory(this.previousIucnCategory);
+        : getPuidsFromIucnCategory(previousIucnCategory);
     //set the previously selected puids
     this.previousPuids = puids;
     //and previousIucnCategory
-    this.previousIucnCategory = iucnCategory;
+    setPreviousIucnCategory(iucnCategory);
     //rerender
     updatePlanningUnits(previousPuids, puids);
   };
@@ -5238,8 +5248,9 @@ const App = () => {
   //loads the costs layer
   const loadCostsLayer = async (forceReload = false) => {
     setDialogsState((prevState) => ({ ...prevState, costsLoading: true }));
-    const cost_data = await getPlanningUnitsCostData(forceReload);
-    renderPuCostLayer(cost_data);
+    const response = await getPlanningUnitsCostData(forceReload);
+    setCostData(response);
+    renderPuCostLayer(response);
     setDialogsState((prevState) => ({ ...prevState, costsLoading: false }));
   };
 
@@ -5250,8 +5261,8 @@ const App = () => {
 
     try {
       // If cost data is already loaded and reload is not forced
-      if (this.cost_data && !forceReload) {
-        return this.cost_data;
+      if (costData && !forceReload) {
+        return costData;
       }
 
       // Fetch the cost data if not already loaded or force reload is requested
@@ -5259,7 +5270,7 @@ const App = () => {
         `getPlanningUnitsCostData?user=${owner}&project=${dialogsState.project}`
       );
       // Save the cost data to a local variable
-      this.cost_data = response;
+      setCostData(response);
       return response;
     } catch (error) {
       // Handle the error (this can be customized based on your requirements)
@@ -5848,7 +5859,6 @@ const App = () => {
             message={snackbarMessage}
             onClose={() => setSnackbarOpen(false)}
             style={{ maxWidth: "800px !important" }}
-            bodyStyle={{ maxWidth: "800px !important" }}
           />
           <Popover
             open={dialogsState.featureMenuOpen}

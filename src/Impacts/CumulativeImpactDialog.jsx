@@ -143,7 +143,6 @@ const CumulativeImpactDialog = (props) => {
       onOk={props.onOk}
       onCancel={props.onCancel}
       autoDetectWindowHeight={false}
-      bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title="Impacts"
       showSearchBox={true}
       searchText={searchText}

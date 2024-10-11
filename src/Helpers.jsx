@@ -78,7 +78,7 @@ export const zoomToBounds = (map, bounds) => {
   }
 
   // Fit the map bounds with padding and easing
-  map.fitBounds([minLng, bounds[1], maxLng, bounds[3]], {
+  map.current.fitBounds([minLng, bounds[1], maxLng, bounds[3]], {
     padding: { top: 10, bottom: 10, left: 10, right: 10 },
     easing: (num) => 1, // This line returns 1 for all values, indicating no easing
   });

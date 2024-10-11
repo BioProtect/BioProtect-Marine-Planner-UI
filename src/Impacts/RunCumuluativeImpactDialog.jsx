@@ -172,7 +172,6 @@ class ImportedActivitiesDialog extends React.Component {
       <MarxanDialog
         {...this.props}
         autoDetectWindowHeight={false}
-        bodyStyle={{ padding: "0px 24px 0px 24px" }}
         title={this.title(
           "Uploaded Activities",
           "Select an uploaded activity and then run"

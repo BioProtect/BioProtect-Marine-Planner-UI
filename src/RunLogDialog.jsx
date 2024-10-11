@@ -254,7 +254,6 @@ class RunLogDialog extends React.Component {
         showCancelButton={false}
         helpLink={"user.html#the-run-log"}
         autoDetectWindowHeight={false}
-        bodyStyle={{ padding: "0px 24px 0px 24px" }}
         title="Runs"
         showSearchBox={true}
         searchTextChanged={this.searchTextChanged.bind(this)}

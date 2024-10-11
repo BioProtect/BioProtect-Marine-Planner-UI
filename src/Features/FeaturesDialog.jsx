@@ -164,7 +164,6 @@ const FeaturesDialog = (props) => {
       open={props.open}
       loading={props.loading}
       autoDetectWindowHeight={false}
-      bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title="Features"
       onOk={onOk}
       showCancelButton={props.addingRemovingFeatures}

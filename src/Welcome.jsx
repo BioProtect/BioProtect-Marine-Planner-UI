@@ -60,7 +60,6 @@ const Welcome = (props) => {
       onOk={() => onOk()}
       showCancelButton={false}
       autoDetectWindowHeight={false}
-      bodyStyle={{ padding: "0px 24px 0px 24px" }}
     >
       {
         <React.Fragment key={"welcomeKey"}>

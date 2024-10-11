@@ -177,7 +177,6 @@ const CumulativeImpactDialog = (props) => {
     <MarxanDialog
       {...props}
       autoDetectWindowHeight={false}
-      bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title="Impacts"
       onOk={onOk}
       showSearchBox={true}

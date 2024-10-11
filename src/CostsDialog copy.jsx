@@ -53,7 +53,6 @@ class CostsDialog extends React.Component {
         {...this.props}
         contentWidth={390}
         autoDetectWindowHeight={false}
-        bodyStyle={{ padding: "0px 24px 0px 24px" }}
         offsetY={80}
         title="Costs"
         onClose={() => this.props.updateState({ costsDialogOpen: false })}

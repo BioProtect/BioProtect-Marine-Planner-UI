@@ -242,7 +242,6 @@ class ImportActivityDialog extends React.Component {
         {...this.props}
         onOk={this.closeDialog.bind(this)}
         okLabel={"Cancel"}
-        bodyStyle={{ padding: "0px 24px 0px 24px" }}
         title={title[this.state.stepIndex]}
         showSearchBox={true}
         searchTextChanged={this.searchTextChanged.bind(this)}
