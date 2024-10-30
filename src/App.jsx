@@ -276,11 +276,15 @@ const App = () => {
   const initialiseServers = useCallback(async (servers) => {
     try {
       // Add the local machine server to the list
+      console.log("servers ", servers);
+
       addLocalServer(servers);
       // Fetch capabilities for all servers
       const updatedServers = await getAllServerCapabilities(servers);
+      console.log("updatedServers ", updatedServers);
       // filter and sort servers
       const filteredAndSortedServers = filterAndSortServers(updatedServers);
+      console.log("filteredAndSortedServers ", filteredAndSortedServers);
       // Update the marxanServers state with the filtered and sorted server list
       setMarxanServers(filteredAndSortedServers);
       return "ServerData retrieved";

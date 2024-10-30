@@ -36,6 +36,7 @@ const getServerCapabilities = async (server) => {
     }
 
     const json = await response.json();
+    console.log("SERVER DATA in serverFunctiosn json ", json);
     if (json.info) {
       // Update server properties based on the response
       const corsEnabled =
