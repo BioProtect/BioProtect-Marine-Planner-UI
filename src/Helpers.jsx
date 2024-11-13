@@ -149,5 +149,7 @@ export const checkObjInArray = (obj1, obj2) => {
 };
 
 // Function to find the index of the matching object from array1 in array2
-export const objInArray = (object, array) =>
-  array.some((item) => checkObjInArray(object, item));
+export const objInArray = (object, array) => {
+  console.log("object, array ", object, array);
+  return array.some((item) => checkObjInArray(object, item));
+};

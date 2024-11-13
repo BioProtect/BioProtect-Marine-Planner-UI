@@ -229,6 +229,7 @@ const App = () => {
     projectList: [],
     projectListDialogHeading: "",
     projectListDialogTitle: "",
+    projectLoaded: false,
     projectsDialogOpen: false,
     protected_area_intersections: [],
     puEditing: false,
@@ -1275,54 +1276,65 @@ const App = () => {
     }));
   };
 
-  const loadProject = async (project, user) => {
-    console.log("user ", user);
-    console.log("project ", project);
-    console.log("loadProject function ");
+  const loadProjectData = async (user, project) => {
+    const response = await _get(`getProject?user=${user}&project=${project}`);
+    setDialogsState((prevState) => ({
+      ...prevState,
+      loggedIn: true,
+      project: response.project,
+      owner: user,
+      runParams: response.runParameters,
+      files: { ...response.files },
+      metadata: response.metadata,
+      renderer: response.renderer,
+      planning_units: response.planning_units,
+      costnames: response.costnames,
+      infoPanelOpen: true,
+      resultsPanelOpen: true,
+      projectLoaded: true,
+      protected_area_intersections: response.protected_area_intersections,
+    }));
+  };
 
+  const loadProject = async (project, user) => {
     try {
-      console.log("trying");
       // Reset the results from any previous projects
       resetResults();
       // Fetch project data
-      const response = await _get(`getProject?user=${user}&project=${project}`);
-      console.log("loading project response ", response);
-      // Update state based on the data returned from the server
-      setDialogsState((prevState) => ({
-        ...prevState,
-        loggedIn: true,
-        project: response.project,
-        owner: user,
-        runParams: response.runParameters,
-        files: { ...response.files },
-        metadata: response.metadata,
-        renderer: response.renderer,
-        planning_units: response.planning_units,
-        costnames: response.costnames,
-        infoPanelOpen: true,
-        resultsPanelOpen: true,
-      }));
+      // const response = await _get(`getProject?user=${user}&project=${project}`);
+      // // Update state based on the data returned from the server
+      // setDialogsState((prevState) => ({
+      //   ...prevState,
+      //   loggedIn: true,
+      //   project: response.project,
+      //   owner: user,
+      //   runParams: response.runParameters,
+      //   files: { ...response.files },
+      //   metadata: response.metadata,
+      //   renderer: response.renderer,
+      //   planning_units: response.planning_units,
+      //   costnames: response.costnames,
+      //   infoPanelOpen: true,
+      //   resultsPanelOpen: true,
+      //   projectLoaded: true,
+      // }));
 
+      await loadProjectData(user, project);
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
-      if (response.metadata.PLANNING_UNIT_NAME) {
+      if (dialogsState.metadata.PLANNING_UNIT_NAME) {
         await changePlanningGrid(
-          CONSTANTS.MAPBOX_USER + "." + response.metadata.PLANNING_UNIT_NAME
+          `${CONSTANTS.MAPBOX_USER}.${dialogsState.metadata.PLANNING_UNIT_NAME}`
         );
-        await getResults(user, response.project);
+        await getResults(user, dialogsState.project);
       }
 
       // Set a local variable - Dont need to track state with these variables as they are not bound to anything
-      setFeaturePreprocessing(response.feature_preprocessing);
-      setPreviousIucnCategory(response.metadata.IUCN_CATEGORY);
-      setDialogsState((prevState) => ({
-        ...prevState,
-        protected_area_intersections: response.protected_area_intersections,
-      }));
-
+      setFeaturePreprocessing(dialogsState.feature_preprocessing);
+      setPreviousIucnCategory(dialogsState.metadata.IUCN_CATEGORY);
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
-        response.metadata.OLDVERSION,
-        response.features
+        dialogsState.metadata.OLDVERSION,
+        dialogsState.features
       );
       await getPlanningUnitsCostData();
       // Activate the project tab
@@ -1643,6 +1655,7 @@ const App = () => {
       await getRunLogs(); //update the run log
 
       if (!checkForErrors(response)) {
+        console.log("getResults from 1646 - runmarxan");
         await getResults(response.user, response.project); //run completed - get the results
         features_tab_active(); //switch to the features tab
       } else {
@@ -1774,6 +1787,7 @@ const App = () => {
 
   //gets the results for a project
   const getResults = async (user, project) => {
+    console.log("user, project ", user, project);
     try {
       const response = await _get(`getResults?user=${user}&project=${project}`);
       runCompleted(response);
@@ -2584,7 +2598,6 @@ const App = () => {
   const mapError = useCallback(
     (e) => {
       let message = "";
-
       switch (e.error.message) {
         case "Not Found":
           message = `The tileset '${e.source.url}' was not found`;
@@ -2598,7 +2611,9 @@ const App = () => {
       }
 
       if (message !== "http status 200 returned without content.") {
-        setSnackBarMessage(`MapError: ${message}`);
+        setSnackBarMessage(
+          `MapError: ${message}, Error status: ${e.error.status}`
+        );
         console.error(message);
       }
     },
@@ -2781,6 +2796,7 @@ const App = () => {
 
         // Get the results, if any
         if (dialogsState.owner) {
+          console.log("calling get results from setBasemap....");
           await getResults(dialogsState.owner, dialogsState.project);
         }
 
@@ -5262,6 +5278,10 @@ const App = () => {
   const getPlanningUnitsCostData = async (forceReload) => {
     const owner =
       dialogsState.owner === "" ? dialogsState.user : dialogsState.owner;
+    const url = `getPlanningUnitsCostData?user=${owner}&project=${dialogsState.project}`;
+    console.log("* " * 100);
+    console.log("getPlanningUnitsCostData - url ", url);
+    console.log("dialogsState ", dialogsState);
 
     try {
       // If cost data is already loaded and reload is not forced
@@ -5270,9 +5290,7 @@ const App = () => {
       }
 
       // Fetch the cost data if not already loaded or force reload is requested
-      const response = await _get(
-        `getPlanningUnitsCostData?user=${owner}&project=${dialogsState.project}`
-      );
+      const response = await _get(url);
       // Save the cost data to a local variable
       setCostData(response);
       return response;

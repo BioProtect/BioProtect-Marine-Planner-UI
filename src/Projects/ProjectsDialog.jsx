@@ -132,7 +132,7 @@ const ProjectsDialog = (props) => {
             title="Projects"
             data={props.projects}
             tableColumns={columns}
-            selected={props.project}
+            selected={[props.project]}
             ableToSelectAll={false}
             showSearchBox={true}
             searchColumns={["user", "name", "description"]}
