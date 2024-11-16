@@ -79,6 +79,7 @@ const BioprotectTable = (props) => {
     props.updateSelection(row);
   };
 
+  // should really be item in Object because were checking an obj. poor naming by me.
   const isSelected = (objToCheck) => objInArray(objToCheck, props.selected);
 
   const visibleRows = useMemo(

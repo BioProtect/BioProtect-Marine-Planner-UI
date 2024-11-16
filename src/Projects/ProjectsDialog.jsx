@@ -14,20 +14,13 @@ import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
 
 const ProjectsDialog = (props) => {
-  console.log(props.project);
   const _delete = useCallback(() => {
     props.deleteProject(props.project.user, props.project.name);
   }, [props.project]);
 
   const load = useCallback(() => {
-    if (props.oldVersion && props.project.oldVersion === false) {
-      props.getAllFeatures().then(() => {
-        loadAndClose();
-      });
-    } else {
-      loadAndClose();
-    }
-  }, [props]);
+    loadAndClose();
+  }, []);
 
   const loadAndClose = useCallback(() => {
     props.loadProject(props.project.name, props.project.user);
@@ -35,10 +28,8 @@ const ProjectsDialog = (props) => {
   }, [props.project]);
 
   const _new = useCallback(() => {
-    props.getAllFeatures().then(() => {
-      props.updateState({ newProjectDialogOpen: true });
-      closeDialog();
-    });
+    props.updateState({ newProjectDialogOpen: true });
+    closeDialog();
   }, [props]);
 
   const cloneProject = useCallback(() => {
@@ -75,7 +66,9 @@ const ProjectsDialog = (props) => {
     });
   }, [props]);
 
-  const handleProjectChange = () => {};
+  const handleProjectChange = (e) => {
+    console.log("e ", e);
+  };
 
   const sortDate = useCallback((a, b, desc) => {
     const dateA = new Date(a.split("/").reverse().join(" "));

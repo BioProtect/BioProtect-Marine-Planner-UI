@@ -131,6 +131,7 @@ export const generateTableCols = (fields, overrides = {}) => {
 
 // Function to deeply compare two objects, ignoring the order of keys
 export const checkObjInArray = (obj1, obj2) => {
+  console.log("obj1 ", obj1, obj2);
   if (
     typeof obj1 === "object" &&
     obj1 !== null &&
@@ -148,8 +149,10 @@ export const checkObjInArray = (obj1, obj2) => {
   }
 };
 
+export const isValueInObject = (obj, value) =>
+  Object.values(obj).includes(value);
+
 // Function to find the index of the matching object from array1 in array2
 export const objInArray = (object, array) => {
-  console.log("object, array ", object, array);
-  return array.some((item) => checkObjInArray(object, item));
+  return array.some((item) => isValueInObject(object, item));
 };
