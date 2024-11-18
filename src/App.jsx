@@ -126,6 +126,7 @@ const App = () => {
   const [costData, setCostData] = useState(null);
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
   const [previousIucnCategory, setPreviousIucnCategory] = useState(null);
+  const [planningCostsTrigger, setPlanningCostsTrigger] = useState(false);
 
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -272,6 +273,7 @@ const App = () => {
     visibleLayers: [],
     wdpaAttribution: "",
     welcomeDialogOpen: false,
+    userAndProjectLoaded: false,
   });
 
   const updateDialogsState = (updates) => {
@@ -348,6 +350,15 @@ const App = () => {
 
     fetchGlobalVariables();
   }, []);
+
+  useEffect(() => {
+    if (planningCostsTrigger && dialogsState.userAndProjectLoaded) {
+      (async () => {
+        await getPlanningUnitsCostData();
+        setPlanningCostsTrigger(false);
+      })();
+    }
+  });
 
   const setSnackBar = (message, silent = false) => {
     if (!silent) setSnackbarOpen(true);
@@ -872,27 +883,25 @@ const App = () => {
     try {
       const checkedPass = await checkPassword(user, password);
       if (checkedPass) {
-        const response = await _get(`getUser?user=${user}`);
+        const userResp = await _get(`getUser?user=${user}`);
+        console.log("userResp ", userResp);
         const basemap = dialogsState.basemaps.find(
-          (item) => item.name === response.userData.BASEMAP
+          (item) => item.name === userResp.userData.BASEMAP
         );
         await setBasemap(basemap);
         const allFeatures = await _get("getAllSpeciesData");
 
-        setDialogsState((prevState) => ({
-          ...prevState,
+        updateDialogsState({
           user: user,
-          loggedIn: !prevState.loggedIn,
-          resultsPanelOpen: !prevState.resultsPanelOpen,
-          infoPanelOpen: !prevState.infoPanelOpen,
-          userData: resp.userData,
-          unauthorisedMethods: resp.unauthorisedMethods,
-          project: resp.userData.LASTPROJECT,
-          dismissedNotifications: resp.dismissedNotifications || [],
+          loggedIn: true,
+          userData: userResp.userData,
+          project: userResp.userData.LASTPROJECT,
+          unauthorisedMethods: userResp.unauthorisedMethods,
+          dismissedNotifications: userResp.dismissedNotifications || [],
           allFeatures: allFeatures.data,
-        }));
+        });
 
-        await loadProject(response.userData.LASTPROJECT, user);
+        await loadProject(userResp.userData.LASTPROJECT, user);
         console.log("getting planning grids....");
 
         await getPlanningUnitGrids();
@@ -1176,44 +1185,49 @@ const App = () => {
   };
 
   const loadProject = async (project, user) => {
+    console.log("project, user ", project, user);
     try {
       // Reset the results from any previous projects
       resetResults();
-      const response = await _get(`getProject?user=${user}&project=${project}`);
-      // Update state based on the data returned from the server
+      const projectResp = await _get(
+        `getProject?user=${user}&project=${project}`
+      );
+      console.log("projectResp ", projectResp);
+      console.log("dialogsState ", dialogsState);
+
       updateDialogsState({
-        loggedIn: true,
-        project: response.project,
+        project: projectResp.project,
         owner: user,
-        runParams: response.runParameters,
-        files: { ...response.files },
-        metadata: response.metadata,
-        renderer: response.renderer,
-        planning_units: response.planning_units,
-        costnames: response.costnames,
+        runParams: projectResp.runParameters,
+        files: { ...projectResp.files },
+        metadata: projectResp.metadata,
+        renderer: projectResp.renderer,
+        planning_units: projectResp.planning_units,
+        costnames: projectResp.costnames,
         infoPanelOpen: true,
         resultsPanelOpen: true,
         projectLoaded: true,
-        protected_area_intersections: response.protected_area_intersections,
+        protected_area_intersections: projectResp.protected_area_intersections,
+        userAndProjectLoaded: true,
       });
+      setPlanningCostsTrigger(true);
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
-      if (dialogsState.metadata.PLANNING_UNIT_NAME) {
+      if (projectResp.metadata.PLANNING_UNIT_NAME) {
         await changePlanningGrid(
-          `${CONSTANTS.MAPBOX_USER}.${dialogsState.metadata.PLANNING_UNIT_NAME}`
+          `${CONSTANTS.MAPBOX_USER}.${projectResp.metadata.PLANNING_UNIT_NAME}`
         );
-        await getResults(user, dialogsState.project);
+        await getResults(user, projectResp.project);
       }
       // Set a local variable - Dont need to track state with these variables as they are not bound to anything
-      setFeaturePreprocessing(response.feature_preprocessing);
-      setPreviousIucnCategory(response.metadata.IUCN_CATEGORY);
+      setFeaturePreprocessing(projectResp.feature_preprocessing);
+      setPreviousIucnCategory(projectResp.metadata.IUCN_CATEGORY);
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
-        response.metadata.OLDVERSION,
-        response.features
+        projectResp.metadata.OLDVERSION,
+        projectResp.features
       );
 
-      await getPlanningUnitsCostData();
       // Activate the project tab
       project_tab_active();
       return "Project loaded";
@@ -1656,7 +1670,6 @@ const App = () => {
 
   //gets the results for a project
   const getResults = async (user, project) => {
-    console.log("user, project ", user, project);
     try {
       const response = await _get(`getResults?user=${user}&project=${project}`);
       runCompleted(response);
@@ -2363,8 +2376,6 @@ const App = () => {
 
   //instantiates the mapboxgl map
   const createMap = (url) => {
-    console.log("Map style or URL: ", url);
-
     // Initialize map only once
     if (map.current) {
       console.log("Map already initialized.");
@@ -2567,47 +2578,12 @@ const App = () => {
   const hideIdentifyPopup = (e) =>
     updateDialogsState({ identifyVisible: false, identifyPlanningUnits: {} });
 
-  //gets a Mapbox Style Specification JSON object from the passed ESRI style endpoint
-  const getESRIStyle = async (styleUrl) => {
-    // Fetch the style JSON
-    const response = await fetch(styleUrl);
-    const style = await response.json();
-
-    // Fetch metadata for the raw tiles
-    const TileJSON = style.sources.esri.url;
-    const metadataResponse = await fetch(TileJSON);
-    const metadata = await metadataResponse.json();
-
-    // Construct the tiles URL
-    const tilesurl = metadata.tiles[0].startsWith("/")
-      ? TileJSON + metadata.tiles[0]
-      : TileJSON + "/" + metadata.tiles[0];
-
-    // Update the style with the fetched metadata
-    style.sources.esri = {
-      type: "vector",
-      scheme: "xyz",
-      tilejson: metadata.tilejson || "2.0.0",
-      format: metadata.tileInfo?.format || "pbf",
-      maxzoom: 15,
-      tiles: [tilesurl],
-      description: metadata.description,
-      name: metadata.name,
-    };
-    return style;
-  };
-
   //sets the basemap either on project load, or if the user changes it
   const setBasemap = async (basemap) => {
-    console.log("basemap ", basemap);
     try {
       updateDialogsState({ basemap: basemap.name });
-      // Get a valid map style
       const style = await getValidStyle(basemap);
-      console.log("loading map style...");
       await createMap(style);
-      // Add the WDPA layer
-      console.log("adding WDPA stuff...");
       addWDPASource();
       addWDPALayer();
 
@@ -2636,7 +2612,33 @@ const App = () => {
     switch (basemap.provider) {
       case "esri":
         // Load the ESRI style dynamically and return the parsed TileJSON object
-        return await getESRIStyle(basemap.id);
+        // Fetch the style JSON
+        const response = await fetch(basemap.id);
+        const style = await response.json();
+
+        // Fetch metadata for the raw tiles
+        const TileJSON = style.sources.esri.url;
+        const metadataResponse = await fetch(TileJSON);
+        const metadata = await metadataResponse.json();
+
+        // Construct the tiles URL
+        const tilesurl = metadata.tiles[0].startsWith("/")
+          ? TileJSON + metadata.tiles[0]
+          : TileJSON + "/" + metadata.tiles[0];
+
+        // Update the style with the fetched metadata
+        style.sources.esri = {
+          type: "vector",
+          scheme: "xyz",
+          tilejson: metadata.tilejson || "2.0.0",
+          format: metadata.tileInfo?.format || "pbf",
+          maxzoom: 15,
+          tiles: [tilesurl],
+          description: metadata.description,
+          name: metadata.name,
+        };
+        return style;
+
       case "local":
         // Return a blank background style
         return {
@@ -2663,20 +2665,6 @@ const App = () => {
         return CONSTANTS.MAPBOX_STYLE_PREFIX + basemap.id;
     }
   };
-
-  //loads the maps style using either a url to a Mapbox Style Specification file or a JSON object
-  // this seems redundant - why not just do it in createMap.
-  // const loadMapStyle = async (style) => {
-  //   console.log("style ", style);
-  //   createMap(style);
-
-  //   return new Promise((resolve) => {
-  //     console.log("resolving map styles in promise...");
-  //     map.current.on("style.load", () => {
-  //       resolve("Map style loaded");
-  //     });
-  //   });
-  // };
 
   const changePlanningGrid = async (tilesetid) => {
     try {
@@ -2882,7 +2870,10 @@ const App = () => {
   };
 
   const toggleLayerVisibility = (id, visibility) => {
-    if (map?.getLayer(id))
+    console.log("id, visibility ", id, visibility);
+    console.log("map ", map);
+
+    if (map.current.getLayer(id))
       map.current.setLayoutProperty(id, "visibility", visibility);
   };
 
@@ -3441,10 +3432,10 @@ const App = () => {
     finaliseDigitising();
   };
 
-  const openPlanningGridsDialog = () => {
+  const openPlanningGridsDialog = async () => {
     //refresh planning grids if using a hosted service - other users could have created/deleted items
     if (marxanServer.system !== "Windows") {
-      getPlanningUnitGrids();
+      await getPlanningUnitGrids();
     }
     updateDialogsState({ planningGridsDialogOpen: true });
   };
@@ -4929,14 +4920,10 @@ const App = () => {
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
   const getPlanningUnitsCostData = async (forceReload) => {
-    console.log("planning units cost - dialogsState ", dialogsState);
     const owner =
       dialogsState.owner === "" ? dialogsState.user : dialogsState.owner;
     const url = `getPlanningUnitsCostData?user=${owner}&project=${dialogsState.project}`;
-    console.log("* " * 100);
-    console.log("getPlanningUnitsCostData - url ", url);
-    console.log("dialogsState ", dialogsState);
-
+    console.log("url ", url);
     try {
       // If cost data is already loaded and reload is not forced
       if (costData && !forceReload) {
