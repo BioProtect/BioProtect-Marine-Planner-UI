@@ -156,3 +156,5 @@ export const isValueInObject = (obj, value) =>
 export const objInArray = (object, array) => {
   return array.some((item) => isValueInObject(object, item));
 };
+
+export const strToBool = (str) => str.toLowerCase() === "true";

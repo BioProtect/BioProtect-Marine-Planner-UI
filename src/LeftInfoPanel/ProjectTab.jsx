@@ -9,8 +9,14 @@ import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Typography from "@mui/material/Typography";
 
 const ProjectTabContent = (props) => {
+  const [editing, setEditing] = useState(false);
   const toggleProjectPrivacy = (event) => {
     props.toggleProjectPrivacy(event.target.checked);
+  };
+
+  const handleChange = (e) => {
+    setEditing(false);
+    props.handleChange(e);
   };
 
   return (
@@ -20,25 +26,19 @@ const ProjectTabContent = (props) => {
           <Typography variant="h5" component="div">
             Description
           </Typography>
-          {props.userRole !== "ReadOnly" && (
-            <TextareaAutosize
-              minRows={5}
-              id="descriptionEdit"
-              ref={props.descriptionEditRef}
-              style={{ display: props.editingDescription ? "block" : "none" }}
-              className="descriptionEditBox"
-              onKeyDown={props.handleKeyPress}
-              onBlur={props.handleBlur}
-            />
-          )}
           <Typography variant="body2" color="text.secondary">
-            <span
-              className="description"
-              onClick={props.startEditingDescription}
-              title={props.userRole === "ReadOnly" ? "" : "Click to edit"}
-            >
-              {props.metadata.DESCRIPTION}
-            </span>
+            {editing ? (
+              <span onClick={setEditing(true)}>
+                {props.metadata.DESCRIPTION}
+              </span>
+            ) : (
+              <input
+                id="descriptionEdit"
+                value={props.metadata.DESCRIPTION || ""}
+                className="descriptionEditBox"
+                onChange={(e) => handleChange(e)}
+              ></input>
+            )}
           </Typography>
           <Typography variant="h5" component="div">
             Created
@@ -63,7 +63,7 @@ const ProjectTabContent = (props) => {
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={props.metadata.PRIVATE}
+                  checked={Boolean(props.metadata.PRIVATE)}
                   onChange={props.toggleProjectPrivacy}
                   size="small"
                 />

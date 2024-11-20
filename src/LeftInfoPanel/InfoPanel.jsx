@@ -6,7 +6,7 @@
  *
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   faEraser,
   faLock,
@@ -29,16 +29,11 @@ import Tabs from "@mui/material/Tabs";
 const activeTabArr = ["project", "features", "planning_units"];
 
 const InfoPanel = (props) => {
-  const [editingProjectName, setEditingProjectName] = useState(false);
-  const [editingDescription, setEditingDescription] = useState(false);
   const [showPlanningGrid, setShowPlanningGrid] = useState(true);
   const [showProtectedAreas, setShowProtectedAreas] = useState(false);
   const [showCosts, setShowCosts] = useState(false);
   const [showStatuses, setShowStatuses] = useState(true);
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
-
-  const projectNameRef = useRef(null);
-  const descriptionEditRef = useRef(null);
 
   useEffect(() => {
     if (props.activeTab) {
@@ -46,51 +41,41 @@ const InfoPanel = (props) => {
     }
   }, []);
 
-  useEffect(() => {
-    if (editingProjectName && projectNameRef.current) {
-      projectNameRef.current.value = props.project;
-      projectNameRef.current.focus();
-    }
+  const iconStyle = useMemo(
+    () => ({
+      color: "white",
+      height: "16px",
+      marginTop: "4px",
+      marginBottom: "2px",
+      marginRight: "5px",
+    }),
+    []
+  );
+  const titleStyle = useMemo(
+    () => ({
+      position: "absolute",
+      left: "39px",
+      top: "32px",
+      width: "365px",
+      border: "1px lightgray solid",
+    }),
+    []
+  );
+  const panelStyle = useMemo(
+    () => ({
+      top: "60px",
+      width: "300px",
+      height: "400px",
+      display: props.open ? "block" : "none",
+    }),
+    []
+  );
 
-    if (editingDescription && descriptionEditRef.current) {
-      descriptionEditRef.current.value = props.metadata.DESCRIPTION;
-      descriptionEditRef.current.focus();
-    }
-  }, [
-    editingProjectName,
-    editingDescription,
-    props.project,
-    props.metadata.DESCRIPTION,
-  ]);
-
-  const handleKeyPress = (e) => {
-    if (e.nativeEvent.keyCode === 13 || e.nativeEvent.keyCode === 27) {
-      e.target.blur(); // call the onBlur event which will call the REST service to rename the project
-    }
-  };
-
-  const handleBlur = (e) => {
-    if (e.target.id === "projectName") {
-      props.renameProject(e.target.value).then(() => {
-        setEditingProjectName(false);
-      });
-    } else {
-      props.renameDescription(e.target.value).then(() => {
-        setEditingDescription(false);
-      });
-    }
-  };
-
-  const startEditingProjectName = () => {
-    if (props.project) {
-      setEditingProjectName(true);
-    }
-  };
-
-  const startEditingDescription = () => {
-    if (props.project && props.userRole !== "ReadOnly") {
-      setEditingDescription(true);
-    }
+  const handleChange = (e) => {
+    console.log("e ", e);
+    return e.target.id === "projectName"
+      ? props.renameProject(e.target.value)
+      : props.renameDescription(e.target.value);
   };
 
   const startStopPuEditSession = () =>
@@ -164,15 +149,7 @@ const InfoPanel = (props) => {
 
   return (
     <React.Fragment>
-      <div
-        className={"infoPanel"}
-        style={{
-          top: "60px",
-          width: "300px",
-          height: "400px",
-          display: props.open ? "block" : "none",
-        }}
-      >
+      <div className={"infoPanel"} style={panelStyle}>
         <Paper elevation={2} className="InfoPanelPaper" mb={4}>
           <Paper elevation={2} className="titleBar">
             {props.userRole === "ReadOnly" ? (
@@ -180,43 +157,26 @@ const InfoPanel = (props) => {
                 className={"projectNameEditBox"}
                 title={props.project + " (Read-only)"}
               >
-                <FontAwesomeIcon
-                  style={{
-                    color: "white",
-                    height: "16px",
-                    marginTop: "4px",
-                    marginBottom: "2px",
-                    marginRight: "5px",
-                  }}
-                  icon={faLock}
-                />
+                <FontAwesomeIcon style={iconStyle} icon={faLock} />
                 {props.project}
               </span>
             ) : (
-              <span
-                onClick={startEditingProjectName}
-                className={"projectNameEditBox"}
-                title="Click to rename the project"
-              >
-                {props.project}
-              </span>
-            )}
-            {props.userRole === "ReadOnly" ? null : (
-              <input
-                id="projectName"
-                ref={projectNameRef}
-                style={{
-                  position: "absolute",
-                  display: editingProjectName ? "block" : "none",
-                  left: "39px",
-                  top: "32px",
-                  width: "365px",
-                  border: "1px lightgray solid",
-                }}
-                className={"projectNameEditBox"}
-                onKeyDown={handleKeyPress}
-                onBlur={handleBlur}
-              />
+              <div>
+                {/* <input
+                  id="projectName"
+                  type="text"
+                  value={props.project}
+                  style={titleStyle}
+                  className={"projectNameEditBox"}
+                  onChange={handleChange}
+                /> */}
+                <span
+                  className={"projectNameEditBox"}
+                  title="Click to rename the project"
+                >
+                  {props.project}
+                </span>
+              </div>
             )}
           </Paper>
           <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
@@ -234,17 +194,13 @@ const InfoPanel = (props) => {
           </Tabs>
           {currentTabIndex === 0 && (
             <ProjectTabContent
-              setEditingDescription={setEditingDescription}
               toggleProjectPrivacy={toggleProjectPrivacy}
-              descriptionEditRef={descriptionEditRef}
-              editingDescription={editingDescription}
+              project={props.project}
               userRole={props.userRole}
               metadata={props.metadata}
-              startEditingDescription={startEditingDescription}
               user={props.user}
               owner={props.owner}
-              handleBlur={handleBlur}
-              handleKeyPress={handleKeyPress}
+              handleChange={handleChange}
             />
           )}
           {currentTabIndex === 1 && (

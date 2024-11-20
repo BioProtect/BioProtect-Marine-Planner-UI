@@ -9,6 +9,7 @@ import {
 } from "./Server/serverFunctions";
 // SERVICES
 import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
+import { strToBool, zoomToBounds } from "./Helpers";
 
 import AboutDialog from "./AboutDialog";
 import AddToMap from "@mui/icons-material/Visibility";
@@ -98,7 +99,6 @@ import classyBrew from "classybrew";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
-import { zoomToBounds } from "./Helpers";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -277,6 +277,8 @@ const App = () => {
   });
 
   const updateDialogsState = (updates) => {
+    console.log("logged in infoPanelOpen.... ", dialogsState.infoPanelOpen);
+    console.log("logged in .... ", dialogsState.loggedIn, updates);
     setDialogsState((prevState) => ({
       ...prevState,
       ...updates,
@@ -353,6 +355,7 @@ const App = () => {
 
   useEffect(() => {
     if (planningCostsTrigger && dialogsState.userAndProjectLoaded) {
+      console.log("dialogsState in useEffect ", dialogsState);
       (async () => {
         await getPlanningUnitsCostData();
         setPlanningCostsTrigger(false);
@@ -884,29 +887,28 @@ const App = () => {
       const checkedPass = await checkPassword(user, password);
       if (checkedPass) {
         const userResp = await _get(`getUser?user=${user}`);
-        console.log("userResp ", userResp);
         const basemap = dialogsState.basemaps.find(
           (item) => item.name === userResp.userData.BASEMAP
         );
+        userResp.userData.USEFEATURECOLORS = strToBool(
+          userResp.userData.USEFEATURECOLORS
+        );
+        userResp.userData.SHOWWELCOMESCREEN = strToBool(
+          userResp.userData.SHOWWELCOMESCREEN
+        );
+        userResp.userData.SHOWPOPUP = strToBool(userResp.userData.SHOWPOPUP);
+        
         await setBasemap(basemap);
         const allFeatures = await _get("getAllSpeciesData");
-
-        updateDialogsState({
-          user: user,
-          loggedIn: true,
-          userData: userResp.userData,
-          project: userResp.userData.LASTPROJECT,
-          unauthorisedMethods: userResp.unauthorisedMethods,
-          dismissedNotifications: userResp.dismissedNotifications || [],
-          allFeatures: allFeatures.data,
-        });
-
-        await loadProject(userResp.userData.LASTPROJECT, user);
-        console.log("getting planning grids....");
-
+        await loadProject(
+          userResp.userData.LASTPROJECT,
+          user,
+          userResp,
+          allFeatures
+        );
+        console.log("Project should be loaded....");
         await getPlanningUnitGrids();
-        console.log("logged in ....");
-
+        console.log("logged in ? ", dialogsState.loggedIn);
         return "Logged in";
       }
     } catch (error) {
@@ -1184,39 +1186,46 @@ const App = () => {
     updateDialogsState({ planning_unit_grids: response.planning_unit_grids });
   };
 
-  const loadProject = async (project, user) => {
+  const loadProject = async (project, user, ...options) => {
     console.log("project, user ", project, user);
+    const userResp = options[0];
+    const allFeatures = options[1];
     try {
       // Reset the results from any previous projects
       resetResults();
       const projectResp = await _get(
         `getProject?user=${user}&project=${project}`
       );
-      console.log("projectResp ", projectResp);
-      console.log("dialogsState ", dialogsState);
-
       updateDialogsState({
         project: projectResp.project,
         owner: user,
+        userData: userResp.userData,
+        unauthorisedMethods: userResp.unauthorisedMethods,
+        dismissedNotifications: userResp.dismissedNotifications || [],
         runParams: projectResp.runParameters,
         files: { ...projectResp.files },
         metadata: projectResp.metadata,
         renderer: projectResp.renderer,
         planning_units: projectResp.planning_units,
         costnames: projectResp.costnames,
+        loggedIn: true,
         infoPanelOpen: true,
         resultsPanelOpen: true,
         projectLoaded: true,
         protected_area_intersections: projectResp.protected_area_intersections,
         userAndProjectLoaded: true,
+        allFeatures: allFeatures.data,
       });
+      console.log("Setting planning costs trigger......");
       setPlanningCostsTrigger(true);
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
       if (projectResp.metadata.PLANNING_UNIT_NAME) {
+        console.log("changePlanningGrid....");
         await changePlanningGrid(
           `${CONSTANTS.MAPBOX_USER}.${projectResp.metadata.PLANNING_UNIT_NAME}`
         );
+        console.log("gettingResults user....");
         await getResults(user, projectResp.project);
       }
       // Set a local variable - Dont need to track state with these variables as they are not bound to anything
@@ -1227,9 +1236,11 @@ const App = () => {
         projectResp.metadata.OLDVERSION,
         projectResp.features
       );
+      console.log("Setting project tabv to active......");
 
       // Activate the project tab
       project_tab_active();
+      console.log("------: ", dialogsState);
       return "Project loaded";
     } catch (error) {
       console.log("error", error);
@@ -2870,9 +2881,6 @@ const App = () => {
   };
 
   const toggleLayerVisibility = (id, visibility) => {
-    console.log("id, visibility ", id, visibility);
-    console.log("map ", map);
-
     if (map.current.getLayer(id))
       map.current.setLayoutProperty(id, "visibility", visibility);
   };
@@ -2895,7 +2903,7 @@ const App = () => {
   };
 
   //centralised code to remove a layer from the maps current style
-  const removeMapLayer = (layerid) => map.removeLayer(layerid);
+  const removeMapLayer = (layerid) => map.current.removeLayer(layerid);
 
   const isLayerVisible = (layername) =>
     map.current &&
