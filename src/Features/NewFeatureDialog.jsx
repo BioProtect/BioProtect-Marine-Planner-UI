@@ -26,6 +26,10 @@ const NewFeatureDialog = (props) => {
     props.createNewFeature(name, description);
   };
 
+  handleAddToProjectChange = (evt) => {
+    this.props.setAddToProject(evt.target.checked);
+  };
+
   return (
     <Dialog
       open={props.open}
@@ -61,7 +65,7 @@ const NewFeatureDialog = (props) => {
         <FormControlLabel
           control={<Checkbox checked={props.addToProject} />}
           label="Add to Project"
-          onChange={props.setAddToProject}
+          onChange={handleAddToProjectChange}
         />
       </DialogContent>
       <DialogActions>

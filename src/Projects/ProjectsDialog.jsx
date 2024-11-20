@@ -28,7 +28,7 @@ const ProjectsDialog = (props) => {
   }, [props.project]);
 
   const _new = useCallback(() => {
-    props.updateState({ newProjectDialogOpen: true });
+    props.setNewProjectDialogOpen(true);
     closeDialog();
   }, [props]);
 
@@ -49,9 +49,9 @@ const ProjectsDialog = (props) => {
   }, [props.updateState]);
 
   const openImportMXWDialog = useCallback(() => {
-    props.updateState({ importMXWDialogOpen: true });
+    props.setImportMXWDialogOpen(true);
     closeDialog();
-  }, [props.updateState]);
+  }, [props.setImportMXWDialogOpen]);
 
   // const changeProject = useCallback((event, project) => {
   //   setSelectedProject(project);

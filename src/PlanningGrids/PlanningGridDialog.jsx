@@ -38,11 +38,7 @@ class PlanningGridDialog extends React.Component {
     return (
       <MarxanDialog
         {...this.props}
-        onClose={() =>
-          this.props.updateState({
-            planningGridDialogOpen: false,
-          })
-        }
+        onClose={() => this.props.setPlanningGridDialogOpen(false)}
         showCancelButton={false}
         title={this.props.planning_grid_metadata.alias}
         helpLink={"user.html#the-planning-grid-details-window"}

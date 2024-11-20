@@ -140,9 +140,14 @@ class ImportFromWebDialog extends React.Component {
         this.closeDialog();
       });
   }
+
+  handleAddToProjectChange = (evt) => {
+    this.props.setAddToProject(evt.target.checked);
+  };
+
   closeDialog() {
     this.setState({ ...INITIAL_STATE });
-    this.props.onCancel({ importFromWebDialogOpen: false });
+    this.props.setImportFromWebDialogOpen(false);
   }
   render() {
     let _disabled = false;
@@ -281,7 +286,7 @@ class ImportFromWebDialog extends React.Component {
                 display: "inline-block",
                 marginTop: "10px",
               }}
-              onCheck={this.props.setAddToProject}
+              onChange={this.handleAddToProjectChange}
               checked={this.props.addToProject}
             />
           </div>

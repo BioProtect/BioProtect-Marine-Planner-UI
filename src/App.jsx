@@ -119,106 +119,112 @@ const App = () => {
   const [lng, setLng] = useState(-70.9);
   const [lat, setLat] = useState(42.35);
   const [zoom, setZoom] = useState(9);
-  // const [map, setMap] = useState(null);
-  // const [mapContainer, setMapContainer] = useState(undefined);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [runMarxanResponse, setRunMarxanResponse] = useState({});
   const [costData, setCostData] = useState(null);
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
   const [previousIucnCategory, setPreviousIucnCategory] = useState(null);
   const [planningCostsTrigger, setPlanningCostsTrigger] = useState(false);
+  const [newFeatureDialogOpen, setNewFeatureDialogOpen] = useState(false);
+  const [newMarinePlanningGridDialogOpen, setNewMarinePlanningGridDialogOpen] =
+    useState(false);
+  const [newPlanningGridDialogOpen, setNewPlanningGridDialogOpen] =
+    useState(false);
+  const [projectsListDialogOpen, setProjectsListDialogOpen] = useState(false);
+  const [userSettingsDialogOpen, setUserSettingsDialogOpen] = useState(false);
+  const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
+  const [activeResultsTab, setActiveResultsTab] = useState("legend");
+  const [activities, setActivities] = useState([]);
+  const [activitiesDialogOpen, setActivitiesDialogOpen] = useState(false);
+  const [addToProject, setAddToProject] = useState(true);
+  const [addingRemovingFeatures, setAddingRemovingFeatures] = useState(false);
+
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [allFeatures, setAllFeatures] = useState([]);
+  const [allImpacts, setAllImpacts] = useState([]);
+  const [atlasLayers, setAtlasLayers] = useState([]);
+  const [atlasLayersDialogOpen, setAtlasLayersDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [basemap, setBasemap] = useState("North Star");
+  const [basemaps, setBasemaps] = useState([]);
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] =
+    useState(false);
+  const [classificationDialogOpen, setClassificationDialogOpen] =
+    useState(false);
+  const [clumpingDialogOpen, setClumpingDialogOpen] = useState(false);
+  const [clumpingRunning, setClumpingRunning] = useState(false);
+  const [costnames, setCostnames] = useState([]);
+  const [costsDialogOpen, setCostsDialogOpen] = useState(false);
+  const [costsLoading, setCostsLoading] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [cumulativeImpactDialogOpen, setCumulativeImpactDialogOpen] =
+    useState(false);
+  const [currentFeature, setCurrentFeature] = useState({});
+  const [featureDatasetFilename, setFeatureDatasetFilename] = useState("");
+  const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
+  const [featureMenuOpen, setFeatureMenuOpen] = useState(false);
+  const [featureMetadata, setFeatureMetadata] = useState({});
+  const [featuresDialogOpen, setFeaturesDialogOpen] = useState(false);
+  const [files, setFiles] = useState({});
+  const [gapAnalysis, setGapAnalysis] = useState([]);
+  const [gapAnalysisDialogOpen, setGapAnalysisDialogOpen] = useState(false);
+  const [helpMenuOpen, setHelpMenuOpen] = useState(false);
+  const [humanActivitiesDialogOpen, setHumanActivitiesDialogOpen] =
+    useState(false);
+  const [identifyFeatures, setIdentifyFeatures] = useState([]);
+  const [identifyPlanningUnits, setIdentifyPlanningUnits] = useState({});
+  const [identifyProtectedAreas, setidentifyProtectedAreas] = useState([]);
+  const [identifyVisible, setIdentifyVisible] = useCallback(false);
+  const [importCostsDialogOpen, setImportCostsDialogOpen] = useState(false);
+  const [importFeaturesDialogOpen, setImportFeaturesDialogOpen] =
+    useState(false);
+  /////////////////////////////////////////////////////////////////////////////
+  const [importFeaturePopoverOpen, setImportFeaturePopoverOpen] =
+    useState(false);
+  const [importFromWebDialogOpen, setImportFromWebDialogOpen] = useState(false);
+  const [importGBIFDialogOpen, setImportGBIFDialogOpen] = useState(false);
+  const [importMXWDialogOpen, setImportMXWDialogOpen] = useState(false);
+  const [importPlanningGridDialogOpen, setImportPlanningGridDialogOpen] =
+    useState(false);
+  const [importProjectDialogOpen, setImportProjectDialogOpen] = useState(false);
+  const [importProjectPopoverOpen, setImportProjectPopoverOpen] =
+    useState(false);
+  const [importedActivitiesDialogOpen, setImportedActivitiesDialogOpen] =
+    useState(false);
+  const [infoPanelOpen, setInfoPanelOpen] = useState(false);
+  const [logMessages, setLogMessages] = useState([]);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [mapPaintProperties, setMapPaintProperties] = useState({
+    mapPP0: [],
+    mapPP1: [],
+    mapPP2: [],
+    mapPP3: [],
+    mapPP4: [],
+  });
+  const [mapCentre, setMapCentre] = useState({ lng: 0, lat: 0 });
+  const [mapZoom, setMapZoom] = useState(12);
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [metadata, setMetadata] = useState({});
+  const [newFeaturePopoverOpen, setNewFeaturePopoverOpen] = useState(false);
+  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
+  const [newProjectWizardDialogOpen, setNewProjectWizardDialogOpen] =
+    useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [openInfoDialogOpen, setOpenInfoDialogOpen] = useState(false);
+  const [owner, setOwner] = useState("");
+  const [paLayerVisible, setPaLayerVisible] = useState(false);
+  const [pid, setPid] = useState(0);
+  const [planningGridDialogOpen, setPlanningGridDialogOpen] = useState(false);
+  const [planningGridsDialogOpen, setPlanningGridsDialogOpen] = useState(false);
+  const [planningGridMetadata, setPlanningGridMetadata] = useState({});
+  const [planningUnitGrids, setPlanningUnitGrids] = useState([]);
+  const [planningUnits, setPlanningUnits] = useState([]);
 
   const mapContainer = useRef(null);
   const map = useRef(null);
 
   const [dialogsState, setDialogsState] = useState({
-    NewFeatureDialogOpen: false,
-    NewMarinePlanningGridDialogOpen: false,
-    NewPlanningGridDialogOpen: false,
-    ProjectsListDialogOpen: false,
-    UserSettingsDialogOpen: false,
-    aboutDialogOpen: false,
-    activeResultsTab: "legend",
-    activities: [],
-    activitiesDialogOpen: false,
-    addToProject: true,
-    addingRemovingFeatures: false,
-    alertDialogOpen: false,
-    allFeatures: [],
-    allImpacts: [],
-    atlasLayers: [],
-    atlasLayersDialogOpen: false,
-    basemap: "North Star",
-    basemaps: [],
-    changePasswordDialogOpen: false,
-    classificationDialogOpen: false,
-    clumpingDialogOpen: false,
-    clumpingRunning: false,
-    costnames: [],
-    costsDialogOpen: false,
-    costsLoading: false,
-    countries: [],
-    cumulativeImpactDialogOpen: false,
-    currentFeature: {},
-    dataBreaks: [],
-    featureDatasetFilename: "",
-    featureDialogOpen: false,
-    featureMenuOpen: false,
-    feature_metadata: {},
-    featuresDialogOpen: false,
-    files: {},
-    gapAnalysis: [],
-    gapAnalysisDialogOpen: false,
-    guestUserEnabled: true,
-    helpDialogOpen: false,
-    helpMenuOpen: false,
-    humanActivitiesDialogOpen: false,
-    identifyFeatures: [],
-    identifyPlanningUnits: {},
-    identifyProtectedAreas: [],
-    identifyVisible: false,
-    impactDatasetFilename: "",
-    impact_metadata: {},
-    importCostsDialogOpen: false,
-    importFeaturesDialogOpen: false,
-    importFromWebDialogOpen: false,
-    importGBIFDialogOpen: false,
-    importMXWDialogOpen: false,
-    importPlanningGridDialogOpen: false,
-    importProjectDialogOpen: false,
-    importProjectPopoverOpen: false,
-    importedActivitiesDialogOpen: false,
-    infoPanelOpen: false,
-    loading: false,
-    logMessages: [],
-    loggedIn: false,
-    map0_paintProperty: [],
-    map1_paintProperty: [],
-    map2_paintProperty: [],
-    map3_paintProperty: [],
-    map4_paintProperty: [],
-    mapCentre: {
-      lng: 0,
-      lat: 0,
-    },
-    mapZoom: 12,
-    menuAnchor: null,
-    metadata: {},
-    newFeaturePopoverOpen: false,
-    newProjectDialogOpen: false,
-    newProjectWizardDialogOpen: false,
-    notifications: [],
-    notificationsOpen: false,
-    openInfoDialogOpen: false,
-    owner: "",
-    pa_layer_visible: false,
     password: "",
-    pid: 0,
-    planningGridDialogOpen: false,
-    planningGridsDialogOpen: false,
-    planning_grid_metadata: {},
-    planning_unit_grids: [],
-    planning_units: [],
     popup_point: {
       x: 0,
       y: 0,
@@ -277,8 +283,8 @@ const App = () => {
   });
 
   const updateDialogsState = (updates) => {
-    console.log("logged in infoPanelOpen.... ", dialogsState.infoPanelOpen);
-    console.log("logged in .... ", dialogsState.loggedIn, updates);
+    console.log("logged in infoPanelOpen.... ", infoPanelOpen);
+    console.log("logged in .... ", loggedIn, updates);
     setDialogsState((prevState) => ({
       ...prevState,
       ...updates,
@@ -321,10 +327,8 @@ const App = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has("project")) {
-      updateDialogsState({
-        loggedIn: true,
-        shareableLink: true,
-      });
+      updateDialogsState({ shareableLink: true });
+      setLoggedIn(true);
     }
 
     const fetchGlobalVariables = async () => {
@@ -336,9 +340,9 @@ const App = () => {
         setBrew(new classyBrew());
         await initialiseServers(registryData.MARXAN_SERVERS);
 
+        setBasemaps(registryData.MAPBOX_BASEMAPS);
         updateDialogsState({
           registry: registryData,
-          basemaps: registryData.MAPBOX_BASEMAPS,
         });
         setInitialLoading(false);
 
@@ -459,19 +463,17 @@ const App = () => {
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   const _get = useCallback(
     (params, timeout = CONSTANTS.TIMEOUT) => {
-      updateDialogsState({ loading: true });
+      setLoading(true);
       return new Promise((resolve, reject) => {
         jsonp(marxanServer.endpoint + params, { timeout })
           .promise.then((response) => {
-            updateDialogsState({ loading: false });
-            if (!checkForErrors(response)) {
-              resolve(response);
-            } else {
-              reject(response.error);
-            }
+            setLoading(false);
+            !checkForErrors(response)
+              ? resolve(response)
+              : reject(response.error);
           })
           .catch((err) => {
-            updateDialogsState({ loading: false });
+            setLoading(false);
             setSnackBar(
               `Request timeout - See <a href='${CONSTANTS.ERRORS_PAGE}#request-timeout' target='blank'>here</a>`
             );
@@ -490,7 +492,7 @@ const App = () => {
       timeout = CONSTANTS.TIMEOUT,
       withCredentials = CONSTANTS.SEND_CREDENTIALS
     ) => {
-      updateDialogsState({ loading: true });
+      setLoading(true);
 
       try {
         const controller = new AbortController();
@@ -519,7 +521,7 @@ const App = () => {
         }
         throw err;
       } finally {
-        updateDialogsState({ loading: false });
+        setLoading(false);
       }
     },
     [marxanServer.endpoint, checkForErrors, setSnackBar]
@@ -585,7 +587,7 @@ const App = () => {
         updateDialogsState({ preprocessing: true });
         break;
       case "pid": //from marxan runs and preprocessing - the pid is an identifer and the pid, e.g. m1234 is a marxan run process with a pid of 1234
-        updateDialogsState({ pid: message.pid });
+        setPid(message.pid);
         break;
       case "FeatureCreated":
         //remove all preprocessing messages
@@ -594,18 +596,13 @@ const App = () => {
         break;
       case "Finished": //from the close method of all MarxanWebSocketHandler subclasses
         //reset the pid
-        resetPID();
+        setPid(0);
         //remove all preprocessing messages
         removeMessageFromLog("Preprocessing");
         break;
       default:
         break;
     }
-  };
-
-  //resets the pid value
-  const resetPID = () => {
-    updateDialogsState({ pid: 0 });
   };
 
   //logs the message if necessary - this removes duplicates
@@ -620,11 +617,11 @@ const App = () => {
         error: "The WebSocket connection closed unexpectedly",
       });
       removeMessageFromLog("Preprocessing");
-      resetPID();
+      setPid(0);
     } else {
       // Check if the message has a PID and handle accordingly
       if (message.hasOwnProperty("pid") && message.status !== "RunningMarxan") {
-        const existingMessages = dialogsState.logMessages.filter(
+        const existingMessages = logMessages.filter(
           (_message) =>
             _message.hasOwnProperty("pid") && _message.pid === message.pid
         );
@@ -665,16 +662,13 @@ const App = () => {
   // removes a message from the log by matching on pid and status or just status
   // update the messages state - filter previous messages state by pid and status
   const removeMessageFromLog = useCallback((status, pid) => {
-    setDialogsState((prevState) => ({
-      ...prevState,
-      logMessages: prevState.logMessages.filter((message) => {
-        if (pid !== undefined) {
-          return !(message.pid === pid && message.status === status);
-        } else {
-          return !(message.status === status);
-        }
+    setLogMessages((prevState) => [
+      prevState.logMessages.filter((message) => {
+        return pid !== undefined
+          ? !(message.pid === pid && message.status === status)
+          : !(message.status === status);
       }),
-    }));
+    ]);
   }, []);
 
   // ----------------------------------------------------------------------------------------------- //
@@ -721,12 +715,7 @@ const App = () => {
   const startLogging = (clearLog = false) => {
     //switches the results pane to the log tab and clears log if needs be
     setActiveTab("log");
-    if (clearLog) this.clearLog();
-  };
-
-  // clears the log
-  const clearLog = () => {
-    updateDialogsState({ logMessages: [] });
+    if (clearLog) setLogMessages([]);
   };
 
   // Main logging method - all log messages use this method
@@ -734,10 +723,10 @@ const App = () => {
     // Add a timestamp to the message
     const timestampedMessage = { ...message, timestamp: new Date() };
     // Update the state with the new log message
-    setDialogsState((prevState) => ({
-      ...prevState,
-      logMessages: [...prevState.logMessages, timestampedMessage],
-    }));
+    setLogMessages((prevState) => [
+      ...prevState.logMessages,
+      timestampedMessage,
+    ]);
   }, []);
 
   // ----------------------------------------------------------------------------------------------- //
@@ -827,7 +816,7 @@ const App = () => {
       updateDialogsState({ users: usersCopy });
 
       // Check if the current project belongs to the deleted user
-      if (dialogsState.owner === user) {
+      if (owner === user) {
         setSnackBar(
           "Current project no longer exists. Loading next available."
         );
@@ -887,7 +876,7 @@ const App = () => {
       const checkedPass = await checkPassword(user, password);
       if (checkedPass) {
         const userResp = await _get(`getUser?user=${user}`);
-        const basemap = dialogsState.basemaps.find(
+        const current_basemap = basemaps.find(
           (item) => item.name === userResp.userData.BASEMAP
         );
         userResp.userData.USEFEATURECOLORS = strToBool(
@@ -897,18 +886,18 @@ const App = () => {
           userResp.userData.SHOWWELCOMESCREEN
         );
         userResp.userData.SHOWPOPUP = strToBool(userResp.userData.SHOWPOPUP);
-        
-        await setBasemap(basemap);
-        const allFeatures = await _get("getAllSpeciesData");
+
+        await loadBasemap(current_basemap);
+        const speciesData = await _get("getAllSpeciesData");
         await loadProject(
           userResp.userData.LASTPROJECT,
           user,
           userResp,
-          allFeatures
+          speciesData
         );
         console.log("Project should be loaded....");
         await getPlanningUnitGrids();
-        console.log("logged in ? ", dialogsState.loggedIn);
+        console.log("logged in ? ", loggedIn);
         return "Logged in";
       }
     } catch (error) {
@@ -921,22 +910,22 @@ const App = () => {
   const logout = () => {
     hideUserMenu();
     updateDialogsState({
-      loggedIn: false,
       user: "",
       password: "",
       project: "",
-      owner: "",
       runParams: [],
-      files: {},
-      metadata: {},
       renderer: {},
-      planning_units: [],
       projectFeatures: [],
-      infoPanelOpen: false,
       resultsPanelOpen: false,
       brew: new classyBrew(),
-      notifications: [],
     });
+    setPlanningUnits([]);
+    setOwner("");
+    setNotifications([]);
+    setMetadata({});
+    setLoggedIn(false);
+    setInfoPanelOpen(false);
+    setFiles({});
     resetResults();
     //clear the currently set cookies
     _get("logout").then((response) => {});
@@ -974,12 +963,9 @@ const App = () => {
 
   const toggleProjectPrivacy = async (newValue) => {
     await updateProjectParameter("PRIVATE", newValue);
-    setDialogsState((prevState) => ({
-      ...prevState,
-      metadata: {
-        ...prevState.metadata, // Ensure to update metadata correctly
-        PRIVATE: newValue === "True",
-      },
+    setMetadata((prevState) => ({
+      ...prevState.metadata,
+      PRIVATE: newValue === "True",
     }));
   };
 
@@ -1072,10 +1058,10 @@ const App = () => {
     }
   });
 
-  const addNotifications = (notifications) => {
-    const currentNotifications = [...dialogsState.notifications];
+  const addNotifications = (newNotifications) => {
+    const currentNotifications = [...notifications];
     // Process and filter notifications based on role, dismissal, and expiry
-    const processedNotifications = notifications.map((item) => {
+    const processedNotifications = newNotifications.map((item) => {
       const allowedForRole = item.showForRoles.includes(
         dialogsState.userData.ROLE
       );
@@ -1101,24 +1087,19 @@ const App = () => {
       ...currentNotifications,
       ...processedNotifications,
     ];
-    updateDialogsState({ notifications: updatedNotifications });
-  };
-
-  //hides the notifications from the UI
-  const hideNotifications = () => {
-    updateDialogsState({ notificationsOpen: false });
+    setNotifications(updatedNotifications);
   };
 
   //removes a notification
   const removeNotification = async (notification) => {
     //remove the notification from the state
-    const updatedNotifications = dialogsState.notifications.filter(
+    const updatedNotifications = notifications.filter(
       (item) => item.id !== notification.id
     );
     //remove it in the users notifications.dat file
     await dismissNotification(notification);
     //set the state
-    updateDialogsState({ notifications: updatedNotifications });
+    setNotifications(updatedNotifications);
   };
 
   //dismisses a notification on the server
@@ -1132,9 +1113,9 @@ const App = () => {
   const resetNotifications = async () => {
     await _get(`resetNotifications?user=${dialogsState.user}`);
     updateDialogsState({
-      notifications: [],
       dismissedNotifications: [],
     });
+    setNotifications([]);
     parseNotifications();
   };
 
@@ -1157,7 +1138,7 @@ const App = () => {
   const updateProjectParams = async (project, parameters) => {
     //initialise the form data
     let formData = new FormData();
-    formData.append("user", dialogsState.owner);
+    formData.append("user", owner);
     formData.append("project", project);
     appendToFormData(formData, parameters);
     //post to the server and return a promise
@@ -1183,13 +1164,13 @@ const App = () => {
   //gets the planning unit grids
   const getPlanningUnitGrids = async () => {
     const response = await _get("getPlanningUnitGrids");
-    updateDialogsState({ planning_unit_grids: response.planning_unit_grids });
+    setPlanningUnitGrids(response.planningUnitGrids);
   };
 
   const loadProject = async (project, user, ...options) => {
     console.log("project, user ", project, user);
     const userResp = options[0];
-    const allFeatures = options[1];
+    const speciesData = options[1];
     try {
       // Reset the results from any previous projects
       resetResults();
@@ -1198,24 +1179,24 @@ const App = () => {
       );
       updateDialogsState({
         project: projectResp.project,
-        owner: user,
         userData: userResp.userData,
         unauthorisedMethods: userResp.unauthorisedMethods,
         dismissedNotifications: userResp.dismissedNotifications || [],
         runParams: projectResp.runParameters,
-        files: { ...projectResp.files },
-        metadata: projectResp.metadata,
         renderer: projectResp.renderer,
-        planning_units: projectResp.planning_units,
-        costnames: projectResp.costnames,
-        loggedIn: true,
-        infoPanelOpen: true,
         resultsPanelOpen: true,
         projectLoaded: true,
         protected_area_intersections: projectResp.protected_area_intersections,
         userAndProjectLoaded: true,
-        allFeatures: allFeatures.data,
       });
+      setPlanningUnits(projectResp.planningUnits);
+      setOwner(user);
+      setMetadata(projectResp.metadata);
+      setLoggedIn(true);
+      setInfoPanelOpen(true);
+      setFiles({ ...projectResp.files });
+      setCostnames(projectResp.costnames);
+      setAllFeatures(speciesData.data);
       console.log("Setting planning costs trigger......");
       setPlanningCostsTrigger(true);
 
@@ -1246,7 +1227,7 @@ const App = () => {
       console.log("error", error);
 
       if (error.toString().includes("Logged on as read-only guest user")) {
-        updateDialogsState({ loggedIn: true });
+        setLoggedIn(true);
         return "No project loaded - logged on as read-only guest user";
       }
 
@@ -1269,7 +1250,7 @@ const App = () => {
     // Determine features based on project version
     const features = oldVersion
       ? projectFeatures.map((feature) => ({ ...feature })) // deep copy
-      : [...dialogsState.allFeatures];
+      : [...allFeatures];
 
     // Extract feature IDs
     const projectFeatureIds = projectFeatures.map((item) => item.id);
@@ -1304,8 +1285,8 @@ const App = () => {
     getSelectedFeatureIds();
 
     // Update state
+    setAllFeatures(processedFeatures);
     updateDialogsState({
-      allFeatures: processedFeatures,
       projectFeatures: processedFeatures.filter((item) => item.selected),
     });
   };
@@ -1482,7 +1463,7 @@ const App = () => {
   const renameProject = async (newName) => {
     if (newName !== "" && newName !== dialogsState.project) {
       const response = await _get(
-        `renameProject?user=${dialogsState.owner}&project=${dialogsState.project}&newName=${newName}`
+        `renameProject?user=${owner}&project=${dialogsState.project}&newName=${newName}`
       );
       updateDialogsState({ project: newName });
       setSnackBarMessage(response.info);
@@ -1493,9 +1474,7 @@ const App = () => {
   //rename the description for a specific project on the server
   const renameDescription = async (newDesc) => {
     await updateProjectParameter("DESCRIPTION", newDesc);
-    updateDialogsState({
-      metadata: Object.assign(dialogsState.metadata, { DESCRIPTION: newDesc }),
-    });
+    setMetadata({ ...metadata, DESCRIPTION: newDesc });
     return "Description Renamed";
   };
 
@@ -1545,10 +1524,7 @@ const App = () => {
     }
 
     try {
-      const response = await startMarxanJob(
-        dialogsState.owner,
-        dialogsState.project
-      ); //start the marxan job
+      const response = await startMarxanJob(owner, dialogsState.project); //start the marxan job
       await getRunLogs(); //update the run log
 
       if (!checkForErrors(response)) {
@@ -1577,20 +1553,20 @@ const App = () => {
   const marxanStopped = async () => await getRunLogs();
 
   const resetProtectedAreas = () => {
-    const updatedFeatures = dialogsState.allFeatures.map((feature) => ({
+    const updatedFeatures = allFeatures.map((feature) => ({
       ...feature,
       protected_area: -1,
       target_area: -1,
     }));
 
     // Set the state with updated features
-    updateDialogsState({ allFeatures: updatedFeatures });
+    setAllFeatures(updatedFeatures);
   };
 
   //updates the species file with any target values that have changed
   const updateSpecFile = async () => {
     const formData = new FormData();
-    formData.append("user", dialogsState.owner);
+    formData.append("user", owner);
     formData.append("project", dialogsState.project);
     //prepare the data that will populate the spec.dat file
     formData.append(
@@ -1624,7 +1600,7 @@ const App = () => {
   //preprocess a single feature
 
   const preprocessSingleFeature = async (feature) => {
-    closeFeatureMenu();
+    setFeatureMenuOpen(false);
     startLogging();
     preprocessFeature(feature);
   };
@@ -1646,7 +1622,7 @@ const App = () => {
 
       // Call the WebSocket
       const message = await _ws(
-        `preprocessFeature?user=${dialogsState.owner}&project=${dialogsState.project}&planning_grid_name=${dialogsState.metadata.PLANNING_UNIT_NAME}&feature_class_name=${feature.feature_class_name}&alias=${feature.alias}&id=${feature.id}`,
+        `preprocessFeature?user=${owner}&project=${dialogsState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}&feature_class_name=${feature.feature_class_name}&alias=${feature.alias}&id=${feature.id}`,
         wsMessageCallback
       );
 
@@ -1742,7 +1718,7 @@ const App = () => {
     );
 
     // Update features with corresponding data from mvData
-    const updatedFeatures = dialogsState.allFeatures.map((feature) => {
+    const updatedFeatures = allFeatures.map((feature) => {
       const mvItem = mvDataMap.get(feature.id);
       if (mvItem) {
         return {
@@ -1755,6 +1731,7 @@ const App = () => {
     });
 
     // Update state with the updated features
+    setAllFeatures(updatedFeatures);
     setFeaturesState(updatedFeatures);
   };
 
@@ -1770,7 +1747,7 @@ const App = () => {
 
   // Uploads a single file to a specific folder - value is the filename
   const uploadFileToFolder = async (value, filename, destFolder) => {
-    updateDialogsState({ loading: true });
+    setLoading(true);
 
     const formData = new FormData();
     formData.append("value", value); // The binary data for the file
@@ -1789,7 +1766,7 @@ const App = () => {
     for (const file of files) {
       if (file.name.endsWith(".dat")) {
         const formData = new FormData();
-        formData.append("user", dialogsState.owner); // Updated reference to dialogsState
+        formData.append("user", owner); // Updated reference to dialogsState
         formData.append("project", project);
 
         const filepath = file.webkitRelativePath.split("/").slice(1).join("/");
@@ -1810,7 +1787,7 @@ const App = () => {
   //uploads a single file to the current projects input folder
   const uploadFileToProject = async (value, filename) => {
     const formData = new FormData();
-    formData.append("user", dialogsState.owner);
+    formData.append("user", owner);
     formData.append("project", dialogsState.project);
     formData.append("filename", `input/${filename}`);
     formData.append("value", value);
@@ -1957,11 +1934,7 @@ const App = () => {
       //load the sum of solutions which will already be loaded
       renderSolution(runMarxanResponse.ssoln, true);
     } else {
-      const response = await getSolution(
-        dialogsSate.owner,
-        dialogsSate.project,
-        solution
-      );
+      const response = await getSolution(owner, dialogsSate.project, solution);
       updateProtectedAmount(response.mv);
       renderSolution(response.solution, false);
     }
@@ -2084,7 +2057,6 @@ const App = () => {
     dialogsState.brew.setNumClasses(numClasses);
     //set the classification method - one of equal_interval, quantile, std_deviation, jenks (default)
     dialogsState.brew.classify(classification);
-    updateDialogsState({ dataBreaks: dialogsState.brew.getBreaks() });
   };
 
   //called when the renderer state has been updated - renders the solution and saves the renderer back to the server
@@ -2323,7 +2295,7 @@ const App = () => {
       return expression;
     };
 
-    const expression = buildExpression(dialogsState.planning_units);
+    const expression = buildExpression(planningUnits);
 
     //set the render paint property
     map.current.setPaintProperty(
@@ -2435,16 +2407,15 @@ const App = () => {
       })
     );
     map.current.on("moveend", (evt) => {
-      if (dialogsState.clumpingDialogOpen) updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
+      if (clumpingDialogOpen) updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
     });
     map.current.on("draw.create", polygonDrawn);
   };
 
-  const updateMapCentreAndZoom = () =>
-    updateDialogsState({
-      mapCentre: map.current.getCenter(),
-      mapZoom: map.current.getZoom(),
-    });
+  const updateMapCentreAndZoom = () => {
+    setMapCentre(map.current.getCenter());
+    setMapZoom(map.current.getZoom());
+  };
 
   //catch all event handler for map errors
   const mapError = useCallback(
@@ -2471,6 +2442,11 @@ const App = () => {
     },
     [setSnackBarMessage]
   );
+
+  const handleInfoMenuItemClick = () => {
+    setOpenInfoDialogOpen(true);
+    setFeatureMenuOpen(false);
+  };
 
   const mapClick = async (e) => {
     //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
@@ -2502,31 +2478,29 @@ const App = () => {
       // Might be dupliate conservation features (e.g. with GBIF data) so get a unique list of sourceLayers
       // Get the full features data from the state.projectFeatures array
 
-      let identifyFeatures = getFeaturesByLayerStartsWith(
+      let idFeatures = getFeaturesByLayerStartsWith(
         clickedFeatures,
         "marxan_feature_layer_"
       );
       const uniqueSourceLayers = Array.from(
-        new Set(identifyFeatures.map((item) => item.sourceLayer))
+        new Set(idFeatures.map((item) => item.sourceLayer))
       );
-      identifyFeatures = uniqueSourceLayers.map((sourceLayer) =>
+      idFeatures = uniqueSourceLayers.map((sourceLayer) =>
         dialogsState.projectFeatures.find(
           (feature) => feature.feature_class_name === sourceLayer
         )
       );
 
       //get any protected area features under the mouse
-      const identifyProtectedAreas = getFeaturesByLayerStartsWith(
+      const idProtectedAreas = getFeaturesByLayerStartsWith(
         clickedFeatures,
         "marxan_wdpa_"
       );
 
       //set the state to populate the identify popup
-      updateDialogsState({
-        identifyVisible: true,
-        identifyFeatures: identifyFeatures,
-        identifyProtectedAreas: identifyProtectedAreas,
-      });
+      setIdentifyVisible(true);
+      setIdentifyFeatures(idFeatures);
+      setidentifyProtectedAreas(idProtectedAreas);
     }
   };
 
@@ -2553,7 +2527,7 @@ const App = () => {
   //gets a list of features for the planning unit
   const getPUData = async (puid) => {
     const response = await _get(
-      `getPUData?user=${dialogsState.owner}&project=${dialogsState.project}&puid=${puid}`
+      `getPUData?user=${owner}&project=${dialogsState.project}&puid=${puid}`
     );
     if (response.data.features.length) {
       //if there are some features for the planning unit join the ids onto the full feature data from the state.projectFeatures array
@@ -2565,11 +2539,9 @@ const App = () => {
       );
     }
     //set the state to update the identify popup
-    updateDialogsState({
-      identifyPlanningUnits: {
-        puData: response.data.pu_data,
-        features: response.data.features,
-      },
+    setIdentifyPlanningUnits({
+      puData: response.data.pu_data,
+      features: response.data.features,
     });
   };
 
@@ -2586,13 +2558,14 @@ const App = () => {
   };
 
   //hides the identify popup
-  const hideIdentifyPopup = (e) =>
-    updateDialogsState({ identifyVisible: false, identifyPlanningUnits: {} });
-
+  const hideIdentifyPopup = (e) => {
+    setIdentifyVisible(false);
+    setIdentifyPlanningUnits({});
+  };
   //sets the basemap either on project load, or if the user changes it
-  const setBasemap = async (basemap) => {
+  const loadBasemap = async (basemap) => {
     try {
-      updateDialogsState({ basemap: basemap.name });
+      setBasemap(basemap.name);
       const style = await getValidStyle(basemap);
       await createMap(style);
       addWDPASource();
@@ -2603,13 +2576,13 @@ const App = () => {
         addPlanningGridLayers(dialogsState.tileset);
 
         // Get the results, if any
-        if (dialogsState.owner) {
+        if (owner) {
           console.log("calling get results from setBasemap....");
-          await getResults(dialogsState.owner, dialogsState.project);
+          await getResults(owner, dialogsState.project);
         }
 
         // Turn on/off layers depending on which tab is selected
-        if (activeTab === "planning_units") {
+        if (activeTab === "planningUnits") {
           pu_tab_active();
         }
       }
@@ -2985,7 +2958,7 @@ const App = () => {
 
   //fired when the planning unit tab is selected
   const pu_tab_active = async () => {
-    setActiveTab("planning_units");
+    setActiveTab("planningUnits");
     //show the planning units layer, status layer, and costs layer
     showLayer(CONSTANTS.PU_LAYER_NAME);
     showLayer(CONSTANTS.STATUS_LAYER_NAME);
@@ -3059,9 +3032,9 @@ const App = () => {
   //clears all of the manual edits from the pu edit layer (except the protected area units)
   const clearManualEdits = () => {
     // Clear all the planning unit statuses
-    updateDialogsState({ planning_units: [] });
+    setPlanningUnits([]);
     // Get the puids for the current IUCN category
-    const puids = getPuidsFromIucnCategory(dialogsState.metadata.IUCN_CATEGORY);
+    const puids = getPuidsFromIucnCategory(metadata.IUCN_CATEGORY);
     // Update the planning units
     updatePlanningUnits([], puids);
   };
@@ -3070,11 +3043,11 @@ const App = () => {
   const updatePuDatFile = async () => {
     //initialise the form data
     let formData = new FormData();
-    formData.append("user", dialogsState.owner);
+    formData.append("user", owner);
     formData.append("project", dialogsState.project);
     //add the planning unit manual exceptions
-    if (dialogsState.planning_units.length > 0) {
-      dialogsState.planning_units.forEach((item) =>
+    if (planningUnits.length > 0) {
+      planningUnits.forEach((item) =>
         formData.append(`status${item[0]}`, item[1])
       );
     }
@@ -3098,13 +3071,13 @@ const App = () => {
       const status = getStatusLevel(puid);
       const next_status = getNextStatusLevel(status, direction);
       //copy the current planning unit statuses
-      const statuses = [...dialogsState.planning_units];
-      // If planning unit is not level 0 (in which case it will not be in the planning_units state) - remove it from the puids array for that status
+      const statuses = [...planningUnits];
+      // If planning unit is not level 0 (in which case it will not be in the planningUnits state) - remove it from the puids array for that status
       if (status !== 0) removePuidFromArray(statuses, status, puid);
       //add it to the new status array
       if (next_status !== 0) addPuidToArray(statuses, next_status, puid);
       //set the state
-      updateDialogsState({ planning_units: statuses });
+      setPlanningUnits(statuses);
       //re-render the planning unit edit layer
       renderPuEditLayer();
     }
@@ -3119,16 +3092,16 @@ const App = () => {
     );
   };
 
-  //gets the array index position for the passed status in the planning_units state
+  //gets the array index position for the passed status in the planningUnits state
   const getStatusPosition = (status) =>
-    dialogsState.planning_units.findIndex((item) => item[0] === status);
+    planningUnits.findIndex((item) => item[0] === status);
 
   //returns the planning units with a particular status, e.g. 1,2,3
   const getPlanningUnitsByStatus = (status) => {
-    //get the position of the status items in the dialogsState.planning_units
+    //get the position of the status items in the planningUnits
     let position = getStatusPosition(status);
     //get the array of planning units
-    return position > -1 ? dialogsState.planning_units[position][1] : [];
+    return position > -1 ? planningUnits[position][1] : [];
   };
 
   //returns the next status level for a planning unit depending on the direction
@@ -3160,9 +3133,9 @@ const App = () => {
   const addPuidToArray = (statuses, status, puid) =>
     appPuidsToPlanningUnits(statuses, status, [puid]);
 
-  //adds all the passed puids to the planning_units state
+  //adds all the passed puids to the planningUnits state
   const appPuidsToPlanningUnits = (statuses, status, puids) => {
-    //get the position of the status items in the dialogsState.planning_units, i.e. the index
+    //get the position of the status items in the planningUnits, i.e. the index
     const position = getStatusPosition(status);
     if (position === -1) {
       //create a new status and empty puid array
@@ -3175,9 +3148,9 @@ const App = () => {
     return statuses;
   };
 
-  //removes all the passed puids from the planning_units state
+  //removes all the passed puids from the planningUnits state
   const removePuidsFromArray = (statuses, status, puids) => {
-    //get the position of the status items in the dialogsState.planning_units
+    //get the position of the status items in the planningUnits
     const position = getStatusPosition(status);
     if (position > -1) {
       let puidArray = statuses[position][1];
@@ -3200,12 +3173,10 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
 
   //previews the planning grid
-  const previewPlanningGrid = (planning_grid_metadata) =>
-    updateDialogsState({
-      planning_grid_metadata: planning_grid_metadata,
-      planningGridDialogOpen: true,
-    });
-
+  const previewPlanningGrid = (newPlanningGridMetadata) => {
+    setPlanningGridMetadata(newPlanningGridMetadata);
+    setPlanningGridDialogOpen(true);
+  };
   //creates a new planning grid unit
   const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
     console.log("createNewPlanningUnitGrid ");
@@ -3215,7 +3186,7 @@ const App = () => {
       wsMessageCallback
     );
     await newPlanningGridCreated(message);
-    updateDialogsState({ NewPlanningGridDialogOpen: false });
+    setNewPlanningGridDialogOpen(false);
   };
 
   //creates a new planning grid unit
@@ -3231,7 +3202,7 @@ const App = () => {
       wsMessageCallback
     );
     await newMarinePlanningGridCreated(message);
-    updateDialogsState({ NewMarinePlanningGridDialogOpen: false });
+    setNewMarinePlanningGridDialogOpen(false);
   };
 
   //imports a zipped shapefile as a new planning grid
@@ -3254,7 +3225,7 @@ const App = () => {
         info: response.info,
       });
       await newPlanningGridCreated(response);
-      updateDialogsState({ importPlanningGridDialogOpen: false });
+      setImportPlanningGridDialogOpen(false);
     } catch (error) {
       deletePlanningUnitGrid(alias, true);
       messageLogger({
@@ -3324,7 +3295,7 @@ const App = () => {
 
   const getCountries = async () => {
     const response = await _get("getCountries");
-    updateDialogsState({ countries: response.records });
+    setCountries(response.records);
   };
 
   //uploads the named feature class to mapbox on the server
@@ -3334,7 +3305,7 @@ const App = () => {
         `uploadTilesetToMapBox?feature_class_name=${feature_class_name}&mapbox_layer_name=${mapbox_layer_name}`,
         300000
       );
-      updateDialogsState({ loading: true });
+      setLoading(true);
       const poll = await pollMapbox(response.uploadid);
       return poll;
     } catch (error) {
@@ -3417,16 +3388,11 @@ const App = () => {
 
   const openFeaturesDialog = async (showClearSelectAll) => {
     // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
-    if (
-      marxanServer.system !== "Windows" &&
-      !dialogsState.metadata.OLDVERSION
-    ) {
+    if (marxanServer.system !== "Windows" && !metadata.OLDVERSION) {
       await refreshFeatures();
     }
-    updateDialogsState({
-      featuresDialogOpen: true,
-      addingRemovingFeatures: showClearSelectAll,
-    });
+    setAddingRemovingFeatures(showClearSelectAll);
+    setFeaturesDialogOpen(true);
     if (showClearSelectAll) {
       getSelectedFeatureIds();
     }
@@ -3435,8 +3401,7 @@ const App = () => {
   const updateState = (state_obj) => updateDialogsState({ ...state_obj });
 
   const closeNewFeatureDialog = () => {
-    updateDialogsState({ NewFeatureDialogOpen: false });
-    //finalise digitising
+    setNewFeatureDialogOpen(false);
     finaliseDigitising();
   };
 
@@ -3445,11 +3410,11 @@ const App = () => {
     if (marxanServer.system !== "Windows") {
       await getPlanningUnitGrids();
     }
-    updateDialogsState({ planningGridsDialogOpen: true });
+    setPlanningGridsDialogOpen(true);
   };
 
   //used by the import wizard to import a users zipped shapefile as the planning units
-  //the zipped shapefile has been uploaded to the MARXAN folder - it will be imported to PostGIS and a record will be entered in the metadata_planning_units table
+  //the zipped shapefile has been uploaded to the MARXAN folder - it will be imported to PostGIS and a record will be entered in the metadata_planningUnits table
   const importZippedShapefileAsPu = async (zipname, alias, description) =>
     await _get(
       `importPlanningUnitGrid?filename=${zipname}&name=${alias}&description=${description}`
@@ -3465,26 +3430,22 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   const openAtlasLayersDialog = async () => {
-    updateDialogsState({ loading: true });
-    if (dialogsState.atlasLayers.length < 1) {
+    setLoading(true);
+    if (atlasLayers.length < 1) {
       const data = await getAtlasLayers();
-      updateDialogsState({
-        atlasLayersDialogOpen: true,
-        atlasLayers: [...prevState.atlasLayers, ...data], // Spread the data correctly
-        loading: false,
-      });
+      setAtlasLayers(data);
+      setAtlasLayersDialogOpen(true);
+      setLoading(false);
     } else {
       // Open the dialog if there is data already loaded
-      updateDialogsState({ atlasLayersDialogOpen: true, loading: false });
+      setAtlasLayersDialogOpen(true);
+      setLoading(false);
     }
   };
 
   const openCumulativeImpactDialog = async () => {
     console.log("trying to get cumulative impacts");
-    // updateDialogsState({revState,
-    //   loading: true,
-    // }));
-    updateDialogsState({ cumulativeImpactDialogOpen: true });
+    setCumulativeImpactDialogOpen(true);
     try {
       await getImpacts();
     } catch (e) {
@@ -3495,8 +3456,7 @@ const App = () => {
   //makes a call to get the impacts from the server and returns them
   const getImpacts = async () => {
     const response = await _get("getAllImpacts");
-    console.log("response ", response);
-    updateDialogsState({ allImpacts: response.data });
+    setAllImpacts(response.data);
   };
 
   const getOceanBaseMap = () => {
@@ -3564,14 +3524,14 @@ const App = () => {
 
   const openImportedActivitesDialog = async () => {
     await getUploadedActivities();
-    updateDialogsState({ importedActivitiesDialogOpen: true });
+    setImportedActivitiesDialogOpen(true);
   };
 
   const openCostsDialog = async () => {
-    if (!dialogsState.allImpacts?.length) {
+    if (!allImpacts?.length) {
       await getImpacts();
     }
-    updateDialogsState({ costsDialogOpen: true });
+    setCostsDialogOpen(true);
   };
 
   const getUploadedActivities = async () => {
@@ -3586,7 +3546,7 @@ const App = () => {
     const layers = [...dialogsState.selectedLayers];
     console.log("layers ", layers);
     layers.forEach((layer) => setSelectedLayers(layer));
-    closeAtlasLayersDialog();
+    setAtlasLayersDialogOpen(false);
   };
 
   const setSelectedLayers = (layer) => {
@@ -3611,9 +3571,6 @@ const App = () => {
       };
     });
   };
-
-  const closeAtlasLayersDialog = () =>
-    updateDialogsState({ atlasLayersDialogOpen: false });
 
   //when a user clicks a impact in the ImpactsDialog
   const clickImpact = (impact, event, previousRow) => {
@@ -3690,7 +3647,7 @@ const App = () => {
   //gets the ids of the selected impacts
   const getSelectedImpactIds = () => {
     // Use map and filter to get selected impact IDs in one line
-    const ids = dialogsState.allImpacts
+    const ids = allImpacts
       .filter((impact) => impact.selected)
       .map((impact) => impact.id);
 
@@ -3700,58 +3657,62 @@ const App = () => {
 
   //updates the properties of a impact and then updates the impacts state
   const updateImpact = (impact, newProps) => {
-    const impacts = [...dialogsState.allImpacts];
-    //get the position of the impact
+    // Create a shallow copy of the impacts array
+    const impacts = [...allImpacts];
+
+    // Find the index of the impact to update
     const index = impacts.findIndex((element) => element.id === impact.id);
 
     if (index !== -1) {
-      allImpacts[index] = { ...allImpacts[index], ...newProps };
-      //update allImpacts and projectImpacts with the new value
+      // Create a new impact object with updated properties
+      impacts[index] = { ...impacts[index], ...newProps };
+
+      // Update the state
+      setAllImpacts(impacts);
+
+      // Update projectImpacts based on the selected impacts
       updateDialogsState({
-        allImpacts: newImpacts,
-        projectImpacts: newImpacts.filter((item) => item.selected),
+        projectImpacts: impacts.filter((item) => item.selected),
       });
     }
   };
 
   const openHumanActivitiesDialog = async () => {
-    if (dialogsState.activities.length < 1) {
+    if (activities.length < 1) {
       const response = await _get("getActivities");
       const data = await JSON.parse(response.data);
-      updateDialogsState({ activities: data, fetched: true });
+      setActivities(data);
     }
-    updateDialogsState({ humanActivitiesDialogOpen: true });
+    setHumanActivitiesDialogOpen(true);
   };
 
-  const closeHumanActivitiesDialog = () =>
-    updateDialogsState({ humanActivitiesDialogOpen: false });
   //create new impact from the created pressures
   const importImpacts = async (filename, selectedActivity, description) => {
     //start the logging
-    updateDialogsState({ loading: true });
+    setLoading(true);
     startLogging();
 
     const url = `runCumumlativeImpact?filename=${filename}&activity=${selectedActivity}&description=${description}`;
     const message = await _ws(url, wsMessageCallback);
     await pollMapbox(message.uploadId);
-    updateDialogsState({ loading: false });
+    setLoading(false);
     return "Cumulative Impact Layer uploaded";
   };
 
   const runCumulativeImpact = async (selectedUploadedActivityIds) => {
-    updateDialogsState({ loading: true });
+    setLoading(true);
     startLogging();
 
     await _ws(
       `runCumumlativeImpact?selectedIds=${selectedUploadedActivityIds}`,
       wsMessageCallback
     );
-    updateDialogsState({ loading: false });
+    setLoading(false);
     return "Cumulative Impact Layer uploaded";
   };
 
   const uploadRaster = async (data) => {
-    updateDialogsState({ loading: true });
+    setLoading(true);
     messageLogger({
       method: "uploadRaster",
       status: "In Progress",
@@ -3767,26 +3728,26 @@ const App = () => {
 
   const openActivitiesDialog = async () => {
     await getUploadedActivities();
-    updateDialogsState({ activitiesDialogOpen: true });
+    setActivitiesDialogOpen(true);
   };
 
   //create new impact from the created pressures
   const saveActivityToDb = async (filename, selectedActivity, description) => {
     //start the logging
-    updateDialogsState({ loading: true });
+    setLoading(true);
     startLogging();
     const url = `saveRaster?filename=${filename}&activity=${selectedActivity}&description=${description}`;
     await _ws(url, wsMessageCallback);
-    updateDialogsState({ loading: false });
+    setLoading(false);
     return "Raster saved to db";
   };
 
   const createCostsFromImpact = async (data) => {
-    updateDialogsState({ loading: true });
+    setLoading(true);
     startLogging();
-    const url = `createCostsFromImpact?user=${dialogsState.owner}&project=${dialogsState.project}&pu_filename=${dialogsState.metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`;
+    const url = `createCostsFromImpact?user=${owner}&project=${dialogsState.project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`;
     await _ws(url, wsMessageCallback);
-    updateDialogsState({ loading: false });
+    setLoading(false);
     addCost(data.alias);
     return "Costs created from Cumulative impact";
   };
@@ -3803,17 +3764,18 @@ const App = () => {
 
   //updates the properties of a feature and then updates the features state
   const updateFeature = (feature, newProps) => {
-    let features = [...dialogsState.allFeatures];
+    let features = [...allFeatures];
     const index = features.findIndex((element) => element.id === feature.id);
     if (index !== -1) {
       features[index] = { ...features[index], ...newProps };
+      setAllFeatures(features);
       setFeaturesState(features);
     }
   };
 
   //gets the ids of the selected features
   const getSelectedFeatureIds = () => {
-    const selectedFeatureIds = dialogsState.allFeatures
+    const selectedFeatureIds = allFeatures
       .filter((feature) => feature.selected)
       .map((feature) => feature.id);
 
@@ -3855,7 +3817,7 @@ const App = () => {
   //called when the user has drawn a polygon on screen
   const polygonDrawn = (evt) => {
     //open the new feature dialog for the metadata
-    updateState({ NewFeatureDialogOpen: true });
+    setNewFeatureDialogOpen(true);
     //save the feature in a local variable
     this.digitisedFeatures = evt.features;
   };
@@ -3863,7 +3825,7 @@ const App = () => {
   //selects all the features
   const selectAllFeatures = () =>
     updateState({
-      selectedFeatureIds: dialogsState.allFeatures.map((feature) => feature.id),
+      selectedFeatureIds: allFeatures.map((feature) => feature.id),
     });
 
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
@@ -3872,7 +3834,7 @@ const App = () => {
     await deleteGapAnalysis();
 
     // Get the updated features
-    let updatedFeatures = dialogsState.allFeatures.map((feature) => {
+    let updatedFeatures = allFeatures.map((feature) => {
       if (dialogsState.selectedFeatureIds.includes(feature.id)) {
         // Feature is selected
         return { ...feature, selected: true };
@@ -3880,7 +3842,7 @@ const App = () => {
         if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
         if (feature.feature_puid_layer_loaded) toggleFeaturePUIDLayer(feature);
         // Feature is not selected
-        if (dialogsState.metadata.OLDVERSION) {
+        if (metadata.OLDVERSION) {
           // For imported projects, only update selection status
           return { ...feature, selected: false };
         } else {
@@ -3900,6 +3862,7 @@ const App = () => {
     });
 
     // Apply updates to state
+    setAllFeatures(updatedFeatures);
     setFeaturesState(updatedFeatures);
     // Persist changes to the server if the user is not read-only
     if (dialogsState.userData.ROLE !== "ReadOnly") {
@@ -3907,22 +3870,21 @@ const App = () => {
     }
 
     // Close dialogs
-    updateState({
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-    });
+    setFeaturesDialogOpen(false);
+    setNewFeaturePopoverOpen(false);
+    setImportFeaturePopoverOpen(false);
   };
 
   //updates the target values for all features in the project to the passed value
   const updateTargetValueForFeatures = async (target_value) => {
-    const allFeatures = dialogsState.allFeatures.map((feature) => ({
+    const features = allFeatures.map((feature) => ({
       ...feature,
       target_value,
     }));
 
     // Set the features in app state
-    setFeaturesState(allFeatures);
+    setAllFeatures(features);
+    setFeaturesState(features);
     // Persist the changes to the server
     if (dialogsState.userData.ROLE !== "ReadOnly") {
       await updateSpecFile();
@@ -3932,7 +3894,6 @@ const App = () => {
   //the callback is optional and will be called when the state has updated
   const setFeaturesState = (newFeatures) => {
     updateDialogsState({
-      allFeatures: newFeatures,
       projectFeatures: newFeatures.filter((item) => item.selected),
     });
   };
@@ -3944,11 +3905,9 @@ const App = () => {
   };
 
   //previews the feature
-  const previewFeature = (feature_metadata) => {
-    updateDialogsState({
-      feature_metadata: feature_metadata,
-      featureDialogOpen: true,
-    });
+  const previewFeature = (featureMetadata) => {
+    setFeatureMetadata(featureMetadata);
+    setFeatureDialogOpen(true);
   };
 
   //unzips a shapefile on the server
@@ -4017,7 +3976,7 @@ const App = () => {
 
   //requests matching species names in GBIF
   const gbifSpeciesSuggest = async (q) => {
-    updateDialogsState({ loading: true });
+    setLoading(true);
     const response = await new Promise((resolve, reject) => {
       jsonp(`https://api.gbif.org/v1/species/suggest?q=${q}&rank=SPECIES`)
         .promise.then(resolve)
@@ -4025,7 +3984,7 @@ const App = () => {
     });
 
     // Update state and return the response
-    updateDialogsState({ loading: false });
+    setLoading(false);
     return response;
   };
 
@@ -4066,7 +4025,7 @@ const App = () => {
     initialiseNewFeature(feature); // Add the required attributes and update the allFeatures array
 
     // If 'addToProject' is set, add the feature to the project
-    if (dialogsState.addToProject) {
+    if (addToProject) {
       addFeature(feature);
       await updateSelectedFeatures();
     }
@@ -4080,12 +4039,12 @@ const App = () => {
 
   //adds a new feature to the allFeatures array
   const addNewFeature = (feature) => {
-    const featuresCopy = [...dialogsState.allFeatures, feature]; // Get the current list of features and add new
+    const featuresCopy = [...allFeatures, feature]; // Get the current list of features and add new
     // Sort the features alphabetically by alias
     featuresCopy.sort((a, b) =>
       a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
     );
-    updateDialogsState({ allFeatures: featuresCopy });
+    setAllFeatures(featuresCopy);
   };
 
   //attempts to delete a feature - if the feature is in use in a project then it will not be deleted and the list of projects will be shown
@@ -4126,12 +4085,10 @@ const App = () => {
 
   //removes a feature from the allFeatures array
   const removeFeatureFromAllFeatures = (feature) => {
-    setDialogsState((prevState) => ({
-      ...prevState,
-      allFeatures: prevState.allFeatures.filter(
-        (item) => item.id !== feature.id
-      ),
-    }));
+    const updatedFeatures = allFeatures.filter(
+      (item) => item.id !== feature.id
+    );
+    setAllFeatures(updatedFeatures);
   };
 
   //gets the feature ids as a set from the allFeatures array
@@ -4145,7 +4102,7 @@ const App = () => {
     const newFeatures = response.data;
 
     // Extract existing and new feature IDs
-    const existingFeatureIds = getFeatureIds(dialogsState.allFeatures);
+    const existingFeatureIds = getFeatureIds(allFeatures);
     const newFeatureIds = getFeatureIds(newFeatures);
 
     // Determine which features have been removed or added
@@ -4166,15 +4123,11 @@ const App = () => {
     addedFeatures.forEach((feature) => initialiseNewFeature(feature));
   };
 
-  const openFeatureMenu = (evt, feature) =>
-    updateDialogsState({
-      featureMenuOpen: true,
-      currentFeature: feature,
-      menuAnchor: evt.currentTarget,
-    });
-
-  const closeFeatureMenu = (evt) =>
-    updateDialogsState({ featureMenuOpen: false });
+  const openFeatureMenu = (evt, feature) => {
+    setCurrentFeature(feature);
+    setMenuAnchor(evt.currentTarget);
+    setFeatureMenuOpen(true);
+  };
 
   //hides the feature layer
   const hideFeatureLayer = () => {
@@ -4191,7 +4144,7 @@ const App = () => {
       );
       return;
     }
-    // closeFeatureMenu();
+    // setFeatureMenuOpen(false);
     const layerId = `marxan_feature_layer_${feature.tilesetid.split(".")[1]}`;
 
     if (map.current.getLayer(layerId)) {
@@ -4232,7 +4185,7 @@ const App = () => {
 
   //toggles the planning unit feature layer on the map
   const toggleFeaturePUIDLayer = async (feature) => {
-    // closeFeatureMenu();
+    // setFeatureMenuOpen(false);
     let layerName = `marxan_puid_${feature.id}`;
 
     if (current.getLayer(layerName)) {
@@ -4241,7 +4194,7 @@ const App = () => {
     } else {
       //get the planning units where the feature occurs
       const response = await _get(
-        `getFeaturePlanningUnits?user=${dialogsSate.owner}&project=${dialogsState.project}&oid=${feature.id}`
+        `getFeaturePlanningUnits?user=${owner}&project=${dialogsState.project}&oid=${feature.id}`
       );
 
       addMapLayer({
@@ -4282,13 +4235,13 @@ const App = () => {
 
   //removes the current feature from the project
   const removeFromProject = (feature) => {
-    closeFeatureMenu();
+    setFeatureMenuOpen(false);
     unselectItem(feature);
   };
 
   //zooms to a features extent
   const zoomToFeature = (feature) => {
-    closeFeatureMenu();
+    setFeatureMenuOpen(false);
     //transform from BOX(-174.173506487 -18.788241791,-173.86528589 -18.5190063499999) to [[-73.9876, 40.7661], [-73.9397, 40.8002]]
     const points = feature.extent
       .substr(4, feature.extent.length - 5)
@@ -4318,28 +4271,24 @@ const App = () => {
     e.preventDefault();
     updateDialogsState({
       userMenuOpen: true,
-      menuAnchor: e.currentTarget,
     });
+    setMenuAnchor(e.currentTarget);
   };
 
   const hideUserMenu = () => updateDialogsState({ userMenuOpen: false });
 
   const showHelpMenu = (e) => {
     e.preventDefault();
-    updateDialogsState({
-      helpMenuOpen: true,
-      menuAnchor: e.currentTarget,
-    });
+    setMenuAnchor(e.currentTarget);
+    setHelpMenuOpen(true);
   };
-
-  const hideHelpMenu = () => updateDialogsState({ helpMenuOpen: false });
 
   const showToolsMenu = (e) => {
     e.preventDefault();
     updateDialogsState({
       toolsMenuOpen: true,
-      menuAnchor: e.currentTarget,
     });
+    setMenuAnchor(e.currentTarget);
   };
 
   const hideToolsMenu = () => updateDialogsState({ toolsMenuOpen: false });
@@ -4351,16 +4300,16 @@ const App = () => {
 
   const openNewProjectWizardDialog = async () => {
     await getCountries();
-    updateDialogsState({ newProjectWizardDialogOpen: true });
+    setNewProjectWizardDialogOpen(true);
   };
 
   const openNewPlanningGridDialog = async () => {
     await getCountries();
-    updateDialogsState({ NewPlanningGridDialogOpen: true });
+    setNewPlanningGridDialogOpen(true);
   };
 
   const openUserSettingsDialog = () => {
-    updateDialogsState({ UserSettingsDialogOpen: true });
+    setUserSettingsDialogOpen(true);
     hideUserMenu();
   };
 
@@ -4370,15 +4319,9 @@ const App = () => {
   };
 
   const openAboutDialog = () => {
-    updateDialogsState({ aboutDialogOpen: true });
-    hideHelpMenu();
+    setAboutDialogOpen(true);
+    setHelpMenuOpen(false);
   };
-
-  const openClassificationDialog = () =>
-    updateDialogsState({ classificationDialogOpen: true });
-
-  const closeClassificationDialog = () =>
-    updateDialogsState({ classificationDialogOpen: false });
 
   const openUsersDialog = async () => {
     await getUsers();
@@ -4386,10 +4329,7 @@ const App = () => {
   };
 
   const toggleInfoPanel = () =>
-    setDialogsState((prevState) => ({
-      ...prevState,
-      infoPanelOpen: !prevState.infoPanelOpen,
-    }));
+    setInfoPanelOpen((prevState) => !prevState.infoPanelOpen);
 
   const toggleResultsPanel = () =>
     setDialogsState((prevState) => ({
@@ -4409,27 +4349,27 @@ const App = () => {
   };
 
   const openGapAnalysisDialog = async () => {
-    updateDialogsState({ gapAnalysisDialogOpen: true, gapAnalysis: [] });
+    setGapAnalysisDialogOpen(true);
+    setGapAnalysis([]);
     return await runGapAnalysis();
   };
 
-  const closeGapAnalysisDialog = () =>
-    updateDialogsState({ gapAnalysisDialogOpen: false, gapAnalysis: [] });
+  const closeGapAnalysisDialog = () => {
+    setGapAnalysis([]);
+    setGapAnalysisDialogOpen(false);
+  };
 
   const openServerDetailsDialog = () => {
     updateDialogsState({ serverDetailsDialogOpen: true });
-    hideHelpMenu();
+    setHelpMenuOpen(false);
   };
   const closeServerDetailsDialog = () =>
     updateDialogsState({ serverDetailsDialogOpen: false });
 
   const openChangePasswordDialog = () => {
     hideUserMenu();
-    updateDialogsState({ changePasswordDialogOpen: true });
+    setChangePasswordDialogOpen(true);
   };
-
-  const closeChangePasswordDialog = () =>
-    updateDialogsState({ changePasswordDialogOpen: false });
 
   const showProjectListDialog = (
     projectList,
@@ -4444,7 +4384,7 @@ const App = () => {
         projectListDialogHeading,
       }),
       () => {
-        updateState({ ProjectsListDialogOpen: true });
+        setProjectsListDialogOpen(true);
       }
     );
   };
@@ -4464,12 +4404,9 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
 
   const changeIucnCategory = async (iucnCategory) => {
-    setDialogsState((prevState) => ({
-      ...prevState,
-      metadata: {
-        ...prevState.metadata,
-        IUCN_CATEGORY: iucnCategory,
-      },
+    setMetadata((prevState) => ({
+      ...prevState.metadata,
+      IUCN_CATEGORY: iucnCategory,
     }));
     //update the input.dat file
     await updateProjectParameter("IUCN_CATEGORY", iucnCategory);
@@ -4482,13 +4419,13 @@ const App = () => {
     const iucnCategories = getIndividualIucnCategories(iucnCategory);
     //TODO FILTER THE WDPA CLIENT SIDE BY INTERSECTING IT WITH THE PLANNING GRID
     //filter the vector tiles for those iucn categories - and if the planning unit name has an iso3 country code - then use that as well. e.g. pu_ton_marine_hexagon_50 (has iso3 code) or pu_a4402723a92444ff829e9411f07e7 (no iso3 code)
-    //let filterExpr = (dialogsState.metadata.PLANNING_UNIT_NAME.match(/_/g).length> 1) ? ['all', ['in', 'IUCN_CAT'].concat(iucnCategories), ['==', 'PARENT_ISO', dialogsState.metadata.PLANNING_UNIT_NAME.substr(3, 3).toUpperCase()]] : ['all', ['in', 'IUCN_CAT'].concat(iucnCategories)];
+    //let filterExpr = (metadata.PLANNING_UNIT_NAME.match(/_/g).length> 1) ? ['all', ['in', 'IUCN_CAT'].concat(iucnCategories), ['==', 'PARENT_ISO', metadata.PLANNING_UNIT_NAME.substr(3, 3).toUpperCase()]] : ['all', ['in', 'IUCN_CAT'].concat(iucnCategories)];
     const filterExpr = ["all", ["in", "iucn_cat", ...iucnCategories]]; // no longer filter by ISO code
     map.current.setFilter(CONSTANTS.WDPA_LAYER_NAME, filterExpr);
 
     // Turn on/off the protected areas legend
     const layerVisible = iucnCategory !== "None";
-    updateDialogsState({ pa_layer_visible: layerVisible });
+    setPaLayerVisible(layerVisible);
   };
 
   const getIndividualIucnCategories = (iucnCategory) => {
@@ -4557,7 +4494,7 @@ const App = () => {
   //updates the planning units by reconciling the passed arrays of puids
   const updatePlanningUnits = async (previousPuids, puids) => {
     //copy the current planning units state
-    const statuses = [...dialogsState.planning_units];
+    const statuses = [...planningUnits];
     //get the new puids that need to be added
     const newPuids = getNewPuids(previousPuids, puids);
     if (newPuids.length === 0) {
@@ -4569,7 +4506,7 @@ const App = () => {
       appPuidsToPlanningUnits(statuses, 2, newPuids);
     }
     //update the state
-    updateDialogsState({ planning_units: statuses });
+    setPlanningUnits(statuses);
     //re-render the layer
     renderPuEditLayer();
     //update the pu.dat file
@@ -4590,7 +4527,7 @@ const App = () => {
 
         // Call the websocket
         const message = await _ws(
-          `preprocessProtectedAreas?user=${dialogsState.owner}&project=${dialogsState.project}&planning_grid_name=${dialogsState.metadata.PLANNING_UNIT_NAME}`,
+          `preprocessProtectedAreas?user=${owner}&project=${dialogsState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}`,
           wsMessageCallback
         );
 
@@ -4645,7 +4582,7 @@ const App = () => {
     //reset the protected area intersections on the client
     updateDialogsState({ protected_area_intersections: [] });
     //recalculate the protected area intersections and refilter the vector tiles
-    await changeIucnCategory(dialogsState.metadata.IUCN_CATEGORY);
+    await changeIucnCategory(metadata.IUCN_CATEGORY);
     //close the dialog
     updateState({ updateWDPADialogOpen: false });
     return message;
@@ -4662,7 +4599,7 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
 
   const preprocessBoundaryLengths = async (iucnCategory) => {
-    if (dialogsState.files.BOUNDNAME) {
+    if (files.BOUNDNAME) {
       // If the bounds.dat file already exists, exit the function
       return;
     }
@@ -4673,18 +4610,12 @@ const App = () => {
 
       // Call the websocket and wait for the response
       const message = await _ws(
-        `preprocessPlanningUnits?user=${dialogsState.owner}&project=${dialogsState.project}`,
+        `preprocessPlanningUnits?user=${owner}&project=${dialogsState.project}`,
         wsMessageCallback
       );
 
       // Update the state with the new file name
-      setDialogsState((prevState) => ({
-        ...prevState,
-        files: {
-          ...prevState.files,
-          BOUNDNAME: "bounds.dat",
-        },
-      }));
+      setFiles((prevState) => ({ ...prevState, BOUNDNAME: "bounds.dat" }));
 
       // Return the message from the websocket
       return message;
@@ -4708,7 +4639,8 @@ const App = () => {
     // When the planning unit file has been updated, update the PuVSpr file - this does all the preprocessing using web sockets
     await updatePuvsprFile();
     //show the clumping dialog
-    updateDialogsState({ clumpingDialogOpen: true, clumpingRunning: true });
+    setClumpingDialogOpen(true);
+    setClumpingRunning(true);
   };
 
   const hideClumpingDialog = async () => {
@@ -4717,7 +4649,7 @@ const App = () => {
     //reset the paint properties in the clumping dialog
     resetPaintProperties();
     //return state to normal
-    updateDialogsState({ clumpingDialogOpen: false });
+    setClumpingDialogOpen(false);
   };
 
   //creates a group of 5 projects with UUIDs in the _clumping folder
@@ -4727,7 +4659,7 @@ const App = () => {
       await deleteProjects();
     }
     const response = await _get(
-      `createProjectGroup?user=${dialogsState.owner}&project=${
+      `createProjectGroup?user=${owner}&project=${
         dialogsState.project
       }&copies=5&blmValues=${blmValues.join(",")}`
     );
@@ -4757,7 +4689,7 @@ const App = () => {
     //reset the counter
     this.projectsRun = 0;
     //set the intitial state
-    updateDialogsState({ clumpingRunning: true });
+    setClumpingRunning(true);
     // Iterate through projects using a for...of loop to handle async/await correctly
     try {
       for (const project of projects) {
@@ -4779,7 +4711,7 @@ const App = () => {
 
         // Update the state when the counter reaches 5
         if (this.projectsRun === 5) {
-          updateDialogsState({ clumpingRunning: false });
+          setClumpingRunning(false);
         }
       }
     } catch (error) {
@@ -4812,12 +4744,12 @@ const App = () => {
 
   const resetPaintProperties = () => {
     //reset the paint properties
-    updateDialogsState({
-      map0_paintProperty: [],
-      map1_paintProperty: [],
-      map2_paintProperty: [],
-      map3_paintProperty: [],
-      map4_paintProperty: [],
+    setMapPaintProperties({
+      mapPP0: [],
+      mapPP1: [],
+      mapPP2: [],
+      mapPP3: [],
+      mapPP4: [],
     });
   };
 
@@ -4877,21 +4809,18 @@ const App = () => {
   const runGapAnalysis = async () => {
     setActiveTab("log");
     const message = await _ws(
-      `runGapAnalysis?user=${dialogsState.owner}&project=${dialogsState.project}`,
+      `runGapAnalysis?user=${owner}&project=${dialogsState.project}`,
       wsMessageCallback
     );
-    updateDialogsState({ gapAnalysis: message.data });
+    setGapAnalysis(message.data);
     return message;
   };
 
   //deletes a stored gap analysis on the server
   const deleteGapAnalysis = async () =>
     await _get(
-      `deleteGapAnalysis?user=${dialogsState.owner}&project=${dialogsState.project}`
+      `deleteGapAnalysis?user=${owner}&project=${dialogsState.project}`
     );
-
-  const setAddToProject = (evt, isChecked) =>
-    updateDialogsState({ addToProject: isChecked });
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -4906,30 +4835,26 @@ const App = () => {
   //changes the cost profile for a project
   const changeCostname = async (costname) => {
     await _get(
-      `updateCosts?user=${dialogsState.owner}&project=${dialogsState.project}&costname=${costname}`
+      `updateCosts?user=${owner}&project=${dialogsState.project}&costname=${costname}`
     );
-    setDialogsState((prevState) => ({
-      ...prevState,
-      metadata: {
-        ...prevState.metadata,
-        COSTS: costname,
-      },
+    setMetadata((prevState) => ({
+      ...prevState.metadata,
+      COSTS: costname,
     }));
   };
 
   //loads the costs layer
   const loadCostsLayer = async (forceReload = false) => {
-    updateDialogsState({ costsLoading: true });
+    setCostsLoading(true);
     const response = await getPlanningUnitsCostData(forceReload);
     setCostData(response);
     renderPuCostLayer(response);
-    updateDialogsState({ costsLoading: false });
+    setCostsLoading(false);
   };
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
   const getPlanningUnitsCostData = async (forceReload) => {
-    const owner =
-      dialogsState.owner === "" ? dialogsState.user : dialogsState.owner;
+    const owner = owner === "" ? dialogsState.user : owner;
     const url = `getPlanningUnitsCostData?user=${owner}&project=${dialogsState.project}`;
     console.log("url ", url);
     try {
@@ -4954,24 +4879,21 @@ const App = () => {
   const deleteCostFileThenClose = async (costname) => {
     if (costname) {
       await deleteCost(costname);
-      updateState({ importCostsDialogOpen: false });
+      setImportCostsDialogOpen(false);
     }
     return;
   };
   //adds a cost in application state
-  const addCost = (costname) => {
-    updateDialogsState({ costnames: [...prevState.costnames, costname] });
-  };
+  const addCost = (costname) =>
+    setCostnames((prevState) => [...prevState, costname]);
 
   //deletes a cost file on the server
   const deleteCost = async (costname) => {
     await _get(
-      `deleteCost?user=${dialogsState.owner}&project=${dialogsState.project}&costname=${costname}`
+      `deleteCost?user=${owner}&project=${dialogsState.project}&costname=${costname}`
     );
-    const _costnames = dialogsState.costnames.filter(
-      (item) => item !== costname
-    );
-    updateDialogsState({ costnames: _costnames });
+    const _costnames = costnames.filter((item) => item !== costname);
+    setCostnames(_costnames);
     return;
   };
   //restores the database back to its original state and runs a git reset on the file system
@@ -4987,6 +4909,13 @@ const App = () => {
     return await _get("cleanup?");
   };
 
+  const handleProjectsDialogCancel = () => {
+    updateState({
+      projectsDialogOpen: false,
+    });
+    setImportProjectPopoverOpen(false);
+  };
+
   return (
     <div>
       {initialLoading ? (
@@ -4998,12 +4927,12 @@ const App = () => {
             className="map-container absolute top right left bottom"
           />
           {/* <LoadingDialog /> */}
-          {dialogsState.loading ? <Loading /> : null}
+          {loading ? <Loading /> : null}
           <LoginDialog
-            open={!dialogsState.loggedIn}
+            open={!loggedIn}
             validateUser={(name, pass) => login(name, pass)}
             // onCancel={() => updateState({ registerDialogOpen: true })}
-            loading={dialogsState.loading}
+            loading={loading}
             user={dialogsState.user}
             password={dialogsState.password}
             changeUserName={(user) => changeUserName(user)}
@@ -5018,13 +4947,13 @@ const App = () => {
             open={dialogsState.registerDialogOpen}
             onOk={handleCreateUser}
             updateState={updateState}
-            loading={dialogsState.loading}
+            loading={loading}
           />
           <ResendPasswordDialog
             open={dialogsState.resendPasswordDialogOpen}
             onOk={resendPassword}
             onCancel={() => updateState({ resendPasswordDialogOpen: false })}
-            loading={dialogsState.loading}
+            loading={loading}
             changeEmail={changeEmail}
             email={dialogsState.resendEmail}
           />
@@ -5037,14 +4966,14 @@ const App = () => {
             onCancel={() => updateState({ welcomeDialogOpen: false })}
             userData={dialogsState.userData}
             saveOptions={saveOptions}
-            notifications={dialogsState.notifications}
+            notifications={notifications}
             resetNotifications={resetNotifications}
             removeNotification={removeNotification}
             openNewProjectDialog={openNewProjectWizardDialog}
           /> */}
           <ToolsMenu
             open={dialogsState.toolsMenuOpen}
-            menuAnchor={dialogsState.menuAnchor}
+            menuAnchor={menuAnchor}
             hideToolsMenu={hideToolsMenu}
             openUsersDialog={openUsersDialog}
             openRunLogDialog={openRunLogDialog}
@@ -5052,12 +4981,12 @@ const App = () => {
             updateState={updateState}
             userRole={dialogsState.userData.ROLE}
             marxanServer={marxanServer}
-            metadata={dialogsState.metadata}
+            metadata={metadata}
             cleanup={cleanup}
           />
           <UserMenu
             open={dialogsState.userMenuOpen}
-            menuAnchor={dialogsState.menuAnchor}
+            menuAnchor={menuAnchor}
             user={dialogsState.user}
             userRole={dialogsState.userData.ROLE}
             hideUserMenu={hideUserMenu}
@@ -5068,27 +4997,27 @@ const App = () => {
             openChangePasswordDialog={openChangePasswordDialog}
           />
           <HelpMenu
-            open={dialogsState.helpMenuOpen}
-            menuAnchor={dialogsState.menuAnchor}
-            hideHelpMenu={hideHelpMenu}
+            open={helpMenuOpen}
+            menuAnchor={menuAnchor}
+            hideHelpMenu={() => setHelpMenuOpen(false)}
             openAboutDialog={openAboutDialog}
           />
           <UserSettingsDialog
-            open={dialogsState.UserSettingsDialogOpen}
-            onOk={() => updateState({ UserSettingsDialogOpen: false })}
-            onCancel={() => updateState({ UserSettingsDialogOpen: false })}
-            loading={dialogsState.loading}
+            open={userSettingsDialogOpen}
+            onOk={() => setUserSettingsDialogOpen(false)}
+            onCancel={() => setUserSettingsDialogOpen(false)}
+            loading={loading}
             userData={dialogsState.userData}
             saveOptions={saveOptions}
             changeBasemap={setBasemap}
-            basemaps={dialogsState.basemaps}
-            basemap={dialogsState.basemap}
+            basemaps={basemaps}
+            basemap={basemap}
           />
           <UsersDialog
             open={dialogsState.usersDialogOpen}
             onOk={() => updateState({ usersDialogOpen: false })}
             onCancel={() => updateState({ usersDialogOpen: false })}
-            loading={dialogsState.loading}
+            loading={loading}
             user={dialogsState.user}
             users={dialogsState.users}
             deleteUser={handleDeleteUser}
@@ -5100,26 +5029,26 @@ const App = () => {
             open={dialogsState.profileDialogOpen}
             onOk={() => updateState({ profileDialogOpen: false })}
             onCancel={() => updateState({ profileDialogOpen: false })}
-            loading={dialogsState.loading}
+            loading={loading}
             userData={dialogsState.userData}
             updateUser={handleUserUpdate}
           />
           <AboutDialog
-            open={dialogsState.aboutDialogOpen}
-            onOk={() => updateState({ aboutDialogOpen: false })}
+            open={aboutDialogOpen}
+            onOk={() => setAboutDialogOpen(false)}
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
             wdpaAttribution={dialogsState.wdpaAttribution}
           />
           <InfoPanel
-            open={dialogsState.infoPanelOpen}
+            open={infoPanelOpen}
             activeTab={activeTab}
             user={dialogsState.user}
-            owner={dialogsState.owner}
+            owner={owner}
             project={dialogsState.project}
-            metadata={dialogsState.metadata}
+            metadata={metadata}
             runMarxan={runMarxan}
             stopProcess={stopProcess}
-            pid={dialogsState.pid}
+            pid={pid}
             renameProject={renameProject}
             renameDescription={renameDescription}
             features={dialogsState.projectFeatures}
@@ -5145,11 +5074,11 @@ const App = () => {
             useFeatureColors={dialogsState.userData.USEFEATURECOLORS}
             smallLinearGauge={dialogsState.smallLinearGauge}
             openCostsDialog={openCostsDialog}
-            costname={dialogsState.metadata?.COSTS}
-            costnames={dialogsState.costnames}
+            costname={metadata?.COSTS}
+            costnames={costnames}
             changeCostname={changeCostname}
             loadCostsLayer={loadCostsLayer}
-            loading={dialogsState.loading}
+            loading={loading}
             updateState={updateState}
             protected_area_intersections={
               dialogsState.protected_area_intersections
@@ -5160,55 +5089,50 @@ const App = () => {
             preprocessing={dialogsState.preprocessing}
             solutions={dialogsState.solutions}
             loadSolution={loadSolution}
-            openClassificationDialog={openClassificationDialog}
+            setClassificationDialogOpen={setClassificationDialogOpen}
             brew={dialogsState.brew}
-            messages={dialogsState.logMessages}
-            activeResultsTab={dialogsState.activeResultsTab}
+            messages={logMessages}
+            activeResultsTab={activeResultsTab}
             setActiveTab={setActiveTab}
-            clearLog={clearLog}
-            owner={dialogsState.owner}
+            clearLog={() => setLogMessages([])}
+            owner={owner}
             resultsLayer={dialogsState.resultsLayer}
             wdpaLayer={dialogsState.wdpaLayer}
-            pa_layer_visible={dialogsState.pa_layer_visible}
+            paLayerVisible={paLayerVisible}
             changeOpacity={changeOpacity}
             userRole={dialogsState.userData.ROLE}
             visibleLayers={dialogsState.visibleLayers}
-            metadata={dialogsState.metadata}
-            costsLoading={dialogsState.costsLoading}
+            metadata={metadata}
+            costsLoading={costsLoading}
           />
           <FeatureInfoDialog
-            open={dialogsState.openInfoDialogOpen}
-            onOk={() => updateState({ openInfoDialogOpen: false })}
-            onCancel={() => updateState({ openInfoDialogOpen: false })}
-            loading={dialogsState.loading}
-            feature={dialogsState.currentFeature}
+            open={openInfoDialogOpen}
+            onOk={() => setOpenInfoDialogOpen(false)}
+            onCancel={() => setOpenInfoDialogOpen(false)}
+            loading={loading}
+            feature={currentFeature}
             updateFeature={updateFeature}
             userRole={dialogsState.userData.ROLE}
             reportUnits={dialogsState.userData.REPORTUNITS}
           />
           <IdentifyPopup
-            visible={dialogsState.identifyVisible}
+            visible={identifyVisible}
             xy={dialogsState.popup_point}
-            identifyPlanningUnits={dialogsState.identifyPlanningUnits}
-            identifyProtectedAreas={dialogsState.identifyProtectedAreas}
-            identifyFeatures={dialogsState.identifyFeatures}
-            loading={dialogsState.loading}
+            identifyPlanningUnits={identifyPlanningUnits}
+            identifyProtectedAreas={identifyProtectedAreas}
+            identifyFeatures={identifyFeatures}
+            loading={loading}
             hideIdentifyPopup={hideIdentifyPopup}
             reportUnits={dialogsState.userData.REPORTUNITS}
-            metadata={dialogsState.metadata}
+            metadata={metadata}
           />
           <ProjectsDialog
             open={dialogsState.projectsDialogOpen}
-            onCancel={() =>
-              updateState({
-                projectsDialogOpen: false,
-                importProjectPopoverOpen: false,
-              })
-            }
+            onCancel={() => handleProjectsDialogCancel()}
             project={dialogsState.project}
-            loading={dialogsState.loading}
+            loading={loading}
             projects={dialogsState.projects}
-            oldVersion={dialogsState.metadata?.OLDVERSION}
+            oldVersion={metadata?.OLDVERSION}
             updateState={updateState}
             deleteProject={deleteProject}
             loadProject={loadProject}
@@ -5216,154 +5140,154 @@ const App = () => {
             cloneProject={cloneProject}
             unauthorisedMethods={dialogsState.unauthorisedMethods}
             userRole={dialogsState.userData.ROLE}
-            allFeatures={dialogsState.allFeatures}
-            importProjectPopoverOpen={dialogsState.importProjectPopoverOpen}
-            importMXWDialogOpen={dialogsState.importMXWDialogOpen}
+            allFeatures={allFeatures}
+            importProjectPopoverOpen={importProjectPopoverOpen}
+            importMXWDialogOpen={importMXWDialogOpen}
+            setImportMXWDialogOpen={setImportMXWDialogOpen}
+            setNewProjectDialogOpen={setNewProjectDialogOpen}
           />
           <NewProjectDialog
-            open={dialogsState.newProjectDialogOpen}
+            open={newProjectDialogOpen}
             registry={dialogsState.registry}
-            loading={dialogsState.loading}
+            loading={loading}
             getPlanningUnitGrids={getPlanningUnitGrids}
-            planning_unit_grids={dialogsState.planning_unit_grids}
+            planningUnitGrids={planningUnitGrids}
             openFeaturesDialog={openFeaturesDialog}
-            features={dialogsState.allFeatures}
+            features={allFeatures}
             updateState={updateState}
             selectedCosts={dialogsState.selectedCosts}
             createNewProject={createNewProject}
             previewFeature={previewFeature}
+            setNewProjectDialogOpen={setNewProjectDialogOpen}
           />
           <NewProjectWizardDialog
-            open={dialogsState.newProjectWizardDialogOpen}
-            onOk={() => updateState({ newProjectWizardDialogOpen: false })}
+            open={newProjectWizardDialogOpen}
+            onOk={() => setNewProjectWizardDialogOpen(false)}
             okDisabled={true}
-            countries={dialogsState.countries}
+            countries={countries}
             updateState={updateState}
             createNewNationalProject={createNewNationalProject}
+            setNewProjectWizardDialogOpen={setNewProjectWizardDialogOpen}
           />
           <NewPlanningGridDialog
-            open={dialogsState.NewPlanningGridDialogOpen}
-            onCancel={() => updateState({ NewPlanningGridDialogOpen: false })}
+            open={newPlanningGridDialogOpen}
+            onCancel={() => setNewPlanningGridDialogOpen(false)}
             loading={
-              dialogsState.loading ||
-              dialogsState.preprocessing ||
-              dialogsState.uploading
+              loading || dialogsState.preprocessing || dialogsState.uploading
             }
             createNewPlanningUnitGrid={createNewPlanningUnitGrid}
-            countries={dialogsState.countries}
+            countries={countries}
             setSnackBarMessage={setSnackBarMessage}
           />
           <NewMarinePlanningGridDialog
-            open={dialogsState.NewMarinePlanningGridDialogOpen}
-            onCancel={() =>
-              updateState({ NewMarinePlanningGridDialogOpen: false })
-            }
+            open={newMarinePlanningGridDialogOpen}
+            onCancel={() => setNewMarinePlanningGridDialogOpen(false)}
             loading={
-              dialogsState.loading ||
-              dialogsState.preprocessing ||
-              dialogsState.uploading
+              loading || dialogsState.preprocessing || dialogsState.uploading
             }
             createNewPlanningUnitGrid={createNewMarinePlanningUnitGrid}
             fileUpload={uploadFileToFolder}
             setSnackBarMessage={setSnackBarMessage}
           />
           <ImportPlanningGridDialog
-            open={dialogsState.importPlanningGridDialogOpen}
+            open={importPlanningGridDialogOpen}
             onOk={importPlanningUnitGrid}
-            onCancel={() =>
-              updateState({ importPlanningGridDialogOpen: false })
-            }
-            loading={dialogsState.loading || dialogsState.uploading}
+            onCancel={() => setImportPlanningGridDialogOpen(false)}
+            loading={loading || dialogsState.uploading}
             fileUpload={uploadFileToFolder}
           />
           <FeaturesDialog
-            open={dialogsState.featuresDialogOpen}
+            open={featuresDialogOpen}
             onOk={updateSelectedFeatures}
-            loading={dialogsState.loading || dialogsState.uploading}
-            metadata={dialogsState.metadata}
-            allFeatures={dialogsState.allFeatures}
+            loading={loading || dialogsState.uploading}
+            metadata={metadata}
+            allFeatures={allFeatures}
             deleteFeature={deleteFeature}
             updateState={updateState}
+            setFeaturesDialogOpen={setFeaturesDialogOpen}
+            setImportFeaturesDialogOpen={setImportFeaturesDialogOpen}
             selectAllFeatures={selectAllFeatures}
             userRole={dialogsState.userData.ROLE}
             clickFeature={clickFeature}
-            addingRemovingFeatures={dialogsState.addingRemovingFeatures}
+            addingRemovingFeatures={addingRemovingFeatures}
             selectedFeatureIds={dialogsState.selectedFeatureIds}
             initialiseDigitising={initialiseDigitising}
-            newFeaturePopoverOpen={dialogsState.newFeaturePopoverOpen}
-            importFeaturePopoverOpen={dialogsState.importFeaturePopoverOpen}
+            newFeaturePopoverOpen={newFeaturePopoverOpen}
+            setNewFeaturePopoverOpen={setNewFeaturePopoverOpen}
+            importFeaturePopoverOpen={importFeaturePopoverOpen}
+            setImportFeaturePopoverOpen={setImportFeaturePopoverOpen}
             previewFeature={previewFeature}
+            setImportFromWebDialogOpen={setImportFromWebDialogOpen}
             marxanServer={marxanServer}
             refreshFeatures={refreshFeatures}
           />
           <FeatureDialog
-            open={dialogsState.featureDialogOpen}
-            onOk={() => updateState({ featureDialogOpen: false })}
-            loading={dialogsState.loading}
-            feature_metadata={dialogsState.feature_metadata}
+            open={featureDialogOpen}
+            onOk={() => setFeatureDialogOpen(false)}
+            loading={loading}
+            featureMetadata={featureMetadata}
             getTilesetMetadata={getMetadata}
             setSnackBarMessage={setSnackBarMessage}
             reportUnits={dialogsState.userData.REPORTUNITS}
             getProjectList={getProjectList}
           />
           <NewFeatureDialog
-            open={dialogsState.NewFeatureDialogOpen}
+            open={newFeatureDialogOpen}
             onOk={closeNewFeatureDialog}
             onCancel={closeNewFeatureDialog}
-            loading={dialogsState.loading || dialogsState.uploading}
+            loading={loading || dialogsState.uploading}
             createNewFeature={createNewFeature}
-            addToProject={dialogsState.addToProject}
+            addToProject={addToProject}
             setAddToProject={setAddToProject}
           />
           <ImportFeaturesDialog
-            open={dialogsState.importFeaturesDialogOpen}
+            open={importFeaturesDialogOpen}
             importFeatures={importFeatures}
             loading={
-              dialogsState.loading ||
-              dialogsState.preprocessing ||
-              dialogsState.uploading
+              loading || dialogsState.preprocessing || dialogsState.uploading
             }
             updateState={updateState}
-            filename={dialogsState.featureDatasetFilename}
+            setFeaturesDialogOpen={setFeaturesDialogOpen}
+            setImportFeaturesDialogOpen={setImportFeaturesDialogOpen}
+            filename={featureDatasetFilename}
+            setFeatureDatasetFilename={setFeatureDatasetFilename}
             fileUpload={uploadFileToFolder}
             unzipShapefile={unzipShapefile}
             getShapefileFieldnames={getShapefileFieldnames}
             deleteShapefile={deleteShapefile}
-            addToProject={dialogsState.addToProject}
+            addToProject={addToProject}
             setAddToProject={setAddToProject}
           />
           <ImportFromWebDialog
-            open={dialogsState.importFromWebDialogOpen}
-            onCancel={updateState}
+            open={importFromWebDialogOpen}
+            setImportFromWebDialogOpen={setImportFromWebDialogOpen}
             loading={
-              dialogsState.loading ||
-              dialogsState.preprocessing ||
-              dialogsState.uploading
+              loading || dialogsState.preprocessing || dialogsState.uploading
             }
             importFeatures={importFeaturesFromWeb}
-            addToProject={dialogsState.addToProject}
+            addToProject={addToProject}
             setAddToProject={setAddToProject}
           />
           <ImportGBIFDialog
-            open={dialogsState.importGBIFDialogOpen}
+            open={importGBIFDialogOpen}
+            setImportGBIFDialogOpen={setImportGBIFDialogOpen}
             updateState={updateState}
             loading={
-              dialogsState.loading ||
-              dialogsState.preprocessing ||
-              dialogsState.uploading
+              loading || dialogsState.preprocessing || dialogsState.uploading
             }
             importGBIFData={importGBIFData}
             gbifSpeciesSuggest={gbifSpeciesSuggest}
-            addToProject={dialogsState.addToProject}
+            addToProject={addToProject}
             setAddToProject={setAddToProject}
           />
           <PlanningGridsDialog
-            open={dialogsState.planningGridsDialogOpen}
+            open={planningGridsDialogOpen}
+            setPlanningGridsDialogOpen={setPlanningGridsDialogOpen}
             updateState={updateState}
-            loading={dialogsState.loading}
+            loading={loading}
             getPlanningUnitGrids={getPlanningUnitGrids}
             unauthorisedMethods={dialogsState.unauthorisedMethods}
-            planningGrids={dialogsState.planning_unit_grids}
+            planningGrids={planningUnitGrids}
             openNewPlanningGridDialog={openNewPlanningGridDialog}
             exportPlanningGrid={exportPlanningGrid}
             deletePlanningGrid={deletePlanningUnitGrid}
@@ -5371,61 +5295,63 @@ const App = () => {
             marxanServer={marxanServer}
             fullWidth={true}
             maxWidth="false"
+            setImportPlanningGridDialogOpen={setImportPlanningGridDialogOpen}
           />
           <PlanningGridDialog
-            open={dialogsState.planningGridDialogOpen}
-            onOk={() => updateState({ planningGridDialogOpen: false })}
+            open={planningGridDialogOpen}
+            onOk={() => setPlanningGridDialogOpen(false)}
+            setPlanningGridDialogOpen={setPlanningGridDialogOpen}
             updateState={updateState}
-            loading={dialogsState.loading}
-            planning_grid_metadata={dialogsState.planning_grid_metadata}
+            loading={loading}
+            planningGridMetadata={planningGridMetadata}
             getTilesetMetadata={getMetadata}
             setSnackBarMessage={setSnackBarMessage}
             getProjectList={getProjectList}
           />
           <ProjectsListDialog
-            open={dialogsState.ProjectsListDialogOpen}
+            open={projectsListDialogOpen}
             projects={dialogsState.projectList}
             userRole={dialogsState.userData.ROLE}
-            onOk={() => updateState({ ProjectsListDialogOpen: false })}
+            onOk={() => setProjectsListDialogOpen(false)}
             title={dialogsState.projectListDialogTitle}
             heading={dialogsState.projectListDialogHeading}
           />
           <CostsDialog
-            open={dialogsState.costsDialogOpen}
-            onOk={() => updateState({ costsDialogOpen: false })}
-            onCancel={() => updateState({ costsDialogOpen: false })}
+            open={costsDialogOpen}
+            onOk={() => setCostsDialogOpen(false)}
+            onCancel={() => setCostsDialogOpen(false)}
             updateState={updateState}
             unauthorisedMethods={dialogsState.unauthorisedMethods}
-            costname={dialogsState.metadata?.COSTS}
+            costname={metadata?.COSTS}
             deleteCost={deleteCost}
-            data={dialogsState.costnames}
-            allImpacts={dialogsState.allImpacts}
-            planningUnitName={dialogsState.metadata?.PLANNING_UNIT_NAME}
+            data={costnames}
+            allImpacts={allImpacts}
+            planningUnitName={metadata?.PLANNING_UNIT_NAME}
             createCostsFromImpact={createCostsFromImpact}
           />
           <ImportCostsDialog
-            open={dialogsState.importCostsDialogOpen}
+            open={importCostsDialogOpen}
             addCost={addCost}
             updateState={updateState}
             deleteCostFileThenClose={deleteCostFileThenClose}
-            loading={dialogsState.loading}
+            loading={loading}
             fileUpload={uploadFileToProject}
           />
           <RunSettingsDialog
             open={dialogsState.settingsDialogOpen}
             onOk={() => updateState({ settingsDialogOpen: false })}
             onCancel={() => updateState({ settingsDialogOpen: false })}
-            loading={dialogsState.loading || dialogsState.preprocessing}
+            loading={loading || dialogsState.preprocessing}
             updateRunParams={updateRunParams}
             runParams={dialogsState.runParams}
             showClumpingDialog={showClumpingDialog}
             userRole={dialogsState.userData.ROLE}
           />
           <ClassificationDialog
-            open={dialogsState.classificationDialogOpen}
-            onOk={closeClassificationDialog}
-            onCancel={closeClassificationDialog}
-            loading={dialogsState.loading}
+            open={classificationDialogOpen}
+            onOk={() => setClassificationDialogOpen(false)}
+            onCancel={() => setClassificationDialogOpen(false)}
+            loading={loading}
             renderer={dialogsState.renderer}
             changeColorCode={changeColorCode}
             changeRenderer={changeRenderer}
@@ -5433,38 +5359,39 @@ const App = () => {
             changeShowTopClasses={changeShowTopClasses}
             summaryStats={dialogsState.summaryStats}
             brew={dialogsState.brew}
-            dataBreaks={dialogsState.dataBreaks}
+            dataBreaks={dialogsState.brew.getBreaks()}
           />
           <ClumpingDialog
-            open={dialogsState.clumpingDialogOpen}
+            open={clumpingDialogOpen}
             onOk={hideClumpingDialog}
             onCancel={hideClumpingDialog}
             tileset={dialogsState.tileset}
-            map0_paintProperty={dialogsState.map0_paintProperty}
-            map1_paintProperty={dialogsState.map1_paintProperty}
-            map2_paintProperty={dialogsState.map2_paintProperty}
-            map3_paintProperty={dialogsState.map3_paintProperty}
-            map4_paintProperty={dialogsState.map4_paintProperty}
-            mapCentre={dialogsState.mapCentre}
-            mapZoom={dialogsState.mapZoom}
+            setMapPaintProperties={setMapPaintProperties}
+            map0_paintProperty={mapPaintProperties.mapPP0}
+            map1_paintProperty={mapPaintProperties.mapPP1}
+            map2_paintProperty={mapPaintProperties.mapPP2}
+            map3_paintProperty={mapPaintProperties.mapPP3}
+            map4_paintProperty={mapPaintProperties.mapPP4}
+            mapCentre={mapCentre}
+            mapZoom={mapZoom}
             createProjectGroupAndRun={createProjectGroupAndRun}
             rerunProjects={rerunProjects}
             setBlmValue={setBlmValue}
-            clumpingRunning={dialogsState.clumpingRunning}
+            clumpingRunning={clumpingRunning}
           />
           <ImportProjectDialog
-            open={dialogsState.importProjectDialogOpen}
-            onOk={() => updateState({ importProjectDialogOpen: false })}
-            loading={dialogsState.loading || dialogsState.uploading}
+            open={importProjectDialogOpen}
+            onOk={() => setImportProjectDialogOpen(false)}
+            loading={loading || dialogsState.uploading}
             importProject={importProject}
             fileUpload={uploadFileToFolder}
             log={messageLogger}
             setSnackBarMessage={setSnackBarMessage}
           />
           <ImportMXWDialog
-            open={dialogsState.importMXWDialogOpen}
-            onOk={() => updateState({ importMXWDialogOpen: false })}
-            loading={dialogsState.loading || dialogsState.preprocessing}
+            open={importMXWDialogOpen}
+            onOk={() => setImportMXWDialogOpen(false)}
+            loading={loading || dialogsState.preprocessing}
             importMXWProject={importMXWProject}
             fileUpload={uploadFileToFolder}
             log={messageLogger}
@@ -5475,13 +5402,13 @@ const App = () => {
             onOk={resetServer}
             onCancel={() => updateState({ resetDialogOpen: false })}
             onClose={() => updateState({ resetDialogOpen: false })}
-            loading={dialogsState.loading}
+            loading={loading}
           />
           <RunLogDialog
             open={dialogsState.runLogDialogOpen}
             onOk={closeRunLogDialog}
             onClose={closeRunLogDialog}
-            loading={dialogsState.loading}
+            loading={loading}
             preprocessing={dialogsState.preprocessing}
             unauthorisedMethods={dialogsState.unauthorisedMethods}
             runLogs={dialogsState.runLogs}
@@ -5510,17 +5437,17 @@ const App = () => {
             registry={dialogsState.registry}
           />
           <ChangePasswordDialog
-            open={dialogsState.changePasswordDialogOpen}
-            onOk={closeChangePasswordDialog}
+            open={changePasswordDialogOpen}
+            onOk={() => setChangePasswordDialogOpen(false)}
             user={dialogsState.user}
-            onClose={closeChangePasswordDialog}
+            onClose={() => setChangePasswordDialogOpen(false)}
             checkPassword={checkPassword}
             setSnackBarMessage={setSnackBarMessage}
             updateUser={handleUserUpdate}
           />
           <AlertDialog
-            open={dialogsState.alertDialogOpen}
-            onOk={() => updateState({ alertDialogOpen: false })}
+            open={alertDialogOpen}
+            onOk={() => setAlertDialogOpen(false)}
           />
           <Snackbar
             open={snackbarOpen}
@@ -5529,24 +5456,19 @@ const App = () => {
             style={{ maxWidth: "800px !important" }}
           />
           <Popover
-            open={dialogsState.featureMenuOpen}
-            anchorEl={dialogsState.menuAnchor}
-            onClose={closeFeatureMenu}
+            open={featureMenuOpen}
+            anchorEl={menuAnchor}
+            onClose={() => setFeatureMenuOpen(false)}
             style={{ width: "307px" }}
           >
             <Menu
               style={{ width: "207px" }}
-              onMouseLeave={closeFeatureMenu}
+              onMouseLeave={() => setFeatureMenuOpen(false)}
               open={false}
             >
               <MenuItemWithButton
                 leftIcon={<Properties style={{ margin: "1px" }} />}
-                onClick={() =>
-                  updateState({
-                    openInfoDialogOpen: true,
-                    featureMenuOpen: false,
-                  })
-                }
+                onClick={() => handleInfoMenuItemClick()}
               >
                 Properties
               </MenuItemWithButton>
@@ -5554,71 +5476,58 @@ const App = () => {
                 leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
                 style={{
                   display:
-                    dialogsState.currentFeature?.old_version ||
+                    currentFeature?.old_version ||
                     dialogsState.userData.ROLE === "ReadOnly"
                       ? "none"
                       : "block",
                 }}
-                onClick={removeFromProject.bind(
-                  this,
-                  dialogsState.currentFeature
-                )}
+                onClick={removeFromProject.bind(this, currentFeature)}
               >
                 Remove from project
               </MenuItemWithButton>
               <MenuItemWithButton
                 leftIcon={
-                  dialogsState.currentFeature?.feature_layer_loaded ? (
+                  currentFeature?.feature_layer_loaded ? (
                     <RemoveFromMap style={{ margin: "1px" }} />
                   ) : (
                     <AddToMap style={{ margin: "1px" }} />
                   )
                 }
                 style={{
-                  display: dialogsState.currentFeature?.tilesetid
-                    ? "block"
-                    : "none",
+                  display: currentFeature?.tilesetid ? "block" : "none",
                 }}
-                onClick={toggleFeatureLayer.bind(
-                  this,
-                  dialogsState.currentFeature
-                )}
+                onClick={toggleFeatureLayer.bind(this, currentFeature)}
               >
-                {dialogsState.currentFeature?.feature_layer_loaded
+                {currentFeature?.feature_layer_loaded
                   ? "Remove from map"
                   : "Add to map"}
               </MenuItemWithButton>
               <MenuItemWithButton
                 leftIcon={
-                  dialogsState.currentFeature?.feature_puid_layer_loaded ? (
+                  currentFeature?.feature_puid_layer_loaded ? (
                     <RemoveFromMap style={{ margin: "1px" }} />
                   ) : (
                     <AddToMap style={{ margin: "1px" }} />
                   )
                 }
-                onClick={toggleFeaturePUIDLayer.bind(
-                  this,
-                  dialogsState.currentFeature
-                )}
+                onClick={toggleFeaturePUIDLayer.bind(this, currentFeature)}
                 disabled={
                   !(
-                    dialogsState.currentFeature?.preprocessed &&
-                    dialogsState.currentFeature.occurs_in_planning_grid
+                    currentFeature?.preprocessed &&
+                    currentFeature.occurs_in_planning_grid
                   )
                 }
               >
-                {dialogsState.currentFeature?.feature_puid_layer_loaded
+                {currentFeature?.feature_puid_layer_loaded
                   ? "Remove planning unit outlines"
                   : "Outline planning units where the feature occurs"}
               </MenuItemWithButton>
               <MenuItemWithButton
                 leftIcon={<ZoomIn style={{ margin: "1px" }} />}
                 style={{
-                  display: dialogsState.currentFeature?.extent
-                    ? "block"
-                    : "none",
+                  display: currentFeature?.extent ? "block" : "none",
                 }}
-                onClick={zoomToFeature.bind(this, dialogsState.currentFeature)}
+                onClick={zoomToFeature.bind(this, currentFeature)}
               >
                 Zoom to feature extent
               </MenuItemWithButton>
@@ -5626,18 +5535,14 @@ const App = () => {
                 leftIcon={<Preprocess style={{ margin: "1px" }} />}
                 style={{
                   display:
-                    dialogsState.currentFeature?.old_version ||
+                    currentFeature?.old_version ||
                     dialogsState.userData.ROLE === "ReadOnly"
                       ? "none"
                       : "block",
                 }}
-                onClick={preprocessSingleFeature.bind(
-                  this,
-                  dialogsState.currentFeature
-                )}
+                onClick={preprocessSingleFeature.bind(this, currentFeature)}
                 disabled={
-                  dialogsState.currentFeature?.preprocessed ||
-                  dialogsState.preprocessing
+                  currentFeature?.preprocessed || dialogsState.preprocessing
                 }
               >
                 Pre-process
@@ -5652,15 +5557,15 @@ const App = () => {
             updateTargetValueForFeatures={updateTargetValueForFeatures}
           />
           <GapAnalysisDialog
-            open={dialogsState.gapAnalysisDialogOpen}
+            open={gapAnalysisDialogOpen}
             showCancelButton={true}
             onOk={closeGapAnalysisDialog}
             onCancel={closeGapAnalysisDialog}
             closeGapAnalysisDialog={closeGapAnalysisDialog}
-            gapAnalysis={dialogsState.gapAnalysis}
+            gapAnalysis={gapAnalysis}
             preprocessing={dialogsState.preprocessing}
             projectFeatures={dialogsState.projectFeatures}
-            metadata={dialogsState.metadata}
+            metadata={metadata}
             marxanServer={marxanServer}
             reportUnits={dialogsState.userData.REPORTUNITS}
           />
@@ -5678,24 +5583,24 @@ const App = () => {
             }
           />
           <AtlasLayersDialog
-            open={dialogsState.atlasLayersDialogOpen}
-            onOk={closeAtlasLayersDialog}
+            open={atlasLayersDialogOpen}
+            onOk={() => setAtlasLayersDialogOpen(false)}
             onCancel={clearSelactedLayers}
-            loading={dialogsState.loading}
-            atlasLayers={dialogsState.atlasLayers}
+            loading={loading}
+            atlasLayers={atlasLayers}
             marxanServer={marxanServer}
             setSnackBarMessage={setSnackBarMessage}
             selectedLayers={dialogsState.selectedLayers}
             setSelectedLayers={setSelectedLayers}
           />
           <CumulativeImpactDialog
-            loading={dialogsState.loading || dialogsState.uploading}
-            open={dialogsState.cumulativeImpactDialogOpen}
-            onOk={() => updateState({ cumulativeImpactDialogOpen: false })}
-            onCancel={() => updateState({ cumulativeImpactDialogOpen: false })}
+            loading={loading || dialogsState.uploading}
+            open={cumulativeImpactDialogOpen}
+            onOk={() => setCumulativeImpactDialogOpen(false)}
+            onCancel={() => setCumulativeImpactDialogOpen(false)}
             openHumanActivitiesDialog={openHumanActivitiesDialog}
-            metadata={dialogsState.metadata}
-            allImpacts={dialogsState.allImpacts}
+            metadata={metadata}
+            allImpacts={allImpacts}
             clickImpact={clickImpact}
             initialiseDigitising={initialiseDigitising}
             updateState={updateState}
@@ -5705,13 +5610,13 @@ const App = () => {
             userRole={dialogsState.userData.ROLE}
           />
           <HumanActivitiesDialog
-            loading={dialogsState.loading || dialogsState.uploading}
-            open={dialogsState.humanActivitiesDialogOpen}
-            onOk={() => updateState({ humanActivitiesDialogOpen: false })}
-            onCancel={() => updateState({ humanActivitiesDialogOpen: false })}
+            loading={loading || dialogsState.uploading}
+            open={humanActivitiesDialogOpen}
+            onOk={() => setHumanActivitiesDialogOpen(false)}
+            onCancel={() => setHumanActivitiesDialogOpen(false)}
             updateState={updateState}
-            metadata={dialogsState.metadata}
-            activities={dialogsState.activities}
+            metadata={metadata}
+            activities={activities}
             initialiseDigitising={initialiseDigitising}
             setSnackBarMessage={setSnackBarMessage}
             userRole={dialogsState.userData.ROLE}
@@ -5720,24 +5625,22 @@ const App = () => {
             openImportedActivitesDialog={openImportedActivitesDialog}
           />
           <RunCumuluativeImpactDialog
-            loading={dialogsState.loading || dialogsState.uploading}
-            open={dialogsState.importedActivitiesDialogOpen}
-            onOk={() => updateState({ importedActivitiesDialogOpen: false })}
-            onCancel={() =>
-              updateState({ importedActivitiesDialogOpen: false })
-            }
+            loading={loading || dialogsState.uploading}
+            open={importedActivitiesDialogOpen}
+            onOk={() => setImportedActivitiesDialogOpen(false)}
+            onCancel={() => setImportedActivitiesDialogOpen(false)}
             updateState={updateState}
-            metadata={dialogsState.metadata}
+            metadata={metadata}
             uploadedActivities={dialogsState.uploadedActivities}
             setSnackBarMessage={setSnackBarMessage}
             userRole={dialogsState.userData.ROLE}
             runCumulativeImpact={runCumulativeImpact}
           />
           <MenuBar
-            open={dialogsState.loggedIn}
+            open={loggedIn}
             user={dialogsState.user}
             userRole={dialogsState.userData.ROLE}
-            infoPanelOpen={dialogsState.infoPanelOpen}
+            infoPanelOpen={infoPanelOpen}
             resultsPanelOpen={dialogsState.resultsPanelOpen}
             toggleInfoPanel={toggleInfoPanel}
             toggleResultsPanel={toggleResultsPanel}

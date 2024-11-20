@@ -19,11 +19,12 @@ class ImportGBIFDialog extends React.Component {
   onOk() {
     this.props
       .importGBIFData(this.state.selectedItem)
-      .then((response) => {
-        this.props.updateState({ importGBIFDialogOpen: false });
-      })
+      .then((response) => {})
       .catch((error) => {
-        this.props.updateState({ importGBIFDialogOpen: false });
+        console.log("error ", error);
+      })
+      .finally(() => {
+        this.props.setImportGBIFDialogOpen(false);
       });
   }
   changeSearchText(event, value) {
@@ -44,6 +45,11 @@ class ImportGBIFDialog extends React.Component {
       this.setState({ searchText: item.scientificName, selectedItem: item });
     });
   }
+
+  handleAddToProjectChange = (evt) => {
+    this.props.setAddToProject(evt.target.checked);
+  };
+
   render() {
     let suggestions = this.state.suggestions.map((item) => {
       return (
@@ -98,7 +104,7 @@ class ImportGBIFDialog extends React.Component {
                   display: "inline-block",
                   marginTop: "10px",
                 }}
-                onCheck={this.props.setAddToProject}
+                onChange={this.handleAddToProjectChange}
                 checked={this.props.addToProject}
               />
             </div>

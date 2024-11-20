@@ -21,38 +21,32 @@ class FeatureDialog extends React.Component {
     this.setState({ expanded: !this.state.expanded });
   }
   getProjectList() {
-    this.props.getProjectList(this.props.feature_metadata, "feature");
+    this.props.getProjectList(this.props.featureMetadata, "feature");
   }
   render() {
     //get the area or amount depending on whether the feature is a polygon or a point layer
+    const metadata = this.props.featureMetadata;
     let amount =
-      this.props.feature_metadata.source === "Imported shapefile"
-        ? getArea(
-            this.props.feature_metadata.area,
-            this.props.reportUnits,
-            true
-          )
-        : this.props.feature_metadata.area;
-    let unit =
-      this.props.feature_metadata.source === "Imported shapefile"
-        ? "Area"
-        : "Amount";
+      metadata.source === "Imported shapefile"
+        ? getArea(metadata.area, this.props.reportUnits, true)
+        : metadata.area;
+    let unit = metadata.source === "Imported shapefile" ? "Area" : "Amount";
     return (
       <MarxanDialog
         {...this.props}
         onClose={() => this.props.updateState({ featureDialogOpen: false })}
         showCancelButton={false}
-        title={this.props.feature_metadata.alias}
+        title={metadata.alias}
         helpLink={"user.html#the-feature-details-window"}
         contentWidth={768}
       >
         {
           <React.Fragment key="k26">
             <MapContainer2
-              planning_grid_metadata={this.props.feature_metadata}
+              planning_grid_metadata={metadata}
               getTilesetMetadata={this.props.getTilesetMetadata}
               setSnackBar={this.props.setSnackBar}
-              color={this.props.feature_metadata.color}
+              color={metadata.color}
               outlineColor={"rgba(0, 0, 0, 0.2)"}
             />
             <div className="metadataPanel">
@@ -65,7 +59,7 @@ class FeatureDialog extends React.Component {
                   </tr>
                   <tr>
                     <td colSpan="2" className="metadataItemValue2">
-                      {this.props.feature_metadata.description}
+                      {metadata.description}
                     </td>
                   </tr>
                   <tr>
@@ -75,20 +69,16 @@ class FeatureDialog extends React.Component {
                   <tr>
                     <td className="metadataItemTitle">Created:</td>
                     <td className="metadataItemValue">
-                      {this.props.feature_metadata.creation_date}
+                      {metadata.creation_date}
                     </td>
                   </tr>
                   <tr>
                     <td className="metadataItemTitle">Created by:</td>
-                    <td className="metadataItemValue">
-                      {this.props.feature_metadata.created_by}
-                    </td>
+                    <td className="metadataItemValue">{metadata.created_by}</td>
                   </tr>
                   <tr>
                     <td className="metadataItemTitle">Source:</td>
-                    <td className="metadataItemValue">
-                      {this.props.feature_metadata.source}
-                    </td>
+                    <td className="metadataItemValue">{metadata.source}</td>
                   </tr>
                   <tr
                     style={{
@@ -96,9 +86,7 @@ class FeatureDialog extends React.Component {
                     }}
                   >
                     <td className="metadataItemTitle">id:</td>
-                    <td className="metadataItemValue">
-                      {this.props.feature_metadata.id}
-                    </td>
+                    <td className="metadataItemValue">{metadata.id}</td>
                   </tr>
                   <tr
                     style={{
@@ -107,7 +95,7 @@ class FeatureDialog extends React.Component {
                   >
                     <td className="metadataItemTitle">guid:</td>
                     <td className="metadataItemValue">
-                      {this.props.feature_metadata.feature_class_name}
+                      {metadata.feature_class_name}
                     </td>
                   </tr>
                   <tr
@@ -116,9 +104,7 @@ class FeatureDialog extends React.Component {
                     }}
                   >
                     <td className="metadataItemTitle">tileset:</td>
-                    <td className="metadataItemValue">
-                      {this.props.feature_metadata.tilesetid}
-                    </td>
+                    <td className="metadataItemValue">{metadata.tilesetid}</td>
                   </tr>
                   <tr
                     style={{

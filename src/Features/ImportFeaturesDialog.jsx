@@ -47,7 +47,7 @@ const ImportFeaturesDialog = (props) => {
   const handleSplitFieldChange = (event) => setSplitField(event.target.value);
   const resetFieldnames = () => setFieldNames([]);
   const setFilename = (filename) => {
-    props.updateState({ featureDatasetFilename: filename });
+    props.setFeatureDatasetFilename(filename);
   };
 
   const getShapefileFieldnames = () => {
@@ -64,6 +64,10 @@ const ImportFeaturesDialog = (props) => {
       });
   };
 
+  const handleAddToProjectChange = (evt) => {
+    props.setAddToProject(evt.target.checked);
+  };
+
   const closeDialog = () => {
     if (shapeFile) {
       props.deleteShapefile(props.filename, shapeFile);
@@ -74,11 +78,9 @@ const ImportFeaturesDialog = (props) => {
     setName("");
     setDescription("");
     setShapeFile(null);
-    props.updateState({
-      featureDatasetFilename: "",
-      importFeaturesDialogOpen: false,
-      featuresDialogOpen: true,
-    });
+    props.setFeatureDatasetFilename("");
+    props.setFeaturesDialogOpen(true);
+    props.setImportFeaturesDialogOpen(false);
   };
 
   const _disabled =
@@ -162,7 +164,7 @@ const ImportFeaturesDialog = (props) => {
               control={
                 <Checkbox
                   checked={props.addToProject}
-                  onChange={props.setAddToProject}
+                  onChange={handleAddToProjectChange}
                 />
               }
               label="Add to project"

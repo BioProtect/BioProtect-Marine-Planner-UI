@@ -19,33 +19,27 @@ const FeaturesDialog = (props) => {
   };
 
   const showNewFeaturePopover = (event) => {
-    console.log("event ", event);
     setNewFeatureAnchor(event.currentTarget);
-    props.updateState({ newFeaturePopoverOpen: true });
+    props.setNewFeaturePopoverOpen(true);
   };
 
   const showImportFeaturePopover = (event) => {
-    console.log("event ", event);
     setImportFeatureAnchor(event.currentTarget);
-    props.updateState({ importFeaturePopoverOpen: true });
+    props.setImportFeaturePopoverOpen(true);
   };
 
   const _openImportFeaturesDialog = () => {
-    props.updateState({
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-      importFeaturesDialogOpen: true,
-    });
+    props.setNewFeaturePopoverOpen(false);
+    props.setImportFeaturePopoverOpen(false);
+    props.setFeaturesDialogOpen(false);
+    props.setImportFeaturesDialogOpen(true);
   };
 
   const _openImportFromWebDialog = () => {
-    props.updateState({
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-      importFromWebDialogOpen: true,
-    });
+    props.setNewFeaturePopoverOpen(false);
+    props.setImportFeaturePopoverOpen(false);
+    props.setImportFromWebDialogOpen(true);
+    props.setFeaturesDialogOpen(false);
   };
 
   const _newByDigitising = () => {
@@ -56,10 +50,10 @@ const FeaturesDialog = (props) => {
   const openImportGBIFDialog = () => {
     props.updateState({
       importGBIFDialogOpen: true,
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
     });
+    props.setImportFeaturePopoverOpen(false);
+    props.setNewFeaturePopoverOpen(false);
+    props.setFeaturesDialogOpen(false);
   };
 
   const clickFeature = (event, rowInfo) => {
@@ -130,15 +124,9 @@ const FeaturesDialog = (props) => {
 
   const unselectFeature = () => {
     setSelectedFeature(undefined);
-    props.updateState({
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-    });
-  };
-
-  const preview = (feature_metadata) => {
-    props.previewFeature(feature_metadata);
+    props.setImportFeaturePopoverOpen(false);
+    props.setNewFeaturePopoverOpen(false);
+    props.setFeaturesDialogOpen(false);
   };
 
   const searchTextChanged = (value) => {
@@ -181,7 +169,7 @@ const FeaturesDialog = (props) => {
             selectedFeatureIds={props.selectedFeatureIds}
             selectedFeature={selectedFeature}
             clickFeature={clickFeature}
-            preview={preview}
+            preview={() => props.previewFeature(feature_metadata)}
           />
         </div>
         <FeaturesToolbar

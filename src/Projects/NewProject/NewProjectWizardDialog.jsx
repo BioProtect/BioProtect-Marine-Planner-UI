@@ -128,8 +128,8 @@ const NewProjectWizardDialog = (props) => {
       title={"New national project"}
       contentWidth={600}
       showCancelButton={true}
-      onCancel={() => props.updateState({ newProjectWizardDialogOpen: false })}
-      onClose={() => props.updateState({ newProjectWizardDialogOpen: false })}
+      onCancel={() => props.setNewProjectWizardDialogOpen(false)}
+      onClose={() => props.setNewProjectWizardDialogOpen(false)}
       helpLink={"user.html#creating-new-projects"}
       actions={actions}
     >

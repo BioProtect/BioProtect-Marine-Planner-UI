@@ -85,6 +85,9 @@ class ImportFeaturesDialog extends React.Component {
         this.closeDialog();
       });
   }
+  handleAddToProjectChange = (evt) => {
+    this.props.setAddToProject(evt.target.checked);
+  };
 
   setFilename(filename) {
     this.props.updateState({ featureDatasetFilename: filename });
@@ -214,7 +217,7 @@ class ImportFeaturesDialog extends React.Component {
                   display: "inline-block",
                   marginTop: "10px",
                 }}
-                onCheck={this.props.setAddToProject}
+                onChange={this.handleAddToProjectChange}
                 checked={this.props.addToProject}
               />
             </div>
@@ -247,7 +250,7 @@ class ImportFeaturesDialog extends React.Component {
                   display: "inline-block",
                   marginTop: "10px",
                 }}
-                onCheck={this.props.setAddToProject}
+                onChange={this.handleAddToProjectChange}
                 checked={this.props.addToProject}
               />
             </div>

@@ -10,7 +10,7 @@ const PlanningGridsDialog = (props) => {
 
   const closeDialog = useCallback(() => {
     setSelectedPlanningGrid(undefined);
-    props.updateState({ planningGridsDialogOpen: false });
+    props.setPlanningGridsDialogOpen(false);
   }, [props]);
 
   const handleDelete = useCallback(() => {
@@ -29,7 +29,7 @@ const PlanningGridsDialog = (props) => {
   }, [props, closeDialog]);
 
   const openImportDialog = useCallback(() => {
-    props.updateState({ importPlanningGridDialogOpen: true });
+    props.setImportPlanningGridDialogOpen(true);
     closeDialog();
   }, [props, closeDialog]);
 

@@ -69,7 +69,7 @@ const NewProjectDialog = (props) => {
 
   const onOk = () => {
     setStepIndex(0);
-    props.updateState({ newProjectDialogOpen: false });
+    props.setNewProjectDialogOpen(false);
   };
 
   const openCostsDialog = () => props.updateState({ costsDialogOpen: true });

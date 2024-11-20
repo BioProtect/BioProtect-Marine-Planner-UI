@@ -114,7 +114,7 @@ class ClumpingDialog extends React.Component {
               selectBlm={this.selectBlm.bind(this)}
               tileset={this.props.tileset}
               RESULTS_LAYER_NAME={CONSTANTS.RESULTS_LAYER_NAME}
-              paintProperty={this.props.map0_paintProperty}
+              paintProperty={this.props.mapPP0}
               blmValue={this.parseBlmValue(this.state.blmValues[0])}
               mapCentre={this.props.mapCentre}
               mapZoom={this.props.mapZoom}
@@ -125,7 +125,7 @@ class ClumpingDialog extends React.Component {
               selectBlm={this.selectBlm.bind(this)}
               tileset={this.props.tileset}
               RESULTS_LAYER_NAME={CONSTANTS.RESULTS_LAYER_NAME}
-              paintProperty={this.props.map1_paintProperty}
+              paintProperty={this.props.mapPP1}
               blmValue={this.parseBlmValue(this.state.blmValues[1])}
               mapCentre={this.props.mapCentre}
               mapZoom={this.props.mapZoom}
@@ -136,7 +136,7 @@ class ClumpingDialog extends React.Component {
               selectBlm={this.selectBlm.bind(this)}
               tileset={this.props.tileset}
               RESULTS_LAYER_NAME={CONSTANTS.RESULTS_LAYER_NAME}
-              paintProperty={this.props.map2_paintProperty}
+              paintProperty={this.props.mapPP2}
               blmValue={this.parseBlmValue(this.state.blmValues[2])}
               mapCentre={this.props.mapCentre}
               mapZoom={this.props.mapZoom}
@@ -147,7 +147,7 @@ class ClumpingDialog extends React.Component {
               selectBlm={this.selectBlm.bind(this)}
               tileset={this.props.tileset}
               RESULTS_LAYER_NAME={CONSTANTS.RESULTS_LAYER_NAME}
-              paintProperty={this.props.map3_paintProperty}
+              paintProperty={this.props.mapPP3}
               blmValue={this.parseBlmValue(this.state.blmValues[3])}
               mapCentre={this.props.mapCentre}
               mapZoom={this.props.mapZoom}
@@ -158,7 +158,7 @@ class ClumpingDialog extends React.Component {
               selectBlm={this.selectBlm.bind(this)}
               tileset={this.props.tileset}
               RESULTS_LAYER_NAME={CONSTANTS.RESULTS_LAYER_NAME}
-              paintProperty={this.props.map4_paintProperty}
+              paintProperty={this.props.mapPP4}
               blmValue={this.parseBlmValue(this.state.blmValues[4])}
               mapCentre={this.props.mapCentre}
               mapZoom={this.props.mapZoom}
