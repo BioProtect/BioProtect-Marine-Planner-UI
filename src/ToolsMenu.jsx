@@ -27,7 +27,7 @@ const ToolsMenu = (props) => {
   }, [props]);
 
   const openResetDialog = useCallback(() => {
-    props.updateState({ resetDialogOpen: true });
+    props.setResetDialogOpen(true);
     props.hideToolsMenu();
   }, [props]);
 

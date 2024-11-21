@@ -49,7 +49,7 @@ const ServerDetailsDialog = (props) => {
           <FontAwesomeIcon
             icon={faExclamationTriangle}
             title={"A new version of the WDPA is available - click for details"}
-            onClick={() => props.updateState({ updateWDPADialogOpen: true })}
+            onClick={() => props.setUpdateWDPADialogOpen(true)}
           />
         )}
       </React.Fragment>

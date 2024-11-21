@@ -20,34 +20,31 @@ class PlanningGridDialog extends React.Component {
     this.setState({ expanded: !this.state.expanded });
   }
   getProjectList() {
-    this.props.getProjectList(
-      this.props.planning_grid_metadata,
-      "planning_grid"
-    );
+    this.props.getProjectList(this.props.planningGridMetadata, "planning_grid");
   }
   render() {
-    let areaTD = this.props.planning_grid_metadata._area ? (
+    let areaTD = this.props.planningGridMetadata._area ? (
       <td className="metadataItemValue">
-        {this.props.planning_grid_metadata._area}Km
+        {this.props.planningGridMetadata._area}Km
         <span className="superscript">2</span>
       </td>
     ) : (
       <td />
     );
-    // let country_idTD = (this.props.planning_grid_metadata.country_id) ? <td className='metadataItemValue'>{this.props.planning_grid_metadata.country_id}</td> : <td/>;
+    // let country_idTD = (this.props.planningGridMetadata.country_id) ? <td className='metadataItemValue'>{this.props.planningGridMetadata.country_id}</td> : <td/>;
     return (
       <MarxanDialog
         {...this.props}
         onClose={() => this.props.setPlanningGridDialogOpen(false)}
         showCancelButton={false}
-        title={this.props.planning_grid_metadata.alias}
+        title={this.props.planningGridMetadata.alias}
         helpLink={"user.html#the-planning-grid-details-window"}
         contentWidth={768}
       >
         {
           <React.Fragment key="k27">
             <MapContainer2
-              planning_grid_metadata={this.props.planning_grid_metadata}
+              planningGridMetadata={this.props.planningGridMetadata}
               getTilesetMetadata={this.props.getTilesetMetadata}
               setSnackBar={this.props.setSnackBar}
             />
@@ -61,19 +58,19 @@ class PlanningGridDialog extends React.Component {
                   </tr>
                   <tr>
                     <td colSpan="2" className="metadataItemValue2">
-                      {this.props.planning_grid_metadata.description}
+                      {this.props.planningGridMetadata.description}
                     </td>
                   </tr>
                   <tr>
                     <td className="metadataItemTitle">Country:</td>
                     <td className="metadataItemValue">
-                      {this.props.planning_grid_metadata.country}
+                      {this.props.planningGridMetadata.country}
                     </td>
                   </tr>
                   <tr>
                     <td className="metadataItemTitle">Domain:</td>
                     <td className="metadataItemValue">
-                      {this.props.planning_grid_metadata.domain}
+                      {this.props.planningGridMetadata.domain}
                     </td>
                   </tr>
                   <tr>
@@ -83,25 +80,25 @@ class PlanningGridDialog extends React.Component {
                   <tr>
                     <td className="metadataItemTitle">Unit count:</td>
                     <td className="metadataItemValue">
-                      {this.props.planning_grid_metadata.planning_unit_count}
+                      {this.props.planningGridMetadata.planning_unit_count}
                     </td>
                   </tr>
                   <tr>
                     <td className="metadataItemTitle">Created:</td>
                     <td className="metadataItemValue">
-                      {this.props.planning_grid_metadata.creation_date}
+                      {this.props.planningGridMetadata.creation_date}
                     </td>
                   </tr>
                   <tr>
                     <td className="metadataItemTitle">Created by:</td>
                     <td className="metadataItemValue">
-                      {this.props.planning_grid_metadata.created_by}
+                      {this.props.planningGridMetadata.created_by}
                     </td>
                   </tr>
                   <tr>
                     <td className="metadataItemTitle">Source:</td>
                     <td className="metadataItemValue">
-                      {this.props.planning_grid_metadata.source}
+                      {this.props.planningGridMetadata.source}
                     </td>
                   </tr>
                   <tr
@@ -111,7 +108,7 @@ class PlanningGridDialog extends React.Component {
                   >
                     <td className="metadataItemTitle">aoi_id:</td>
                     <td className="metadataItemValue">
-                      {this.props.planning_grid_metadata.aoi_id}
+                      {this.props.planningGridMetadata.aoi_id}
                     </td>
                   </tr>
                   {/*<tr style={{display:(this.state.expanded) ? 'table-row' : 'none'}}>
@@ -120,7 +117,7 @@ class PlanningGridDialog extends React.Component {
 									</tr>
 									<tr style={{display:(this.state.expanded) ? 'table-row' : 'none'}}>
 										<td className='metadataItemTitle'>guid:</td>
-										<td className='metadataItemValue'>{this.props.planning_grid_metadata.feature_class_name}</td>
+										<td className='metadataItemValue'>{this.props.planningGridMetadata.feature_class_name}</td>
 									</tr>*/}
                   <tr
                     style={{
@@ -129,7 +126,7 @@ class PlanningGridDialog extends React.Component {
                   >
                     <td className="metadataItemTitle">tilesetid:</td>
                     <td className="metadataItemValue">
-                      {this.props.planning_grid_metadata.tilesetid}
+                      {this.props.planningGridMetadata.tilesetid}
                     </td>
                   </tr>
                   <tr

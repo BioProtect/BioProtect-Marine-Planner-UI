@@ -108,7 +108,7 @@ const FeaturesDialog = (props) => {
   const selectAllFeatures = () => {
     if (filteredRows.length < props.allFeatures.length) {
       const selectedIds = filteredRows.map((feature) => feature.id);
-      props.updateState({ selectedFeatureIds: selectedIds });
+      props.setSelectedFeatureIds(selectedIds);
     } else {
       props.selectAllFeatures();
     }
@@ -185,6 +185,7 @@ const FeaturesDialog = (props) => {
           _openImportFromWebDialog={() => _openImportFromWebDialog()}
           _delete={() => _delete()}
           _newByDigitising={_newByDigitising}
+          setSelectedFeatureIds={props.setSelectedFeatureIds}
         />
       </React.Fragment>
     </MarxanDialog>

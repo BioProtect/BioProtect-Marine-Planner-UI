@@ -6,9 +6,8 @@ import { generateTableCols } from "./Helpers";
 
 const AtlasLayersDialog = (props) => {
   const tableColumns = generateTableCols([{ id: "title", label: "title" }]);
-  const updateSelection = (newSelected) => {
-    props.setSelectedLayers(newSelected);
-  };
+  const updateSelection = (newSelected) =>
+    props.updateSelectedLayers(newSelected);
   if (props.atlasLayers.length > 0) {
     return (
       <MarxanDialog

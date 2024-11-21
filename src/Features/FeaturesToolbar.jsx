@@ -141,7 +141,7 @@ const FeaturesToolbar = (props) => {
           <Button
             startIcon={<FontAwesomeIcon icon={faTimesCircle} />}
             title="Clear all features"
-            onClick={() => props.updateState({ selectedFeatureIds: [] })}
+            onClick={() => props.setSelectedFeatureIds([])}
           >
             Clear all
           </Button>

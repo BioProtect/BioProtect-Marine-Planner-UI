@@ -266,7 +266,7 @@ const InfoPanel = (props) => {
                   <Settings style={{ height: "20px", width: "20px" }} />
                 }
                 title="Run Settings"
-                onClick={() => props.updateState({ settingsDialogOpen: true })}
+                onClick={() => props.setSettingsDialogOpen(true)}
                 key="openSettingsButton"
               >
                 Settings

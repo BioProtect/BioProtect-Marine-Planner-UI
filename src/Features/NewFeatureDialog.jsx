@@ -26,7 +26,7 @@ const NewFeatureDialog = (props) => {
     props.createNewFeature(name, description);
   };
 
-  handleAddToProjectChange = (evt) => {
+  const handleAddToProjectChange = (evt) => {
     this.props.setAddToProject(evt.target.checked);
   };
 

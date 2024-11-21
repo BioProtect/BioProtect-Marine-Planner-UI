@@ -110,6 +110,7 @@ const App = () => {
   const [marxanServers, setMarxanServers] = useState([]);
   const [marxanServer, setMarxanServer] = useState({});
   const [brew, setBrew] = useState(null);
+  const [dataBreaks, setDataBreaks] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackBarMessage] = useState("");
   const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState("");
@@ -174,7 +175,7 @@ const App = () => {
   const [identifyFeatures, setIdentifyFeatures] = useState([]);
   const [identifyPlanningUnits, setIdentifyPlanningUnits] = useState({});
   const [identifyProtectedAreas, setidentifyProtectedAreas] = useState([]);
-  const [identifyVisible, setIdentifyVisible] = useCallback(false);
+  const [identifyVisible, setIdentifyVisible] = useState(false);
   const [importCostsDialogOpen, setImportCostsDialogOpen] = useState(false);
   const [importFeaturesDialogOpen, setImportFeaturesDialogOpen] =
     useState(false);
@@ -212,75 +213,73 @@ const App = () => {
   const [notifications, setNotifications] = useState([]);
   const [openInfoDialogOpen, setOpenInfoDialogOpen] = useState(false);
   const [owner, setOwner] = useState("");
-  const [paLayerVisible, setPaLayerVisible] = useState(false);
-  const [pid, setPid] = useState(0);
-  const [planningGridDialogOpen, setPlanningGridDialogOpen] = useState(false);
-  const [planningGridsDialogOpen, setPlanningGridsDialogOpen] = useState(false);
-  const [planningGridMetadata, setPlanningGridMetadata] = useState({});
   const [planningUnitGrids, setPlanningUnitGrids] = useState([]);
   const [planningUnits, setPlanningUnits] = useState([]);
+  const [preprocessing, setPreprocessing] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [project, setProject] = useState("");
+  const [projectFeatures, setProjectFeatures] = useState([]);
+  const [user, setUser] = useState("");
+  const [projects, setProjects] = useState([]);
+  const [projectList, setProjectList] = useState([]);
+  const [projectListDialogHeading, setProjectListDialogHeading] = useState("");
+  const [projectListDialogTitle, setProjectListDialogTitle] = useState("");
+  const [projectLoaded, setProjectLoaded] = useState(false);
+  const [projectsDialogOpen, setProjectsDialogOpen] = useState(false);
+  const [protectedAreaIntersections, setProtectedAreaIntersections] = useState(
+    []
+  );
+  const [puEditing, setPuEditing] = useState(false);
+  const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
+  const [registry, setRegistry] = useState(undefined);
+  const [renderer, setRenderer] = useState({});
+  const [resendPasswordDialogOpen, setResendPasswordDialogOpen] =
+    useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resultsPanelOpen, setResultsPanelOpen] = useState(false);
+  const [runLogDialogOpen, setRunLogDialogOpen] = useState(false);
+  const [runLogs, setRunLogs] = useState([]);
+  const [runParams, setRunParams] = useState([]);
+  const [runningImpactMessage, setRunningImpactMessage] =
+    useState("Import Activity");
+  const [selectedCosts, setSelectedCosts] = useState([]);
+  const [selectedFeatureIds, setSelectedFeatureIds] = useState([]);
+  const [selectedImpactIds, setSelectedImpactIds] = useState([]);
+  const [selectedLayers, setSelectedLayers] = useState([]);
+  const [serverDetailsDialogOpen, setServerDetailsDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [shareableLink, setShareableLink] = useState(false);
+  const [shareableLinkDialogOpen, setShareableLinkDialogOpen] = useState(false);
+  const [smallLinearGauge, setSmallLinearGauge] = useState(true);
+  const [targetDialogOpen, setTargetDialogOpen] = useState(false);
+  const [tileset, setTileset] = useState(null);
+  const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
+  const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
+  const [updateWDPADialogOpen, setUpdateWDPADialogOpen] = useState(false);
+  const [uploadedActivities, setUploadedActivities] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [usersDialogOpen, setUsersDialogOpen] = useState(false);
+  const [visibleLayers, setVisibleLayers] = useState([]);
+  const [wdpaAttribution, setWdpaAttribution] = useState("");
+  const [welcomeDialogOpen, setWelcomeDialogOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [popupPoint, setPopupPoint] = useState({ x: 0, y: 0 });
+  const [userData, setUserData] = useState({
+    SHOWWELCOMESCREEN: true,
+    REPORTUNITS: "Ha",
+  });
+  const [dismissedNotifications, setDismissedNotifications] = useState([]);
+  const [resendEmail, setResendEmail] = useState("");
+  const [solutions, setSolutions] = useState([]);
+  const [wdpaLayer, setWdpaLayer] = useState();
+  const [resultsLayer, setResultsLayer] = useState({});
+  const [summaryStats, setSummaryStats] = useState([]);
+  const [projectImpacts, setProjectImpacts] = useState([]);
 
   const mapContainer = useRef(null);
   const map = useRef(null);
-
-  const [dialogsState, setDialogsState] = useState({
-    password: "",
-    popup_point: {
-      x: 0,
-      y: 0,
-    },
-    preprocessing: false,
-    profileDialogOpen: false,
-    project: "",
-    projectFeatures: [],
-    projectList: [],
-    projectListDialogHeading: "",
-    projectListDialogTitle: "",
-    projectLoaded: false,
-    projectsDialogOpen: false,
-    protected_area_intersections: [],
-    puEditing: false,
-    registerDialogOpen: false,
-    registry: undefined,
-    renderer: {},
-    resendPasswordDialogOpen: false,
-    resetDialogOpen: false,
-    resultsPanelOpen: false,
-    runLogDialogOpen: false,
-    runLogs: [],
-    runParams: [],
-    runningImpactMessage: "Import Activity",
-    selectedCosts: [],
-    selectedFeatureIds: [],
-    selectedImpactIds: [],
-    selectedLayers: [],
-    serverDetailsDialogOpen: false,
-    settingsDialogOpen: false,
-    shareableLink: false,
-    shareableLinkDialogOpen: false,
-    shareableLinkUrl: "",
-    smallLinearGauge: true,
-    targetDialogOpen: false,
-    tileset: null,
-    tilesets: [],
-    toolsMenuOpen: false,
-    unauthorisedMethods: [],
-    updateWDPADialogOpen: false,
-    uploadedActivities: [],
-    uploading: false,
-    user: "",
-    userData: {
-      SHOWWELCOMESCREEN: true,
-      REPORTUNITS: "Ha",
-    },
-    userMenuOpen: false,
-    users: [],
-    usersDialogOpen: false,
-    visibleLayers: [],
-    wdpaAttribution: "",
-    welcomeDialogOpen: false,
-    userAndProjectLoaded: false,
-  });
 
   const updateDialogsState = (updates) => {
     console.log("logged in infoPanelOpen.... ", infoPanelOpen);
@@ -327,7 +326,7 @@ const App = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has("project")) {
-      updateDialogsState({ shareableLink: true });
+      setShareableLink(true);
       setLoggedIn(true);
     }
 
@@ -341,9 +340,7 @@ const App = () => {
         await initialiseServers(registryData.MARXAN_SERVERS);
 
         setBasemaps(registryData.MAPBOX_BASEMAPS);
-        updateDialogsState({
-          registry: registryData,
-        });
+        setRegistry(registryData);
         setInitialLoading(false);
 
         if (searchParams.has("project")) openShareableLink(searchParams);
@@ -358,8 +355,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (planningCostsTrigger && dialogsState.userAndProjectLoaded) {
-      console.log("dialogsState in useEffect ", dialogsState);
+    if (planningCostsTrigger && projectLoaded && user !== "") {
       (async () => {
         await getPlanningUnitsCostData();
         setPlanningCostsTrigger(false);
@@ -444,10 +440,8 @@ const App = () => {
 
   const switchToGuestUser = useCallback(async () => {
     // Set the state to switch to guest user
-    updateDialogsState({
-      user: "guest",
-      password: "password",
-    });
+    setPassword("password");
+    setUser("guets");
     return "Switched to guest user";
   }, []);
 
@@ -541,14 +535,14 @@ const App = () => {
           if (!checkForErrors(message)) {
             if (message.status === "Finished") {
               msgCallback(message);
-              updateDialogsState({ preprocessing: false });
+              setPreprocessing(false);
               resolve(message);
             } else {
               msgCallback(message);
             }
           } else {
             msgCallback(message);
-            updateDialogsState({ preprocessing: false });
+            setPreprocessing(false);
             reject(message.error);
           }
         };
@@ -558,12 +552,12 @@ const App = () => {
         };
 
         ws.onError = (evt) => {
-          updateDialogsState({ preprocessing: false });
+          setPreprocessing(false);
           reject(evt);
         };
 
         ws.onClose = (evt) => {
-          updateDialogsState({ preprocessing: false });
+          setPreprocessing(false);
           if (!evt.wasClean) {
             msgCallback({ status: "SocketClosedUnexpectedly" });
           } else {
@@ -584,7 +578,7 @@ const App = () => {
     switch (message.status) {
       case "Started": //from the open method of all MarxanWebSocketHandler subclasses
         //set the processing state when the websocket starts
-        updateDialogsState({ preprocessing: true });
+        setPreprocessing(true);
         break;
       case "pid": //from marxan runs and preprocessing - the pid is an identifer and the pid, e.g. m1234 is a marxan run process with a pid of 1234
         setPid(message.pid);
@@ -684,9 +678,7 @@ const App = () => {
     (server) => {
       setMarxanServer(server);
       // Check if there is a new version of the WDPA
-      setNewWDPAVersion(
-        server.wdpa_version !== dialogsState.registry.WDPA.latest_version
-      );
+      setNewWDPAVersion(server.wdpa_version !== registry.WDPA.latest_version);
       // Set the link to the WDPA vector tiles layer name based on the version
       setWDPAVectorTilesLayerName(server.wdpa_version);
       // If server is online, not CORS-enabled, and guest user is enabled, switch to guest user
@@ -694,7 +686,7 @@ const App = () => {
         switchToGuestUser();
       }
     },
-    [dialogsState.registry]
+    [registry]
   );
 
   //gets the capabilities of all servers
@@ -751,10 +743,8 @@ const App = () => {
 
   //deletes all of the projects belonging to the passed user from the state
   const deleteProjectsForUser = (user) => {
-    const updatedProjects = dialogsState.projects.filter(
-      (project) => project.user !== user
-    );
-    updateDialogsState({ projects: updatedProjects });
+    const updatedProjects = projects.filter((project) => project.user !== user);
+    setProjects(updatedProjects);
   };
 
   const createNewUser = async (user, password, name, email) => {
@@ -768,18 +758,15 @@ const App = () => {
       const response = await _post("createUser", formData);
       // UI feedback
       setSnackBar(response.info);
-      // Update state to reflect user registration
-      updateDialogsState({
-        registerDialogOpen: false,
-        user: user,
-        password: "",
-      });
+      setRegisterDialogOpen(false);
+      setPassword("");
+      setUser(user);
     } catch (error) {
       console.error("Error creating user:", error);
     }
   };
 
-  const updateUser = async (parameters, user = dialogsState.user) => {
+  const updateUser = async (parameters, user = user) => {
     try {
       // Remove keys that are not part of the user's information
       const filteredParameters = removeKeys(parameters, [
@@ -792,11 +779,11 @@ const App = () => {
 
       const response = await _post("updateUserParameters", formData);
       // If successful, update the state if the current user is being updated
-      if (dialogsState.user === user) {
+      if (user === user) {
         // Update local user data
-        const newUserData = { ...dialogsState.userData, ...filteredParameters };
+        const newUserData = { ...userData, ...filteredParameters };
         // Update state
-        updateDialogsState({ userData: newUserData });
+        setUserData(newUserData);
       }
       return newUserData; // Optionally return response if needed elsewhere
     } catch (error) {
@@ -812,8 +799,8 @@ const App = () => {
       setSnackBar("User deleted");
 
       // Update local state to remove the deleted user
-      const usersCopy = dialogsState.users.filter((item) => item.user !== user);
-      updateDialogsState({ users: usersCopy });
+      const usersCopy = users.filter((item) => item.user !== user);
+      setUsers(usersCopy);
 
       // Check if the current project belongs to the deleted user
       if (owner === user) {
@@ -822,9 +809,7 @@ const App = () => {
         );
 
         // Load the next available project
-        const nextProject = dialogsState.projects.find(
-          (project) => project.user !== user
-        );
+        const nextProject = projects.find((project) => project.user !== user);
         if (nextProject) {
           // Import loadProject from the appropriate file if necessary
           await loadProject(nextProject.name, nextProject.user);
@@ -843,32 +828,22 @@ const App = () => {
   const getUsers = async () => {
     try {
       const response = await _get("getUsers");
-      updateDialogsState({ users: response.users });
+      setUsers(response.users);
     } catch (error) {
-      updateDialogsState({ users: [] });
+      setUsers([]);
     }
   };
 
   const handleCreateUser = async (user, password, name, email) =>
     await createNewUser(user, password, name, email);
 
-  const handleUserUpdate = async (parameters, user = dialogsState.user) =>
+  const handleUserUpdate = async (parameters, user = user) =>
     await updateUser(parameters, user);
 
   const handleDeleteUser = async (user) => await deleteUser(user);
 
-  const changeUserName = (user) => {
-    console.log("user ", user);
-    updateDialogsState({ user: user });
-  };
-
-  const changePassword = (password) =>
-    updateDialogsState({ password: password });
-
   const checkPassword = async (user, password) =>
     await _get(`validateUser?user=${user}&password=${password}`, 1000);
-
-  const changeEmail = (value) => updateDialogsState({ resendEmail: value });
 
   //the user is validated so login
   const login = async (user, password) => {
@@ -908,17 +883,15 @@ const App = () => {
   };
   //log out and reset some state
   const logout = () => {
-    hideUserMenu();
-    updateDialogsState({
-      user: "",
-      password: "",
-      project: "",
-      runParams: [],
-      renderer: {},
-      projectFeatures: [],
-      resultsPanelOpen: false,
-      brew: new classyBrew(),
-    });
+    setUserMenuOpen(false);
+    setBrew(new classyBrew());
+    setPassword("");
+    setRunParams([]);
+    setResultsPanelOpen(false);
+    setRenderer({});
+    setUser("");
+    setProjectFeatures([]);
+    setProject("");
     setPlanningUnits([]);
     setOwner("");
     setNotifications([]);
@@ -933,10 +906,10 @@ const App = () => {
 
   const resendPassword = async () => {
     try {
-      const response = await _get(`resendPassword?user=${dialogsState.user}`);
+      const response = await _get(`resendPassword?user=${user}`);
       setSnackBarMessage(response.info);
       // Close the resend password dialog
-      updateDialogsState({ resendPasswordDialogOpen: false });
+      setResendPasswordDialogOpen(false);
     } catch (error) {
       console.error("Failed to resend password:", error);
     }
@@ -944,11 +917,11 @@ const App = () => {
 
   const changeRole = async (user, role) => {
     await handleUserUpdate({ ROLE: role }, user);
-    const updatedUsers = dialogsState.users.map((item) =>
+    const updatedUsers = users.map((item) =>
       item.user === user ? { ...item, ROLE: role } : item
     );
     // Update the state with the modified user list
-    updateDialogsState({ users: updatedUsers });
+    setUsers(updatedUsers);
   };
 
   //toggles if the guest user is enabled on the server or not
@@ -984,15 +957,15 @@ const App = () => {
     const newNotifications = [];
 
     //see if there are any new notifications from the marxan-registry
-    if (dialogsState.registry.NOTIFICATIONS.length > 0) {
-      addNotifications(dialogsState.registry.NOTIFICATIONS);
+    if (registry.NOTIFICATIONS.length > 0) {
+      addNotifications(registry.NOTIFICATIONS);
     }
     // Check for new version of wdpa data
     // From the Marxan Registry WDPA object - if there is then show a notification to admin users
     if (newWDPAVersion) {
       addNotifications([
         {
-          id: "wdpa_update_" + dialogsState.registry.WDPA.latest_version,
+          id: "wdpa_update_" + registry.WDPA.latest_version,
           html: "A new version of the WDPA is available. Go to Help | Server Details for more information.",
           type: "Data Update",
           showForRoles: ["Admin"],
@@ -1000,13 +973,13 @@ const App = () => {
       ]);
     }
     //see if there is a new version of the marxan-client software
-    if (MARXAN_CLIENT_VERSION !== dialogsState.registry.CLIENT_VERSION) {
+    if (MARXAN_CLIENT_VERSION !== registry.CLIENT_VERSION) {
       addNotifications([
         {
-          id: "marxan_client_update_" + dialogsState.registry.CLIENT_VERSION,
+          id: "marxan_client_update_" + registry.CLIENT_VERSION,
           html:
             "A new version of marxan-client is available (" +
-            dialogsState.registry.CLIENT_VERSION +
+            MARXAN_CLIENT_VERSION +
             "). Go to Help | About for more information.",
           type: "Software Update",
           showForRoles: ["Admin"],
@@ -1014,13 +987,13 @@ const App = () => {
       ]);
     }
     //see if there is a new version of the marxan-server software
-    if (marxanServer.server_version !== dialogsState.registry.SERVER_VERSION) {
+    if (marxanServer.server_version !== registry.SERVER_VERSION) {
       addNotifications([
         {
-          id: "marxan_server_update_" + dialogsState.registry.SERVER_VERSION,
+          id: "marxan_server_update_" + registry.SERVER_VERSION,
           html:
             "A new version of marxan-server is available (" +
-            dialogsState.registry.SERVER_VERSION +
+            registry.SERVER_VERSION +
             "). Go to Help | Server Details for more information.",
           type: "Software Update",
           showForRoles: ["Admin"],
@@ -1062,12 +1035,8 @@ const App = () => {
     const currentNotifications = [...notifications];
     // Process and filter notifications based on role, dismissal, and expiry
     const processedNotifications = newNotifications.map((item) => {
-      const allowedForRole = item.showForRoles.includes(
-        dialogsState.userData.ROLE
-      );
-      const notDismissed = !dialogsState.dismissedNotifications.includes(
-        String(item.id)
-      );
+      const allowedForRole = item.showForRoles.includes(userData.ROLE);
+      const notDismissed = !dismissedNotifications.includes(String(item.id));
       let notExpired = true;
       // Check if the notification has an expiry date and if it is still valid
       if (item.expires) {
@@ -1105,16 +1074,14 @@ const App = () => {
   //dismisses a notification on the server
   const dismissNotification = async (notification) => {
     await _get(
-      `dismissNotification?user=${dialogsState.user}&notificationid=${notification.id}`
+      `dismissNotification?user=${user}&notificationid=${notification.id}`
     );
   };
 
   //clears all of the dismissed notifications on the server
   const resetNotifications = async () => {
-    await _get(`resetNotifications?user=${dialogsState.user}`);
-    updateDialogsState({
-      dismissedNotifications: [],
-    });
+    await _get(`resetNotifications?user=${user}`);
+    setDismissedNotifications([]);
     setNotifications([]);
     parseNotifications();
   };
@@ -1131,15 +1098,15 @@ const App = () => {
   const saveOptions = async (options) => await handleUserUpdate(options);
 
   //updates the project from the old version to the new version
-  const upgradeProject = async (project) =>
-    await _get(`upgradeProject?user=${dialogsState.user}&project=${project}`);
+  const upgradeProject = async (proj) =>
+    await _get(`upgradeProject?user=${user}&project=${proj}`);
 
-  //updates the project parameters back to the server (i.e. the input.dat file)
-  const updateProjectParams = async (project, parameters) => {
+  //updates the proj parameters back to the server (i.e. the input.dat file)
+  const updateProjectParams = async (proj, parameters) => {
     //initialise the form data
     let formData = new FormData();
     formData.append("user", owner);
-    formData.append("project", project);
+    formData.append("proj", proj);
     appendToFormData(formData, parameters);
     //post to the server and return a promise
     return await _post("updateProjectParameters", formData);
@@ -1148,7 +1115,7 @@ const App = () => {
   //updates a single parameter in the input.dat file directly
 
   const updateProjectParameter = async (parameter, value) =>
-    await updateProjectParams(dialogsState.project, { [parameter]: value });
+    await updateProjectParams(project, { [parameter]: value });
 
   //updates the run parameters for the current project
   const updateRunParams = async (array) => {
@@ -1157,8 +1124,8 @@ const App = () => {
       acc[obj.key] = obj.value;
       return acc;
     }, {});
-    await updateProjectParams(dialogsState.project, parameters);
-    updateDialogsState({ runParams: parameters });
+    await updateProjectParams(project, parameters);
+    setRunParams(parameters);
   };
 
   //gets the planning unit grids
@@ -1167,28 +1134,24 @@ const App = () => {
     setPlanningUnitGrids(response.planningUnitGrids);
   };
 
-  const loadProject = async (project, user, ...options) => {
+  const loadProject = async (proj, user, ...options) => {
     console.log("project, user ", project, user);
     const userResp = options[0];
     const speciesData = options[1];
     try {
       // Reset the results from any previous projects
       resetResults();
-      const projectResp = await _get(
-        `getProject?user=${user}&project=${project}`
-      );
-      updateDialogsState({
-        project: projectResp.project,
-        userData: userResp.userData,
-        unauthorisedMethods: userResp.unauthorisedMethods,
-        dismissedNotifications: userResp.dismissedNotifications || [],
-        runParams: projectResp.runParameters,
-        renderer: projectResp.renderer,
-        resultsPanelOpen: true,
-        projectLoaded: true,
-        protected_area_intersections: projectResp.protected_area_intersections,
-        userAndProjectLoaded: true,
-      });
+      const projectResp = await _get(`getProject?user=${user}&project=${proj}`);
+      setDismissedNotifications(userResp.dismissedNotifications || []);
+      setUserData(userResp.userData);
+      setUnauthorisedMethods(userResp.unauthorisedMethods);
+      setRunParams(projectResp.runParameters);
+      setResultsPanelOpen(true);
+      setProtectedAreaIntersections(projectResp.protectedAreaIntersections);
+      setRenderer(projectResp.renderer);
+      setProjectLoaded(true);
+      setUser(user);
+      setProject(projectResp.project);
       setPlanningUnits(projectResp.planningUnits);
       setOwner(user);
       setMetadata(projectResp.metadata);
@@ -1197,7 +1160,6 @@ const App = () => {
       setFiles({ ...projectResp.files });
       setCostnames(projectResp.costnames);
       setAllFeatures(speciesData.data);
-      console.log("Setting planning costs trigger......");
       setPlanningCostsTrigger(true);
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
@@ -1221,7 +1183,6 @@ const App = () => {
 
       // Activate the project tab
       project_tab_active();
-      console.log("------: ", dialogsState);
       return "Project loaded";
     } catch (error) {
       console.log("error", error);
@@ -1246,23 +1207,23 @@ const App = () => {
   const getArrayItem = (arr, id) => arr.find(([itemId]) => itemId === id);
 
   //initialises the interest features based on the currently loading project
-  const initialiseInterestFeatures = (oldVersion, projectFeatures) => {
+  const initialiseInterestFeatures = (oldVersion, projFeatures) => {
     // Determine features based on project version
     const features = oldVersion
-      ? projectFeatures.map((feature) => ({ ...feature })) // deep copy
+      ? projFeatures.map((feature) => ({ ...feature })) // deep copy
       : [...allFeatures];
 
     // Extract feature IDs
-    const projectFeatureIds = projectFeatures.map((item) => item.id);
+    const projectFeatureIds = projFeatures.map((item) => item.id);
 
     // Process features
     const processedFeatures = features.map((feature) => {
       // Check if the feature is part of the current project
       const projectFeature = projectFeatureIds.includes(item.id)
-        ? projectFeatures[projectFeatureIds.indexOf(item.id)]
+        ? projFeatures[projectFeatureIds.indexOf(item.id)]
         : null;
 
-      const preprocessing = getArrayItem(featurePreprocessing, feature.id);
+      const preprocess = getArrayItem(featurePreprocessing, feature.id);
       // Add required attributes
       addFeatureAttributes(feature, oldVersion);
 
@@ -1270,12 +1231,12 @@ const App = () => {
       if (projectFeature) {
         Object.assign(feature, {
           selected: true,
-          preprocessed: !!preprocessing,
-          pu_area: preprocessing ? preprocessing[1] : -1,
-          pu_count: preprocessing ? preprocessing[2] : -1,
+          preprocessed: !!preprocess,
+          pu_area: preprocess ? preprocess[1] : -1,
+          pu_count: preprocess ? preprocess[2] : -1,
           spf: projectFeature.spf,
           target_value: projectFeature.target_value,
-          occurs_in_planning_grid: preprocessing && preprocessing[2] > 0,
+          occurs_in_planning_grid: preprocess && preprocess[2] > 0,
         });
       }
       return feature;
@@ -1286,9 +1247,7 @@ const App = () => {
 
     // Update state
     setAllFeatures(processedFeatures);
-    updateDialogsState({
-      projectFeatures: processedFeatures.filter((item) => item.selected),
-    });
+    setProjectFeatures(processedFeatures.filter((item) => item.selected));
   };
 
   //adds the required attributes for the features to work in the marxan web app - these are the default values
@@ -1322,7 +1281,7 @@ const App = () => {
   //resets state in between runs
   const resetRun = () => {
     setRunMarxanResponse({});
-    updateDialogsState({ solutions: [] });
+    setSolutions([]);
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -1365,35 +1324,35 @@ const App = () => {
   };
 
   // Helper function to prepare form data
-  const prepareFormDataNewProject = (project, user) => {
+  const prepareFormDataNewProject = (proj, user) => {
     const formData = new FormData();
     formData.append("user", user);
-    formData.append("project", project.name);
-    formData.append("description", project.description);
-    formData.append("planning_grid_name", project.planning_grid_name);
+    formData.append("project", proj.name);
+    formData.append("description", proj.description);
+    formData.append("planning_grid_name", proj.planning_grid_name);
     formData.append(
       "interest_features",
-      project.features.map((item) => item.id).join(",")
+      proj.features.map((item) => item.id).join(",")
     );
-    formData.append("target_values", project.features.map(() => 17).join(","));
-    formData.append("spf_values", project.features.map(() => 40).join(","));
+    formData.append("target_values", proj.features.map(() => 17).join(","));
+    formData.append("spf_values", proj.features.map(() => 40).join(","));
 
     return formData;
   };
 
   //REST call to create a new import project from the wizard
-  const createImportProject = async (project) => {
+  const createImportProject = async (proj) => {
     const formData = new FormData();
-    formData.append("user", dialogsState.user);
-    formData.append("project", project);
+    formData.append("user", user);
+    formData.append("project", proj);
     return await _post("createImportProject", formData);
   };
-  const createNewProject = async (project) => {
-    const formData = prepareFormDataNewProject(project, dialogsState.user);
+  const createNewProject = async (proj) => {
+    const formData = prepareFormDataNewProject(proj, user);
     const response = await _post("createProject", formData);
 
     setSnackBarMessage(response.info);
-    updateDialogsState({ projectsDialogOpen: false });
+    setProjectsDialogOpen(false);
 
     await loadProject(response.name, response.user);
   };
@@ -1407,12 +1366,10 @@ const App = () => {
     );
 
   //REST call to delete a specific project
-  const deleteProject = async (user, project, silent = false) => {
+  const deleteProject = async (user, proj, silent = false) => {
     try {
       // Make the request to delete the project
-      const response = await _get(
-        `deleteProject?user=${user}&project=${project}`
-      );
+      const response = await _get(`deleteProject?user=${user}&project=${proj}`);
 
       // Fetch the updated list of projects
       await getProjects();
@@ -1421,13 +1378,11 @@ const App = () => {
       setSnackBarMessage(response.info, silent);
 
       // Check if the deleted project is the current one
-      if (response.project === dialogsState.project) {
+      if (response.project === project) {
         setSnackBarMessage("Current project deleted - loading first available");
 
         // Find the next available project
-        const nextProject = dialogsState.projects.find(
-          (p) => p.name !== dialogsState.project
-        );
+        const nextProject = projects.find((p) => p.name !== project);
 
         if (nextProject) {
           await loadProject(nextProject.name, user);
@@ -1440,11 +1395,11 @@ const App = () => {
   };
 
   //exports the project on the server and returns the *.mxw file
-  const exportProject = async (user, project) => {
+  const exportProject = async (user, proj) => {
     try {
       setActiveTab("log");
       const message = await _ws(
-        `exportProject?user=${user}project=${project}`,
+        `exportProject?user=${user}project=${proj}`,
         wsMessageCallback
       );
       return marxanServer.endpoint + "exports/" + message.filename;
@@ -1453,19 +1408,19 @@ const App = () => {
     }
   };
 
-  const cloneProject = async (user, project) => {
-    const response = await _get(`cloneProject?user=${user}&project=${project}`);
+  const cloneProject = async (user, proj) => {
+    const response = await _get(`cloneProject?user=${user}&project=${proj}`);
     getProjects();
     setSnackBarMessage(response.info);
   };
 
   //rename a specific project on the server
   const renameProject = async (newName) => {
-    if (newName !== "" && newName !== dialogsState.project) {
+    if (newName !== "" && newName !== project) {
       const response = await _get(
-        `renameProject?user=${owner}&project=${dialogsState.project}&newName=${newName}`
+        `renameProject?user=${owner}&project=${project}&newName=${newName}`
       );
-      updateDialogsState({ project: newName });
+      setProject(newName);
       setSnackBarMessage(response.info);
       return "Project renamed";
     }
@@ -1479,17 +1434,13 @@ const App = () => {
   };
 
   const getProjects = async () => {
-    const response = await _get(`getProjects?user=${dialogsState.user}`);
+    const response = await _get(`getProjects?user=${user}`);
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
       (proj) =>
-        !(
-          proj.private &&
-          proj.user !== dialogsState.user &&
-          dialogsState.userData.ROLE !== "Admin"
-        )
+        !(proj.private && proj.user !== user && userData.ROLE !== "Admin")
     );
-    updateDialogsState({ projects: projects });
+    setProjects(projects);
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -1524,7 +1475,7 @@ const App = () => {
     }
 
     try {
-      const response = await startMarxanJob(owner, dialogsState.project); //start the marxan job
+      const response = await startMarxanJob(owner, project); //start the marxan job
       await getRunLogs(); //update the run log
 
       if (!checkForErrors(response)) {
@@ -1532,7 +1483,7 @@ const App = () => {
         await getResults(response.user, response.project); //run completed - get the results
         features_tab_active(); //switch to the features tab
       } else {
-        runFinished([]); //set state with no solutions
+        setSolutions([]); //set state with no solutions
       }
     } catch (error) {
       marxanStopped(error);
@@ -1567,19 +1518,19 @@ const App = () => {
   const updateSpecFile = async () => {
     const formData = new FormData();
     formData.append("user", owner);
-    formData.append("project", dialogsState.project);
+    formData.append("project", project);
     //prepare the data that will populate the spec.dat file
     formData.append(
       "interest_features",
-      dialogsState.projectFeatures.map((item) => item.id).join(",")
+      projectFeatures.map((item) => item.id).join(",")
     );
     formData.append(
       "target_values",
-      dialogsState.projectFeatures.map((item) => item.target_value).join(",")
+      projectFeatures.map((item) => item.target_value).join(",")
     );
     formData.append(
       "spf_values",
-      dialogsState.projectFeatures.map((item) => item.spf).join(",")
+      projectFeatures.map((item) => item.spf).join(",")
     );
     return await _post("updateSpecFile", formData);
   };
@@ -1607,7 +1558,7 @@ const App = () => {
 
   //preprocess synchronously, i.e. one after another
   const preprocessAllFeatures = async () => {
-    for (const feature of dialogsState.projectFeatures) {
+    for (const feature of projectFeatures) {
       if (!feature.preprocessed) {
         await preprocessFeature(feature);
       }
@@ -1622,7 +1573,7 @@ const App = () => {
 
       // Call the WebSocket
       const message = await _ws(
-        `preprocessFeature?user=${owner}&project=${dialogsState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}&feature_class_name=${feature.feature_class_name}&alias=${feature.alias}&id=${feature.id}`,
+        `preprocessFeature?user=${owner}&project=${project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}&feature_class_name=${feature.feature_class_name}&alias=${feature.alias}&id=${feature.id}`,
         wsMessageCallback
       );
 
@@ -1642,11 +1593,11 @@ const App = () => {
   };
 
   //calls the marxan executeable and runs it getting the output streamed through websockets
-  const startMarxanJob = async (user, project) => {
+  const startMarxanJob = async (user, proj) => {
     try {
       // Make the request to get the Marxan data
       return await _ws(
-        `runMarxan?user=${user}&project=${project}`,
+        `runMarxan?user=${user}&project=${proj}`,
         wsMessageCallback
       );
     } catch (error) {
@@ -1656,9 +1607,9 @@ const App = () => {
   };
 
   //gets the results for a project
-  const getResults = async (user, project) => {
+  const getResults = async (user, proj) => {
     try {
-      const response = await _get(`getResults?user=${user}&project=${project}`);
+      const response = await _get(`getResults?user=${user}&project=${proj}`);
       runCompleted(response);
       return "Results retrieved";
     } catch (error) {
@@ -1697,15 +1648,12 @@ const App = () => {
       });
 
       updateProtectedAmount(response.mvbest);
-      runFinished(solutions);
+      setSolutions(solutions);
     } else {
       // No solutions available
-      runFinished([]);
+      setSolutions([]);
     }
   };
-
-  const runFinished = (solutions) =>
-    updateDialogsState({ solutions: solutions });
 
   // Get the protected area information in m2 from marxan run and populate interest features with the values
   const updateProtectedAmount = (mvData) => {
@@ -1732,7 +1680,7 @@ const App = () => {
 
     // Update state with the updated features
     setAllFeatures(updatedFeatures);
-    setFeaturesState(updatedFeatures);
+    setProjectFeatures(updatedFeatures.filter((item) => item.selected));
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -1762,12 +1710,12 @@ const App = () => {
   };
 
   //uploads a list of files to the current project
-  const uploadFiles = async (files, project) => {
+  const uploadFiles = async (files, proj) => {
     for (const file of files) {
       if (file.name.endsWith(".dat")) {
         const formData = new FormData();
-        formData.append("user", owner); // Updated reference to dialogsState
-        formData.append("project", project);
+        formData.append("user", owner);
+        formData.append("project", proj);
 
         const filepath = file.webkitRelativePath.split("/").slice(1).join("/");
         formData.append("filename", filepath);
@@ -1788,7 +1736,7 @@ const App = () => {
   const uploadFileToProject = async (value, filename) => {
     const formData = new FormData();
     formData.append("user", owner);
-    formData.append("project", dialogsState.project);
+    formData.append("project", project);
     formData.append("filename", `input/${filename}`);
     formData.append("value", value);
 
@@ -1800,7 +1748,7 @@ const App = () => {
   };
 
   const importProject = async (
-    project,
+    proj,
     description,
     zipFilename,
     files,
@@ -1817,11 +1765,11 @@ const App = () => {
     });
 
     // Create a new project
-    await createImportProject(project);
+    await createImportProject(proj);
     messageLogger({
       method: "importProject",
       status: "Importing",
-      info: `Project '${project}' created`,
+      info: `Project '${proj}' created`,
     });
 
     try {
@@ -1829,7 +1777,7 @@ const App = () => {
       const puResponse = await importZippedShapefileAsPu(
         zipFilename,
         planning_grid_name,
-        `Imported with the project '${project}'`
+        `Imported with the project '${proj}'`
       );
       feature_class_name = puResponse.feature_class_name;
       uploadId = puResponse.uploadId;
@@ -1840,13 +1788,13 @@ const App = () => {
         info: "Planning grid imported",
       });
     } catch (error) {
-      deleteProject(dialogsState.user, project, true);
+      deleteProject(user, proj, true);
       throw error;
     }
 
     try {
       // Upload all the files
-      await uploadFiles(files, project);
+      await uploadFiles(files, proj);
       messageLogger({
         method: "importProject",
         status: "Importing",
@@ -1854,7 +1802,7 @@ const App = () => {
       });
 
       // Upgrade the project to the new version of Marxan
-      await upgradeProject(project);
+      await upgradeProject(proj);
       messageLogger({
         method: "importProject",
         status: "Importing",
@@ -1873,8 +1821,8 @@ const App = () => {
         })
         .replace(",", "");
 
-      await updateProjectParams(project, {
-        DESCRIPTION: `${description} (imported from an existing Marxan project)`,
+      await updateProjectParams(proj, {
+        DESCRIPTION: `${description} (imported from an existing Marxan proj)`,
         CREATEDATE: formattedDate,
         OLDVERSION: "True",
         PLANNING_UNIT_NAME: feature_class_name,
@@ -1890,8 +1838,8 @@ const App = () => {
         info: "Import complete",
       });
 
-      // Load the project
-      await loadProject(project, dialogsState.user);
+      // Load the proj
+      await loadProject(proj, user);
       return "Import complete";
     } catch (error) {
       messageLogger({
@@ -1908,14 +1856,14 @@ const App = () => {
   const pad = (num, size) => num.toString().padStart(size, "0");
 
   //imports a project from an mxd file
-  const importMXWProject = async (project, description, filename) => {
+  const importMXWProject = async (proj, description, filename) => {
     startLogging();
     await _ws(
-      `importProject?user=${dialogsState.user}&project=${project}&filename=${filename}&description=$description}`,
+      `importProject?user=${user}&project=${proj}&filename=${filename}&description=$description}`,
       wsMessageCallback
     );
     refreshFeatures();
-    loadProject(project, dialogsState.user);
+    loadProject(proj, user);
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -1934,32 +1882,28 @@ const App = () => {
       //load the sum of solutions which will already be loaded
       renderSolution(runMarxanResponse.ssoln, true);
     } else {
-      const response = await getSolution(owner, dialogsSate.project, solution);
+      const response = await getSolution(owner, project, solution);
       updateProtectedAmount(response.mv);
       renderSolution(response.solution, false);
     }
   };
 
   // Load a solution from another project - used in the clumping dialog - when the solution is loaded the paint properties are set on the individual maps through state changes
-  const loadOtherSolution = async (user, project, solution) => {
-    const response = await getSolution(user, project, solution);
+  const loadOtherSolution = async (user, proj, solution) => {
+    const response = await getSolution(user, proj, solution);
     const paintProperties = getPaintProperties(response.solution, false, false);
-    // Get the project that matches the project name from the this.projects property - this was set when the projectGroup was created
-    if (this.projects) {
-      const _projects = this.projects.filter(
-        (item) => item.projectName === project
-      );
+    // Get the proj that matches the proj name from the this.projs property - this was set when the projGroup was created
+    if (projects) {
+      const _projects = projects.filter((item) => item.projectName === proj);
       // Get which clump it is
       const clump = _projects[0].clump;
-      updateDialogsState({ [`map${clump}_paintProperty`]: paintProperties });
+      setMapPaintProperties({ [`mapPP${clump}`]: paintProperties });
     }
   };
 
   // Gets a solution
-  const getSolution = async (user, project, solution) =>
-    await _get(
-      `getSolution?user=${user}&project=${project}&solution=${solution}`
-    );
+  const getSolution = async (user, proj, solution) =>
+    await _get(`getSolution?user=${user}&project=${proj}&solution=${solution}`);
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -1979,7 +1923,7 @@ const App = () => {
       return { number: item[0], count };
     });
 
-    updateDialogsState({ summaryStats });
+    setSummaryStats(summaryStats);
     return total;
   };
 
@@ -2001,9 +1945,9 @@ const App = () => {
     //get a sample of the data to make the renderer classification
     const sample = getSsolnSample(data, 1000); //samples dont work
     // let sample = this.getSsolnData(data); //get all the ssoln data
-    dialogsState.brew.setSeries(sample);
-    const brew = dialogsState.brew;
-    const renderer = dialogsState.renderer;
+    brew.setSeries(sample);
+    const brew = brew;
+    const renderer = renderer;
     // If the colorCode is opacity then calculate the rgba values dynamically and add them to the color schemes
     if (colorCode === "opacity") {
       const { opacity } = brew.colorSchemes;
@@ -2020,148 +1964,86 @@ const App = () => {
           brew.colorSchemes.opacity = [];
         }
         // Update the Brew color schemes state
-        updateDialogsState({
-          brew: {
-            ...brew,
-            colorSchemes: {
-              ...brew.colorSchemes,
-              opacity: {
-                ...opacity,
-                [renderer.NUMCLASSES]: newBrewColorScheme,
-              },
+        setBrew((prevState) => ({
+          ...prevState, // Spread the existing state
+          colorSchemes: {
+            ...prevState.colorSchemes, // Use prevState to maintain the existing colorSchemes
+            opacity: {
+              ...prevState.colorSchemes.opacity, // Preserve existing opacity settings
+              [renderer.NUMCLASSES]: newBrewColorScheme, // Add or update the NUMCLASSES key
             },
           },
-        });
+        }));
       }
     }
     // Set the color code - see the color theory section on Joshua Tanners page here https://github.com/tannerjt/classybrew - for all the available colour codes
-    dialogsState.brew.setColorCode(colorCode);
+    brew.setColorCode(colorCode);
     //get the maximum number of colors in this scheme
-    const colorSchemeLength = getMaxNumberOfClasses(
-      dialogsState.brew,
-      colorCode
-    );
+    const colorSchemeLength = getMaxNumberOfClasses(brew, colorCode);
     //check the color scheme supports the passed number of classes
     if (numClasses > colorSchemeLength) {
       //set the numClasses to the max for the color scheme
       numClasses = colorSchemeLength;
       //reset the renderer
-      updateDialogsState({
-        renderer: {
-          ...renderer,
-          NUMCLASSES: finalNumClasses,
-        },
-      });
+      setRenderer((prevState) => ({
+        ...prevState,
+        NUMCLASSES: finalNumClasses, // Update or add the NUMCLASSES property
+      }));
     }
     //set the number of classes
-    dialogsState.brew.setNumClasses(numClasses);
+    brew.setNumClasses(numClasses);
     //set the classification method - one of equal_interval, quantile, std_deviation, jenks (default)
-    dialogsState.brew.classify(classification);
+    brew.classify(classification);
   };
 
   //called when the renderer state has been updated - renders the solution and saves the renderer back to the server
   const rendererStateUpdated = async (parameter, value) => {
     renderSolution(runMarxanResponse.ssoln, true);
-    if (dialogsState.userData.ROLE !== "ReadOnly")
+    if (userData.ROLE !== "ReadOnly")
       await updateProjectParameter(parameter, value);
   };
 
   //change the renderer, e.g. jenks, natural_breaks etc.
   const changeRenderer = async (renderer) => {
     // Update state and wait for the update to complete
-    await new Promise((resolve) => {
-      setDialogsState((prevState) => {
-        const newState = {
-          ...prevState,
-          renderer: {
-            ...prevState.renderer,
-            CLASSIFICATION: renderer,
-          },
-        };
-        resolve(newState); // Resolve the promise with the new state
-        return newState; // Return the new state to update the state
-      });
-    });
+    setRenderer((prevState) => ({
+      ...prevState,
+      CLASSIFICATION: renderer,
+    }));
+
     // Call the async function after the state has been updated
     await rendererStateUpdated("CLASSIFICATION", renderer);
   };
 
   //change the number of classes of the renderer
   const changeNumClasses = async (numClasses) => {
-    // Update state
-    await new Promise((resolve) => {
-      setDialogsState((prevState) => {
-        const newState = {
-          ...prevState,
-          renderer: {
-            ...dialogsState.renderer,
-            NUMCLASSES: numClasses,
-          },
-        };
-        resolve(newState); // Resolve the promise with the new state
-        return newState; // Return the new state to update the state
-      });
-    });
-
+    setRenderer((prevState) => ({
+      ...prevState,
+      NUMCLASSES: numClasses,
+    }));
     // Call the async function after the state has been updated
     await rendererStateUpdated("NUMCLASSES", numClasses);
   };
 
   const changeColorCode = async (colorCode) => {
     // Ensure NUMCLASSES is not greater than the max allowed by brew
-    if (dialogsState.renderer.NUMCLASSES > dialogsState.brew.getNumClasses()) {
-      await new Promise((resolve) => {
-        setDialogsState((prevState) => {
-          const newState = {
-            ...prevState,
-            renderer: {
-              ...prevState.renderer,
-              NUMCLASSES: dialogsState.brew.getNumClasses(),
-            },
-          };
-          resolve(newState); // Resolve the promise with the new state
-          return newState; // Return the new state to update the state
-        });
-      });
+    const newState = { COLORCODE: colorCode };
+    if (renderer.NUMCLASSES > brew.getNumClasses()) {
+      newState[NUMCLASSES] = brew.getNumClasses();
     }
-
-    // Update colorCode in the state
-    await new Promise((resolve) => {
-      setDialogsState((prevState) => {
-        const newState = {
-          ...prevState,
-          renderer: {
-            ...prevState.renderer,
-            COLORCODE: colorCode,
-          },
-        };
-        resolve(newState); // Resolve the promise with the new state
-        return newState; // Return the new state to update the state
-      });
-    });
-
-    // Call the async function after the state has been updated
+    setRenderer((prevState) => ({
+      ...prevState,
+      ...newState,
+    }));
     await rendererStateUpdated("COLORCODE", colorCode);
   };
 
   //change how many of the top classes only to show
   const changeShowTopClasses = async (numClasses) => {
-    // Update TOPCLASSES in the state
-    await new Promise((resolve) => {
-      setDialogsState((prevState) => {
-        const newState = {
-          ...prevState,
-          renderer: {
-            ...prevState.renderer,
-            TOPCLASSES: numClasses,
-          },
-        };
-        resolve(newState); // Resolve the promise with the new state
-        return newState; // Return the new state to update the state
-      });
-    });
-
-    // Call the async function after the state has been updated
+    setRenderer((prevState) => ({
+      ...prevState,
+      TOPCLASSES: numClasses,
+    }));
     await rendererStateUpdated("TOPCLASSES", numClasses);
   };
 
@@ -2205,14 +2087,14 @@ const App = () => {
       if (setRenderer) {
         classifyData(
           data,
-          Number(dialogsState.renderer.NUMCLASSES),
-          dialogsState.renderer.COLORCODE,
-          dialogsState.renderer.CLASSIFICATION
+          Number(renderer.NUMCLASSES),
+          renderer.COLORCODE,
+          renderer.CLASSIFICATION
         );
       }
 
       //if only the top n classes will be rendered then get the visible value at the boundary
-      visibleValue = getVisibleValue(dialogsState.renderer, dialogsState.brew);
+      visibleValue = getVisibleValue(renderer, brew);
 
       // the rest service sends the data grouped by the 'number', e.g. [1,[23,34,36,43,98]],[2,[16,19]]
       data.forEach((row) => {
@@ -2220,7 +2102,7 @@ const App = () => {
         // For each row add the puids and the color to the expression, e.g. [35,36,37],"rgba(255, 0, 136,0.1)"
         if (sum) {
           // Multi-value rendering
-          color = dialogsState.brew.getColorInRange(value);
+          color = brew.getColorInRange(value);
           updateExpressions(row, value, color, visibleValue, [
             fillColorExpression,
             fillOutlineColorExpression,
@@ -2450,10 +2332,7 @@ const App = () => {
 
   const mapClick = async (e) => {
     //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
-    if (
-      !dialogsState.puEditing &&
-      !map.current.getSource("mapbox-gl-draw-cold")
-    ) {
+    if (!puEditing && !map.current.getSource("mapbox-gl-draw-cold")) {
       //get a list of the layers that we want to query for features
       const featureLayers = getLayers([
         CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
@@ -2472,8 +2351,7 @@ const App = () => {
       if (puFeatures.length && puFeatures[0].properties.puid) {
         await getPUData(puFeatures[0].properties.puid);
       }
-      updateDialogsState({ popup_point: e.point });
-
+      setPopupPoint(e.point);
       // Get any conservation features under the mouse
       // Might be dupliate conservation features (e.g. with GBIF data) so get a unique list of sourceLayers
       // Get the full features data from the state.projectFeatures array
@@ -2486,7 +2364,7 @@ const App = () => {
         new Set(idFeatures.map((item) => item.sourceLayer))
       );
       idFeatures = uniqueSourceLayers.map((sourceLayer) =>
-        dialogsState.projectFeatures.find(
+        projectFeatures.find(
           (feature) => feature.feature_class_name === sourceLayer
         )
       );
@@ -2517,7 +2395,7 @@ const App = () => {
           layer.id.startsWith("marxan_") &&
           layer.layout.visibility === "visible"
       );
-    updateDialogsState({ visibleLayers: visibleLayers });
+    setVisibleLayers(visibleLayers);
   };
 
   //gets a set of features that have a layerid that starts with the passed text
@@ -2527,16 +2405,11 @@ const App = () => {
   //gets a list of features for the planning unit
   const getPUData = async (puid) => {
     const response = await _get(
-      `getPUData?user=${owner}&project=${dialogsState.project}&puid=${puid}`
+      `getPUData?user=${owner}&project=${project}&puid=${puid}`
     );
     if (response.data.features.length) {
       //if there are some features for the planning unit join the ids onto the full feature data from the state.projectFeatures array
-      joinArrays(
-        response.data.features,
-        dialogsState.projectFeatures,
-        "species",
-        "id"
-      );
+      joinArrays(response.data.features, projectFeatures, "species", "id");
     }
     //set the state to update the identify popup
     setIdentifyPlanningUnits({
@@ -2572,13 +2445,13 @@ const App = () => {
       addWDPALayer();
 
       // Add the planning unit layers (if a project has already been loaded)
-      if (dialogsState.tileset) {
-        addPlanningGridLayers(dialogsState.tileset);
+      if (tileset) {
+        addPlanningGridLayers(tileset);
 
         // Get the results, if any
         if (owner) {
           console.log("calling get results from setBasemap....");
-          await getResults(owner, dialogsState.project);
+          await getResults(owner, project);
         }
 
         // Turn on/off layers depending on which tab is selected
@@ -2667,8 +2540,7 @@ const App = () => {
       }
 
       // Update the state with the new tileset information
-      updateDialogsState({ tileset: tileset });
-
+      setTileset(tileset);
       return tileset;
     } catch (error) {
       setSnackBarMessage(error);
@@ -2744,9 +2616,7 @@ const App = () => {
       },
     });
     //set the result layer in app state so that it can update the Legend component and its opacity control
-    updateDialogsState({
-      resultsLayer: map.current.getLayer(CONSTANTS.RESULTS_LAYER_NAME),
-    });
+    setResultsLayer(map.current.getLayer(CONSTANTS.RESULTS_LAYER_NAME));
     //add the planning unit layer
     addMapLayer({
       id: CONSTANTS.PU_LAYER_NAME,
@@ -2805,10 +2675,10 @@ const App = () => {
     const attribution = `IUCN and UNEP-WCMC (${yr}), The World Database on Protected Areas (WDPA) ${marxanServer.wdpa_version}, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
 
     const tiles = [
-      `${dialogsState.registry.WDPA.tilesUrl}layer=marxan:${wdpaVectorTileLayer}&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}`,
+      `${registry.WDPA.tilesUrl}layer=marxan:${wdpaVectorTileLayer}&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}`,
     ];
 
-    updateDialogsState({ wdpaAttribution: attribution });
+    setWdpaAttribution(attribution);
     map.current.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
       attribution: attribution,
       type: "vector",
@@ -2848,9 +2718,7 @@ const App = () => {
       },
     });
     //set the wdpa layer in app state so that it can update the Legend component and its opacity control
-    updateDialogsState({
-      wdpaLayer: map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME),
-    });
+    setWdpaLayer(map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME));
   };
 
   const toggleLayerVisibility = (id, visibility) => {
@@ -3005,7 +2873,7 @@ const App = () => {
 
   const startPuEditSession = () => {
     //set the state
-    updateDialogsState({ puEditing: true });
+    setPuEditing(true);
     //set the cursor to a crosshair
     map.current.getCanvas().style.cursor = "crosshair";
     //add the left mouse click event to the planning unit layer
@@ -3018,7 +2886,7 @@ const App = () => {
 
   const stopPuEditSession = () => {
     //set the state
-    updateDialogsState({ puEditing: false });
+    setPuEditing(false);
     //reset the cursor
     map.current.getCanvas().style.cursor = "pointer";
     //remove the mouse left click event
@@ -3044,7 +2912,7 @@ const App = () => {
     //initialise the form data
     let formData = new FormData();
     formData.append("user", owner);
-    formData.append("project", dialogsState.project);
+    formData.append("project", project);
     //add the planning unit manual exceptions
     if (planningUnits.length > 0) {
       planningUnits.forEach((item) =>
@@ -3317,7 +3185,7 @@ const App = () => {
   const pollStatus = async (uploadid) => {
     try {
       const response = await fetch(
-        `https://api.mapbox.com/uploads/v1/${CONSTANTS.MAPBOX_USER}/${uploadid}?access_token=${dialogsState.registry.MBAT}`
+        `https://api.mapbox.com/uploads/v1/${CONSTANTS.MAPBOX_USER}/${uploadid}?access_token=${registry.MBAT}`
       );
       const result = await response.json();
 
@@ -3335,13 +3203,13 @@ const App = () => {
         throw new Error(result.error);
       }
     } catch (error) {
-      updateDialogsState({ uploading: false });
+      setUploading(false);
       throw error;
     }
   };
   //polls mapbox to see when an upload has finished - returns as promise
   const pollMapbox = async (uploadid) => {
-    updateDialogsState({ uploading: true });
+    setUploading(true);
     messageLogger({ info: "Uploading to Mapbox..", status: "Uploading" });
 
     if (uploadid === "0") {
@@ -3350,7 +3218,7 @@ const App = () => {
         status: "UploadComplete",
       });
       //reset state
-      updateDialogsState({ uploading: false });
+      setUploading(false);
       return "Uploaded to Mapbox";
     }
 
@@ -3378,12 +3246,12 @@ const App = () => {
     clearInterval(timerToClear.timer);
     //remove the timer from the timers array
     timers = timers.filter((timer) => timer.uploadid !== uploadid);
-    if (timers.length === 0) updateDialogsState({ uploading: false });
+    if (timers.length === 0) setUploading(false);
   };
 
   const openWelcomeDialog = () => {
     parseNotifications();
-    updateDialogsState({ welcomeDialogOpen: true });
+    setWelcomeDialogOpen(true);
   };
 
   const openFeaturesDialog = async (showClearSelectAll) => {
@@ -3515,7 +3383,6 @@ const App = () => {
         await addLayer(sourceName);
       }
 
-      console.log("dialogsState.userData 1 ", dialogsState.userData);
       return parsedData;
     } catch (error) {
       console.error("Failed to fetch and add Atlas layers:", error);
@@ -3536,20 +3403,17 @@ const App = () => {
 
   const getUploadedActivities = async () => {
     const response = await _get("getUploadedActivities");
-    updateDialogsState({
-      uploadedActivities: response.data,
-      fetched: true,
-    });
+    setUploadedActivities(response.data);
   };
 
   const clearSelactedLayers = () => {
-    const layers = [...dialogsState.selectedLayers];
+    const layers = [...selectedLayers];
     console.log("layers ", layers);
-    layers.forEach((layer) => setSelectedLayers(layer));
+    layers.forEach((layer) => updateSelectedLayers(layer));
     setAtlasLayersDialogOpen(false);
   };
 
-  const setSelectedLayers = (layer) => {
+  const updateSelectedLayers = (layer) => {
     // Determine the new visibility
     const currentVisibility = map.current.getLayoutProperty(
       layer.layer,
@@ -3560,21 +3424,19 @@ const App = () => {
     map.current.setLayoutProperty(layer.layer, "visibility", newVisibility);
 
     // Update the selectedLayers state
-    setDialogsState((prevState) => {
-      const isLayerSelected = prevState.selectedLayers.includes(layer);
 
-      return {
-        ...prevState,
-        selectedLayers: isLayerSelected
-          ? prevState.selectedLayers.filter((item) => item !== layer)
-          : [...prevState.selectedLayers, layer],
-      };
+    setSelectedLayers((prevState) => {
+      const isLayerSelected = prevState.includes(layer);
+
+      return isLayerSelected
+        ? prevState.filter((item) => item !== layer)
+        : [...prevState, layer];
     });
   };
 
   //when a user clicks a impact in the ImpactsDialog
   const clickImpact = (impact, event, previousRow) => {
-    dialogsState.selectedImpactIds.includes(impact.id)
+    selectedImpactIds.includes(impact.id)
       ? removeImpact(impact)
       : addImpact(impact);
     toggleImpactLayer(impact);
@@ -3582,19 +3444,16 @@ const App = () => {
 
   //adds a impact to the selectedImpactIds array
   const addImpact = (impact) =>
-    setDialogsState((prevState) => ({
-      ...prevState, // Spread the rest of the state
-      selectedImpactIds: [...prevState.selectedImpactIds, impact.id], // Update selectedImpactIds
-    }));
+    setSelectedImpactIds((prevState) => [
+      ...prevState.selectedImpactIds,
+      impact.id,
+    ]);
 
   //removes a impact from the selectedImpactIds array
   const removeImpact = (impact) => {
-    setDialogsState((prevState) => ({
-      ...prevState,
-      selectedImpactIds: prevState.selectedImpactIds.filter(
-        (imp) => imp !== impact.id
-      ),
-    }));
+    setSelectedImpactIds((prevState) =>
+      prevState.selectedImpactIds.filter((imp) => imp !== impact.id)
+    );
   };
 
   //toggles the impact layer on the map
@@ -3652,7 +3511,7 @@ const App = () => {
       .map((impact) => impact.id);
 
     // Update the state with the selected impact IDs
-    updateDialogsState({ selectedImpactIds: ids });
+    setSelectedImpactIds(ids);
   };
 
   //updates the properties of a impact and then updates the impacts state
@@ -3671,9 +3530,7 @@ const App = () => {
       setAllImpacts(impacts);
 
       // Update projectImpacts based on the selected impacts
-      updateDialogsState({
-        projectImpacts: impacts.filter((item) => item.selected),
-      });
+      setProjectImpacts(impacts.filter((item) => item.selected));
     }
   };
 
@@ -3745,7 +3602,7 @@ const App = () => {
   const createCostsFromImpact = async (data) => {
     setLoading(true);
     startLogging();
-    const url = `createCostsFromImpact?user=${owner}&project=${dialogsState.project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`;
+    const url = `createCostsFromImpact?user=${owner}&project=${project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`;
     await _ws(url, wsMessageCallback);
     setLoading(false);
     addCost(data.alias);
@@ -3769,7 +3626,7 @@ const App = () => {
     if (index !== -1) {
       features[index] = { ...features[index], ...newProps };
       setAllFeatures(features);
-      setFeaturesState(features);
+      setProjectFeatures(features.filter((item) => item.selected));
     }
   };
 
@@ -3779,29 +3636,29 @@ const App = () => {
       .filter((feature) => feature.selected)
       .map((feature) => feature.id);
 
-    updateDialogsState({ selectedFeatureIds: selectedFeatureIds });
+    setSelectedFeatureIds(selectedFeatureIds);
   };
 
   //when a user clicks a feature in the FeaturesDialog
   const clickFeature = (feature) => {
-    return [...dialogsState.selectedFeatureIds].includes(feature.id)
+    return [...selectedFeatureIds].includes(feature.id)
       ? removeFeature(feature)
       : addFeature(feature);
   };
 
   //removes a feature from the selectedFeatureIds array
   const removeFeature = (feature) => {
-    const updatedFeatureIds = dialogsState.selectedFeatureIds.filter(
+    const updatedFeatureIds = selectedFeatureIds.filter(
       (id) => id !== feature.id
     );
-    updateDialogsState({ selectedFeatureIds: updatedFeatureIds });
+    setSelectedFeatureIds(updatedFeatureIds);
   };
 
   //adds a feature to the selectedFeatureIds array
   const addFeature = (feature) =>
-    updateDialogsState({
-      selectedFeatureIds: [...dialogsState.selectedFeatureIds, feature.id],
-    });
+    setSelectedFeatureIds((prevState) =>
+      prevState.includes(feature.id) ? prevState : [...prevState, feature.id]
+    );
 
   //starts a digitising session
   const initialiseDigitising = () => {
@@ -3824,9 +3681,7 @@ const App = () => {
 
   //selects all the features
   const selectAllFeatures = () =>
-    updateState({
-      selectedFeatureIds: allFeatures.map((feature) => feature.id),
-    });
+    setSelectedFeatureIds(allFeatures.map((feature) => feature.id));
 
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
   const updateSelectedFeatures = async () => {
@@ -3835,7 +3690,7 @@ const App = () => {
 
     // Get the updated features
     let updatedFeatures = allFeatures.map((feature) => {
-      if (dialogsState.selectedFeatureIds.includes(feature.id)) {
+      if (selectedFeatureIds.includes(feature.id)) {
         // Feature is selected
         return { ...feature, selected: true };
       } else {
@@ -3863,9 +3718,9 @@ const App = () => {
 
     // Apply updates to state
     setAllFeatures(updatedFeatures);
-    setFeaturesState(updatedFeatures);
+    setProjectFeatures(updatedFeatures.filter((item) => item.selected));
     // Persist changes to the server if the user is not read-only
-    if (dialogsState.userData.ROLE !== "ReadOnly") {
+    if (userData.ROLE !== "ReadOnly") {
       await updateSpecFile();
     }
 
@@ -3884,18 +3739,11 @@ const App = () => {
 
     // Set the features in app state
     setAllFeatures(features);
-    setFeaturesState(features);
+    setProjectFeatures(features.filter((item) => item.selected));
     // Persist the changes to the server
-    if (dialogsState.userData.ROLE !== "ReadOnly") {
+    if (userData.ROLE !== "ReadOnly") {
       await updateSpecFile();
     }
-  };
-
-  //the callback is optional and will be called when the state has updated
-  const setFeaturesState = (newFeatures) => {
-    updateDialogsState({
-      projectFeatures: newFeatures.filter((item) => item.selected),
-    });
   };
 
   //unselects a single Conservation feature
@@ -4131,7 +3979,7 @@ const App = () => {
 
   //hides the feature layer
   const hideFeatureLayer = () => {
-    dialogsState.projectFeatures.forEach((feature) => {
+    projectFeatures.forEach((feature) => {
       if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
     });
   };
@@ -4194,7 +4042,7 @@ const App = () => {
     } else {
       //get the planning units where the feature occurs
       const response = await _get(
-        `getFeaturePlanningUnits?user=${owner}&project=${dialogsState.project}&oid=${feature.id}`
+        `getFeaturePlanningUnits?user=${owner}&project=${project}&oid=${feature.id}`
       );
 
       addMapLayer({
@@ -4206,7 +4054,7 @@ const App = () => {
         },
         type: "line",
         source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
-        "source-layer": dialogsState.tileset.name,
+        "source-layer": tileset.name,
         layout: {
           visibility: "visible",
         },
@@ -4269,13 +4117,9 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   const showUserMenu = (e) => {
     e.preventDefault();
-    updateDialogsState({
-      userMenuOpen: true,
-    });
+    setUserMenuOpen(true);
     setMenuAnchor(e.currentTarget);
   };
-
-  const hideUserMenu = () => updateDialogsState({ userMenuOpen: false });
 
   const showHelpMenu = (e) => {
     e.preventDefault();
@@ -4285,16 +4129,12 @@ const App = () => {
 
   const showToolsMenu = (e) => {
     e.preventDefault();
-    updateDialogsState({
-      toolsMenuOpen: true,
-    });
+    setToolsMenuOpen(true);
     setMenuAnchor(e.currentTarget);
   };
 
-  const hideToolsMenu = () => updateDialogsState({ toolsMenuOpen: false });
-
   const openProjectsDialog = async () => {
-    updateDialogsState({ projectsDialogOpen: true });
+    setProjectsDialogOpen(true);
     await getProjects();
   };
 
@@ -4310,12 +4150,12 @@ const App = () => {
 
   const openUserSettingsDialog = () => {
     setUserSettingsDialogOpen(true);
-    hideUserMenu();
+    setUserMenuOpen(false);
   };
 
   const openProfileDialog = () => {
-    updateDialogsState({ profileDialogOpen: true });
-    hideUserMenu();
+    setProfileDialogOpen(true);
+    setUserMenuOpen(false);
   };
 
   const openAboutDialog = () => {
@@ -4325,27 +4165,24 @@ const App = () => {
 
   const openUsersDialog = async () => {
     await getUsers();
-    updateDialogsState({ usersDialogOpen: true });
+    setUsersDialogOpen(true);
   };
 
   const toggleInfoPanel = () =>
     setInfoPanelOpen((prevState) => !prevState.infoPanelOpen);
 
   const toggleResultsPanel = () =>
-    setDialogsState((prevState) => ({
-      ...prevState,
-      resultsPanelOpen: !prevState.resultsPanelOpen,
-    }));
+    setResultsPanelOpen((prevState) => !prevState.resultsPanelOpen);
 
   const openRunLogDialog = async () => {
     await getRunLogs();
     await startPollingRunLogs();
-    updateDialogsState({ runLogDialogOpen: true });
+    setRunLogDialogOpen(true);
   };
 
   const closeRunLogDialog = () => {
     clearInterval(this.runlogTimer);
-    updateDialogsState({ runLogDialogOpen: false });
+    setRunLogDialogOpen(false);
   };
 
   const openGapAnalysisDialog = async () => {
@@ -4360,14 +4197,12 @@ const App = () => {
   };
 
   const openServerDetailsDialog = () => {
-    updateDialogsState({ serverDetailsDialogOpen: true });
+    setServerDetailsDialogOpen(true);
     setHelpMenuOpen(false);
   };
-  const closeServerDetailsDialog = () =>
-    updateDialogsState({ serverDetailsDialogOpen: false });
 
   const openChangePasswordDialog = () => {
-    hideUserMenu();
+    setUserMenuOpen(false);
     setChangePasswordDialogOpen(true);
   };
 
@@ -4376,23 +4211,12 @@ const App = () => {
     projectListDialogTitle,
     projectListDialogHeading
   ) => {
-    setDialogsState(
-      (prevState) => ({
-        ...prevState,
-        projectList,
-        projectListDialogTitle,
-        projectListDialogHeading,
-      }),
-      () => {
-        setProjectsListDialogOpen(true);
-      }
-    );
+    setProjectList(projectList);
+    setProjectListDialogHeading(projectListDialogHeading);
+    setProjectListDialogTitle(projectListDialogTitle);
+    setProjectsListDialogOpen(true);
   };
 
-  const openTargetDialog = () => updateDialogsState({ targetDialogOpen: true });
-
-  const closeTargetDialog = () =>
-    updateDialogsState({ targetDialogOpen: false });
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -4518,8 +4342,8 @@ const App = () => {
 
   const preprocessProtectedAreas = async (iucnCategory) => {
     // Have the intersections already been calculated
-    if (dialogsState.protected_area_intersections.length > 0) {
-      return dialogsState.protected_area_intersections;
+    if (protectedAreaIntersections.length > 0) {
+      return protectedAreaIntersections;
     } else {
       try {
         // Start logging
@@ -4527,16 +4351,10 @@ const App = () => {
 
         // Call the websocket
         const message = await _ws(
-          `preprocessProtectedAreas?user=${owner}&project=${dialogsState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}`,
+          `preprocessProtectedAreas?user=${owner}&project=${project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}`,
           wsMessageCallback
         );
-
-        // Update the state
-        updateDialogsState({
-          protected_area_intersections: message.intersections,
-        });
-
-        // Return the intersections
+        setProtectedAreaIntersections(message.intersections);
         return message.intersections;
       } catch (error) {
         throw error;
@@ -4548,7 +4366,7 @@ const App = () => {
     //get the individual iucn categories
     const _iucn_categories = getIndividualIucnCategories(iucnCategory);
     //get the planning units that intersect the protected areas with the passed iucn category
-    return dialogsState.protected_area_intersections.filter(
+    return protectedAreaIntersections.filter(
       (item) => _iucn_categories.indexOf(item[0]) > -1
     );
   };
@@ -4558,7 +4376,7 @@ const App = () => {
     startLogging();
     //call the webservice
     const message = await _ws(
-      `updateWDPA?downloadUrl=${dialogsState.registry.WDPA.downloadUrl}&wdpaVersion=${dialogsState.registry.WDPA.latest_version}`,
+      `updateWDPA?downloadUrl=${registry.WDPA.downloadUrl}&wdpaVersion=${registry.WDPA.latest_version}`,
       wsMessageCallback
     );
     // Websocket has finished - set the new version of the wdpa
@@ -4566,11 +4384,11 @@ const App = () => {
     setNewWDPAVersion(false);
     setMarxanServer({
       ...prev,
-      wdpa_version: dialogsState.registry.WDPA.latest_version,
+      wdpa_version: registry.WDPA.latest_version,
     });
     await delay(1000);
     //set the source for the WDPA layer to the new vector tiles
-    setWDPAVectorTilesLayerName(dialogsState.registry.WDPA.latest_version);
+    setWDPAVectorTilesLayerName(registry.WDPA.latest_version);
     // Remove the existing WDPA layer and source
     removeMapLayer(CONSTANTS.WDPA_LAYER_NAME);
     if (map.current && map.current.getSource(CONSTANTS.WDPA_SOURCE_NAME)) {
@@ -4580,11 +4398,11 @@ const App = () => {
     addWDPASource();
     addWDPALayer();
     //reset the protected area intersections on the client
-    updateDialogsState({ protected_area_intersections: [] });
+    setProtectedAreaIntersections([]);
     //recalculate the protected area intersections and refilter the vector tiles
     await changeIucnCategory(metadata.IUCN_CATEGORY);
     //close the dialog
-    updateState({ updateWDPADialogOpen: false });
+    setUpdateWDPADialogOpen(false);
     return message;
   };
 
@@ -4610,7 +4428,7 @@ const App = () => {
 
       // Call the websocket and wait for the response
       const message = await _ws(
-        `preprocessPlanningUnits?user=${owner}&project=${dialogsState.project}`,
+        `preprocessPlanningUnits?user=${owner}&project=${project}`,
         wsMessageCallback
       );
 
@@ -4655,16 +4473,17 @@ const App = () => {
   //creates a group of 5 projects with UUIDs in the _clumping folder
   const createProjectGroupAndRun = async (blmValues) => {
     //clear any exists projects
-    if (this.projects) {
+    let _projects = undefined;
+    if (_projects) {
       await deleteProjects();
     }
     const response = await _get(
-      `createProjectGroup?user=${owner}&project=${
-        dialogsState.project
-      }&copies=5&blmValues=${blmValues.join(",")}`
+      `createProjectGroup?user=${owner}&project=${project}&copies=5&blmValues=${blmValues.join(
+        ","
+      )}`
     );
     // Set the local variable for the projects
-    this.projects = response.data;
+    _projects = response.data;
     //run the projects
     await runProjects(response.data);
     return "Project group created";
@@ -4692,11 +4511,11 @@ const App = () => {
     setClumpingRunning(true);
     // Iterate through projects using a for...of loop to handle async/await correctly
     try {
-      for (const project of projects) {
+      for (const proj of projects) {
         // Start the Marxan job and wait for the response
         const response = await startMarxanJob(
           "_clumping",
-          project.projectName,
+          proj.projectName,
           false
         );
 
@@ -4733,7 +4552,7 @@ const App = () => {
   };
 
   const setBlmValue = async (blmValue) => {
-    const newRunParams = dialogsSate.runParams.map((item) => ({
+    const newRunParams = runParams.map((item) => ({
       key: item.key,
       value: item.key === "BLM" ? String(blmValue) : item.value,
     }));
@@ -4780,9 +4599,9 @@ const App = () => {
 
   //returns the log of all of the runs from the server
   const getRunLogs = async () => {
-    if (!dialogsState.unauthorisedMethods.includes("getRunLogs")) {
+    if (!unauthorisedMethods.includes("getRunLogs")) {
       const response = await _get("getRunLogs");
-      updateDialogsState({ runLogs: response.data });
+      setRunLogs(response.data);
     }
   };
 
@@ -4790,10 +4609,6 @@ const App = () => {
   const clearRunLogs = async () => {
     await _get("clearRunLogs");
     await getRunLogs();
-  };
-
-  const getShareableLink = () => {
-    updateState({ shareableLinkDialogOpen: true });
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -4809,7 +4624,7 @@ const App = () => {
   const runGapAnalysis = async () => {
     setActiveTab("log");
     const message = await _ws(
-      `runGapAnalysis?user=${owner}&project=${dialogsState.project}`,
+      `runGapAnalysis?user=${owner}&project=${project}`,
       wsMessageCallback
     );
     setGapAnalysis(message.data);
@@ -4818,9 +4633,7 @@ const App = () => {
 
   //deletes a stored gap analysis on the server
   const deleteGapAnalysis = async () =>
-    await _get(
-      `deleteGapAnalysis?user=${owner}&project=${dialogsState.project}`
-    );
+    await _get(`deleteGapAnalysis?user=${owner}&project=${project}`);
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -4835,7 +4648,7 @@ const App = () => {
   //changes the cost profile for a project
   const changeCostname = async (costname) => {
     await _get(
-      `updateCosts?user=${owner}&project=${dialogsState.project}&costname=${costname}`
+      `updateCosts?user=${owner}&project=${project}&costname=${costname}`
     );
     setMetadata((prevState) => ({
       ...prevState.metadata,
@@ -4854,8 +4667,8 @@ const App = () => {
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
   const getPlanningUnitsCostData = async (forceReload) => {
-    const owner = owner === "" ? dialogsState.user : owner;
-    const url = `getPlanningUnitsCostData?user=${owner}&project=${dialogsState.project}`;
+    const owner = owner === "" ? user : owner;
+    const url = `getPlanningUnitsCostData?user=${owner}&project=${project}`;
     console.log("url ", url);
     try {
       // If cost data is already loaded and reload is not forced
@@ -4890,7 +4703,7 @@ const App = () => {
   //deletes a cost file on the server
   const deleteCost = async (costname) => {
     await _get(
-      `deleteCost?user=${owner}&project=${dialogsState.project}&costname=${costname}`
+      `deleteCost?user=${owner}&project=${project}&costname=${costname}`
     );
     const _costnames = costnames.filter((item) => item !== costname);
     setCostnames(_costnames);
@@ -4900,7 +4713,7 @@ const App = () => {
   const resetServer = async () => {
     setActiveTab("log");
     await _ws("resetDatabase", wsMessageCallback);
-    updateState({ resetDialogOpen: false });
+    setResetDialogOpen(false);
     return;
   };
 
@@ -4910,9 +4723,7 @@ const App = () => {
   };
 
   const handleProjectsDialogCancel = () => {
-    updateState({
-      projectsDialogOpen: false,
-    });
+    setProjectsDialogOpen(false);
     setImportProjectPopoverOpen(false);
   };
 
@@ -4933,10 +4744,10 @@ const App = () => {
             validateUser={(name, pass) => login(name, pass)}
             // onCancel={() => updateState({ registerDialogOpen: true })}
             loading={loading}
-            user={dialogsState.user}
-            password={dialogsState.password}
-            changeUserName={(user) => changeUserName(user)}
-            changePassword={(pass) => changePassword(pass)}
+            user={user}
+            password={password}
+            changeUserName={(user) => setUser(user)}
+            changePassword={(pass) => setPassword(pass)}
             updateState={updateState}
             marxanServers={marxanServers}
             selectServer={selectServer}
@@ -4944,27 +4755,28 @@ const App = () => {
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
           />
           <RegisterDialog
-            open={dialogsState.registerDialogOpen}
+            open={registerDialogOpen}
             onOk={handleCreateUser}
             updateState={updateState}
             loading={loading}
+            setRegisterDialogOpen={setRegisterDialogOpen}
           />
           <ResendPasswordDialog
-            open={dialogsState.resendPasswordDialogOpen}
+            open={resendPasswordDialogOpen}
             onOk={resendPassword}
-            onCancel={() => updateState({ resendPasswordDialogOpen: false })}
+            onCancel={() => setResendPasswordDialogOpen(false)}
             loading={loading}
-            changeEmail={changeEmail}
-            email={dialogsState.resendEmail}
+            changeEmail={() => setResendEmail(value)}
+            email={resendEmail}
           />
           {/* <Welcome
             open={
-              dialogsState.userData.SHOWWELCOMESCREEN &&
-              dialogsState.welcomeDialogOpen
+              userData.SHOWWELCOMESCREEN &&
+              welcomeDialogOpen
             }
             onOk={updateState}
-            onCancel={() => updateState({ welcomeDialogOpen: false })}
-            userData={dialogsState.userData}
+            onCancel={() => setWelcomeDialogOpen(false)}
+            userData={userData}
             saveOptions={saveOptions}
             notifications={notifications}
             resetNotifications={resetNotifications}
@@ -4972,24 +4784,25 @@ const App = () => {
             openNewProjectDialog={openNewProjectWizardDialog}
           /> */}
           <ToolsMenu
-            open={dialogsState.toolsMenuOpen}
+            open={toolsMenuOpen}
+            setResetDialogOpen={setResetDialogOpen}
             menuAnchor={menuAnchor}
-            hideToolsMenu={hideToolsMenu}
+            hideToolsMenu={() => setToolsMenuOpen(false)}
             openUsersDialog={openUsersDialog}
             openRunLogDialog={openRunLogDialog}
             openGapAnalysisDialog={openGapAnalysisDialog}
             updateState={updateState}
-            userRole={dialogsState.userData.ROLE}
+            userRole={userData.ROLE}
             marxanServer={marxanServer}
             metadata={metadata}
             cleanup={cleanup}
           />
           <UserMenu
-            open={dialogsState.userMenuOpen}
+            open={userMenuOpen}
             menuAnchor={menuAnchor}
-            user={dialogsState.user}
-            userRole={dialogsState.userData.ROLE}
-            hideUserMenu={hideUserMenu}
+            user={user}
+            userRole={userData.ROLE}
+            hideUserMenu={() => setUserMenuOpen(false)}
             openUserSettingsDialog={openUserSettingsDialog}
             openProfileDialog={openProfileDialog}
             logout={logout}
@@ -5007,72 +4820,72 @@ const App = () => {
             onOk={() => setUserSettingsDialogOpen(false)}
             onCancel={() => setUserSettingsDialogOpen(false)}
             loading={loading}
-            userData={dialogsState.userData}
+            userData={userData}
             saveOptions={saveOptions}
             changeBasemap={setBasemap}
             basemaps={basemaps}
             basemap={basemap}
           />
           <UsersDialog
-            open={dialogsState.usersDialogOpen}
-            onOk={() => updateState({ usersDialogOpen: false })}
-            onCancel={() => updateState({ usersDialogOpen: false })}
+            open={usersDialogOpen}
+            onOk={() => setUsersDialogOpen(false)}
+            onCancel={() => setUsersDialogOpen(false)}
             loading={loading}
-            user={dialogsState.user}
-            users={dialogsState.users}
+            user={user}
+            users={users}
             deleteUser={handleDeleteUser}
             changeRole={changeRole}
             guestUserEnabled={marxanServer.guestUserEnabled}
             toggleEnableGuestUser={toggleEnableGuestUser}
           />
           <ProfileDialog
-            open={dialogsState.profileDialogOpen}
-            onOk={() => updateState({ profileDialogOpen: false })}
-            onCancel={() => updateState({ profileDialogOpen: false })}
+            open={profileDialogOpen}
+            onOk={() => setProfileDialogOpen(false)}
+            onCancel={() => setProfileDialogOpen(false)}
             loading={loading}
-            userData={dialogsState.userData}
+            userData={userData}
             updateUser={handleUserUpdate}
           />
           <AboutDialog
             open={aboutDialogOpen}
             onOk={() => setAboutDialogOpen(false)}
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
-            wdpaAttribution={dialogsState.wdpaAttribution}
+            wdpaAttribution={wdpaAttribution}
           />
           <InfoPanel
             open={infoPanelOpen}
             activeTab={activeTab}
-            user={dialogsState.user}
+            user={user}
             owner={owner}
-            project={dialogsState.project}
+            project={project}
             metadata={metadata}
             runMarxan={runMarxan}
             stopProcess={stopProcess}
             pid={pid}
             renameProject={renameProject}
             renameDescription={renameDescription}
-            features={dialogsState.projectFeatures}
+            features={projectFeatures}
             project_tab_active={project_tab_active}
             features_tab_active={features_tab_active}
             pu_tab_active={pu_tab_active}
             startPuEditSession={startPuEditSession}
             stopPuEditSession={stopPuEditSession}
-            puEditing={dialogsState.puEditing}
+            puEditing={puEditing}
             clearManualEdits={clearManualEdits}
             openFeatureMenu={openFeatureMenu}
-            preprocessing={dialogsState.preprocessing}
+            preprocessing={preprocessing}
             openFeaturesDialog={openFeaturesDialog}
             changeIucnCategory={changeIucnCategory}
             updateFeature={updateFeature}
-            userRole={dialogsState.userData.ROLE}
+            userRole={userData.ROLE}
             toggleProjectPrivacy={toggleProjectPrivacy}
-            openTargetDialog={openTargetDialog}
-            getShareableLink={getShareableLink}
+            openTargetDialog={() => setTargetDialogOpen(true)}
+            getShareableLink={() => setShareableLinkDialogOpen(true)}
             marxanServer={marxanServer}
             toggleFeatureLayer={toggleFeatureLayer}
             toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
-            useFeatureColors={dialogsState.userData.USEFEATURECOLORS}
-            smallLinearGauge={dialogsState.smallLinearGauge}
+            useFeatureColors={userData.USEFEATURECOLORS}
+            smallLinearGauge={smallLinearGauge}
             openCostsDialog={openCostsDialog}
             costname={metadata?.COSTS}
             costnames={costnames}
@@ -5080,28 +4893,27 @@ const App = () => {
             loadCostsLayer={loadCostsLayer}
             loading={loading}
             updateState={updateState}
-            protected_area_intersections={
-              dialogsState.protected_area_intersections
-            }
+            setSettingsDialogOpen={setSettingsDialogOpen}
+            // protectedAreaIntersections={protectedAreaIntersections}
           />
           <ResultsPanel
-            open={dialogsState.resultsPanelOpen}
-            preprocessing={dialogsState.preprocessing}
-            solutions={dialogsState.solutions}
+            open={resultsPanelOpen}
+            preprocessing={preprocessing}
+            solutions={solutions}
             loadSolution={loadSolution}
             setClassificationDialogOpen={setClassificationDialogOpen}
-            brew={dialogsState.brew}
+            brew={brew}
             messages={logMessages}
             activeResultsTab={activeResultsTab}
             setActiveTab={setActiveTab}
             clearLog={() => setLogMessages([])}
             owner={owner}
-            resultsLayer={dialogsState.resultsLayer}
-            wdpaLayer={dialogsState.wdpaLayer}
+            resultsLayer={resultsLayer}
+            wdpaLayer={wdpaLayer}
             paLayerVisible={paLayerVisible}
             changeOpacity={changeOpacity}
-            userRole={dialogsState.userData.ROLE}
-            visibleLayers={dialogsState.visibleLayers}
+            userRole={userData.ROLE}
+            visibleLayers={visibleLayers}
             metadata={metadata}
             costsLoading={costsLoading}
           />
@@ -5112,34 +4924,35 @@ const App = () => {
             loading={loading}
             feature={currentFeature}
             updateFeature={updateFeature}
-            userRole={dialogsState.userData.ROLE}
-            reportUnits={dialogsState.userData.REPORTUNITS}
+            userRole={userData.ROLE}
+            reportUnits={userData.REPORTUNITS}
           />
           <IdentifyPopup
             visible={identifyVisible}
-            xy={dialogsState.popup_point}
+            xy={popupPoint}
             identifyPlanningUnits={identifyPlanningUnits}
             identifyProtectedAreas={identifyProtectedAreas}
             identifyFeatures={identifyFeatures}
             loading={loading}
             hideIdentifyPopup={hideIdentifyPopup}
-            reportUnits={dialogsState.userData.REPORTUNITS}
+            reportUnits={userData.REPORTUNITS}
             metadata={metadata}
           />
           <ProjectsDialog
-            open={dialogsState.projectsDialogOpen}
+            open={projectsDialogOpen}
+            setProjectsDialogOpen={setProjectsDialogOpen}
             onCancel={() => handleProjectsDialogCancel()}
-            project={dialogsState.project}
+            project={project}
             loading={loading}
-            projects={dialogsState.projects}
+            projects={projects}
             oldVersion={metadata?.OLDVERSION}
             updateState={updateState}
             deleteProject={deleteProject}
             loadProject={loadProject}
             exportProject={exportProject}
             cloneProject={cloneProject}
-            unauthorisedMethods={dialogsState.unauthorisedMethods}
-            userRole={dialogsState.userData.ROLE}
+            unauthorisedMethods={unauthorisedMethods}
+            userRole={userData.ROLE}
             allFeatures={allFeatures}
             importProjectPopoverOpen={importProjectPopoverOpen}
             importMXWDialogOpen={importMXWDialogOpen}
@@ -5148,14 +4961,14 @@ const App = () => {
           />
           <NewProjectDialog
             open={newProjectDialogOpen}
-            registry={dialogsState.registry}
+            registry={registry}
             loading={loading}
             getPlanningUnitGrids={getPlanningUnitGrids}
             planningUnitGrids={planningUnitGrids}
             openFeaturesDialog={openFeaturesDialog}
             features={allFeatures}
             updateState={updateState}
-            selectedCosts={dialogsState.selectedCosts}
+            selectedCosts={selectedCosts}
             createNewProject={createNewProject}
             previewFeature={previewFeature}
             setNewProjectDialogOpen={setNewProjectDialogOpen}
@@ -5172,9 +4985,7 @@ const App = () => {
           <NewPlanningGridDialog
             open={newPlanningGridDialogOpen}
             onCancel={() => setNewPlanningGridDialogOpen(false)}
-            loading={
-              loading || dialogsState.preprocessing || dialogsState.uploading
-            }
+            loading={loading || preprocessing || uploading}
             createNewPlanningUnitGrid={createNewPlanningUnitGrid}
             countries={countries}
             setSnackBarMessage={setSnackBarMessage}
@@ -5182,9 +4993,7 @@ const App = () => {
           <NewMarinePlanningGridDialog
             open={newMarinePlanningGridDialogOpen}
             onCancel={() => setNewMarinePlanningGridDialogOpen(false)}
-            loading={
-              loading || dialogsState.preprocessing || dialogsState.uploading
-            }
+            loading={loading || preprocessing || uploading}
             createNewPlanningUnitGrid={createNewMarinePlanningUnitGrid}
             fileUpload={uploadFileToFolder}
             setSnackBarMessage={setSnackBarMessage}
@@ -5193,13 +5002,13 @@ const App = () => {
             open={importPlanningGridDialogOpen}
             onOk={importPlanningUnitGrid}
             onCancel={() => setImportPlanningGridDialogOpen(false)}
-            loading={loading || dialogsState.uploading}
+            loading={loading || uploading}
             fileUpload={uploadFileToFolder}
           />
           <FeaturesDialog
             open={featuresDialogOpen}
             onOk={updateSelectedFeatures}
-            loading={loading || dialogsState.uploading}
+            loading={loading || uploading}
             metadata={metadata}
             allFeatures={allFeatures}
             deleteFeature={deleteFeature}
@@ -5207,10 +5016,11 @@ const App = () => {
             setFeaturesDialogOpen={setFeaturesDialogOpen}
             setImportFeaturesDialogOpen={setImportFeaturesDialogOpen}
             selectAllFeatures={selectAllFeatures}
-            userRole={dialogsState.userData.ROLE}
+            userRole={userData.ROLE}
             clickFeature={clickFeature}
             addingRemovingFeatures={addingRemovingFeatures}
-            selectedFeatureIds={dialogsState.selectedFeatureIds}
+            selectedFeatureIds={selectedFeatureIds}
+            setSelectedFeatureIds={setSelectedFeatureIds}
             initialiseDigitising={initialiseDigitising}
             newFeaturePopoverOpen={newFeaturePopoverOpen}
             setNewFeaturePopoverOpen={setNewFeaturePopoverOpen}
@@ -5228,14 +5038,14 @@ const App = () => {
             featureMetadata={featureMetadata}
             getTilesetMetadata={getMetadata}
             setSnackBarMessage={setSnackBarMessage}
-            reportUnits={dialogsState.userData.REPORTUNITS}
+            reportUnits={userData.REPORTUNITS}
             getProjectList={getProjectList}
           />
           <NewFeatureDialog
             open={newFeatureDialogOpen}
             onOk={closeNewFeatureDialog}
             onCancel={closeNewFeatureDialog}
-            loading={loading || dialogsState.uploading}
+            loading={loading || uploading}
             createNewFeature={createNewFeature}
             addToProject={addToProject}
             setAddToProject={setAddToProject}
@@ -5243,9 +5053,7 @@ const App = () => {
           <ImportFeaturesDialog
             open={importFeaturesDialogOpen}
             importFeatures={importFeatures}
-            loading={
-              loading || dialogsState.preprocessing || dialogsState.uploading
-            }
+            loading={loading || preprocessing || uploading}
             updateState={updateState}
             setFeaturesDialogOpen={setFeaturesDialogOpen}
             setImportFeaturesDialogOpen={setImportFeaturesDialogOpen}
@@ -5261,9 +5069,7 @@ const App = () => {
           <ImportFromWebDialog
             open={importFromWebDialogOpen}
             setImportFromWebDialogOpen={setImportFromWebDialogOpen}
-            loading={
-              loading || dialogsState.preprocessing || dialogsState.uploading
-            }
+            loading={loading || preprocessing || uploading}
             importFeatures={importFeaturesFromWeb}
             addToProject={addToProject}
             setAddToProject={setAddToProject}
@@ -5272,9 +5078,7 @@ const App = () => {
             open={importGBIFDialogOpen}
             setImportGBIFDialogOpen={setImportGBIFDialogOpen}
             updateState={updateState}
-            loading={
-              loading || dialogsState.preprocessing || dialogsState.uploading
-            }
+            loading={loading || preprocessing || uploading}
             importGBIFData={importGBIFData}
             gbifSpeciesSuggest={gbifSpeciesSuggest}
             addToProject={addToProject}
@@ -5286,7 +5090,7 @@ const App = () => {
             updateState={updateState}
             loading={loading}
             getPlanningUnitGrids={getPlanningUnitGrids}
-            unauthorisedMethods={dialogsState.unauthorisedMethods}
+            unauthorisedMethods={unauthorisedMethods}
             planningGrids={planningUnitGrids}
             openNewPlanningGridDialog={openNewPlanningGridDialog}
             exportPlanningGrid={exportPlanningGrid}
@@ -5310,18 +5114,18 @@ const App = () => {
           />
           <ProjectsListDialog
             open={projectsListDialogOpen}
-            projects={dialogsState.projectList}
-            userRole={dialogsState.userData.ROLE}
+            projects={projectList}
+            userRole={userData.ROLE}
             onOk={() => setProjectsListDialogOpen(false)}
-            title={dialogsState.projectListDialogTitle}
-            heading={dialogsState.projectListDialogHeading}
+            title={projectListDialogTitle}
+            heading={projectListDialogHeading}
           />
           <CostsDialog
             open={costsDialogOpen}
             onOk={() => setCostsDialogOpen(false)}
             onCancel={() => setCostsDialogOpen(false)}
             updateState={updateState}
-            unauthorisedMethods={dialogsState.unauthorisedMethods}
+            unauthorisedMethods={unauthorisedMethods}
             costname={metadata?.COSTS}
             deleteCost={deleteCost}
             data={costnames}
@@ -5338,34 +5142,34 @@ const App = () => {
             fileUpload={uploadFileToProject}
           />
           <RunSettingsDialog
-            open={dialogsState.settingsDialogOpen}
-            onOk={() => updateState({ settingsDialogOpen: false })}
-            onCancel={() => updateState({ settingsDialogOpen: false })}
-            loading={loading || dialogsState.preprocessing}
+            open={settingsDialogOpen}
+            onOk={() => setSettingsDialogOpen(false)}
+            onCancel={() => setSettingsDialogOpen(false)}
+            loading={loading || preprocessing}
             updateRunParams={updateRunParams}
-            runParams={dialogsState.runParams}
+            runParams={runParams}
             showClumpingDialog={showClumpingDialog}
-            userRole={dialogsState.userData.ROLE}
+            userRole={userData.ROLE}
           />
           <ClassificationDialog
             open={classificationDialogOpen}
             onOk={() => setClassificationDialogOpen(false)}
             onCancel={() => setClassificationDialogOpen(false)}
             loading={loading}
-            renderer={dialogsState.renderer}
+            renderer={renderer}
             changeColorCode={changeColorCode}
             changeRenderer={changeRenderer}
             changeNumClasses={changeNumClasses}
             changeShowTopClasses={changeShowTopClasses}
-            summaryStats={dialogsState.summaryStats}
-            brew={dialogsState.brew}
-            dataBreaks={dialogsState.brew.getBreaks()}
+            summaryStats={summaryStats}
+            brew={brew}
+            dataBreaks={dataBreaks}
           />
           <ClumpingDialog
             open={clumpingDialogOpen}
             onOk={hideClumpingDialog}
             onCancel={hideClumpingDialog}
-            tileset={dialogsState.tileset}
+            tileset={tileset}
             setMapPaintProperties={setMapPaintProperties}
             map0_paintProperty={mapPaintProperties.mapPP0}
             map1_paintProperty={mapPaintProperties.mapPP1}
@@ -5382,7 +5186,7 @@ const App = () => {
           <ImportProjectDialog
             open={importProjectDialogOpen}
             onOk={() => setImportProjectDialogOpen(false)}
-            loading={loading || dialogsState.uploading}
+            loading={loading || uploading}
             importProject={importProject}
             fileUpload={uploadFileToFolder}
             log={messageLogger}
@@ -5391,55 +5195,56 @@ const App = () => {
           <ImportMXWDialog
             open={importMXWDialogOpen}
             onOk={() => setImportMXWDialogOpen(false)}
-            loading={loading || dialogsState.preprocessing}
+            loading={loading || preprocessing}
             importMXWProject={importMXWProject}
             fileUpload={uploadFileToFolder}
             log={messageLogger}
             setSnackBarMessage={setSnackBarMessage}
           />
           <ResetDialog
-            open={dialogsState.resetDialogOpen}
+            open={resetDialogOpen}
             onOk={resetServer}
-            onCancel={() => updateState({ resetDialogOpen: false })}
-            onClose={() => updateState({ resetDialogOpen: false })}
+            onCancel={() => setResetDialogOpen(false)}
+            onClose={() => setResetDialogOpen(false)}
             loading={loading}
           />
           <RunLogDialog
-            open={dialogsState.runLogDialogOpen}
+            open={runLogDialogOpen}
             onOk={closeRunLogDialog}
             onClose={closeRunLogDialog}
             loading={loading}
-            preprocessing={dialogsState.preprocessing}
-            unauthorisedMethods={dialogsState.unauthorisedMethods}
-            runLogs={dialogsState.runLogs}
+            preprocessing={preprocessing}
+            unauthorisedMethods={unauthorisedMethods}
+            runLogs={runLogs}
             getRunLogs={getRunLogs}
             clearRunLogs={clearRunLogs}
             stopMarxan={stopProcess}
-            userRole={dialogsState.userData.ROLE}
+            userRole={userData.ROLE}
           />
           <ServerDetailsDialog
-            open={dialogsState.serverDetailsDialogOpen}
-            onOk={closeServerDetailsDialog}
-            onCancel={closeServerDetailsDialog}
-            onClose={closeServerDetailsDialog}
+            open={serverDetailsDialogOpen}
+            onOk={() => setServerDetailsDialogOpen(false)}
+            onCancel={() => setServerDetailsDialogOpen(false)}
+            onClose={() => setServerDetailsDialogOpen(false)}
             updateState={updateState}
             marxanServer={marxanServer}
             newWDPAVersion={newWDPAVersion}
-            registry={dialogsState.registry}
+            registry={registry}
+            setUpdateWDPADialogOpen={setUpdateWDPADialogOpen}
           />
           <UpdateWDPADialog
-            open={dialogsState.updateWDPADialogOpen}
-            onOk={() => updateState({ updateWDPADialogOpen: false })}
-            onCancel={() => updateState({ updateWDPADialogOpen: false })}
+            open={updateWDPADialogOpen}
+            onOk={() => setUpdateWDPADialogOpen(false)}
+            onCancel={() => setUpdateWDPADialogOpen(false)}
             newWDPAVersion={newWDPAVersion}
             updateWDPA={updateWDPA}
-            loading={dialogsState.preprocessing}
-            registry={dialogsState.registry}
+            loading={preprocessing}
+            registry={registry}
           />
           <ChangePasswordDialog
             open={changePasswordDialogOpen}
             onOk={() => setChangePasswordDialogOpen(false)}
-            user={dialogsState.user}
+            user={user}
             onClose={() => setChangePasswordDialogOpen(false)}
             checkPassword={checkPassword}
             setSnackBarMessage={setSnackBarMessage}
@@ -5476,8 +5281,7 @@ const App = () => {
                 leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
                 style={{
                   display:
-                    currentFeature?.old_version ||
-                    dialogsState.userData.ROLE === "ReadOnly"
+                    currentFeature?.old_version || userData.ROLE === "ReadOnly"
                       ? "none"
                       : "block",
                 }}
@@ -5535,25 +5339,22 @@ const App = () => {
                 leftIcon={<Preprocess style={{ margin: "1px" }} />}
                 style={{
                   display:
-                    currentFeature?.old_version ||
-                    dialogsState.userData.ROLE === "ReadOnly"
+                    currentFeature?.old_version || userData.ROLE === "ReadOnly"
                       ? "none"
                       : "block",
                 }}
                 onClick={preprocessSingleFeature.bind(this, currentFeature)}
-                disabled={
-                  currentFeature?.preprocessed || dialogsState.preprocessing
-                }
+                disabled={currentFeature?.preprocessed || preprocessing}
               >
                 Pre-process
               </MenuItemWithButton>
             </Menu>
           </Popover>
           <TargetDialog
-            open={dialogsState.targetDialogOpen}
-            onOk={closeTargetDialog}
+            open={targetDialogOpen}
+            onOk={() => setTargetDialogOpen(false)}
             showCancelButton={true}
-            onCancel={closeTargetDialog}
+            onCancel={() => setTargetDialogOpen(false)}
             updateTargetValueForFeatures={updateTargetValueForFeatures}
           />
           <GapAnalysisDialog
@@ -5563,24 +5364,16 @@ const App = () => {
             onCancel={closeGapAnalysisDialog}
             closeGapAnalysisDialog={closeGapAnalysisDialog}
             gapAnalysis={gapAnalysis}
-            preprocessing={dialogsState.preprocessing}
-            projectFeatures={dialogsState.projectFeatures}
+            preprocessing={preprocessing}
+            projectFeatures={projectFeatures}
             metadata={metadata}
             marxanServer={marxanServer}
-            reportUnits={dialogsState.userData.REPORTUNITS}
+            reportUnits={userData.REPORTUNITS}
           />
           <ShareableLinkDialog
-            open={dialogsState.shareableLinkDialogOpen}
-            onOk={() => updateState({ shareableLinkDialogOpen: false })}
-            shareableLinkUrl={
-              window.location +
-              "?server=" +
-              marxanServer.name +
-              "&user=" +
-              dialogsState.user +
-              "&project=" +
-              dialogsState.project
-            }
+            open={shareableLinkDialogOpen}
+            onOk={() => setShareableLinkDialogOpen(false)}
+            shareableLinkUrl={`${window.location}?server=${marxanServer.name}&user=${user}&project=${project}`}
           />
           <AtlasLayersDialog
             open={atlasLayersDialogOpen}
@@ -5590,11 +5383,11 @@ const App = () => {
             atlasLayers={atlasLayers}
             marxanServer={marxanServer}
             setSnackBarMessage={setSnackBarMessage}
-            selectedLayers={dialogsState.selectedLayers}
-            setSelectedLayers={setSelectedLayers}
+            selectedLayers={selectedLayers}
+            updateSelectedLayers={updateSelectedLayers}
           />
           <CumulativeImpactDialog
-            loading={loading || dialogsState.uploading}
+            loading={loading || uploading}
             open={cumulativeImpactDialogOpen}
             onOk={() => setCumulativeImpactDialogOpen(false)}
             onCancel={() => setCumulativeImpactDialogOpen(false)}
@@ -5604,13 +5397,13 @@ const App = () => {
             clickImpact={clickImpact}
             initialiseDigitising={initialiseDigitising}
             updateState={updateState}
-            selectedImpactIds={dialogsState.selectedImpactIds}
+            selectedImpactIds={selectedImpactIds}
             openImportedActivitesDialog={openImportedActivitesDialog}
             setSnackBarMessage={setSnackBarMessage}
-            userRole={dialogsState.userData.ROLE}
+            userRole={userData.ROLE}
           />
           <HumanActivitiesDialog
-            loading={loading || dialogsState.uploading}
+            loading={loading || uploading}
             open={humanActivitiesDialogOpen}
             onOk={() => setHumanActivitiesDialogOpen(false)}
             onCancel={() => setHumanActivitiesDialogOpen(false)}
@@ -5619,29 +5412,29 @@ const App = () => {
             activities={activities}
             initialiseDigitising={initialiseDigitising}
             setSnackBarMessage={setSnackBarMessage}
-            userRole={dialogsState.userData.ROLE}
+            userRole={userData.ROLE}
             fileUpload={uploadRaster}
             saveActivityToDb={saveActivityToDb}
             openImportedActivitesDialog={openImportedActivitesDialog}
           />
           <RunCumuluativeImpactDialog
-            loading={loading || dialogsState.uploading}
+            loading={loading || uploading}
             open={importedActivitiesDialogOpen}
             onOk={() => setImportedActivitiesDialogOpen(false)}
             onCancel={() => setImportedActivitiesDialogOpen(false)}
             updateState={updateState}
             metadata={metadata}
-            uploadedActivities={dialogsState.uploadedActivities}
+            uploadedActivities={uploadedActivities}
             setSnackBarMessage={setSnackBarMessage}
-            userRole={dialogsState.userData.ROLE}
+            userRole={userData.ROLE}
             runCumulativeImpact={runCumulativeImpact}
           />
           <MenuBar
             open={loggedIn}
-            user={dialogsState.user}
-            userRole={dialogsState.userData.ROLE}
+            user={user}
+            userRole={userData.ROLE}
             infoPanelOpen={infoPanelOpen}
-            resultsPanelOpen={dialogsState.resultsPanelOpen}
+            resultsPanelOpen={resultsPanelOpen}
             toggleInfoPanel={toggleInfoPanel}
             toggleResultsPanel={toggleResultsPanel}
             showToolsMenu={showToolsMenu}

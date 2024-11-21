@@ -59,10 +59,9 @@ const ProjectsDialog = (props) => {
 
   const closeDialog = useCallback(() => {
     // setSelectedProject(undefined);
+    props.setProjectsDialogOpen(false);
     props.updateState({
-      projectsDialogOpen: false,
       selectedProject: undefined,
-      // importProjectPopoverOpen: false,
     });
   }, [props]);
 
