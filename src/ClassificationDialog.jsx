@@ -21,9 +21,14 @@ import React from "react";
 import RendererSelector from "./RendererSelector";
 
 const ClassificationDialog = (props) => {
+  const renderer = props.renderer || {};
+  const dataBreaks = Array.isArray(props.dataBreaks) ? props.dataBreaks : [];
+  const summaryStats = props.summaryStats || [];
+
+  console.log("Props in ClassificationDialog:", props);
+
   // Generate reference lines based on dataBreaks
-  const breaks = props.dataBreaks.map((item, index) => (
-    // Don't include the bottom line as we will use the Y-axis
+  const breaks = dataBreaks.map((item, index) => (
     <ReferenceLine x={item} key={index} stroke="#00BCD4" />
   ));
 
@@ -38,7 +43,7 @@ const ClassificationDialog = (props) => {
       title="Classification"
     >
       <div style={{ height: "275px" }} key="k6">
-        <BarChart width={250} height={150} data={props.summaryStats}>
+        <BarChart width={250} height={150} data={summaryStats}>
           <CartesianGrid strokeDasharray="1" stroke="#f4f4f4" />
           <XAxis dataKey="number" tick={{ fontSize: 11 }} type={"number"}>
             <Label
@@ -65,26 +70,29 @@ const ClassificationDialog = (props) => {
           <ColorSelector
             values={COLORCODES}
             changeValue={props.changeColorCode}
-            property={props.renderer.COLORCODE}
+            property={renderer.COLORCODE}
             floatingLabelText="Colour scheme"
             brew={props.brew}
           />
           <RendererSelector
+            selectionRenderer={renderer}
             values={RENDERERS}
             changeValue={props.changeRenderer}
-            property={props.renderer.CLASSIFICATION}
+            property={renderer.CLASSIFICATION}
             floatingLabelText="Classification"
           />
           <RendererSelector
+            selectionRenderer={renderer}
             values={NUMCLASSES}
             changeValue={props.changeNumClasses}
-            property={props.renderer.NUMCLASSES}
+            property={renderer.NUMCLASSES}
             floatingLabelText="Number of classes"
           />
           <RendererSelector
+            selectionRenderer={renderer}
             values={TOPCLASSES}
             changeValue={props.changeShowTopClasses}
-            property={props.renderer.TOPCLASSES}
+            property={renderer.TOPCLASSES}
             floatingLabelText="Show top n classes"
           />
         </div>

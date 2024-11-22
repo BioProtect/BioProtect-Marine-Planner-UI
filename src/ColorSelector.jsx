@@ -4,6 +4,12 @@ import Select from "@mui/material/Select";
 import { getMaxNumberOfClasses } from "./Helpers";
 
 const ColorSelector = ({ values, property, brew, changeValue }) => {
+  console.log("{ values, property, brew, changeValue } ", {
+    values,
+    property,
+    brew,
+    changeValue,
+  });
   // Handle change in selection
   const handleChange = (event) => {
     changeValue(event.target.value);
@@ -58,7 +64,7 @@ const ColorSelector = ({ values, property, brew, changeValue }) => {
     <Select
       value={property}
       onChange={handleChange}
-      renderValue={getSwatch(property, true)}
+      // renderValue={getSwatch(property, true)}
       style={{ width: "150px", margin: "0px 10px" }}
     >
       {values.map((colorCode) => (

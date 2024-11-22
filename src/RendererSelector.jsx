@@ -3,6 +3,7 @@ import React from "react";
 import Select from "@mui/material/Select";
 
 const RendererSelector = (props) => {
+  console.log("props selection renderer", props);
   const handleChange = (event) => {
     props.changeValue(event.target.value);
   };
@@ -22,7 +23,7 @@ const RendererSelector = (props) => {
 
   return (
     <Select
-      renderValue={props.selectionRenderer}
+      // renderValue={props.selectionRenderer}
       style={{ width: "150px", margin: "0px 10px" }}
       onChange={handleChange}
       value={props.property}

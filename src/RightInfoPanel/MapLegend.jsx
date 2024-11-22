@@ -109,7 +109,7 @@ const MapLegend = (props) => {
                 layer={layer}
                 items={items}
                 shape={planningGridShape}
-                setSymbology={props.setClassificationDialogOpen(true)}
+                // setSymbology={props.setClassificationDialogOpen(true)}
               />
             );
           case CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST:

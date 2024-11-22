@@ -139,7 +139,7 @@ const App = () => {
   const [activitiesDialogOpen, setActivitiesDialogOpen] = useState(false);
   const [addToProject, setAddToProject] = useState(true);
   const [addingRemovingFeatures, setAddingRemovingFeatures] = useState(false);
-
+  const [pid, setPid] = useState("");
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [allFeatures, setAllFeatures] = useState([]);
   const [allImpacts, setAllImpacts] = useState([]);
@@ -277,6 +277,10 @@ const App = () => {
   const [resultsLayer, setResultsLayer] = useState({});
   const [summaryStats, setSummaryStats] = useState([]);
   const [projectImpacts, setProjectImpacts] = useState([]);
+  const [paLayerVisible, setPaLayerVisible] = useState(false);
+  const [planningGridDialogOpen, setPlanningGridDialogOpen] = useState(false);
+  const [planningGridsDialogOpen, setPlanningGridsDialogOpen] = useState(false);
+  const [planningGridMetadata, setPlanningGridMetadata] = useState({});
 
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -355,7 +359,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (planningCostsTrigger && projectLoaded && user !== "") {
+    if (planningCostsTrigger && projectLoaded && owner !== "" && user !== "") {
       (async () => {
         await getPlanningUnitsCostData();
         setPlanningCostsTrigger(false);
@@ -851,6 +855,14 @@ const App = () => {
       const checkedPass = await checkPassword(user, password);
       if (checkedPass) {
         const userResp = await _get(`getUser?user=${user}`);
+        setUser(user);
+        setUserData(userResp.userData);
+        setUnauthorisedMethods(userResp.unauthorisedMethods);
+        setDismissedNotifications(userResp.dismissedNotifications || []);
+        setResultsPanelOpen(true);
+        setLoggedIn(true);
+        setInfoPanelOpen(true);
+
         const current_basemap = basemaps.find(
           (item) => item.name === userResp.userData.BASEMAP
         );
@@ -864,12 +876,9 @@ const App = () => {
 
         await loadBasemap(current_basemap);
         const speciesData = await _get("getAllSpeciesData");
-        await loadProject(
-          userResp.userData.LASTPROJECT,
-          user,
-          userResp,
-          speciesData
-        );
+        setAllFeatures(speciesData.data);
+
+        await loadProject(userResp.userData.LASTPROJECT, user, userResp);
         console.log("Project should be loaded....");
         await getPlanningUnitGrids();
         console.log("logged in ? ", loggedIn);
@@ -1137,29 +1146,20 @@ const App = () => {
   const loadProject = async (proj, user, ...options) => {
     console.log("project, user ", project, user);
     const userResp = options[0];
-    const speciesData = options[1];
     try {
       // Reset the results from any previous projects
       resetResults();
       const projectResp = await _get(`getProject?user=${user}&project=${proj}`);
-      setDismissedNotifications(userResp.dismissedNotifications || []);
-      setUserData(userResp.userData);
-      setUnauthorisedMethods(userResp.unauthorisedMethods);
       setRunParams(projectResp.runParameters);
-      setResultsPanelOpen(true);
       setProtectedAreaIntersections(projectResp.protectedAreaIntersections);
       setRenderer(projectResp.renderer);
-      setProjectLoaded(true);
-      setUser(user);
       setProject(projectResp.project);
       setPlanningUnits(projectResp.planningUnits);
-      setOwner(user);
       setMetadata(projectResp.metadata);
-      setLoggedIn(true);
-      setInfoPanelOpen(true);
       setFiles({ ...projectResp.files });
       setCostnames(projectResp.costnames);
-      setAllFeatures(speciesData.data);
+      setOwner(user);
+      setProjectLoaded(true);
       setPlanningCostsTrigger(true);
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
@@ -4667,7 +4667,9 @@ const App = () => {
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
   const getPlanningUnitsCostData = async (forceReload) => {
-    const owner = owner === "" ? user : owner;
+    if (owner === "") {
+      setOwner(user);
+    }
     const url = `getPlanningUnitsCostData?user=${owner}&project=${project}`;
     console.log("url ", url);
     try {

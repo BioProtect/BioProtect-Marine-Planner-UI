@@ -1,260 +1,214 @@
+import React, { useCallback } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
 import { getArea, isNumber, isValidTargetValue } from "../Helpers";
 
 import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
-import { Table } from "@mui/material";
 
-class FeatureInfoDialog extends React.Component {
-  onKeyDown(key, e) {
-    if (e.nativeEvent.keyCode === 13 || e.nativeEvent.keyCode === 27) {
-      //update the feature
-      this.updateFeatureValue(key, e);
-      //closes this window
-      this.props.onOk();
-    }
-  }
-  getHTML(value, title = "") {
-    return <div title={title !== "" ? title : value}>{value}</div>;
-  }
-  //adds Kms to the area values and rounds to 1 decimal place
-  getAreaHTML(props) {
-    //set the font color to red if the area protected is less than the target area
-    let color =
-      this.props.feature.protected_area < this.props.feature.target_area &&
-      props.row.key === "Area protected"
+const FeatureInfoDialog = ({
+  feature,
+  userRole,
+  updateFeature,
+  reportUnits,
+  onOk,
+  ...props
+}) => {
+  const updateFeatureValue = useCallback(
+    (key, e) => {
+      const value = e.currentTarget.textContent;
+      if (
+        (key === "target_value" && isValidTargetValue(value)) ||
+        (key === "spf" && isNumber(value))
+      ) {
+        const updatedProps = { [key]: value };
+        updateFeature(feature, updatedProps);
+      } else {
+        alert("Invalid value");
+      }
+    },
+    [feature, updateFeature]
+  );
+
+  const onKeyDown = useCallback(
+    (key, e) => {
+      if (e.key === "Enter" || e.key === "Escape") {
+        updateFeatureValue(key, e);
+        onOk(); // Close the dialog
+      }
+    },
+    [updateFeatureValue, onOk]
+  );
+
+  const getHTML = (value, title = "") => (
+    <div title={title || value}>{value}</div>
+  );
+
+  const getAreaHTML = (rowKey, value) => {
+    const color =
+      feature.protected_area < feature.target_area &&
+      rowKey === "Area protected"
         ? "red"
         : "rgba(0, 0, 0, 0.6)";
-    //rounded to 6 sf in the hint
-    let html = (
-      <div
-        title={getArea(props.row.value, this.props.reportUnits, false, 6)}
-        style={{ color: color }}
-      >
-        {getArea(props.row.value, this.props.reportUnits, true)}
+
+    return (
+      <div title={getArea(value, reportUnits, false, 6)} style={{ color }}>
+        {getArea(value, reportUnits, true)}
       </div>
     );
-    return html;
-  }
-  renderKeyCell(props) {
-    return this.getHTML(props.row.key, props.original.hint);
-  }
-  //called when the user moves away from an editable property, e.g. target percent or spf
-  updateFeatureValue(key, evt) {
-    var value = evt.currentTarget.innerHTML;
-    if (
-      (key === "target_value" && isValidTargetValue(value)) ||
-      (key === "spf" && isNumber(value))
-    ) {
-      var obj = {};
-      obj[key] = value;
-      this.props.updateFeature(this.props.feature, obj);
-    } else {
-      alert("Invalid value");
-    }
-  }
-  renderValueCell(props) {
-    let html;
-    switch (props.row.key) {
+  };
+
+  const renderValueCell = (row) => {
+    switch (row.key) {
       case "ID":
       case "Alias":
       case "Feature class name":
-        html = this.getHTML(props.row.value, props.original.hint);
-        break;
+        return getHTML(row.value, row.hint);
+
       case "Description":
-        html = this.getHTML(props.row.value);
-        break;
       case "Creation date":
-        html = this.getHTML(props.row.value);
-        break;
+        return getHTML(row.value);
+
       case "Mapbox ID":
-        html =
-          props.row.value === "" || props.row.value === null
-            ? this.getHTML(
-                "Not available",
-                "The feature was not uploaded to Mapbox"
-              )
-            : this.getHTML(
-                props.row.value,
-                "The feature was uploaded to Mapbox with this identifier"
-              );
-        break;
+        return row.value === "" || row.value === null
+          ? getHTML("Not available", "The feature was not uploaded to Mapbox")
+          : getHTML(
+              row.value,
+              "The feature was uploaded to Mapbox with this identifier"
+            );
+
       case "Total area":
-        html =
-          props.row.value === -1
-            ? this.getHTML(
-                "Not calculated",
-                "Total areas are not available for imported projects"
-              )
-            : this.getAreaHTML(props, props.original.hint);
-        break;
+        return row.value === -1
+          ? getHTML(
+              "Not calculated",
+              "Total areas are not available for imported projects"
+            )
+          : getAreaHTML(row.key, row.value);
+
       case "Total":
-        html = this.getHTML(props.row.value);
-        break;
+        return getHTML(row.value);
+
       case "Target percent":
-        html =
-          this.props.userRole === "ReadOnly" ? (
-            <div>{props.row.value}</div>
-          ) : (
-            <div
-              contentEditable
-              suppressContentEditableWarning
-              title="Click to edit"
-              onBlur={this.updateFeatureValue.bind(this, "target_value")}
-              onKeyDown={this.onKeyDown.bind(this, "target_value")}
-            >
-              {props.row.value}
-            </div>
-          );
-        break;
       case "Species Penalty Factor":
-        html =
-          this.props.userRole === "ReadOnly" ? (
-            <div>{props.row.value}</div>
-          ) : (
-            <div
-              contentEditable
-              suppressContentEditableWarning
-              title="Click to edit"
-              onBlur={this.updateFeatureValue.bind(this, "spf")}
-              onKeyDown={this.onKeyDown.bind(this, "spf")}
-            >
-              {props.row.value}
-            </div>
-          );
-        break;
+        return userRole === "ReadOnly" ? (
+          <Typography>{row.value}</Typography>
+        ) : (
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            title="Click to edit"
+            onBlur={(e) =>
+              updateFeatureValue(
+                row.key === "Target percent" ? "target_value" : "spf",
+                e
+              )
+            }
+            onKeyDown={(e) =>
+              onKeyDown(
+                row.key === "Target percent" ? "target_value" : "spf",
+                e
+              )
+            }
+          >
+            {row.value}
+          </div>
+        );
+
       case "Preprocessed":
-        html = props.row.value
-          ? this.getHTML(
+        return row.value
+          ? getHTML(
               "Yes",
               "The feature has been intersected with the planning units"
             )
-          : this.getHTML(
+          : getHTML(
               "No",
               "The feature has not yet been intersected with the planning units"
             );
-        break;
+
       case "Planning grid area":
-        html =
-          props.row.value === -1
-            ? this.getHTML("Not calculated", "Calculated during pre-processing")
-            : this.getAreaHTML(props);
-        break;
-      case "Planning grid amount":
-        html =
-          props.row.value === -1
-            ? this.getHTML("Not calculated", "Calculated during pre-processing")
-            : this.getHTML(props.row.value);
-        break;
-      case "Planning unit count":
-        html =
-          props.row.value === -1
-            ? this.getHTML("Not calculated", "Calculated during pre-processing")
-            : this.getHTML(props.row.value);
-        break;
       case "Target area":
-        html =
-          props.row.value === -1
-            ? this.getHTML("Not calculated", "Calculated during a Marxan run")
-            : this.getAreaHTML(props);
-        break;
-      case "Target amount":
-        html =
-          props.row.value === -1
-            ? this.getHTML("Not calculated", "Calculated during pre-processing")
-            : this.getHTML(props.row.value);
-        break;
       case "Area protected":
-        html =
-          props.row.value === -1
-            ? this.getHTML("Not calculated", "Calculated during a Marxan run")
-            : this.getAreaHTML(props);
-        break;
+        return row.value === -1
+          ? getHTML("Not calculated", "Calculated during processing")
+          : getAreaHTML(row.key, row.value);
+
+      case "Planning grid amount":
+      case "Planning unit count":
+      case "Target amount":
       case "Protected amount":
-        html =
-          props.row.value === -1
-            ? this.getHTML("Not calculated", "Calculated during pre-processing")
-            : this.getHTML(props.row.value);
-        break;
+        return row.value === -1
+          ? getHTML("Not calculated", "Calculated during pre-processing")
+          : getHTML(row.value);
+
       default:
-        break;
+        return getHTML(row.value);
     }
-    return html;
+  };
+
+  if (!feature) {
+    return null;
   }
-  render() {
-    if (this.props.feature) {
-      let data = [];
-      //iterate through the feature properties and set the data to bind to the table - if it is a feature from the old version of marxan then showForOld must be true for that property to be shown
-      let properties =
-        this.props.feature.source === "Imported shapefile"
-          ? CONSTANTS.FEATURE_PROPERTIES_POLYGONS
-          : CONSTANTS.FEATURE_PROPERTIES_POINTS;
-      properties.forEach((item) => {
-        if (
-          (!this.props.feature.old_version && item.showForNew) ||
-          (this.props.feature.old_version && item.showForOld)
-        ) {
-          data.push({
-            key: item.key,
-            value: this.props.feature[item.name],
-            hint: item.hint,
-          });
-        }
-      }, this);
-      return (
-        <MarxanDialog
-          title="Properties"
-          {...this.props}
-          contentWidth={380}
-          helpLink={"user.html#feature-properties-window"}
-          offsetX={135}
-          offsetY={250}
+
+  const data = (
+    feature.source === "Imported shapefile"
+      ? CONSTANTS.FEATURE_PROPERTIES_POLYGONS
+      : CONSTANTS.FEATURE_PROPERTIES_POINTS
+  )
+    .filter((item) => {
+      if (!feature.old_version && item.showForNew) return true;
+      if (feature.old_version && item.showForOld) return true;
+      return false;
+    })
+    .map((item) => ({
+      key: item.key,
+      value: feature[item.name],
+      hint: item.hint,
+    }));
+
+  return (
+    <MarxanDialog
+      title="Properties"
+      {...props}
+      contentWidth={380}
+      helpLink="user.html#feature-properties-window"
+      offsetX={135}
+      offsetY={250}
+    >
+      <TableContainer>
+        <Table
+          key="k9"
+          size="small"
+          className={feature.old_version ? "infoTableOldVersion" : "infoTable"}
         >
-          {
-            <Table
-              showPagination={false}
-              className={
-                this.props.feature.old_version
-                  ? "infoTableOldVersion"
-                  : "infoTable"
-              }
-              minRows={0}
-              pageSize={data.length}
-              data={data}
-              noDataText=""
-              columns={[
-                {
-                  Header: "Key",
-                  accessor: "key",
-                  width: 150,
-                  headerStyle: { textAlign: "left" },
-                  Cell: (props) => this.renderKeyCell(props),
-                },
-                {
-                  Header: "Value",
-                  accessor: "value",
-                  width: 185,
-                  headerStyle: { textAlign: "left" },
-                  Cell: (props) => this.renderValueCell(props),
-                },
-              ]}
-              key="k9"
-            />
-          }
-        </MarxanDialog>
-      );
-    } else {
-      return null;
-    }
-  }
-}
+          <TableHead>
+            <TableRow>
+              <TableCell style={{ textAlign: "left", width: "150px" }}>
+                Key
+              </TableCell>
+              <TableCell style={{ textAlign: "left", width: "185px" }}>
+                Value
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.map((row) => (
+              <TableRow key={row.key}>
+                <TableCell>{getHTML(row.key, row.hint)}</TableCell>
+                <TableCell>{renderValueCell(row)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </MarxanDialog>
+  );
+};
 
 export default FeatureInfoDialog;
