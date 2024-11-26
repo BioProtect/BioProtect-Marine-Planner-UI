@@ -24,7 +24,7 @@ const PlanningGridsDialog = (props) => {
   }, [props, closeDialog]);
 
   const handleNewMarine = useCallback(() => {
-    props.updateState({ NewMarinePlanningGridDialogOpen: true });
+    props.setNewMarinePlanningGridDialogOpen(true);
     closeDialog();
   }, [props, closeDialog]);
 
@@ -79,8 +79,14 @@ const PlanningGridsDialog = (props) => {
 
   const columns = [
     {
-      id: "name",
+      id: "alias",
       label: "alias",
+      numeric: false,
+      disablePadding: true,
+    },
+    {
+      id: "domain",
+      label: "domain",
       numeric: false,
       disablePadding: true,
     },
@@ -91,14 +97,14 @@ const PlanningGridsDialog = (props) => {
       disablePadding: true,
     },
     {
-      id: "created",
-      label: "creation_date",
+      id: "created_by",
+      label: "created_by",
       numeric: false,
       disablePadding: true,
     },
     {
-      id: "created by",
-      label: "created_by",
+      id: "creation_date",
+      label: "creation_date",
       numeric: false,
       disablePadding: true,
     },
@@ -130,7 +136,7 @@ const PlanningGridsDialog = (props) => {
               "description",
               "created_by",
             ]}
-            initialSelection={selectedPlanningGrid}
+            selected={[selectedPlanningGrid] || []}
             updateSelection={changePlanningGrid}
           />
         </div>
@@ -143,7 +149,6 @@ const PlanningGridsDialog = (props) => {
           loading={props.loading}
           exportPlanningGrid={() => exportPlanningGrid()}
           handleDelete={() => handleDelete()}
-          updateState={() => props.updateState()}
           selectedPlanningGrid={selectedPlanningGrid}
         />
       </React.Fragment>

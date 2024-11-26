@@ -22,11 +22,9 @@ const CumulativeImpactDialog = (props) => {
   }, [props]);
 
   const _openImportImpactsDialog = useCallback(() => {
-    props.updateState({
-      cumulativeImpactDialogOpen: false,
-      importImpactPopoverOpen: false,
-    });
-    props.openImportImpactsDialog("import");
+    props.setCumulativeImpactDialogOpen(false);
+    props.setImportImpactPopoverOpen(false);
+    props.setOpenImportImpactsDialog("import");
   }, [props]);
 
   const _newByDigitising = useCallback(() => {

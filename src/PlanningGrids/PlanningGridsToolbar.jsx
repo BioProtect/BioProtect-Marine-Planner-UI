@@ -18,7 +18,7 @@ const PlanningGridsToolbar = (props) => {
         display: props.userRole === "ReadOnly" ? "none" : "block",
       }}
     >
-      <ButtonGroup aria-label="Basic button group" fullWidth="true">
+      <ButtonGroup aria-label="Basic button group" fullWidth={true}>
         {props.unauthorisedMethods.includes("createPlanningUnitGrid") ? null : (
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}

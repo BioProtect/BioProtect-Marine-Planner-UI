@@ -25,8 +25,6 @@ const ClassificationDialog = (props) => {
   const dataBreaks = Array.isArray(props.dataBreaks) ? props.dataBreaks : [];
   const summaryStats = props.summaryStats || [];
 
-  console.log("Props in ClassificationDialog:", props);
-
   // Generate reference lines based on dataBreaks
   const breaks = dataBreaks.map((item, index) => (
     <ReferenceLine x={item} key={index} stroke="#00BCD4" />

@@ -37,7 +37,7 @@ const FeaturesToolbar = (props) => {
         This is an imported project. Only features from this project are shown.
       </div>
 
-      <ButtonGroup aria-label="Basic button group" fullWidth="true">
+      <ButtonGroup aria-label="Basic button group" fullWidth={true}>
         {props.userRole !== "ReadOnly" &&
         !props.metadata.OLDVERSION &&
         !props.addingRemovingFeatures ? (

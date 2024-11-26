@@ -18,7 +18,7 @@ const CumulativeImpactsToolbar = (props) => {
           shown.
         </div>
       )}
-      <ButtonGroup aria-label="Basic button group" fullWidth="true">
+      <ButtonGroup aria-label="Basic button group" fullWidth={true}>
         {props.userRole !== "ReadOnly" && !props.metadataOV ? (
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}

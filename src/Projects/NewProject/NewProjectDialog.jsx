@@ -72,7 +72,7 @@ const NewProjectDialog = (props) => {
     props.setNewProjectDialogOpen(false);
   };
 
-  const openCostsDialog = () => props.updateState({ costsDialogOpen: true });
+  const openCostsDialog = () => props.setCostsDialogOpen(true);
 
   const actions = (
     <div>
@@ -102,7 +102,6 @@ const NewProjectDialog = (props) => {
       <MarxanDialog
         open={props.open}
         loading={props.loading}
-        updateState={props.updateState}
         title="New project"
         fullWidth={true}
         actions={actions}

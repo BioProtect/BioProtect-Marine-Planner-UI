@@ -27,7 +27,6 @@ const LoginDialog = (props) => {
     password,
     changeUserName,
     changePassword,
-    updateState,
     marxanServers,
     selectServer,
     marxanServer,

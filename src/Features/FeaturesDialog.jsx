@@ -48,9 +48,7 @@ const FeaturesDialog = (props) => {
   };
 
   const openImportGBIFDialog = () => {
-    props.updateState({
-      importGBIFDialogOpen: true,
-    });
+    props.setImportGBIFDialogOpen(true);
     props.setImportFeaturePopoverOpen(false);
     props.setNewFeaturePopoverOpen(false);
     props.setFeaturesDialogOpen(false);
@@ -166,6 +164,7 @@ const FeaturesDialog = (props) => {
             searchColumns={["alias", "description", "source", "created_by"]}
             dataFiltered={dataFiltered}
             addingRemovingFeatures={props.addingRemovingFeatures}
+            selected={props.selectedFeatureIds}
             selectedFeatureIds={props.selectedFeatureIds}
             selectedFeature={selectedFeature}
             clickFeature={clickFeature}
@@ -178,7 +177,6 @@ const FeaturesDialog = (props) => {
           addingRemovingFeatures={props.addingRemovingFeatures}
           loading={props.loading}
           selectedFeature={selectedFeature}
-          updateState={props.updateState}
           openImportGBIFDialog={() => openImportGBIFDialog()}
           selectAllFeatures={() => selectAllFeatures()}
           _openImportFeaturesDialog={() => _openImportFeaturesDialog()}

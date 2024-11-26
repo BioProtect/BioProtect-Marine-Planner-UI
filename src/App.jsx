@@ -192,6 +192,8 @@ const App = () => {
     useState(false);
   const [importedActivitiesDialogOpen, setImportedActivitiesDialogOpen] =
     useState(false);
+  const [importImpactPopoverOpen, setImportImpactPopoverOpen] = useState(false);
+  const [openImportImpactsDialog, setOpenImportImpactsDialog] = useState("");
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [logMessages, setLogMessages] = useState([]);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -285,28 +287,11 @@ const App = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
 
-  const updateDialogsState = (updates) => {
-    console.log("logged in infoPanelOpen.... ", infoPanelOpen);
-    console.log("logged in .... ", loggedIn, updates);
-    setDialogsState((prevState) => ({
-      ...prevState,
-      ...updates,
-    }));
-  };
-
   const initialiseServers = useCallback(async (servers) => {
     try {
-      // Add the local machine server to the list
-      console.log("servers ", servers);
-
       addLocalServer(servers);
-      // Fetch capabilities for all servers
       const updatedServers = await getAllServerCapabilities(servers);
-      console.log("updatedServers ", updatedServers);
-      // filter and sort servers
       const filteredAndSortedServers = filterAndSortServers(updatedServers);
-      console.log("filteredAndSortedServers ", filteredAndSortedServers);
-      // Update the marxanServers state with the filtered and sorted server list
       setMarxanServers(filteredAndSortedServers);
       return "ServerData retrieved";
     } catch (error) {
@@ -360,6 +345,11 @@ const App = () => {
 
   useEffect(() => {
     if (planningCostsTrigger && projectLoaded && owner !== "" && user !== "") {
+      console.log("user ", user);
+      console.log("owner ", owner);
+      console.log("projectLoaded ", projectLoaded);
+      console.log("planningCostsTrigger ", planningCostsTrigger);
+      console.log("loggedIn ", loggedIn);
       (async () => {
         await getPlanningUnitsCostData();
         setPlanningCostsTrigger(false);
@@ -854,13 +844,14 @@ const App = () => {
     try {
       const checkedPass = await checkPassword(user, password);
       if (checkedPass) {
+        setLoggedIn(true);
+        console.log("logged in ? ", loggedIn, infoPanelOpen, resultsPanelOpen);
         const userResp = await _get(`getUser?user=${user}`);
         setUser(user);
         setUserData(userResp.userData);
         setUnauthorisedMethods(userResp.unauthorisedMethods);
         setDismissedNotifications(userResp.dismissedNotifications || []);
         setResultsPanelOpen(true);
-        setLoggedIn(true);
         setInfoPanelOpen(true);
 
         const current_basemap = basemaps.find(
@@ -881,7 +872,6 @@ const App = () => {
         await loadProject(userResp.userData.LASTPROJECT, user, userResp);
         console.log("Project should be loaded....");
         await getPlanningUnitGrids();
-        console.log("logged in ? ", loggedIn);
         return "Logged in";
       }
     } catch (error) {
@@ -892,6 +882,7 @@ const App = () => {
   };
   //log out and reset some state
   const logout = () => {
+    console.log("logged out triggered.....");
     setUserMenuOpen(false);
     setBrew(new classyBrew());
     setPassword("");
@@ -905,12 +896,13 @@ const App = () => {
     setOwner("");
     setNotifications([]);
     setMetadata({});
-    setLoggedIn(false);
-    setInfoPanelOpen(false);
     setFiles({});
     resetResults();
     //clear the currently set cookies
-    _get("logout").then((response) => {});
+    _get("logout").then((response) => {
+      setLoggedIn(false);
+      setInfoPanelOpen(false);
+    });
   };
 
   const resendPassword = async () => {
@@ -1140,12 +1132,12 @@ const App = () => {
   //gets the planning unit grids
   const getPlanningUnitGrids = async () => {
     const response = await _get("getPlanningUnitGrids");
-    setPlanningUnitGrids(response.planningUnitGrids);
+    console.log("planning unit grids response ", response);
+    setPlanningUnitGrids(response.planning_unit_grids);
   };
 
   const loadProject = async (proj, user, ...options) => {
     console.log("project, user ", project, user);
-    const userResp = options[0];
     try {
       // Reset the results from any previous projects
       resetResults();
@@ -1180,6 +1172,7 @@ const App = () => {
         projectResp.features
       );
       console.log("Setting project tabv to active......");
+      console.log("logged in......", loggedIn);
 
       // Activate the project tab
       project_tab_active();
@@ -2302,6 +2295,8 @@ const App = () => {
   //catch all event handler for map errors
   const mapError = useCallback(
     (e) => {
+      console.log("Map error e: ", e);
+
       let message = "";
       switch (e.error.message) {
         case "Not Found":
@@ -2315,7 +2310,10 @@ const App = () => {
           break;
       }
 
-      if (message !== "http status 200 returned without content.") {
+      if (
+        message !== "http status 200 returned without content." ||
+        message == ""
+      ) {
         setSnackBarMessage(
           `MapError: ${message}, Error status: ${e.error.status}`
         );
@@ -2809,6 +2807,7 @@ const App = () => {
 
   //fired when the projects tab is selected
   const project_tab_active = () => {
+    console.log("loggedIn in project_tab_active... ", loggedIn);
     setActiveTab("project");
     pu_tab_inactive();
   };
@@ -3265,8 +3264,6 @@ const App = () => {
       getSelectedFeatureIds();
     }
   };
-
-  const updateState = (state_obj) => updateDialogsState({ ...state_obj });
 
   const closeNewFeatureDialog = () => {
     setNewFeatureDialogOpen(false);
@@ -4744,25 +4741,23 @@ const App = () => {
           <LoginDialog
             open={!loggedIn}
             validateUser={(name, pass) => login(name, pass)}
-            // onCancel={() => updateState({ registerDialogOpen: true })}
+            // onCancel={() => setRegisterDialogOpen(true)}
             loading={loading}
             user={user}
             password={password}
             changeUserName={(user) => setUser(user)}
             changePassword={(pass) => setPassword(pass)}
-            updateState={updateState}
             marxanServers={marxanServers}
             selectServer={selectServer}
             marxanServer={marxanServer}
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
           />
-          <RegisterDialog
+          {/* <RegisterDialog
             open={registerDialogOpen}
             onOk={handleCreateUser}
-            updateState={updateState}
             loading={loading}
             setRegisterDialogOpen={setRegisterDialogOpen}
-          />
+          /> */}
           <ResendPasswordDialog
             open={resendPasswordDialogOpen}
             onOk={resendPassword}
@@ -4776,7 +4771,7 @@ const App = () => {
               userData.SHOWWELCOMESCREEN &&
               welcomeDialogOpen
             }
-            onOk={updateState}
+            onOk={}
             onCancel={() => setWelcomeDialogOpen(false)}
             userData={userData}
             saveOptions={saveOptions}
@@ -4793,7 +4788,6 @@ const App = () => {
             openUsersDialog={openUsersDialog}
             openRunLogDialog={openRunLogDialog}
             openGapAnalysisDialog={openGapAnalysisDialog}
-            updateState={updateState}
             userRole={userData.ROLE}
             marxanServer={marxanServer}
             metadata={metadata}
@@ -4894,7 +4888,6 @@ const App = () => {
             changeCostname={changeCostname}
             loadCostsLayer={loadCostsLayer}
             loading={loading}
-            updateState={updateState}
             setSettingsDialogOpen={setSettingsDialogOpen}
             // protectedAreaIntersections={protectedAreaIntersections}
           />
@@ -4948,7 +4941,8 @@ const App = () => {
             loading={loading}
             projects={projects}
             oldVersion={metadata?.OLDVERSION}
-            updateState={updateState}
+            setImportProjectDialogOpen={setImportProjectDialogOpen}
+            setProject={setProject}
             deleteProject={deleteProject}
             loadProject={loadProject}
             exportProject={exportProject}
@@ -4969,7 +4963,7 @@ const App = () => {
             planningUnitGrids={planningUnitGrids}
             openFeaturesDialog={openFeaturesDialog}
             features={allFeatures}
-            updateState={updateState}
+            setCostsDialogOpen={setCostsDialogOpen}
             selectedCosts={selectedCosts}
             createNewProject={createNewProject}
             previewFeature={previewFeature}
@@ -4980,7 +4974,6 @@ const App = () => {
             onOk={() => setNewProjectWizardDialogOpen(false)}
             okDisabled={true}
             countries={countries}
-            updateState={updateState}
             createNewNationalProject={createNewNationalProject}
             setNewProjectWizardDialogOpen={setNewProjectWizardDialogOpen}
           />
@@ -5014,7 +5007,7 @@ const App = () => {
             metadata={metadata}
             allFeatures={allFeatures}
             deleteFeature={deleteFeature}
-            updateState={updateState}
+            setImportGBIFDialogOpen={setImportGBIFDialogOpen}
             setFeaturesDialogOpen={setFeaturesDialogOpen}
             setImportFeaturesDialogOpen={setImportFeaturesDialogOpen}
             selectAllFeatures={selectAllFeatures}
@@ -5056,7 +5049,6 @@ const App = () => {
             open={importFeaturesDialogOpen}
             importFeatures={importFeatures}
             loading={loading || preprocessing || uploading}
-            updateState={updateState}
             setFeaturesDialogOpen={setFeaturesDialogOpen}
             setImportFeaturesDialogOpen={setImportFeaturesDialogOpen}
             filename={featureDatasetFilename}
@@ -5079,7 +5071,6 @@ const App = () => {
           <ImportGBIFDialog
             open={importGBIFDialogOpen}
             setImportGBIFDialogOpen={setImportGBIFDialogOpen}
-            updateState={updateState}
             loading={loading || preprocessing || uploading}
             importGBIFData={importGBIFData}
             gbifSpeciesSuggest={gbifSpeciesSuggest}
@@ -5089,7 +5080,9 @@ const App = () => {
           <PlanningGridsDialog
             open={planningGridsDialogOpen}
             setPlanningGridsDialogOpen={setPlanningGridsDialogOpen}
-            updateState={updateState}
+            setNewMarinePlanningGridDialogOpen={
+              setNewMarinePlanningGridDialogOpen
+            }
             loading={loading}
             getPlanningUnitGrids={getPlanningUnitGrids}
             unauthorisedMethods={unauthorisedMethods}
@@ -5107,7 +5100,6 @@ const App = () => {
             open={planningGridDialogOpen}
             onOk={() => setPlanningGridDialogOpen(false)}
             setPlanningGridDialogOpen={setPlanningGridDialogOpen}
-            updateState={updateState}
             loading={loading}
             planningGridMetadata={planningGridMetadata}
             getTilesetMetadata={getMetadata}
@@ -5125,9 +5117,11 @@ const App = () => {
           <CostsDialog
             open={costsDialogOpen}
             onOk={() => setCostsDialogOpen(false)}
+            onClose={() => setCostsDialogOpen(false)}
             onCancel={() => setCostsDialogOpen(false)}
-            updateState={updateState}
+            setCostsDialogOpen={setCostsDialogOpen}
             unauthorisedMethods={unauthorisedMethods}
+            setImportCostsDialogOpen={setImportCostsDialogOpen}
             costname={metadata?.COSTS}
             deleteCost={deleteCost}
             data={costnames}
@@ -5138,7 +5132,7 @@ const App = () => {
           <ImportCostsDialog
             open={importCostsDialogOpen}
             addCost={addCost}
-            updateState={updateState}
+            setImportCostsDialogOpen={setImportCostsDialogOpen}
             deleteCostFileThenClose={deleteCostFileThenClose}
             loading={loading}
             fileUpload={uploadFileToProject}
@@ -5153,20 +5147,22 @@ const App = () => {
             showClumpingDialog={showClumpingDialog}
             userRole={userData.ROLE}
           />
-          <ClassificationDialog
-            open={classificationDialogOpen}
-            onOk={() => setClassificationDialogOpen(false)}
-            onCancel={() => setClassificationDialogOpen(false)}
-            loading={loading}
-            renderer={renderer}
-            changeColorCode={changeColorCode}
-            changeRenderer={changeRenderer}
-            changeNumClasses={changeNumClasses}
-            changeShowTopClasses={changeShowTopClasses}
-            summaryStats={summaryStats}
-            brew={brew}
-            dataBreaks={dataBreaks}
-          />
+          {classificationDialogOpen ? (
+            <ClassificationDialog
+              open={classificationDialogOpen}
+              onOk={() => setClassificationDialogOpen(false)}
+              onCancel={() => setClassificationDialogOpen(false)}
+              loading={loading}
+              renderer={renderer}
+              changeColorCode={changeColorCode}
+              changeRenderer={changeRenderer}
+              changeNumClasses={changeNumClasses}
+              changeShowTopClasses={changeShowTopClasses}
+              summaryStats={summaryStats}
+              brew={brew}
+              dataBreaks={dataBreaks}
+            />
+          ) : null}
           <ClumpingDialog
             open={clumpingDialogOpen}
             onOk={hideClumpingDialog}
@@ -5228,7 +5224,6 @@ const App = () => {
             onOk={() => setServerDetailsDialogOpen(false)}
             onCancel={() => setServerDetailsDialogOpen(false)}
             onClose={() => setServerDetailsDialogOpen(false)}
-            updateState={updateState}
             marxanServer={marxanServer}
             newWDPAVersion={newWDPAVersion}
             registry={registry}
@@ -5398,7 +5393,9 @@ const App = () => {
             allImpacts={allImpacts}
             clickImpact={clickImpact}
             initialiseDigitising={initialiseDigitising}
-            updateState={updateState}
+            setCumulativeImpactDialogOpen={setCumulativeImpactDialogOpen}
+            setImportImpactPopoverOpen={setImportImpactPopoverOpen}
+            setOpenImportImpactsDialog={setOpenImportImpactsDialog}
             selectedImpactIds={selectedImpactIds}
             openImportedActivitesDialog={openImportedActivitesDialog}
             setSnackBarMessage={setSnackBarMessage}
@@ -5409,7 +5406,6 @@ const App = () => {
             open={humanActivitiesDialogOpen}
             onOk={() => setHumanActivitiesDialogOpen(false)}
             onCancel={() => setHumanActivitiesDialogOpen(false)}
-            updateState={updateState}
             metadata={metadata}
             activities={activities}
             initialiseDigitising={initialiseDigitising}
@@ -5424,7 +5420,6 @@ const App = () => {
             open={importedActivitiesDialogOpen}
             onOk={() => setImportedActivitiesDialogOpen(false)}
             onCancel={() => setImportedActivitiesDialogOpen(false)}
-            updateState={updateState}
             metadata={metadata}
             uploadedActivities={uploadedActivities}
             setSnackBarMessage={setSnackBarMessage}

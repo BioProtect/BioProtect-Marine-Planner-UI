@@ -26,7 +26,7 @@ const Welcome = (props) => {
 
   const onOk = () => {
     props.saveOptions({ SHOWWELCOMESCREEN: checked });
-    props.updateState({ welcomeDialogOpen: false });
+    props.setWelcomeDialogOpen(false);
   };
 
   const openNewProjectDialog = () => {

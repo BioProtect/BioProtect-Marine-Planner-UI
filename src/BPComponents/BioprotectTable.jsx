@@ -33,6 +33,7 @@ import TableRow from "@mui/material/TableRow";
 // Description: If true, the table will support selecting all rows at once. Default is false.
 
 const BioprotectTable = (props) => {
+  console.log("props ", props);
   // Props
   // 1. data (Array, Required)
   // 2. tableColumns (Array, Required)
@@ -52,6 +53,7 @@ const BioprotectTable = (props) => {
   };
 
   const filteredData = useMemo(() => {
+    console.log("data = ", props.data);
     if (!searchQuery)
       return stableSort(props.data, getComparator(order, orderBy));
 
@@ -105,7 +107,7 @@ const BioprotectTable = (props) => {
           <BPTableHeadWithSort
             title={props.title}
             tableColumns={props.tableColumns}
-            numSelected={props.selected.length}
+            numSelected={props.selected.length || []}
             order={order}
             orderBy={orderBy}
             onSelectAllClick={handleSelectAllClick}
@@ -124,7 +126,7 @@ const BioprotectTable = (props) => {
                   role="checkbox"
                   aria-checked={isItemSelected}
                   tabIndex={-1}
-                  key={row.id}
+                  key={idx}
                   selected={isItemSelected}
                   sx={{ cursor: "pointer" }}
                 >
@@ -138,7 +140,10 @@ const BioprotectTable = (props) => {
                     />
                   </TableCell>
                   {props.tableColumns.map((column) => (
-                    <TableCell key={column.id} align="left">
+                    <TableCell
+                      key={`${row.id || idx}-${column.id}`}
+                      align="left"
+                    >
                       {row[column.id]}
                     </TableCell>
                   ))}

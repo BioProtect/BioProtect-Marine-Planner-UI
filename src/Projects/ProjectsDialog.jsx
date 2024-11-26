@@ -44,9 +44,9 @@ const ProjectsDialog = (props) => {
   }, [props]);
 
   const openImportProjectDialog = useCallback(() => {
-    props.updateState({ importProjectDialogOpen: true });
+    props.setImportProjectDialogOpen(true);
     closeDialog();
-  }, [props.updateState]);
+  }, [props.setImportProjectDialogOpen]);
 
   const openImportMXWDialog = useCallback(() => {
     props.setImportMXWDialogOpen(true);
@@ -58,12 +58,8 @@ const ProjectsDialog = (props) => {
   // }, []);
 
   const closeDialog = useCallback(() => {
-    // setSelectedProject(undefined);
     props.setProjectsDialogOpen(false);
-    props.updateState({
-      selectedProject: undefined,
-    });
-  }, [props]);
+  }, [props.setProjectsDialogOpen]);
 
   const handleProjectChange = (e) => {
     console.log("e ", e);
@@ -115,7 +111,6 @@ const ProjectsDialog = (props) => {
             project={props.project}
             cloneProject={cloneProject}
             handleDelete={() => _delete()}
-            updateState={() => props.updateState()}
           />
         }
       >

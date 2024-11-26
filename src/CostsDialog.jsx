@@ -51,7 +51,7 @@ const CostsDialog = (props) => {
       onOk={props.onOk}
       onCancel={props.onCancel}
       title="Costs"
-      onClose={() => props.updateState({ costsDialogOpen: false })}
+      onClose={props.onClose}
       helpLink={"user.html#importing-a-cost-surface"}
     >
       <div>
@@ -89,7 +89,7 @@ const CostsDialog = (props) => {
             icon={<Import style={{ height: "20px", width: "20px" }} />}
             title="Upload a new costs file"
             disabled={props.loading}
-            onClick={() => props.updateState({ importCostsDialogOpen: true })}
+            onClick={() => props.setImportCostsDialogOpen(true)}
             label={"Import"}
           />
           <ToolbarButton
