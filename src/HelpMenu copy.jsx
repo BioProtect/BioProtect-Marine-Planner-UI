@@ -29,7 +29,6 @@ class HelpMenu extends React.Component {
           onClose={this.props.hideHelpMenu}
         >
           <Menu
-            desktop={true}
             onMouseLeave={this.props.hideHelpMenu}
             menuItemStyle={{
               backgroundColor: "rgb(0, 188, 212)",

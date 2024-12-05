@@ -36,7 +36,6 @@ const ToolsMenu = (props) => {
       open={props.open}
       anchorEl={props.menuAnchor}
       onClose={props.hideToolsMenu}
-      desktop={true}
       slotProps={{
         paper: {
           elevation: 0,

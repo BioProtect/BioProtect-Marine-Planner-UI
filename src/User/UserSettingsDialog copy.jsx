@@ -59,7 +59,6 @@ class UserSettingsDialog extends React.Component {
               floatingLabelFixed={true}
               underlineShow={false}
               menuItemStyle={{ fontSize: "12px" }}
-              labelStyle={{ fontSize: "12px" }}
               style={{ width: "260px" }}
               value={this.props.basemap}
               onChange={this.changeBasemap.bind(this)}
@@ -90,7 +89,6 @@ class UserSettingsDialog extends React.Component {
                   className={"radioButton"}
                   style={{ width: "60px", display: "inline-block" }}
                   inputStyle={{ width: "40px" }}
-                  labelStyle={{ width: "40px" }}
                   iconStyle={{ marginRight: "3px" }}
                 />
                 <Radio
@@ -99,7 +97,6 @@ class UserSettingsDialog extends React.Component {
                   className={"radioButton"}
                   style={{ width: "60px", display: "inline-block" }}
                   inputStyle={{ width: "40px" }}
-                  labelStyle={{ width: "40px" }}
                   iconStyle={{ marginRight: "3px" }}
                 />
                 <Radio
@@ -108,7 +105,6 @@ class UserSettingsDialog extends React.Component {
                   className={"radioButton"}
                   style={{ width: "60px", display: "inline-block" }}
                   inputStyle={{ width: "40px" }}
-                  labelStyle={{ width: "40px" }}
                   iconStyle={{ marginRight: "3px" }}
                 />
               </RadioGroup>

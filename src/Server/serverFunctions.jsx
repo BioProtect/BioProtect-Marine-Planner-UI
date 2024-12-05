@@ -70,7 +70,7 @@ const getServerCapabilities = async (server) => {
       };
     }
   } catch (error) {
-    console.error(`Fetch failed with: ${error}`);
+    // console.error(`Fetch failed with: ${error}`);
   }
   return server;
 };

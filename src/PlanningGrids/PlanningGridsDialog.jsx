@@ -77,6 +77,10 @@ const PlanningGridsDialog = (props) => {
     setSearchText(value);
   }, []);
 
+  const clickRow = (event, rowInfo) => {
+    changePlanningGrid(event, rowInfo.planningGrid);
+  };
+
   const columns = [
     {
       id: "alias",
@@ -122,24 +126,7 @@ const PlanningGridsDialog = (props) => {
       title="Planning grids"
       showSearchBox={true}
       searchTextChanged={searchTextChanged}
-    >
-      <React.Fragment key="k2">
-        <div id="projectsTable">
-          <BioprotectTable
-            title="Planning Grids"
-            data={props.planningGrids}
-            tableColumns={columns}
-            searchColumns={[
-              "country",
-              "domain",
-              "alias",
-              "description",
-              "created_by",
-            ]}
-            selected={[selectedPlanningGrid] || []}
-            updateSelection={changePlanningGrid}
-          />
-        </div>
+      actions={
         <PlanningGridsToolbar
           userRole={props.userRole}
           unauthorisedMethods={props.unauthorisedMethods}
@@ -151,7 +138,25 @@ const PlanningGridsDialog = (props) => {
           handleDelete={() => handleDelete()}
           selectedPlanningGrid={selectedPlanningGrid}
         />
-      </React.Fragment>
+      }
+    >
+      <div id="react-planning-grids-table">
+        <BioprotectTable
+          title="Planning Grids"
+          data={props.planningGrids}
+          tableColumns={columns}
+          searchColumns={[
+            "country",
+            "domain",
+            "alias",
+            "description",
+            "created_by",
+          ]}
+          selected={[selectedPlanningGrid] || []}
+          updateSelection={changePlanningGrid}
+          clickRow={clickRow}
+        />
+      </div>
     </MarxanDialog>
   );
 };

@@ -5,11 +5,11 @@ import MarxanDialog from "./MarxanDialog";
 import { generateTableCols } from "./Helpers";
 
 const AtlasLayersDialog = (props) => {
-  console.log("props ", props);
-
+  console.log("props.selectedLayers ", props.selectedLayers);
   const tableColumns = generateTableCols([{ id: "title", label: "title" }]);
-  const updateSelection = (newSelected) =>
-    props.updateSelectedLayers(newSelected);
+  const updateSelection = (event, rowInfo) =>
+    props.updateSelectedLayers(rowInfo);
+
   if (props.atlasLayers.length > 0) {
     return (
       <MarxanDialog
@@ -30,6 +30,7 @@ const AtlasLayersDialog = (props) => {
           showSearchBox={true}
           searchColumns={["title"]}
           updateSelection={updateSelection}
+          clickRow={updateSelection}
         />
       </MarxanDialog>
     );

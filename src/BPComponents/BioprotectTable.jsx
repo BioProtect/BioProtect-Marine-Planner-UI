@@ -33,7 +33,6 @@ import TableRow from "@mui/material/TableRow";
 // Description: If true, the table will support selecting all rows at once. Default is false.
 
 const BioprotectTable = (props) => {
-  console.log("props ", props);
   // Props
   // 1. data (Array, Required)
   // 2. tableColumns (Array, Required)
@@ -53,7 +52,6 @@ const BioprotectTable = (props) => {
   };
 
   const filteredData = useMemo(() => {
-    console.log("data = ", props.data);
     if (!searchQuery)
       return stableSort(props.data, getComparator(order, orderBy));
 
@@ -76,13 +74,12 @@ const BioprotectTable = (props) => {
     props.updateSelection([]);
   };
 
-  const handleClick = (event, row) => {
-    // handle single select or multiple select depending on the table needs
-    props.updateSelection(row);
-  };
-
   // should really be item in Object because were checking an obj. poor naming by me.
-  const isSelected = (objToCheck) => objInArray(objToCheck, props.selected);
+  const isSelected = (objToCheck) => {
+    if (props.selected.length > 0) {
+      return objInArray(objToCheck, props.selected);
+    }
+  };
 
   const visibleRows = useMemo(
     () => stableSort(filteredData, getComparator(order, orderBy)),
@@ -122,7 +119,7 @@ const BioprotectTable = (props) => {
               return (
                 <TableRow
                   hover
-                  onClick={(event) => handleClick(event, row)}
+                  onClick={(event) => props.clickRow(event, row)}
                   role="checkbox"
                   aria-checked={isItemSelected}
                   tabIndex={-1}

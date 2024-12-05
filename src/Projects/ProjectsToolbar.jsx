@@ -59,12 +59,7 @@ const ProjectsToolbar = (props) => {
           </Button>
         )}
 
-        <Menu
-          desktop={true}
-          open={open}
-          anchorEl={anchorEl}
-          onClose={handleClose}
-        >
+        <Menu open={open} anchorEl={anchorEl} onClose={handleClose}>
           <MenuItem
             style={style("importProject")}
             onClick={props.openImportMXWDialog}

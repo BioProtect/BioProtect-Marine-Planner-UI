@@ -51,7 +51,6 @@ class PlanningUnitsDialog extends React.Component {
               <SelectMapboxLayer
                 {...this.props}
                 menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
                 selectedValue={this.props.pu}
                 map={this.state.map}
                 // mapboxUser={"blishten"}

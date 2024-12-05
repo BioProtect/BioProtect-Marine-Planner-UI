@@ -131,7 +131,6 @@ class SelectMapboxLayer extends React.Component {
           onChange={this.changeItem.bind(this)}
           value={this.props.selectedValue}
           menuItemStyle={{ fontSize: "12px" }}
-          labelStyle={{ fontSize: "12px" }}
           floatingLabelText="Select the planning units"
           floatingLabelFixed={true}
           style={{ width: this.props.width, verticalAlign: "middle" }}
@@ -144,7 +143,6 @@ class SelectMapboxLayer extends React.Component {
                 key={item.feature_class_name}
                 style={{ fontSize: "12px" }}
                 menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
               />
             );
           })}

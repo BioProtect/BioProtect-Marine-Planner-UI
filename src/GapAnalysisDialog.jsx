@@ -210,11 +210,6 @@ class GapAnalysisDialog extends React.PureComponent {
                       float: "right",
                       paddingTop: "2px",
                     }}
-                    labelStyle={{
-                      fontSize: "14px",
-                      width: "100px",
-                      color: "rgba(0, 0, 0, 0.6)",
-                    }}
                     toggled={this.state.showChart}
                   />
                 </div>

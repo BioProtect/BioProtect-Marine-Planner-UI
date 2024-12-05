@@ -87,7 +87,6 @@ class ColorSelector extends React.Component {
       <Select
         selectionRenderer={this.selectionRenderer.bind(this)}
         menuItemStyle={{ fontSize: "12px" }}
-        labelStyle={{ fontSize: "12px" }}
         listStyle={{ fontSize: "12px" }}
         style={{ width: "150px", margin: "0px 10px" }}
         autoWidth={true}

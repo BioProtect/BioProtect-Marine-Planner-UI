@@ -845,7 +845,6 @@ const App = () => {
       const checkedPass = await checkPassword(user, password);
       if (checkedPass) {
         setLoggedIn(true);
-        console.log("logged in ? ", loggedIn, infoPanelOpen, resultsPanelOpen);
         const userResp = await _get(`getUser?user=${user}`);
         setUser(user);
         setUserData(userResp.userData);
@@ -869,8 +868,12 @@ const App = () => {
         const speciesData = await _get("getAllSpeciesData");
         setAllFeatures(speciesData.data);
 
-        await loadProject(userResp.userData.LASTPROJECT, user, userResp);
-        console.log("Project should be loaded....");
+        await loadProject(
+          userResp.userData.LASTPROJECT,
+          user,
+          userResp,
+          speciesData.data
+        );
         await getPlanningUnitGrids();
         return "Logged in";
       }
@@ -1137,11 +1140,14 @@ const App = () => {
   };
 
   const loadProject = async (proj, user, ...options) => {
-    console.log("project, user ", project, user);
     try {
       // Reset the results from any previous projects
+      const userResp = options[0];
+      const allFeaturesData = options[1];
+
       resetResults();
       const projectResp = await _get(`getProject?user=${user}&project=${proj}`);
+      console.log("projectResp ", projectResp);
       setRunParams(projectResp.runParameters);
       setProtectedAreaIntersections(projectResp.protectedAreaIntersections);
       setRenderer(projectResp.renderer);
@@ -1169,7 +1175,9 @@ const App = () => {
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
         projectResp.metadata.OLDVERSION,
-        projectResp.features
+        projectResp.features,
+        projectResp.feature_preprocessing,
+        allFeaturesData
       );
       console.log("Setting project tabv to active......");
       console.log("logged in......", loggedIn);
@@ -1200,23 +1208,36 @@ const App = () => {
   const getArrayItem = (arr, id) => arr.find(([itemId]) => itemId === id);
 
   //initialises the interest features based on the currently loading project
-  const initialiseInterestFeatures = (oldVersion, projFeatures) => {
+  const initialiseInterestFeatures = (
+    oldVersion,
+    projFeatures,
+    featurePrePro,
+    allFeaturesData
+  ) => {
+    console.log("projFeatures ", projFeatures);
+    console.log("allFeatures ", allFeatures);
+    console.log("oldVersion ", oldVersion);
+
+    const allFeats = allFeatures.length > 0 ? allFeatures : allFeaturesData;
+
     // Determine features based on project version
     const features = oldVersion
-      ? projFeatures.map((feature) => ({ ...feature })) // deep copy
-      : [...allFeatures];
+      ? projFeatures.map((feature) => ({ ...feature }))
+      : [...allFeats];
 
     // Extract feature IDs
     const projectFeatureIds = projFeatures.map((item) => item.id);
 
     // Process features
     const processedFeatures = features.map((feature) => {
+      console.log("feature ", feature);
       // Check if the feature is part of the current project
-      const projectFeature = projectFeatureIds.includes(item.id)
-        ? projFeatures[projectFeatureIds.indexOf(item.id)]
+      const projectFeature = projectFeatureIds.includes(feature.id)
+        ? projFeatures[projectFeatureIds.indexOf(feature.id)]
         : null;
+      console.log("projectFeature ", projectFeature);
+      const preprocess = getArrayItem(featurePrePro, feature.id);
 
-      const preprocess = getArrayItem(featurePreprocessing, feature.id);
       // Add required attributes
       addFeatureAttributes(feature, oldVersion);
 
@@ -1234,6 +1255,11 @@ const App = () => {
       }
       return feature;
     });
+    console.log("processedFeatures ", processedFeatures);
+    console.log(
+      "proj Features ",
+      processedFeatures.filter((item) => item.selected)
+    );
 
     // Get the selected feature ids
     getSelectedFeatureIds();
@@ -3256,6 +3282,7 @@ const App = () => {
   const openFeaturesDialog = async (showClearSelectAll) => {
     // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
     if (marxanServer.system !== "Windows" && !metadata.OLDVERSION) {
+      console.log("should be refershing features here... ");
       await refreshFeatures();
     }
     setAddingRemovingFeatures(showClearSelectAll);
@@ -3411,6 +3438,7 @@ const App = () => {
   };
 
   const updateSelectedLayers = (layer) => {
+    console.log("layer ", layer);
     // Determine the new visibility
     const currentVisibility = map.current.getLayoutProperty(
       layer.layer,
@@ -3867,7 +3895,8 @@ const App = () => {
   const newFeatureCreated = async (id) => {
     const response = await _get(`getFeature?oid=${id}&format=json`);
     const feature = response.data[0];
-    initialiseNewFeature(feature); // Add the required attributes and update the allFeatures array
+    addFeatureAttributes(feature);
+    addNewFeature([feature]);
 
     // If 'addToProject' is set, add the feature to the project
     if (addToProject) {
@@ -3876,20 +3905,15 @@ const App = () => {
     }
   };
 
-  //adds the required attributes to use it in Marxan Web and update the allFeatures array
-  const initialiseNewFeature = (feature) => {
-    addFeatureAttributes(feature); // Add the required attributes to the feature
-    addNewFeature(feature); // Add the new feature to the state
-  };
-
   //adds a new feature to the allFeatures array
-  const addNewFeature = (feature) => {
-    const featuresCopy = [...allFeatures, feature]; // Get the current list of features and add new
-    // Sort the features alphabetically by alias
-    featuresCopy.sort((a, b) =>
-      a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
-    );
-    setAllFeatures(featuresCopy);
+  const addNewFeature = (newFeatures) => {
+    setAllFeatures((prevFeatures) => {
+      const featuresCopy = [...prevFeatures, ...newFeatures];
+      featuresCopy.sort((a, b) =>
+        a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
+      );
+      return featuresCopy;
+    });
   };
 
   //attempts to delete a feature - if the feature is in use in a project then it will not be deleted and the list of projects will be shown
@@ -3944,11 +3968,15 @@ const App = () => {
   const refreshFeatures = async () => {
     // Fetch the latest features
     const response = await _get("getAllSpeciesData");
+    console.log("response ", response);
     const newFeatures = response.data;
+    console.log("newFeatures ", newFeatures);
 
     // Extract existing and new feature IDs
     const existingFeatureIds = getFeatureIds(allFeatures);
+    console.log("existingFeatureIds ", existingFeatureIds);
     const newFeatureIds = getFeatureIds(newFeatures);
+    console.log("newFeatureIds ", newFeatureIds);
 
     // Determine which features have been removed or added
     const removedFeatureIds = [...existingFeatureIds].filter(
@@ -3965,7 +3993,10 @@ const App = () => {
     const addedFeatures = newFeatures.filter((feature) =>
       addedFeatureIds.includes(feature.id)
     );
-    addedFeatures.forEach((feature) => initialiseNewFeature(feature));
+    const updatedFeatures = addedFeatures.map((feature) =>
+      addFeatureAttributes(feature)
+    );
+    addNewFeature(updatedFeatures);
   };
 
   const openFeatureMenu = (evt, feature) => {
@@ -4164,12 +4195,6 @@ const App = () => {
     await getUsers();
     setUsersDialogOpen(true);
   };
-
-  const toggleInfoPanel = () =>
-    setInfoPanelOpen((prevState) => !prevState.infoPanelOpen);
-
-  const toggleResultsPanel = () =>
-    setResultsPanelOpen((prevState) => !prevState.resultsPanelOpen);
 
   const openRunLogDialog = async () => {
     await getRunLogs();
@@ -5372,17 +5397,20 @@ const App = () => {
             onOk={() => setShareableLinkDialogOpen(false)}
             shareableLinkUrl={`${window.location}?server=${marxanServer.name}&user=${user}&project=${project}`}
           />
-          <AtlasLayersDialog
-            open={atlasLayersDialogOpen}
-            onOk={() => setAtlasLayersDialogOpen(false)}
-            onCancel={clearSelactedLayers}
-            loading={loading}
-            atlasLayers={atlasLayers}
-            marxanServer={marxanServer}
-            setSnackBarMessage={setSnackBarMessage}
-            selectedLayers={selectedLayers}
-            updateSelectedLayers={updateSelectedLayers}
-          />
+          {atlasLayersDialogOpen ? (
+            <AtlasLayersDialog
+              open={atlasLayersDialogOpen}
+              onOk={() => setAtlasLayersDialogOpen(false)}
+              onCancel={clearSelactedLayers}
+              loading={loading}
+              atlasLayers={atlasLayers}
+              marxanServer={marxanServer}
+              setSnackBarMessage={setSnackBarMessage}
+              selectedLayers={selectedLayers}
+              updateSelectedLayers={updateSelectedLayers}
+            />
+          ) : null}
+
           <CumulativeImpactDialog
             loading={loading || uploading}
             open={cumulativeImpactDialogOpen}
@@ -5432,8 +5460,8 @@ const App = () => {
             userRole={userData.ROLE}
             infoPanelOpen={infoPanelOpen}
             resultsPanelOpen={resultsPanelOpen}
-            toggleInfoPanel={toggleInfoPanel}
-            toggleResultsPanel={toggleResultsPanel}
+            toggleInfoPanel={() => setInfoPanelOpen(!infoPanelOpen)}
+            toggleResultsPanel={() => setResultsPanelOpen(!resultsPanelOpen)}
             showToolsMenu={showToolsMenu}
             showUserMenu={showUserMenu}
             showHelpMenu={showHelpMenu}

@@ -302,7 +302,7 @@ class RunLogDialog extends React.Component {
                 }
                 onClick={this.stopRun.bind(this)}
                 label={"Stop"}
-                secondary="true"
+                secondary={true}
               />
               <ToolbarButton
                 show={!this.props.unauthorisedMethods.includes("getRunLogs")}

@@ -95,7 +95,6 @@ class NewPlanningGridDialog extends React.Component {
             <div>
               <Select
                 menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeIso3.bind(this)}
                 value={this.state.iso3}
                 floatingLabelText="Area of interest"
@@ -117,7 +116,6 @@ class NewPlanningGridDialog extends React.Component {
             <div>
               <Select
                 menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeDomain.bind(this)}
                 value={this.state.domain}
                 style={dropDownStyle}
@@ -140,7 +138,6 @@ class NewPlanningGridDialog extends React.Component {
             <div>
               <Select
                 menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeShape.bind(this)}
                 value={this.state.shape}
                 style={dropDownStyle}
@@ -162,7 +159,6 @@ class NewPlanningGridDialog extends React.Component {
             <div>
               <Select
                 menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeAreaKm2.bind(this)}
                 value={this.state.areakm2}
                 style={dropDownStyle}

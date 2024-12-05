@@ -131,22 +131,21 @@ export const generateTableCols = (fields, overrides = {}) => {
 
 // Function to deeply compare two objects, ignoring the order of keys
 export const checkObjInArray = (obj1, obj2) => {
-  console.log("obj1 ", obj1, obj2);
+  if (obj1 === obj2) return true;
   if (
-    typeof obj1 === "object" &&
-    obj1 !== null &&
-    typeof obj2 === "object" &&
-    obj2 !== null
-  ) {
-    const keys1 = Object.keys(obj1);
-    const keys2 = Object.keys(obj2);
+    typeof obj1 !== "object" ||
+    typeof obj2 !== "object" ||
+    obj1 === null ||
+    obj2 === null
+  )
+    return false;
 
-    if (keys1.length !== keys2.length) return false;
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
 
-    return keys1.every((key) => checkObjInArray(obj1[key], obj2[key]));
-  } else {
-    return obj1 === obj2;
-  }
+  if (keys1.length !== keys2.length) return false;
+
+  return keys1.every((key) => checkObjInArray(obj1[key], obj2[key]));
 };
 
 export const isValueInObject = (obj, value) =>
@@ -154,7 +153,7 @@ export const isValueInObject = (obj, value) =>
 
 // Function to find the index of the matching object from array1 in array2
 export const objInArray = (object, array) => {
-  return array.some((item) => isValueInObject(object, item));
+  return array.some((item) => checkObjInArray(object, item));
 };
 
 export const strToBool = (str) => str.toLowerCase() === "true";

@@ -31,6 +31,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 
 const MenuBar = (props) => {
+  console.log("props.infoPanelOpen ", props.infoPanelOpen);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   //opens the features dialog without the ability to add/remove features (i.e. different from the dialog that is opened from a project)
   const openFeaturesDialog = useCallback(

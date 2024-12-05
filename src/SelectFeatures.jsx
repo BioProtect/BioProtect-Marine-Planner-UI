@@ -44,7 +44,6 @@ const SelectFeatures = (props) => {
           props.userRole === "ReadOnly" ? null : (
             <Button
               variant="contained"
-              labelStyle={{ paddingLeft: "6px", paddingRight: "6px" }}
               label="+/-"
               onClick={openFeaturesDialog}
               title="Add/remove features from the project"

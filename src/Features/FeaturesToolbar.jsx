@@ -54,12 +54,7 @@ const FeaturesToolbar = (props) => {
           </Button>
         ) : null}
 
-        <Menu
-          desktop={true}
-          open={newOpen}
-          anchorEl={newAnchorEl}
-          onClose={handleClose}
-        >
+        <Menu open={newOpen} anchorEl={newAnchorEl} onClose={handleClose}>
           <MenuItem
             primaryText="Draw on screen"
             title="Create a new feature by digitising it on the screen"
@@ -85,12 +80,7 @@ const FeaturesToolbar = (props) => {
           </Button>
         ) : null}
 
-        <Menu
-          desktop={true}
-          open={importOpen}
-          anchorEl={importAnchorEl}
-          onClose={handleClose}
-        >
+        <Menu open={importOpen} anchorEl={importAnchorEl} onClose={handleClose}>
           <MenuItem
             primaryText="From a shapefile"
             onClick={() => props._openImportFeaturesDialog()}

@@ -54,7 +54,9 @@ const FeaturesDialog = (props) => {
     props.setFeaturesDialogOpen(false);
   };
 
-  const clickFeature = (event, rowInfo) => {
+  const clickRow = (event, rowInfo) => {
+    console.log("rowInfo ", rowInfo);
+    console.log("event ", event);
     if (props.addingRemovingFeatures) {
       if (event.shiftKey) {
         const selectedIds = getFeaturesBetweenRows(previousRow, rowInfo);
@@ -138,11 +140,11 @@ const FeaturesDialog = (props) => {
   if (!props.allFeatures) return null;
 
   const columns = generateTableCols([
-    { id: "name", label: "alias" },
+    { id: "alias", label: "alias" },
     { id: "description", label: "description" },
     { id: "source", label: "source" },
-    { id: "created", label: "creation_date" },
-    { id: "created by", label: "created_by" },
+    { id: "creation_date", label: "Date" },
+    { id: "created_by", label: "By" },
   ]);
 
   return (
@@ -155,22 +157,7 @@ const FeaturesDialog = (props) => {
       showCancelButton={props.addingRemovingFeatures}
       showSearchBox={true}
       searchTextChanged={searchTextChanged}
-    >
-      <React.Fragment key="k10">
-        <div id="projectsTable">
-          <BioprotectTable
-            data={props.allFeatures}
-            tableColumns={columns}
-            searchColumns={["alias", "description", "source", "created_by"]}
-            dataFiltered={dataFiltered}
-            addingRemovingFeatures={props.addingRemovingFeatures}
-            selected={props.selectedFeatureIds}
-            selectedFeatureIds={props.selectedFeatureIds}
-            selectedFeature={selectedFeature}
-            clickFeature={clickFeature}
-            preview={() => props.previewFeature(feature_metadata)}
-          />
-        </div>
+      actions={
         <FeaturesToolbar
           metadata={props.metadata}
           userRole={props.userRole}
@@ -185,7 +172,22 @@ const FeaturesDialog = (props) => {
           _newByDigitising={_newByDigitising}
           setSelectedFeatureIds={props.setSelectedFeatureIds}
         />
-      </React.Fragment>
+      }
+    >
+      <div id="react-features-dialog-table">
+        <BioprotectTable
+          data={props.allFeatures}
+          tableColumns={columns}
+          searchColumns={["alias", "description", "source", "created_by"]}
+          dataFiltered={dataFiltered}
+          addingRemovingFeatures={props.addingRemovingFeatures}
+          selected={props.selectedFeatureIds}
+          selectedFeatureIds={props.selectedFeatureIds}
+          selectedFeature={selectedFeature}
+          clickRow={clickRow}
+          preview={() => props.previewFeature(feature_metadata)}
+        />
+      </div>
     </MarxanDialog>
   );
 };

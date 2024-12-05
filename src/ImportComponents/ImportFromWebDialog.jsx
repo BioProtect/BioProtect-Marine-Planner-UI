@@ -210,7 +210,6 @@ class ImportFromWebDialog extends React.Component {
           <div>
             <Select
               menuItemStyle={{ fontSize: "12px" }}
-              labelStyle={{ fontSize: "12px" }}
               onChange={this.changeSourceType.bind(this)}
               value={this.state.sourceType}
               floatingLabelText="Select source type"
@@ -245,7 +244,6 @@ class ImportFromWebDialog extends React.Component {
             <Select
               menuItemStyle={{ fontSize: "12px" }}
               autoWidth={true}
-              labelStyle={{ fontSize: "12px" }}
               onChange={this.changeFeatureType.bind(this)}
               value={this.state.featureType}
               floatingLabelText="Select feature type"

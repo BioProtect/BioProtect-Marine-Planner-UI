@@ -88,7 +88,6 @@ class NewPlanningGridDialog extends React.Component {
             <div>
               <Select
                 menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeShape.bind(this)}
                 value={this.state.shape}
                 style={dropDownStyle}
@@ -110,7 +109,6 @@ class NewPlanningGridDialog extends React.Component {
             <div>
               <Select
                 menuItemStyle={{ fontSize: "12px" }}
-                labelStyle={{ fontSize: "12px" }}
                 onChange={this.changeAreaKm2.bind(this)}
                 value={this.state.areakm2}
                 style={dropDownStyle}
