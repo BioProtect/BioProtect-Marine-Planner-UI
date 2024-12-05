@@ -9,7 +9,19 @@ import {
 } from "./Server/serverFunctions";
 // SERVICES
 import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleFeatureDialog,
+  toggleImportDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "./slices/uiSlice";
 import { strToBool, zoomToBounds } from "./Helpers";
+import { useDispatch, useSelector } from "react-redux";
 
 import AboutDialog from "./AboutDialog";
 import AddToMap from "@mui/icons-material/Visibility";
@@ -107,15 +119,14 @@ mapboxgl.accessToken =
   "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg";
 
 const App = () => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const [marxanServers, setMarxanServers] = useState([]);
   const [marxanServer, setMarxanServer] = useState({});
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackBarMessage] = useState("");
   const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState("");
   const [newWDPAVersion, setNewWDPAVersion] = useState(false);
-  const [activeTab, setActiveTab] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
   const [lng, setLng] = useState(-70.9);
   const [lat, setLat] = useState(42.35);
@@ -126,75 +137,33 @@ const App = () => {
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
   const [previousIucnCategory, setPreviousIucnCategory] = useState(null);
   const [planningCostsTrigger, setPlanningCostsTrigger] = useState(false);
-  const [newFeatureDialogOpen, setNewFeatureDialogOpen] = useState(false);
-  const [newMarinePlanningGridDialogOpen, setNewMarinePlanningGridDialogOpen] =
-    useState(false);
-  const [newPlanningGridDialogOpen, setNewPlanningGridDialogOpen] =
-    useState(false);
-  const [projectsListDialogOpen, setProjectsListDialogOpen] = useState(false);
-  const [userSettingsDialogOpen, setUserSettingsDialogOpen] = useState(false);
-  const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
-  const [activeResultsTab, setActiveResultsTab] = useState("legend");
   const [activities, setActivities] = useState([]);
-  const [activitiesDialogOpen, setActivitiesDialogOpen] = useState(false);
   const [addToProject, setAddToProject] = useState(true);
   const [addingRemovingFeatures, setAddingRemovingFeatures] = useState(false);
   const [pid, setPid] = useState("");
-  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [allFeatures, setAllFeatures] = useState([]);
   const [allImpacts, setAllImpacts] = useState([]);
   const [atlasLayers, setAtlasLayers] = useState([]);
-  const [atlasLayersDialogOpen, setAtlasLayersDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [basemap, setBasemap] = useState("North Star");
   const [basemaps, setBasemaps] = useState([]);
-  const [changePasswordDialogOpen, setChangePasswordDialogOpen] =
-    useState(false);
-  const [classificationDialogOpen, setClassificationDialogOpen] =
-    useState(false);
-  const [clumpingDialogOpen, setClumpingDialogOpen] = useState(false);
   const [clumpingRunning, setClumpingRunning] = useState(false);
   const [costnames, setCostnames] = useState([]);
-  const [costsDialogOpen, setCostsDialogOpen] = useState(false);
   const [costsLoading, setCostsLoading] = useState(false);
   const [countries, setCountries] = useState([]);
-  const [cumulativeImpactDialogOpen, setCumulativeImpactDialogOpen] =
-    useState(false);
   const [currentFeature, setCurrentFeature] = useState({});
   const [featureDatasetFilename, setFeatureDatasetFilename] = useState("");
-  const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [featureMenuOpen, setFeatureMenuOpen] = useState(false);
   const [featureMetadata, setFeatureMetadata] = useState({});
-  const [featuresDialogOpen, setFeaturesDialogOpen] = useState(false);
   const [files, setFiles] = useState({});
   const [gapAnalysis, setGapAnalysis] = useState([]);
-  const [gapAnalysisDialogOpen, setGapAnalysisDialogOpen] = useState(false);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
-  const [humanActivitiesDialogOpen, setHumanActivitiesDialogOpen] =
-    useState(false);
   const [identifyFeatures, setIdentifyFeatures] = useState([]);
   const [identifyPlanningUnits, setIdentifyPlanningUnits] = useState({});
   const [identifyProtectedAreas, setidentifyProtectedAreas] = useState([]);
   const [identifyVisible, setIdentifyVisible] = useState(false);
   const [importCostsDialogOpen, setImportCostsDialogOpen] = useState(false);
-  const [importFeaturesDialogOpen, setImportFeaturesDialogOpen] =
-    useState(false);
   /////////////////////////////////////////////////////////////////////////////
-  const [importFeaturePopoverOpen, setImportFeaturePopoverOpen] =
-    useState(false);
-  const [importFromWebDialogOpen, setImportFromWebDialogOpen] = useState(false);
-  const [importGBIFDialogOpen, setImportGBIFDialogOpen] = useState(false);
-  const [importMXWDialogOpen, setImportMXWDialogOpen] = useState(false);
-  const [importPlanningGridDialogOpen, setImportPlanningGridDialogOpen] =
-    useState(false);
-  const [importProjectDialogOpen, setImportProjectDialogOpen] = useState(false);
-  const [importProjectPopoverOpen, setImportProjectPopoverOpen] =
-    useState(false);
-  const [importedActivitiesDialogOpen, setImportedActivitiesDialogOpen] =
-    useState(false);
-  const [importImpactPopoverOpen, setImportImpactPopoverOpen] = useState(false);
-  const [openImportImpactsDialog, setOpenImportImpactsDialog] = useState("");
-  const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [logMessages, setLogMessages] = useState([]);
   const [loggedIn, setLoggedIn] = useState(false);
   const [mapPaintProperties, setMapPaintProperties] = useState({
@@ -209,16 +178,11 @@ const App = () => {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [metadata, setMetadata] = useState({});
   const [newFeaturePopoverOpen, setNewFeaturePopoverOpen] = useState(false);
-  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
-  const [newProjectWizardDialogOpen, setNewProjectWizardDialogOpen] =
-    useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [openInfoDialogOpen, setOpenInfoDialogOpen] = useState(false);
   const [owner, setOwner] = useState("");
   const [planningUnitGrids, setPlanningUnitGrids] = useState([]);
   const [planningUnits, setPlanningUnits] = useState([]);
   const [preprocessing, setPreprocessing] = useState(false);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [project, setProject] = useState("");
   const [projectFeatures, setProjectFeatures] = useState([]);
   const [user, setUser] = useState("");
@@ -227,19 +191,13 @@ const App = () => {
   const [projectListDialogHeading, setProjectListDialogHeading] = useState("");
   const [projectListDialogTitle, setProjectListDialogTitle] = useState("");
   const [projectLoaded, setProjectLoaded] = useState(false);
-  const [projectsDialogOpen, setProjectsDialogOpen] = useState(false);
   const [protectedAreaIntersections, setProtectedAreaIntersections] = useState(
     []
   );
   const [puEditing, setPuEditing] = useState(false);
-  const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [registry, setRegistry] = useState(undefined);
   const [renderer, setRenderer] = useState({});
-  const [resendPasswordDialogOpen, setResendPasswordDialogOpen] =
-    useState(false);
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resultsPanelOpen, setResultsPanelOpen] = useState(false);
-  const [runLogDialogOpen, setRunLogDialogOpen] = useState(false);
   const [runLogs, setRunLogs] = useState([]);
   const [runParams, setRunParams] = useState([]);
   const [runningImpactMessage, setRunningImpactMessage] =
@@ -248,24 +206,17 @@ const App = () => {
   const [selectedFeatureIds, setSelectedFeatureIds] = useState([]);
   const [selectedImpactIds, setSelectedImpactIds] = useState([]);
   const [selectedLayers, setSelectedLayers] = useState([]);
-  const [serverDetailsDialogOpen, setServerDetailsDialogOpen] = useState(false);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [shareableLink, setShareableLink] = useState(false);
-  const [shareableLinkDialogOpen, setShareableLinkDialogOpen] = useState(false);
   const [smallLinearGauge, setSmallLinearGauge] = useState(true);
-  const [targetDialogOpen, setTargetDialogOpen] = useState(false);
   const [tileset, setTileset] = useState(null);
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
-  const [updateWDPADialogOpen, setUpdateWDPADialogOpen] = useState(false);
   const [uploadedActivities, setUploadedActivities] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [users, setUsers] = useState([]);
-  const [usersDialogOpen, setUsersDialogOpen] = useState(false);
   const [visibleLayers, setVisibleLayers] = useState([]);
   const [wdpaAttribution, setWdpaAttribution] = useState("");
-  const [welcomeDialogOpen, setWelcomeDialogOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [popupPoint, setPopupPoint] = useState({ x: 0, y: 0 });
   const [userData, setUserData] = useState({
@@ -280,8 +231,6 @@ const App = () => {
   const [summaryStats, setSummaryStats] = useState([]);
   const [projectImpacts, setProjectImpacts] = useState([]);
   const [paLayerVisible, setPaLayerVisible] = useState(false);
-  const [planningGridDialogOpen, setPlanningGridDialogOpen] = useState(false);
-  const [planningGridsDialogOpen, setPlanningGridsDialogOpen] = useState(false);
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
 
   const mapContainer = useRef(null);
@@ -359,7 +308,7 @@ const App = () => {
 
   const setSnackBar = (message, silent = false) => {
     if (!silent) setSnackbarOpen(true);
-    setSnackBarMessage(message);
+    dispatch(setSnackbarMessage(message));
   };
 
   // Memoized function to check for timeout errors or empty responses
@@ -368,13 +317,13 @@ const App = () => {
       if (!response) {
         const msg = "No response received from server";
         if (snackbarOpen) {
-          setSnackBarMessage(msg);
+          dispatch.setSnackBarMessage(msg);
         }
         return true;
       }
       return false;
     },
-    [setSnackBarMessage]
+    []
   );
   // Memoized function to check if the response indicates a server error
   const isServerError = useCallback(
@@ -5277,9 +5226,9 @@ const App = () => {
             onOk={() => setAlertDialogOpen(false)}
           />
           <Snackbar
-            open={snackbarOpen}
-            message={snackbarMessage}
-            onClose={() => setSnackbarOpen(false)}
+            open={uiState.snackbarOpen}
+            message={uiState.snackbarMessage}
+            onClose={() => dispatch(setSnackbarOpen(false))}
             style={{ maxWidth: "800px !important" }}
           />
           <Popover
