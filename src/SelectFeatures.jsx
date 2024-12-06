@@ -1,11 +1,17 @@
+import { useDispatch, useSelector } from "react-redux";
+
 import Button from "@mui/material/Button";
 import FeaturesList from "./LeftInfoPanel/FeaturesList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 import Stack from "@mui/material/Stack";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
+import { toggleDialog } from "./slices/uiSlice";
 
 const SelectFeatures = (props) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+
   const openFeaturesDialog = (evt) => {
     props.openFeaturesDialog(true);
   };
@@ -34,7 +40,12 @@ const SelectFeatures = (props) => {
           {props.userRole !== "ReadOnly" && props.showTargetButton ? (
             <Button
               variant="contained"
-              onClick={props.openTargetDialog}
+              onClick={dispatch(
+                toggleDialog({
+                  dialogName: "targetDialogOpen",
+                  isOpen: true,
+                })
+              )}
               startIcon={<FontAwesomeIcon icon={faCrosshairs} />}
             >
               Set a target for all features

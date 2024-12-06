@@ -1,30 +1,36 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import * as React from "react";
+import { Box, Typography } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
 
 import MarxanDialog from "./MarxanDialog";
+import React from "react";
+import { toggleDialog } from "./slices/uiSlice";
 
-class ResetDialog extends React.PureComponent {
-  render() {
-    return (
-      <MarxanDialog
-        {...this.props}
-        contentWidth={240}
-        title="Reset database"
-        okLabel="Yes"
-        cancelLabel="No"
-        showCancelButton={true}
-      >
-        {<div>Are you sure you want to reset?</div>}
-      </MarxanDialog>
-    );
-  }
-}
+const ResetDialog = ({ onOk, loading }) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+
+  return (
+    <MarxanDialog
+      open={dialogStates.resetDialogOpen}
+      loading={loading}
+      onOk={onOk}
+      onCancel={() =>
+        dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: false }))
+      }
+      onClose={() =>
+        dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: false }))
+      }
+      contentWidth={240}
+      title="Reset database"
+      okLabel="Yes"
+      cancelLabel="No"
+      showCancelButton={true}
+    >
+      <Box>
+        <Typography variant="body1">Are you sure you want to reset?</Typography>
+      </Box>
+    </MarxanDialog>
+  );
+};
 
 export default ResetDialog;

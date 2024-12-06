@@ -14,7 +14,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
 import { getArea } from "../Helpers";
-import { toggleFeatureDialog } from "./slices/uiSlice";
+import { toggleFeatureDialog } from "../slices/uiSlice";
 
 const FeatureDialog = ({
   loading,

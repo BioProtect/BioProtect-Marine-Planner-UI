@@ -1,3 +1,5 @@
+import { useDispatch, useSelector } from "react-redux";
+
 import MarxanDialog from "./MarxanDialog";
 import React from "react";
 import Typography from "@mui/material/Typography";
@@ -5,22 +7,22 @@ import biopama_small from "./images/biopama_small.png";
 import iucn from "./images/iucn.png";
 import jrc_logo_color_small from "./images/jrc_logo_color_small.png";
 import mapbox_small from "./images/mapbox_small.png";
+import { toggleDialog } from "./slices/uiSlice";
 import wcmc from "./images/wcmc.png";
 
-const AboutDialog = ({
-  open,
-  onOk,
-  marxanClientReleaseVersion,
-  wdpaAttribution,
-}) => {
+const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+
   return (
     <MarxanDialog
-      open={open}
-      onOk={onOk}
+      open={dialogStates.aboutDialogOpen}
+      onOk={dispatch(
+        toggleDialog({ dialogName: "aboutDialogOpen", isOpen: false })
+      )}
       contentWidth={500}
       offsetY={80}
       title="About"
-      helpLink={"user.html#about-window"}
     >
       <Typography variant="h6" gutterBottom>
         Software development

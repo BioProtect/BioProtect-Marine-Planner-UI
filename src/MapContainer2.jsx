@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { setSnackbarMessage, setSnackbarOpen } from "../slices/uiSlice";
+import { setSnackbarMessage, setSnackbarOpen } from "./slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Box } from "@mui/material";

@@ -12,10 +12,9 @@ import {
   setSnackbarOpen,
   toggleDialog,
   toggleFeatureDialog,
-  toggleImportDialog,
   togglePlanningGridDialog,
   toggleProjectDialog,
-} from "./slices/uiSlice";
+} from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -129,9 +128,18 @@ const InfoPanel = (props) => {
     }),
     []
   );
+  const iconStyle = useMemo(
+    () => ({
+      color: "white",
+      height: "16px",
+      marginTop: "4px",
+      marginBottom: "2px",
+      marginRight: "5px",
+    }),
+    []
+  );
 
   const handleChange = (e) => {
-    console.log("e ", e);
     return e.target.id === "projectName"
       ? props.renameProject(e.target.value)
       : props.renameDescription(e.target.value);
@@ -156,6 +164,8 @@ const InfoPanel = (props) => {
   const changeCostname = (event) => {
     const costname = event.target.value;
     if (costname === "Custom..") {
+      // dispatch(toggleDialog({ dialogName: "costsDialogOpen", isOpen: true }));
+
       props.openCostsDialog();
     } else {
       props.changeCostname(costname).then(() => {
@@ -222,16 +232,7 @@ const InfoPanel = (props) => {
                 className={"projectNameEditBox"}
                 title={props.project + " (Read-only)"}
               >
-                <FontAwesomeIcon
-                  style={{
-                    color: "white",
-                    height: "16px",
-                    marginTop: "4px",
-                    marginBottom: "2px",
-                    marginRight: "5px",
-                  }}
-                  icon={faLock}
-                />
+                <FontAwesomeIcon style={iconStyle} icon={faLock} />
                 {props.project}
               </span>
             ) : (
@@ -290,7 +291,6 @@ const InfoPanel = (props) => {
               maxheight={"409px"}
               simple={false}
               showTargetButton={true}
-              openTargetDialog={props.openTargetDialog}
               userRole={props.userRole}
               toggleFeatureLayer={props.toggleFeatureLayer}
               toggleFeaturePUIDLayer={props.toggleFeaturePUIDLayer}
@@ -342,7 +342,14 @@ const InfoPanel = (props) => {
                   <Settings style={{ height: "20px", width: "20px" }} />
                 }
                 title="Run Settings"
-                onClick={() => props.setSettingsDialogOpen(true)}
+                onClick={() =>
+                  dispatch(
+                    toggleDialog({
+                      dialogName: "settingsDialogOpen",
+                      isOpen: true,
+                    })
+                  )
+                }
                 key="openSettingsButton"
               >
                 Settings

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import CumulativeImpactsToolbar from "./CumulativeImpactsToolbar";
-import LoadingDialog from "../LoadingDialog";
+import Loading from "../Loading";
 import MarxanDialog from "../MarxanDialog";
 
 const CumulativeImpactDialog = (props) => {
@@ -162,7 +162,7 @@ const CumulativeImpactDialog = (props) => {
               preview={preview}
             />
           ) : (
-            <LoadingDialog />
+            <Loading />
           )}
         </div>
         <CumulativeImpactsToolbar

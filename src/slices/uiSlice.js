@@ -23,7 +23,6 @@ const initialState = {
     planningGridDialogOpen: false,
     planningGridsDialogOpen: false,
   },
-  importDialogStates: {},
   dialogStates: {
     aboutDialogOpen: false,
     activitiesDialogOpen: false,
@@ -33,6 +32,7 @@ const initialState = {
     classificationDialogOpen: false,
     clumpingDialogOpen: false,
     costsDialogOpen: false,
+    importCostsDialogOpen: false,
     cumulativeImpactDialogOpen: false,
     gapAnalysisDialogOpen: false,
     humanActivitiesDialogOpen: false,
@@ -85,10 +85,6 @@ const uiSlice = createSlice({
       const { dialogName, isOpen } = action.payload;
       state.planningGridDialogStates[dialogName] = isOpen;
     },
-    toggleImportDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.importDialogStates[dialogName] = isOpen;
-    },
     toggleDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogStates[dialogName] = isOpen;
@@ -104,7 +100,6 @@ export const {
   toggleProjectDialog,
   toggleFeatureDialog,
   togglePlanningGridDialog,
-  toggleImportDialog,
   toggleDialog,
 } = uiSlice.actions;
 export default uiSlice.reducer;

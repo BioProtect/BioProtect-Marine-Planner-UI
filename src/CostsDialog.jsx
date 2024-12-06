@@ -1,39 +1,35 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
+import BioprotectTable from "./BPComponents/BioprotectTable";
 import CONSTANTS from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Import from "@mui/icons-material/GetApp";
 import MarxanDialog from "./MarxanDialog";
 import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import ToolbarButton from "./ToolbarButton";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { toggleDialog } from "./slices/uiSlice";
 
 const CostsDialog = (props) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+
   const [selectedCost, setSelectedCost] = useState(undefined);
 
-  useEffect(() => {
-    if (props.open) {
-      // Additional logic when dialog opens can go here
-    }
-  }, [props.open]);
+  const changeCost = (event, cost) => setSelectedCost(cost);
 
-  const changeCost = (event, cost) => {
-    setSelectedCost(cost);
-  };
-
-  const costFromImpact = (e, data) => {
-    props.createCostsFromImpact(data);
-  };
+  const costFromImpact = (e, data) => props.createCostsFromImpact(data);
 
   const deleteCost = () => {
     props.deleteCost(selectedCost.name);
     setSelectedCost(undefined);
   };
+
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "costsDialogOpen", isOpen: false }));
 
   const renderDate = (row) => {
     return (
@@ -47,22 +43,27 @@ const CostsDialog = (props) => {
 
   return (
     <MarxanDialog
-      open={props.open}
-      onOk={props.onOk}
-      onCancel={props.onCancel}
+      open={dialogStates.costsDialogOpen}
+      onOk={closeDialog()}
+      onCancel={closeDialog()}
+      onClose={closeDialog()}
       title="Costs"
-      onClose={props.onClose}
-      helpLink={"user.html#importing-a-cost-surface"}
     >
       <div>
-        <Table
+        <BioprotectTable
+          data={_data}
+          selected={selectedCost}
+          columns={[{ id: "name", label: "Name" }]}
+          changeCost={changeCost}
+          clickRow={() => changeCost(e, rowInfo.original)}
+        ></BioprotectTable>
+        {/* <Table
           {...props}
           pageSize={_data.length}
           columns={[
             {
-              Header: "Name",
-              accessor: "name",
-              headerStyle: { textAlign: "left" },
+              label: "Name",
+              id: "name",
             },
           ]}
           className={"projectsReactTable noselect"}
@@ -82,14 +83,21 @@ const CostsDialog = (props) => {
               changeCost(e, rowInfo.original);
             },
           })}
-        />
+        /> */}
         <div id="costsToolbar">
           <ToolbarButton
             show={props.userRole !== "ReadOnly"}
             icon={<Import style={{ height: "20px", width: "20px" }} />}
             title="Upload a new costs file"
             disabled={props.loading}
-            onClick={() => props.setImportCostsDialogOpen(true)}
+            onClick={() =>
+              dispatch(
+                toggleDialog({
+                  dialogName: "importCostsDialogOpen",
+                  isOpen: true,
+                })
+              )
+            }
             label={"Import"}
           />
           <ToolbarButton

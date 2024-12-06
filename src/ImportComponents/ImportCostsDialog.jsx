@@ -1,9 +1,18 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import FileUpload from "../Uploads/FileUpload";
 import MarxanDialog from "../MarxanDialog";
+import { toggleDialog } from "../slices/uiSlice";
 
-const ImportCostsDialog = (props) => {
+const ImportCostsDialog = ({
+  addCost,
+  deleteCostFileThenClose,
+  fileUpload,
+}) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+
   const [costsFilename, setCostsFilename] = useState("");
   const [costName, setCostName] = useState("");
 
@@ -14,9 +23,11 @@ const ImportCostsDialog = (props) => {
 
   const onOk = () => {
     // Add the cost to the application state
-    props.addCost(costName);
+    addCost(costName);
     resetState();
-    props.setImportCostsDialogOpen(false);
+    dispatch(
+      toggleDialog({ dialogName: "importCostsDialogOpen", isOpen: false })
+    );
   };
 
   const handleFileUpdate = (filename) => {
@@ -25,26 +36,27 @@ const ImportCostsDialog = (props) => {
   };
 
   const handleClose = async () => {
-    await props.deleteCostFileThenClose(costName);
+    await deleteCostFileThenClose(costName);
     resetState();
-    props.setImportCostsDialogOpen(false);
+    dispatch(
+      toggleDialog({ dialogName: "importCostsDialogOpen", isOpen: false })
+    );
   };
 
   return (
     <MarxanDialog
-      {...props}
+      open={dialogStates.importCostsDialogOpen}
       contentWidth={390}
       offsetY={80}
-      okDisabled={props.loading}
       title="Import Cost Surface"
       showCancelButton={true}
       onOk={onOk}
       onCancel={() => handleClose()}
       onClose={() => handleClose()}
-      helpLink={"user.html#importing-a-cost-surface"}
     >
       <FileUpload
         {...props}
+        fileUpload={fileUpload}
         fileMatch={".cost"}
         mandatory={true}
         filename={costsFilename}

@@ -1,65 +1,67 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import * as React from "react";
+import { Box, TextField } from "@mui/material";
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
 import { isValidTargetValue } from "./Helpers";
+import { toggleDialog } from "./slices/uiSlice";
 
-class TargetDialog extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = { target_value: 17, validTarget: true };
-  }
-  handleKeyPress(e) {
-    if (e.nativeEvent.key === "Enter") this.validateTarget();
-  }
-  validateTarget() {
-    let _validTarget = isValidTargetValue(this.state.target_value);
-    this.setState({ validTarget: _validTarget });
-    if (_validTarget) {
-      this.props.updateTargetValueForFeatures(this.state.target_value);
-      this.props.onOk();
+const TargetDialog = ({ updateTargetValueForFeatures, ...props }) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+
+  const [targetValue, setTargetValue] = useState(17);
+  const [validTarget, setValidTarget] = useState(true);
+
+  const validateTarget = () => {
+    const isValid = isValidTargetValue(targetValue);
+    setValidTarget(isValid);
+
+    if (isValid) {
+      updateTargetValueForFeatures(targetValue);
+      dispatch(toggleDialog({ dialogName: "targetDialogOpen", isOpen: false }));
     }
-  }
-  onOk() {
-    this.validateTarget();
-  }
-  render() {
-    return (
-      <MarxanDialog
-        {...this.props}
-        contentWidth={240}
-        offsetX={80}
-        offsetY={260}
-        title="Target for all features"
-        onOk={this.onOk.bind(this)}
-      >
-        {
-          <React.Fragment>
-            <MarxanTextField
-              style={{ fontSize: "13px", width: "70px" }}
-              id={"commonTarget"}
-              onChange={(event, newValue) =>
-                this.setState({ target_value: newValue })
-              }
-              defaultValue={this.state.target_value}
-              onKeyDown={this.handleKeyPress.bind(this)}
-              floatingLabelShrinkStyle={{ fontSize: "16px" }}
-              floatingLabelFocusStyle={{ fontSize: "16px" }}
-              errorText={this.state.validTarget ? "" : "Invalid target"}
-            />
-          </React.Fragment>
-        }
-      </MarxanDialog>
-    );
-  }
-}
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      validateTarget();
+    }
+  };
+
+  return (
+    <MarxanDialog
+      open={dialogStates.targetDialogOpen}
+      contentWidth={240}
+      offsetX={80}
+      offsetY={260}
+      title="Target for all features"
+      onOk={() => validateTarget()}
+      onCancel={() =>
+        dispatch(
+          toggleDialog({ dialogName: "targetDialogOpen", isOpen: false })
+        )
+      }
+    >
+      <Box display="flex" justifyContent="center" alignItems="center">
+        <TextField
+          id="commonTarget"
+          type="number"
+          value={targetValue}
+          onChange={(e) => setTargetValue(Number(e.target.value))}
+          onKeyDown={handleKeyPress}
+          error={!validTarget}
+          helperText={!validTarget ? "Invalid target" : ""}
+          inputProps={{
+            style: { fontSize: "13px", width: "70px", textAlign: "center" },
+          }}
+          label="Target Value"
+          variant="outlined"
+          size="small"
+        />
+      </Box>
+    </MarxanDialog>
+  );
+};
 
 export default TargetDialog;
