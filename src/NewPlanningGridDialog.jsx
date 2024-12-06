@@ -1,10 +1,25 @@
 import React, { useState } from "react";
+import {
+  setSnackbarMessage,
+  setSnackbarOpen,
+  togglePlanningGridDialog,
+} from "./slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectSelect from "./BPComponents/BioprotectSelect";
 import CONSTANTS from "./constants";
 import MarxanDialog from "./MarxanDialog";
 
-const NewPlanningGridDialog = (props) => {
+const NewPlanningGridDialog = ({
+  loading,
+  createNewPlanningUnitGrid,
+  countries,
+}) => {
+  const dispatch = useDispatch();
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
+
   const [iso3, setIso3] = useState("");
   const [domain, setDomain] = useState("");
   const [shape, setShape] = useState("");
@@ -15,51 +30,57 @@ const NewPlanningGridDialog = (props) => {
     if (["FJI", "KIR", "NZL", "RUS", "TUV", "USA", "WLF"].includes(value)) {
       setIso3(undefined);
       // Optionally show an error if the country spans the meridian
-      props.setSnackBar(
-        "Countries that span the meridian are currently not supported..."
+      dispatch(setSnackbarOpen(true));
+      dispatch(
+        setSnackbarMessage(
+          "Countries that span the meridian are currently not supported..."
+        )
       );
     } else {
       setIso3(value);
     }
 
     // Automatically set domain to terrestrial only if no marine area exists
-    const filteredCountry = props.countries.filter(
+    const filteredCountry = countries.filter(
       (country) => country.iso3 === value
     )[0];
 
     if (filteredCountry.has_marine) {
       setDomainEnabled(true);
     } else {
-      handleDomainChange(1); // Assuming '1' corresponds to terrestrial
+      setDomain(1); // Assuming '1' corresponds to terrestrial
       setDomainEnabled(false);
     }
   };
 
-  const handleDomainChange = (value) => setDomain(value);
-  const handleShapeChange = (value) => setShape(value);
-  const handleAreaKm2Change = (value) => setAreaKm2(value);
-
   const handleOk = () => {
-    props
-      .createNewPlanningUnitGrid(iso3, domain, areakm2, shape)
+    createNewPlanningUnitGrid(iso3, domain, areakm2, shape)
       .then(() => {
-        props.onCancel(); // Close the dialog after success
+        () => closeDialog(); // Close the dialog after success
       })
       .catch((error) => {
         console.error("Error creating planning grid:", error);
       });
   };
 
+  const closeDialog = () =>
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "newPlanningGridDialogOpen",
+        isOpen: false,
+      })
+    );
+
   return (
     <MarxanDialog
-      open={props.open}
+      open={planningGridDialogStates.newPlanningGridDialogOpen}
       fullWidth={true}
       maxWidth="sm"
-      loading={props.loading}
+      loading={loading}
       onOk={handleOk}
-      onClose={props.onCancel}
-      onCancel={props.onCancel}
-      okDisabled={!iso3 || !domain || !areakm2 || props.loading}
+      onClose={() => closeDialog()}
+      onCancel={() => closeDialog()}
+      okDisabled={!iso3 || !domain || !areakm2 || loading}
       cancelLabel="Cancel"
       showCancelButton={true}
       helpLink="user.html#creating-new-planning-grids-using-marxan-web"
@@ -70,7 +91,7 @@ const NewPlanningGridDialog = (props) => {
         <BioprotectSelect
           id="area of interest"
           label="Area of Interest"
-          options={props.countries}
+          options={countries}
           changeFunc={handleIso3Change}
           displayField="name_iso31"
           value={iso3}
@@ -79,7 +100,7 @@ const NewPlanningGridDialog = (props) => {
           id="select domain"
           label="Domain"
           options={CONSTANTS.DOMAINS}
-          changeFunc={handleDomainChange}
+          changeFunc={setDomain}
           disabled={!domainEnabled}
           value={domain}
         />
@@ -87,14 +108,14 @@ const NewPlanningGridDialog = (props) => {
           id="planning-unit"
           label="Planning Unit Shape"
           options={CONSTANTS.SHAPES}
-          changeFunc={handleShapeChange}
+          changeFunc={setShape}
           value={shape}
         />
         <BioprotectSelect
           id="planning-area"
           label="Area of each planning unit"
           options={CONSTANTS.AREAKM2S}
-          changeFunc={handleAreaKm2Change}
+          changeFunc={setAreaKm2}
           value={areakm2}
         />
       </React.Fragment>

@@ -3,17 +3,12 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   snackbarOpen: false,
   snackbarMessage: "",
-  activeTab: "",
+  activeTab: "project",
   activeResultsTab: "legend",
   projectDialogStates: {
     projectsListDialogOpen: false,
-    importProjectDialogOpen: false,
-    importProjectPopoverOpen: false,
     newProjectDialogOpen: false,
     projectsDialogOpen: false,
-    importFromWebDialogOpen: false,
-    importGBIFDialogOpen: false,
-    importMXWDialogOpen: false,
   },
   featureDialogStates: {
     newFeatureDialogOpen: false,

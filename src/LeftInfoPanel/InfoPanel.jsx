@@ -1,11 +1,3 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   faEraser,
@@ -13,6 +5,18 @@ import {
   faSave,
   faShareAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleFeatureDialog,
+  toggleImportDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "./slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import CONSTANTS from "../constants";
@@ -29,7 +33,19 @@ import Tabs from "@mui/material/Tabs";
 const activeTabArr = ["project", "features", "planning_units"];
 
 const InfoPanel = (props) => {
-  console.log("props.features ", props.features);
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
+
   const [editingProjectName, setEditingProjectName] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
 
@@ -60,8 +76,8 @@ const InfoPanel = (props) => {
   ]);
 
   useEffect(() => {
-    if (props.activeTab) {
-      setCurrentTabIndex(activeTabArr.indexOf(props.activeTab));
+    if (uiState.activeTab) {
+      setCurrentTabIndex(activeTabArr.indexOf(uiState.activeTab));
     }
   }, []);
 
@@ -178,18 +194,21 @@ const InfoPanel = (props) => {
   const handleTabChange = (evt, tabIndex) => {
     setCurrentTabIndex(tabIndex);
     if (tabIndex === 0) {
-      props.project_tab_active;
+      dispatch(setActiveTab("project"));
     }
     if (tabIndex === 1) {
-      props.features_tab_active;
+      dispatch(setActiveTab("features"));
+      props.setPUTabInactive();
     }
     if (tabIndex === 2) {
-      props.pu_tab_active;
+      props.setPUTabActive();
     }
   };
 
   let costnames = props.costnames ? [...props.costnames, "Custom.."] : [];
-  const displayStyle = { display: props.open ? "block" : "none" };
+  const displayStyle = {
+    display: dialogStates.infoPanelOpen ? "block" : "none",
+  };
   const combinedDisplayStyles = { ...panelStyle, ...displayStyle };
   const titleDisplayStyle = { display: editingProjectName ? "block" : "none" };
   const combinedDisplayStyle = { ...titleStyle, ...titleDisplayStyle };

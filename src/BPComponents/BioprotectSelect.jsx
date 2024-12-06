@@ -3,17 +3,14 @@ import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import React from "react";
 
 const BioprotectSelect = ({
+  id,
   label,
   options,
   changeFunc,
-  id,
-  displayField,
   disabled = false,
+  displayField,
+  value,
 }) => {
-  const handleChanges = (value) => {
-    console.log("value ", value);
-    changeFunc(value);
-  };
   return options && options.length > 0 ? (
     <FormControl fullWidth variant="outlined" margin="normal">
       <InputLabel id={`${id}-label`}>{label}</InputLabel>
@@ -21,7 +18,7 @@ const BioprotectSelect = ({
         labelId={`${id}-label`}
         id={id}
         fullWidth
-        onChange={(e) => handleChanges(e.target.value)}
+        onChange={(e) => changeFunc(e.target.value)}
         label={label}
         disabled={disabled}
       >

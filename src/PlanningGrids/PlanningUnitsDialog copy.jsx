@@ -19,7 +19,7 @@ class PlanningUnitsDialog extends React.Component {
   componentDidMount() {
     let map = new mapboxgl.Map({
       container: this.mapContainer,
-      style: "mapbox://styles/blishten/cjg6jk8vg3tir2spd2eatu5fd", //north star + marine PAs in pacific
+      style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8", //north star + marine PAs in pacific
       center: [0, 0],
       zoom: 2,
     });

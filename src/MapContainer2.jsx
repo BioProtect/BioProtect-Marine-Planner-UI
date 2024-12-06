@@ -1,38 +1,43 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import * as React from "react";
+import React, { useEffect, useRef } from "react";
+import { setSnackbarMessage, setSnackbarOpen } from "../slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
+import { Box } from "@mui/material";
 import mapboxgl from "mapbox-gl";
 import { zoomToBounds } from "./Helpers";
-//TODO: Combine this with MapContainer.js as they do similar things
-class MapContainer2 extends React.Component {
-  componentDidMount() {
-    this.map = new mapboxgl.Map({
-      container: this.mapContainer,
-      style: "mapbox://styles/blishten/cjg6jk8vg3tir2spd2eatu5fd", //north star + marine PAs in pacific
+
+// Refactored functional component
+const MapContainer2 = ({
+  planningGridMetadata,
+  getTilesetMetadata,
+  color = "rgba(255, 0, 0, 0.4)",
+  outlineColor = "rgba(255, 0, 0, 0.5)",
+}) => {
+  const dispatch = useDispatch();
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    // Initialize the map
+    mapRef.current = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
       center: [0, 0],
       zoom: 2,
       attributionControl: false,
     });
-    this.map.on("load", (evt) => {
-      let color = this.props.color ? this.props.color : "rgba(255, 0, 0, 0.4)";
-      let outlineColor = this.props.outlineColor
-        ? this.props.outlineColor
-        : "rgba(255, 0, 0, 0.5)";
-      evt.target.addLayer({
+
+    const map = mapRef.current;
+
+    map.current.on("load", () => {
+      map.current.addLayer({
         id: "planning_grid",
         type: "fill",
         source: {
           type: "vector",
-          url: "mapbox://" + this.props.planning_grid_metadata.tilesetid,
+          url: `mapbox://${planningGridMetadata.tilesetid}`,
         },
-        "source-layer": this.props.planning_grid_metadata.feature_class_name,
+        "source-layer": planningGridMetadata.feature_class_name,
         paint: {
           "fill-color": color,
           "fill-opacity": 0.9,
@@ -40,41 +45,35 @@ class MapContainer2 extends React.Component {
         },
       });
     });
-    this.props
-      .getTilesetMetadata(this.props.planning_grid_metadata.tilesetid)
+
+    // Fetch tileset metadata and adjust bounds
+    getTilesetMetadata(planningGridMetadata.tilesetid)
       .then((tileset) => {
-        if (tileset.bounds != null) zoomToBounds(this.map, tileset.bounds);
+        if (tileset.bounds) zoomToBounds(map, tileset.bounds);
       })
       .catch((error) => {
-        this.props.setSnackBar(error);
+        dispatch(setSnackbarOpen(true));
+        dispatch(setSnackbarMessage(error));
       });
-  }
 
-  componentWillUnmount() {
-    //remove the map and free all resources
-    if (this.map) this.map.remove();
-  }
+    // Cleanup function to remove the map
+    return () => {
+      if (map) map.current.remove();
+    };
+  }, [planningGridMetadata, getTilesetMetadata]);
 
-  render() {
-    return (
-      <React.Fragment>
-        <div className={"floatLeft mapContainer2"}>
-          <div>
-            <div
-              ref={(el) => (this.mapContainer = el)}
-              className="absolute top right left bottom"
-              style={{
-                width: "352px",
-                height: "300px",
-                marginTop: "50px",
-                marginLeft: "24px",
-              }}
-            />
-          </div>
-        </div>
-      </React.Fragment>
-    );
-  }
-}
+  return (
+    <Box
+      ref={mapContainerRef}
+      sx={{
+        width: "352px",
+        height: "300px",
+        marginTop: "50px",
+        marginLeft: "24px",
+        position: "relative",
+      }}
+    />
+  );
+};
 
 export default MapContainer2;

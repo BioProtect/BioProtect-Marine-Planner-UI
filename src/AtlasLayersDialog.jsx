@@ -1,31 +1,36 @@
-import React, { useState } from "react";
-
 import BioprotectTable from "./BPComponents/BioprotectTable";
 import MarxanDialog from "./MarxanDialog";
+import React from "react";
 import { generateTableCols } from "./Helpers";
 
-const AtlasLayersDialog = (props) => {
-  console.log("props.selectedLayers ", props.selectedLayers);
+const AtlasLayersDialog = ({
+  open,
+  onOk,
+  onCancel,
+  loading,
+  atlasLayers,
+  selectedLayers,
+  updateSelectedLayers,
+}) => {
   const tableColumns = generateTableCols([{ id: "title", label: "title" }]);
-  const updateSelection = (event, rowInfo) =>
-    props.updateSelectedLayers(rowInfo);
+  const updateSelection = (event, rowInfo) => updateSelectedLayers(rowInfo);
 
-  if (props.atlasLayers.length > 0) {
+  if (atlasLayers.length > 0) {
     return (
       <MarxanDialog
-        open={props.open}
-        onOk={props.onOk}
-        onCancel={props.onCancel}
-        loading={props.loading}
+        open={open}
+        onOk={onOk}
+        onCancel={onCancel}
+        loading={loading}
         title="Atlas Layers Selection"
         showCancelButton={true}
         cancelLabel="Clear all Layers"
       >
         <BioprotectTable
           title="Atlas Layers"
-          data={props.atlasLayers}
+          data={atlasLayers}
           tableColumns={tableColumns}
-          selected={props.selectedLayers} // has to be an array of indices
+          selected={selectedLayers} // has to be an array of indices
           ableToSelectAll={true}
           showSearchBox={true}
           searchColumns={["title"]}

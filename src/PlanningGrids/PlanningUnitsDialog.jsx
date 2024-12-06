@@ -16,8 +16,7 @@ const PlanningUnitsDialog = (props) => {
   useEffect(() => {
     const mapInstance = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/craicerjack/ckf6p8lax0q4319my1f2dbi7v",
-      // style: "mapbox://styles/blishten/cjg6jk8vg3tir2spd2eatu5fd", // north star + marine PAs in pacific
+      style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
       center: [0, 0],
       zoom: 2,
     });

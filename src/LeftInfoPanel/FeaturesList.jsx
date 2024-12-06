@@ -41,13 +41,7 @@ const FeaturesList = (props) => {
   };
 
   return (
-    <List
-    // sx={{
-    //   padding: "0px !important",
-    //   maxHeight: props.maxheight,
-    //   overflow: "auto",
-    // }}
-    >
+    <List>
       {props.features.map((item) => {
         // Get the total area of the feature in the planning unit
         let pu_area = item.pu_area;

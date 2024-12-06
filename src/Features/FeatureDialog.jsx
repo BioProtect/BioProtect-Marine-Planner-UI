@@ -1,145 +1,152 @@
+import {
+  Box,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  Typography,
+} from "@mui/material";
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
 import { getArea } from "../Helpers";
+import { toggleFeatureDialog } from "./slices/uiSlice";
 
-class FeatureDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { expanded: false };
-  }
-  expand() {
-    this.setState({ expanded: !this.state.expanded });
-  }
-  getProjectList() {
-    this.props.getProjectList(this.props.featureMetadata, "feature");
-  }
-  render() {
-    //get the area or amount depending on whether the feature is a polygon or a point layer
-    const metadata = this.props.featureMetadata;
-    let amount =
-      metadata.source === "Imported shapefile"
-        ? getArea(metadata.area, this.props.reportUnits, true)
-        : metadata.area;
-    let unit = metadata.source === "Imported shapefile" ? "Area" : "Amount";
-    return (
-      <MarxanDialog
-        {...this.props}
-        onClose={() => this.props.updateState({ featureDialogOpen: false })}
-        showCancelButton={false}
-        title={metadata.alias}
-        helpLink={"user.html#the-feature-details-window"}
-        contentWidth={768}
-      >
-        {
-          <React.Fragment key="k26">
-            <MapContainer2
-              planning_grid_metadata={metadata}
-              getTilesetMetadata={this.props.getTilesetMetadata}
-              setSnackBar={this.props.setSnackBar}
-              color={metadata.color}
-              outlineColor={"rgba(0, 0, 0, 0.2)"}
-            />
-            <div className="metadataPanel">
-              <table>
-                <tbody>
-                  <tr>
-                    <td colSpan="2" className="metadataItemTitle">
-                      Description:
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colSpan="2" className="metadataItemValue2">
-                      {metadata.description}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="metadataItemTitle">{unit}</td>
-                    <td className="metadataItemValue">{amount}</td>
-                  </tr>
-                  <tr>
-                    <td className="metadataItemTitle">Created:</td>
-                    <td className="metadataItemValue">
-                      {metadata.creation_date}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="metadataItemTitle">Created by:</td>
-                    <td className="metadataItemValue">{metadata.created_by}</td>
-                  </tr>
-                  <tr>
-                    <td className="metadataItemTitle">Source:</td>
-                    <td className="metadataItemValue">{metadata.source}</td>
-                  </tr>
-                  <tr
-                    style={{
-                      display: this.state.expanded ? "table-row" : "none",
-                    }}
-                  >
-                    <td className="metadataItemTitle">id:</td>
-                    <td className="metadataItemValue">{metadata.id}</td>
-                  </tr>
-                  <tr
-                    style={{
-                      display: this.state.expanded ? "table-row" : "none",
-                    }}
-                  >
-                    <td className="metadataItemTitle">guid:</td>
-                    <td className="metadataItemValue">
-                      {metadata.feature_class_name}
-                    </td>
-                  </tr>
-                  <tr
-                    style={{
-                      display: this.state.expanded ? "table-row" : "none",
-                    }}
-                  >
-                    <td className="metadataItemTitle">tileset:</td>
-                    <td className="metadataItemValue">{metadata.tilesetid}</td>
-                  </tr>
-                  <tr
-                    style={{
-                      display: this.state.expanded ? "table-row" : "none",
-                    }}
-                  >
-                    <td className="metadataItemTitle">Projects:</td>
-                    <td className="metadataItemValue">
+const FeatureDialog = ({
+  loading,
+  featureMetadata,
+  getTilesetMetadata,
+  getProjectList,
+  reportUnits,
+}) => {
+  const dispatch = useDispatch();
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+
+  const [expanded, setExpanded] = useState(false);
+
+  const toggleExpand = () => setExpanded(!expanded);
+
+  const fetchProjectList = () => {
+    getProjectList(featureMetadata, "feature");
+  };
+
+  // Determine unit type and value
+  const isShapefile = featureMetadata.source === "Imported shapefile";
+  const amount = isShapefile
+    ? getArea(featureMetadata.area, reportUnits, true)
+    : featureMetadata.area;
+  const unit = isShapefile ? "Area" : "Amount";
+
+  return (
+    <MarxanDialog
+      open={featureDialogStates.featureDialogOpen}
+      loading={loading}
+      onOk={() =>
+        dispatch(
+          toggleFeatureDialog({
+            dialogName: "featureDialogOpen",
+            isOpen: false,
+          })
+        )
+      }
+      onClose={() =>
+        dispatch(
+          toggleFeatureDialog({
+            dialogName: "featureDialogOpen",
+            isOpen: false,
+          })
+        )
+      }
+      showCancelButton={false}
+      title={featureMetadata.alias}
+      contentWidth={768}
+    >
+      <Box>
+        <MapContainer2
+          planningGridMetadata={featureMetadata}
+          getTilesetMetadata={getTilesetMetadata}
+          color={featureMetadata.color}
+          outlineColor="rgba(0, 0, 0, 0.2)"
+        />
+        <Box className="metadataPanel" mt={2}>
+          <Table>
+            <TableBody>
+              <TableRow>
+                <TableCell colSpan={2}>
+                  <Typography variant="subtitle1">Description:</Typography>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell colSpan={2}>
+                  <Typography variant="body2">
+                    {featureMetadata.description}
+                  </Typography>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>{unit}:</TableCell>
+                <TableCell>{amount}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Created:</TableCell>
+                <TableCell>{featureMetadata.creation_date}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Created by:</TableCell>
+                <TableCell>{featureMetadata.created_by}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Source:</TableCell>
+                <TableCell>{featureMetadata.source}</TableCell>
+              </TableRow>
+              {expanded && (
+                <>
+                  <TableRow>
+                    <TableCell>id:</TableCell>
+                    <TableCell>{featureMetadata.id}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>guid:</TableCell>
+                    <TableCell>{featureMetadata.feature_class_name}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>tileset:</TableCell>
+                    <TableCell>{featureMetadata.tilesetid}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Projects:</TableCell>
+                    <TableCell>
                       <FontAwesomeIcon
-                        name="external-link-alt"
-                        onClick={this.getProjectList.bind(this)}
+                        icon="external-link-alt"
+                        onClick={fetchProjectList}
                         title="View a list of projects that this feature is used in"
                         style={{ cursor: "pointer", paddingTop: "6px" }}
                       />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <div
-                onClick={this.expand.bind(this)}
-                title={
-                  this.state.expanded
-                    ? "Show less details"
-                    : "Show more details"
-                }
-                className={"textHyperlink"}
-              >
-                {this.state.expanded ? "less" : "more.."}
-              </div>
-            </div>
-          </React.Fragment>
-        }
-      </MarxanDialog>
-    ); //return
-  }
-}
+                    </TableCell>
+                  </TableRow>
+                </>
+              )}
+            </TableBody>
+          </Table>
+          <Box mt={1}>
+            <Button
+              variant="text"
+              onClick={toggleExpand}
+              title={expanded ? "Show less details" : "Show more details"}
+            >
+              {expanded ? "less" : "more.."}
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    </MarxanDialog>
+  );
+};
 
 export default FeatureDialog;

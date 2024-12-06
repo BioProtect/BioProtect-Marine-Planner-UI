@@ -28,7 +28,6 @@ import AddToMap from "@mui/icons-material/Visibility";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import CONSTANTS from "./constants";
-import ChangePasswordDialog from "./User/ChangePasswordDialog";
 import ClassificationDialog from "./ClassificationDialog";
 import ClumpingDialog from "./ClumpingDialog";
 import CostsDialog from "./CostsDialog";
@@ -45,12 +44,9 @@ import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
 import ImportFeaturesDialog from "./Features/ImportFeaturesDialog";
 import ImportFromWebDialog from "./ImportComponents/ImportFromWebDialog";
 import ImportGBIFDialog from "./ImportComponents/ImportGBIFDialog";
-import ImportMXWDialog from "./ImportComponents/ImportMXWDialog";
 import ImportPlanningGridDialog from "./ImportComponents/ImportPlanningGridDialog";
-import ImportProjectDialog from "./ImportComponents/ImportProjectDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
-import LoadingDialog from "./LoadingDialog";
 import LoginDialog from "./LoginDialog";
 //mapbox imports
 import { Map } from "mapbox-gl"; // Assuming you're using mapbox-gl
@@ -121,6 +117,11 @@ mapboxgl.accessToken =
 const App = () => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector((state) => state.ui.projectDialogStates);
+  const featureDialogStates = useSelector((state) => state.ui.featureDialogStates);
+  const planningGridDialogStates = useSelector((state) => state.ui.planningGridDialogStates);
+
   const [marxanServers, setMarxanServers] = useState([]);
   const [marxanServer, setMarxanServer] = useState({});
   const [brew, setBrew] = useState(null);
@@ -307,8 +308,10 @@ const App = () => {
   });
 
   const setSnackBar = (message, silent = false) => {
-    if (!silent) setSnackbarOpen(true);
-    dispatch(setSnackbarMessage(message));
+    if (!silent) {
+      dispatch(setSnackbarOpen(true));
+      dispatch(setSnackbarMessage(message));
+    }
   };
 
   // Memoized function to check for timeout errors or empty responses
@@ -317,7 +320,7 @@ const App = () => {
       if (!response) {
         const msg = "No response received from server";
         if (snackbarOpen) {
-          dispatch.setSnackBarMessage(msg);
+          dispatch(setSnackbarMessage(msg));
         }
         return true;
       }
@@ -701,7 +704,7 @@ const App = () => {
       const response = await _post("createUser", formData);
       // UI feedback
       setSnackBar(response.info);
-      setRegisterDialogOpen(false);
+      dispatch(toggleDialog({ dialogName: 'registerDialogOpen', isOpen: false }))
       setPassword("");
       setUser(user);
     } catch (error) {
@@ -860,7 +863,7 @@ const App = () => {
   const resendPassword = async () => {
     try {
       const response = await _get(`resendPassword?user=${user}`);
-      setSnackBarMessage(response.info);
+      dispatch(setSnackbarMessage(response.info));
       // Close the resend password dialog
       setResendPasswordDialogOpen(false);
     } catch (error) {
@@ -1132,7 +1135,8 @@ const App = () => {
       console.log("logged in......", loggedIn);
 
       // Activate the project tab
-      project_tab_active();
+      dispatch(setActiveTab("project"))
+      setPUTabInactive();
       return "Project loaded";
     } catch (error) {
       console.log("error", error);
@@ -1144,7 +1148,7 @@ const App = () => {
 
       if (error.toString().includes("does not exist")) {
         // Handle case where project does not exist
-        setSnackBarMessage("Loading first available project");
+        dispatch(setSnackbarMessage("Loading first available project"));
         await loadProject("", user);
         return;
       }
@@ -1319,7 +1323,7 @@ const App = () => {
     const formData = prepareFormDataNewProject(proj, user);
     const response = await _post("createProject", formData);
 
-    setSnackBarMessage(response.info);
+    dispatch(setSnackbarMessage(response.info);
     setProjectsDialogOpen(false);
 
     await loadProject(response.name, response.user);
@@ -1343,11 +1347,11 @@ const App = () => {
       await getProjects();
 
       // Show a snackbar message, but allow it to be silent if specified
-      setSnackBarMessage(response.info, silent);
+      dispatch(setSnackbarMessage(response.info, silent));
 
       // Check if the deleted project is the current one
       if (response.project === project) {
-        setSnackBarMessage("Current project deleted - loading first available");
+        dispatch(setSnackbarMessage("Current project deleted - loading first available"));
 
         // Find the next available project
         const nextProject = projects.find((p) => p.name !== project);
@@ -1379,7 +1383,7 @@ const App = () => {
   const cloneProject = async (user, proj) => {
     const response = await _get(`cloneProject?user=${user}&project=${proj}`);
     getProjects();
-    setSnackBarMessage(response.info);
+    dispatch(setSnackbarMessage(response.info));
   };
 
   //rename a specific project on the server
@@ -1389,7 +1393,7 @@ const App = () => {
         `renameProject?user=${owner}&project=${project}&newName=${newName}`
       );
       setProject(newName);
-      setSnackBarMessage(response.info);
+      dispatch(setSnackbarMessage(response.info));
       return "Project renamed";
     }
   };
@@ -1449,7 +1453,7 @@ const App = () => {
       if (!checkForErrors(response)) {
         console.log("getResults from 1646 - runmarxan");
         await getResults(response.user, response.project); //run completed - get the results
-        features_tab_active(); //switch to the features tab
+        setPUTabInactive(); //switch to the features tab
       } else {
         setSolutions([]); //set state with no solutions
       }
@@ -1592,7 +1596,7 @@ const App = () => {
 
     // Check if solutions are present
     if (response.ssoln?.length > 0) {
-      setSnackBarMessage(response.info);
+      dispatch(setSnackbarMessage(response.info));
       renderSolution(response.ssoln, true);
 
       // Map the solutions to the required format
@@ -2289,13 +2293,13 @@ const App = () => {
         message !== "http status 200 returned without content." ||
         message == ""
       ) {
-        setSnackBarMessage(
+        dispatch(setSnackbarMessage(
           `MapError: ${message}, Error status: ${e.error.status}`
-        );
+        ));
         console.error(message);
       }
     },
-    [setSnackBarMessage]
+    []
   );
 
   const handleInfoMenuItemClick = () => {
@@ -2428,8 +2432,8 @@ const App = () => {
         }
 
         // Turn on/off layers depending on which tab is selected
-        if (activeTab === "planningUnits") {
-          pu_tab_active();
+        if (uiState.activeTab === "planningUnits") {
+          setPUTabActive();
         }
       }
     } catch (error) {
@@ -2516,7 +2520,7 @@ const App = () => {
       setTileset(tileset);
       return tileset;
     } catch (error) {
-      setSnackBarMessage(error);
+      dispatch(setSnackbarMessage(error));
       throw error;
     }
   };
@@ -2780,27 +2784,9 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
 
-  //fired when the projects tab is selected
-  const project_tab_active = () => {
-    console.log("loggedIn in project_tab_active... ", loggedIn);
-    setActiveTab("project");
-    pu_tab_inactive();
-  };
-
-  //fired when the features tab is selected
-  const features_tab_active = () => {
-    if (activeTab !== "features") {
-      setActiveTab("features");
-      //render the sum solution map
-      // this.renderSolution(this.runMarxanResponse.ssoln, true);
-      //hide the planning unit layers
-      pu_tab_inactive();
-    }
-  };
-
   //fired when the planning unit tab is selected
-  const pu_tab_active = async () => {
-    setActiveTab("planningUnits");
+  const setPUTabActive = async () => {
+    dispatch(setActiveTab("planningUnits"));
     //show the planning units layer, status layer, and costs layer
     showLayer(CONSTANTS.PU_LAYER_NAME);
     showLayer(CONSTANTS.STATUS_LAYER_NAME);
@@ -2819,7 +2805,7 @@ const App = () => {
   };
 
   //fired whenever another tab is selected
-  const pu_tab_inactive = () => {
+  const setPUTabInactive = () => {
     //show the results layer, eature layer, and feature puid layers
     showLayer(CONSTANTS.RESULTS_LAYER_NAME);
     showHideLayerTypes(
@@ -3114,7 +3100,7 @@ const App = () => {
     );
     //update the planning unit grids
     await getPlanningUnitGrids();
-    setSnackBarMessage(response.info, silent);
+    dispatch(setSnackbarMessage(response.info, silent))
   };
 
   //exports a planning grid to a zipped shapefile
@@ -3172,7 +3158,7 @@ const App = () => {
       if (result.error) {
         const errorMsg = `Mapbox upload error: ${result.error}. See <a href='${CONSTANTS.ERRORS_PAGE}#mapbox-upload-error' target='blank'>here</a>`;
         messageLogger({ error: errorMsg, status: "UploadFailed" });
-        setSnackBarMessage(errorMsg);
+        dispatch(setSnackbarMessage(errorMsg));
         clearMapboxTimer(uploadid);
         throw new Error(result.error);
       }
@@ -3290,7 +3276,7 @@ const App = () => {
     try {
       await getImpacts();
     } catch (e) {
-      setSnackBarMessage("no impacts found");
+      dispatch(setSnackbarMessage("no impacts found"))
     }
   };
 
@@ -3433,9 +3419,9 @@ const App = () => {
   //toggles the impact layer on the map
   const toggleImpactLayer = (impact) => {
     if (impact.tilesetid === "") {
-      setSnackBarMessage(
+      dispatch(setSnackbarMessage(
         `This impact does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='blank'>here</a>`
-      );
+      ))
       return;
     }
     // this.closeImpactMenu();
@@ -3887,7 +3873,7 @@ const App = () => {
       // Handle any errors that occur during the process
       console.error("Error deleting feature:", error);
       // Optionally: show error feedback to the user
-      setSnackBarMessage("Failed to delete feature due to an error.");
+      dispatch(setSnackbarMessage("Failed to delete feature due to an error."));
     }
   };
 
@@ -3896,8 +3882,8 @@ const App = () => {
     const response = await _get(
       `deleteFeature?feature_name=${feature.feature_class_name}`
     );
-    setSnackBarMessage("Feature deleted");
-    await removeFeature(feature);
+    dispatch(setSnackbarMessage("Feature deleted"));
+    removeFeature(feature);
     removeFeatureFromAllFeatures(feature); //remove it from the allFeatures array
   };
 
@@ -3964,9 +3950,9 @@ const App = () => {
   //toggles the feature layer on the map
   const toggleFeatureLayer = (feature) => {
     if (feature.tilesetid === "") {
-      setSnackBarMessage(
+      dispatch(setSnackbarMessage(
         `This feature does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE} #the-tileset-from-source-source-was-not-found' target='blank'>here</a>`
-      );
+      ))
       return;
     }
     // setFeatureMenuOpen(false);
@@ -4268,9 +4254,9 @@ const App = () => {
     if (clashingPuids.length > 0) {
       //remove them from the puids
       puids = puids.filter((item) => !clashingPuids.includes(item));
-      setSnackBarMessage(
+      dispatch(setSnackbarMessage(
         `Not all planning units have been added. See <a href='${CONSTANTS.ERRORS_PAGE}#not-all-planning-units-have-been-added' target='blank'>here</a>`
-      );
+      ))
     }
     // Get all puids for existing iucn category - these will come from the previousPuids rather than getPuidsFromIucnCategory as there may have been some clashes and not all of the puids from getPuidsFromIucnCategory may actually be renderered
     //if the previousPuids are undefined then get them from the projects previousIucnCategory
@@ -4697,7 +4683,6 @@ const App = () => {
 
   const handleProjectsDialogCancel = () => {
     setProjectsDialogOpen(false);
-    setImportProjectPopoverOpen(false);
   };
 
   return (
@@ -4823,8 +4808,6 @@ const App = () => {
             wdpaAttribution={wdpaAttribution}
           />
           <InfoPanel
-            open={infoPanelOpen}
-            activeTab={activeTab}
             user={user}
             owner={owner}
             project={project}
@@ -4835,9 +4818,8 @@ const App = () => {
             renameProject={renameProject}
             renameDescription={renameDescription}
             features={projectFeatures}
-            project_tab_active={project_tab_active}
-            features_tab_active={features_tab_active}
-            pu_tab_active={pu_tab_active}
+            setPUTabInactive={setPUTabInactive}
+            setPUTabActive={setPUTabActive}
             startPuEditSession={startPuEditSession}
             stopPuEditSession={stopPuEditSession}
             puEditing={puEditing}
@@ -4915,7 +4897,6 @@ const App = () => {
             loading={loading}
             projects={projects}
             oldVersion={metadata?.OLDVERSION}
-            setImportProjectDialogOpen={setImportProjectDialogOpen}
             setProject={setProject}
             deleteProject={deleteProject}
             loadProject={loadProject}
@@ -4924,9 +4905,6 @@ const App = () => {
             unauthorisedMethods={unauthorisedMethods}
             userRole={userData.ROLE}
             allFeatures={allFeatures}
-            importProjectPopoverOpen={importProjectPopoverOpen}
-            importMXWDialogOpen={importMXWDialogOpen}
-            setImportMXWDialogOpen={setImportMXWDialogOpen}
             setNewProjectDialogOpen={setNewProjectDialogOpen}
           />
           <NewProjectDialog
@@ -4952,20 +4930,14 @@ const App = () => {
             setNewProjectWizardDialogOpen={setNewProjectWizardDialogOpen}
           />
           <NewPlanningGridDialog
-            open={newPlanningGridDialogOpen}
-            onCancel={() => setNewPlanningGridDialogOpen(false)}
             loading={loading || preprocessing || uploading}
             createNewPlanningUnitGrid={createNewPlanningUnitGrid}
             countries={countries}
-            setSnackBarMessage={setSnackBarMessage}
           />
           <NewMarinePlanningGridDialog
-            open={newMarinePlanningGridDialogOpen}
-            onCancel={() => setNewMarinePlanningGridDialogOpen(false)}
             loading={loading || preprocessing || uploading}
             createNewPlanningUnitGrid={createNewMarinePlanningUnitGrid}
             fileUpload={uploadFileToFolder}
-            setSnackBarMessage={setSnackBarMessage}
           />
           <ImportPlanningGridDialog
             open={importPlanningGridDialogOpen}
@@ -5001,12 +4973,9 @@ const App = () => {
             refreshFeatures={refreshFeatures}
           />
           <FeatureDialog
-            open={featureDialogOpen}
-            onOk={() => setFeatureDialogOpen(false)}
             loading={loading}
             featureMetadata={featureMetadata}
             getTilesetMetadata={getMetadata}
-            setSnackBarMessage={setSnackBarMessage}
             reportUnits={userData.REPORTUNITS}
             getProjectList={getProjectList}
           />
@@ -5074,10 +5043,8 @@ const App = () => {
             open={planningGridDialogOpen}
             onOk={() => setPlanningGridDialogOpen(false)}
             setPlanningGridDialogOpen={setPlanningGridDialogOpen}
-            loading={loading}
             planningGridMetadata={planningGridMetadata}
             getTilesetMetadata={getMetadata}
-            setSnackBarMessage={setSnackBarMessage}
             getProjectList={getProjectList}
           />
           <ProjectsListDialog
@@ -5155,24 +5122,6 @@ const App = () => {
             setBlmValue={setBlmValue}
             clumpingRunning={clumpingRunning}
           />
-          <ImportProjectDialog
-            open={importProjectDialogOpen}
-            onOk={() => setImportProjectDialogOpen(false)}
-            loading={loading || uploading}
-            importProject={importProject}
-            fileUpload={uploadFileToFolder}
-            log={messageLogger}
-            setSnackBarMessage={setSnackBarMessage}
-          />
-          <ImportMXWDialog
-            open={importMXWDialogOpen}
-            onOk={() => setImportMXWDialogOpen(false)}
-            loading={loading || preprocessing}
-            importMXWProject={importMXWProject}
-            fileUpload={uploadFileToFolder}
-            log={messageLogger}
-            setSnackBarMessage={setSnackBarMessage}
-          />
           <ResetDialog
             open={resetDialogOpen}
             onOk={resetServer}
@@ -5211,15 +5160,6 @@ const App = () => {
             updateWDPA={updateWDPA}
             loading={preprocessing}
             registry={registry}
-          />
-          <ChangePasswordDialog
-            open={changePasswordDialogOpen}
-            onOk={() => setChangePasswordDialogOpen(false)}
-            user={user}
-            onClose={() => setChangePasswordDialogOpen(false)}
-            checkPassword={checkPassword}
-            setSnackBarMessage={setSnackBarMessage}
-            updateUser={handleUserUpdate}
           />
           <AlertDialog
             open={alertDialogOpen}
@@ -5346,15 +5286,13 @@ const App = () => {
             onOk={() => setShareableLinkDialogOpen(false)}
             shareableLinkUrl={`${window.location}?server=${marxanServer.name}&user=${user}&project=${project}`}
           />
-          {atlasLayersDialogOpen ? (
+          {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog
-              open={atlasLayersDialogOpen}
+              open={dialogStates.atlasLayersDialogOpen}
               onOk={() => setAtlasLayersDialogOpen(false)}
               onCancel={clearSelactedLayers}
               loading={loading}
               atlasLayers={atlasLayers}
-              marxanServer={marxanServer}
-              setSnackBarMessage={setSnackBarMessage}
               selectedLayers={selectedLayers}
               updateSelectedLayers={updateSelectedLayers}
             />
@@ -5375,7 +5313,7 @@ const App = () => {
             setOpenImportImpactsDialog={setOpenImportImpactsDialog}
             selectedImpactIds={selectedImpactIds}
             openImportedActivitesDialog={openImportedActivitesDialog}
-            setSnackBarMessage={setSnackBarMessage}
+            setSnackbarMessage={setSnackbarMessage}
             userRole={userData.ROLE}
           />
           <HumanActivitiesDialog
@@ -5386,7 +5324,7 @@ const App = () => {
             metadata={metadata}
             activities={activities}
             initialiseDigitising={initialiseDigitising}
-            setSnackBarMessage={setSnackBarMessage}
+            setSnackbarMessage={setSnackbarMessage}
             userRole={userData.ROLE}
             fileUpload={uploadRaster}
             saveActivityToDb={saveActivityToDb}
@@ -5399,7 +5337,7 @@ const App = () => {
             onCancel={() => setImportedActivitiesDialogOpen(false)}
             metadata={metadata}
             uploadedActivities={uploadedActivities}
-            setSnackBarMessage={setSnackBarMessage}
+            setSnackbarMessage={setSnackbarMessage}
             userRole={userData.ROLE}
             runCumulativeImpact={runCumulativeImpact}
           />
