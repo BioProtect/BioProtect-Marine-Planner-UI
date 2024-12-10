@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "../../constants";
-import Checkbox from "@mui/material/Checkbox";
 import MarxanDialog from "../../MarxanDialog";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 import Step0 from "./Step0";
 import Step1 from "./Step1";
 import ToolbarButton from "../../ToolbarButton";
+import { toggleProjectDialog } from "../../slices/uiSlice";
 
 const NewProjectWizardDialog = (props) => {
+  const dispatch = useDispatch();
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+
   const [domainEnabled, setDomainEnabled] = useState(true);
   const [stepIndex, setStepIndex] = useState(0);
   const [stepComplete, setStepComplete] = useState(false);
@@ -89,6 +93,14 @@ const NewProjectWizardDialog = (props) => {
     });
   };
 
+  const closeDialog = () =>
+    dispatch(
+      toggleProjectDialog({
+        dialogName: "newProjectWizardDialogOpen",
+        isOpen: false,
+      })
+    );
+
   const dropDownStyle = { width: "240px" };
 
   const actions = (
@@ -124,13 +136,13 @@ const NewProjectWizardDialog = (props) => {
 
   return (
     <MarxanDialog
-      {...props}
+      open={projectDialogStates.newProjectWizardDialogOpen}
       title={"New national project"}
       contentWidth={600}
       showCancelButton={true}
-      onCancel={() => props.setNewProjectWizardDialogOpen(false)}
-      onClose={() => props.setNewProjectWizardDialogOpen(false)}
-      helpLink={"user.html#creating-new-projects"}
+      onOk={() => closeDialog()}
+      onCancel={() => closeDialog()}
+      onClose={() => closeDialog()}
       actions={actions}
     >
       <div className="newNationalProjectContent">

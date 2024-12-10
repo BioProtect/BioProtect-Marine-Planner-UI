@@ -7,13 +7,20 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React, { useCallback, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
+import { toggleProjectDialog } from "../slices/uiSlice";
 
 const ProjectsDialog = (props) => {
+  const dispatch = useDispatch();
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+
   const _delete = useCallback(() => {
     props.deleteProject(props.project.user, props.project.name);
   }, [props.project]);
@@ -24,13 +31,19 @@ const ProjectsDialog = (props) => {
 
   const loadAndClose = useCallback(() => {
     props.loadProject(props.project.name, props.project.user);
-    closeDialog();
+    dispatch(
+      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+    );
   }, [props.project]);
 
   const _new = useCallback(() => {
-    props.setNewProjectDialogOpen(true);
-    closeDialog();
-  }, [props]);
+    dispatch(
+      toggleProjectDialog({ dialogName: "newProjectDialogOpen", isOpen: true })
+    );
+    dispatch(
+      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+    );
+  }, []);
 
   const cloneProject = useCallback(() => {
     props.cloneProject(props.project.user, props.project.name);
@@ -40,26 +53,28 @@ const ProjectsDialog = (props) => {
     props.exportProject(props.project.user, props.project.name).then((url) => {
       window.location = url;
     });
-    closeDialog();
+    dispatch(
+      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+    );
   }, [props]);
 
   const openImportProjectDialog = useCallback(() => {
     props.setImportProjectDialogOpen(true);
-    closeDialog();
+    dispatch(
+      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+    );
   }, [props.setImportProjectDialogOpen]);
 
   const openImportMXWDialog = useCallback(() => {
     props.setImportMXWDialogOpen(true);
-    closeDialog();
+    dispatch(
+      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+    );
   }, [props.setImportMXWDialogOpen]);
 
   // const changeProject = useCallback((event, project) => {
   //   setSelectedProject(project);
   // }, []);
-
-  const closeDialog = useCallback(() => {
-    props.setProjectsDialogOpen(false);
-  }, [props.setProjectsDialogOpen]);
 
   const handleProjectChange = (e) => {
     console.log("e ", e);
@@ -89,10 +104,18 @@ const ProjectsDialog = (props) => {
   if (props.projects) {
     return (
       <MarxanDialog
-        {...props}
+        open={projectDialogStates.projectsDialogOpen}
+        loading={loading}
         okLabel={props.userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
         onOk={load}
-        onCancel={closeDialog}
+        onCancel={() =>
+          dispatch(
+            toggleProjectDialog({
+              dialogName: "projectsDialogOpen",
+              isOpen: false,
+            })
+          )
+        }
         okDisabled={!props.project}
         showCancelButton={true}
         helpLink={"user.html#the-projects-window"}

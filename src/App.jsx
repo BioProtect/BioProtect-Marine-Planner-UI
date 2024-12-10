@@ -10,10 +10,14 @@ import {
 // SERVICES
 import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
 import {
+  setActiveResultsTab,
   setActiveTab,
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
+  toggleFeatureDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
 } from "./slices/uiSlice";
 import { strToBool, zoomToBounds } from "./Helpers";
 import { useDispatch, useSelector } from "react-redux";
@@ -177,7 +181,6 @@ const App = () => {
   const [mapZoom, setMapZoom] = useState(12);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [metadata, setMetadata] = useState({});
-  const [newFeaturePopoverOpen, setNewFeaturePopoverOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [owner, setOwner] = useState("");
   const [planningUnitGrids, setPlanningUnitGrids] = useState([]);
@@ -1325,7 +1328,7 @@ const App = () => {
     const response = await _post("createProject", formData);
 
     dispatch(setSnackbarMessage(response.info));
-    setProjectsDialogOpen(false);
+    dispatch(toggleDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
 
     await loadProject(response.name, response.user);
   };
@@ -3007,7 +3010,12 @@ const App = () => {
   //previews the planning grid
   const previewPlanningGrid = (newPlanningGridMetadata) => {
     setPlanningGridMetadata(newPlanningGridMetadata);
-    setPlanningGridDialogOpen(true);
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "planningGridDialogOpen",
+        isOpen: true,
+      })
+    );
   };
   //creates a new planning grid unit
   const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
@@ -3034,7 +3042,12 @@ const App = () => {
       wsMessageCallback
     );
     await newMarinePlanningGridCreated(message);
-    setNewMarinePlanningGridDialogOpen(false);
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "newMarinePlanningGridDialogOpen",
+        isOpen: false,
+      })
+    );
   };
 
   //imports a zipped shapefile as a new planning grid
@@ -3057,7 +3070,12 @@ const App = () => {
         info: response.info,
       });
       await newPlanningGridCreated(response);
-      setImportPlanningGridDialogOpen(false);
+      dispatch(
+        togglePlanningGridDialog({
+          dialogName: "importPlanningGridDialogOpen",
+          isOpen: false,
+        })
+      );
     } catch (error) {
       deletePlanningUnitGrid(alias, true);
       messageLogger({
@@ -3225,14 +3243,21 @@ const App = () => {
       await refreshFeatures();
     }
     setAddingRemovingFeatures(showClearSelectAll);
-    setFeaturesDialogOpen(true);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "featuresDialogOpen",
+        isOpen: true,
+      })
+    );
     if (showClearSelectAll) {
       getSelectedFeatureIds();
     }
   };
 
   const closeNewFeatureDialog = () => {
-    setNewFeatureDialogOpen(false);
+    dispatch(
+      toggleFeatureDialog({ dialogName: "newFeatureDialogOpen", isOpen: false })
+    );
     finaliseDigitising();
   };
 
@@ -3241,7 +3266,12 @@ const App = () => {
     if (marxanServer.system !== "Windows") {
       await getPlanningUnitGrids();
     }
-    setPlanningGridsDialogOpen(true);
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "planningGridsDialogOpen",
+        isOpen: true,
+      })
+    );
   };
 
   //used by the import wizard to import a users zipped shapefile as the planning units
@@ -3692,9 +3722,24 @@ const App = () => {
     }
 
     // Close dialogs
-    setFeaturesDialogOpen(false);
-    setNewFeaturePopoverOpen(false);
-    setImportFeaturePopoverOpen(false);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "featuresDialogOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "importFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
   };
 
   //updates the target values for all features in the project to the passed value
@@ -3777,30 +3822,6 @@ const App = () => {
     const message = await _ws(url, wsMessageCallback);
     const uploadId = message.uploadId;
     return await pollMapbox(uploadId);
-  };
-
-  //import features from GBIF
-  const importGBIFData = async (item) => {
-    startLogging();
-    _ws(
-      `importGBIFData?taxonKey=${item.key}&scientificName=${item.scientificName}`,
-      wsMessageCallback
-    );
-    return await pollMapbox(message.uploadId);
-  };
-
-  //requests matching species names in GBIF
-  const gbifSpeciesSuggest = async (q) => {
-    setLoading(true);
-    const response = await new Promise((resolve, reject) => {
-      jsonp(`https://api.gbif.org/v1/species/suggest?q=${q}&rank=SPECIES`)
-        .promise.then(resolve)
-        .catch(reject);
-    });
-
-    // Update state and return the response
-    setLoading(false);
-    return response;
   };
 
   //create the new feature from the feature that has been digitised on the map
@@ -4102,7 +4123,7 @@ const App = () => {
   };
 
   const openProjectsDialog = async () => {
-    setProjectsDialogOpen(true);
+    dispatch(toggleDialog({ dialogName: "projectsDialogOpen", isOpen: true }));
     await getProjects();
   };
 
@@ -4693,7 +4714,8 @@ const App = () => {
     return await _get("cleanup?");
   };
 
-  const handleProjectsDialogCancel = () => setProjectsDialogOpen(false);
+  const handleProjectsDialogCancel = () =>
+    dispatch(toggleDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
 
   return (
     <div>
@@ -4886,8 +4908,6 @@ const App = () => {
             metadata={metadata}
           />
           <ProjectsDialog
-            open={projectDialogStates.projectsDialogOpen}
-            setProjectsDialogOpen={setProjectsDialogOpen}
             onCancel={() => handleProjectsDialogCancel()}
             project={project}
             loading={loading}
@@ -4901,29 +4921,22 @@ const App = () => {
             unauthorisedMethods={unauthorisedMethods}
             userRole={userData.ROLE}
             allFeatures={allFeatures}
-            setNewProjectDialogOpen={setNewProjectDialogOpen}
           />
           <NewProjectDialog
-            open={newProjectDialogOpen}
             registry={registry}
             loading={loading}
             getPlanningUnitGrids={getPlanningUnitGrids}
             planningUnitGrids={planningUnitGrids}
             openFeaturesDialog={openFeaturesDialog}
             features={allFeatures}
-            setCostsDialogOpen={setCostsDialogOpen}
             selectedCosts={selectedCosts}
             createNewProject={createNewProject}
             previewFeature={previewFeature}
-            setNewProjectDialogOpen={setNewProjectDialogOpen}
           />
           <NewProjectWizardDialog
-            open={newProjectWizardDialogOpen}
-            onOk={() => setNewProjectWizardDialogOpen(false)}
             okDisabled={true}
             countries={countries}
             createNewNationalProject={createNewNationalProject}
-            setNewProjectWizardDialogOpen={setNewProjectWizardDialogOpen}
           />
           <NewPlanningGridDialog
             loading={loading || preprocessing || uploading}
@@ -4936,22 +4949,16 @@ const App = () => {
             fileUpload={uploadFileToFolder}
           />
           <ImportPlanningGridDialog
-            open={importPlanningGridDialogOpen}
-            onOk={importPlanningUnitGrid}
-            onCancel={() => setImportPlanningGridDialogOpen(false)}
+            importPlanningUnitGrid={importPlanningUnitGrid}
             loading={loading || uploading}
             fileUpload={uploadFileToFolder}
           />
           <FeaturesDialog
-            open={featuresDialogOpen}
             onOk={updateSelectedFeatures}
             loading={loading || uploading}
             metadata={metadata}
             allFeatures={allFeatures}
             deleteFeature={deleteFeature}
-            setImportGBIFDialogOpen={setImportGBIFDialogOpen}
-            setFeaturesDialogOpen={setFeaturesDialogOpen}
-            setImportFeaturesDialogOpen={setImportFeaturesDialogOpen}
             selectAllFeatures={selectAllFeatures}
             userRole={userData.ROLE}
             clickFeature={clickFeature}
@@ -4959,12 +4966,7 @@ const App = () => {
             selectedFeatureIds={selectedFeatureIds}
             setSelectedFeatureIds={setSelectedFeatureIds}
             initialiseDigitising={initialiseDigitising}
-            newFeaturePopoverOpen={newFeaturePopoverOpen}
-            setNewFeaturePopoverOpen={setNewFeaturePopoverOpen}
-            importFeaturePopoverOpen={importFeaturePopoverOpen}
-            setImportFeaturePopoverOpen={setImportFeaturePopoverOpen}
             previewFeature={previewFeature}
-            setImportFromWebDialogOpen={setImportFromWebDialogOpen}
             marxanServer={marxanServer}
             refreshFeatures={refreshFeatures}
           />
@@ -4976,20 +4978,15 @@ const App = () => {
             getProjectList={getProjectList}
           />
           <NewFeatureDialog
-            open={newFeatureDialogOpen}
-            onOk={closeNewFeatureDialog}
-            onCancel={closeNewFeatureDialog}
+            closeNewFeatureDialog={closeNewFeatureDialog}
             loading={loading || uploading}
             createNewFeature={createNewFeature}
             addToProject={addToProject}
             setAddToProject={setAddToProject}
           />
           <ImportFeaturesDialog
-            open={importFeaturesDialogOpen}
             importFeatures={importFeatures}
             loading={loading || preprocessing || uploading}
-            setFeaturesDialogOpen={setFeaturesDialogOpen}
-            setImportFeaturesDialogOpen={setImportFeaturesDialogOpen}
             filename={featureDatasetFilename}
             setFeatureDatasetFilename={setFeatureDatasetFilename}
             fileUpload={uploadFileToFolder}
@@ -5000,19 +4997,21 @@ const App = () => {
             setAddToProject={setAddToProject}
           />
           <ImportFromWebDialog
-            open={importFromWebDialogOpen}
-            setImportFromWebDialogOpen={setImportFromWebDialogOpen}
+            open={dialogStates.importFromWebDialogOpen}
+            setImportFromWebDialogOpen={() =>
+              dispatch(
+                toggleDialog({
+                  dialogName: "importFromWebDialogOpen",
+                  isOpen: false,
+                })
+              )
+            }
             loading={loading || preprocessing || uploading}
             importFeatures={importFeaturesFromWeb}
             addToProject={addToProject}
             setAddToProject={setAddToProject}
           />
           <PlanningGridsDialog
-            open={planningGridsDialogOpen}
-            setPlanningGridsDialogOpen={setPlanningGridsDialogOpen}
-            setNewMarinePlanningGridDialogOpen={
-              setNewMarinePlanningGridDialogOpen
-            }
             loading={loading}
             getPlanningUnitGrids={getPlanningUnitGrids}
             unauthorisedMethods={unauthorisedMethods}
@@ -5024,12 +5023,8 @@ const App = () => {
             marxanServer={marxanServer}
             fullWidth={true}
             maxWidth="false"
-            setImportPlanningGridDialogOpen={setImportPlanningGridDialogOpen}
           />
           <PlanningGridDialog
-            open={planningGridDialogOpen}
-            onOk={() => setPlanningGridDialogOpen(false)}
-            setPlanningGridDialogOpen={setPlanningGridDialogOpen}
             planningGridMetadata={planningGridMetadata}
             getTilesetMetadata={getMetadata}
             getProjectList={getProjectList}

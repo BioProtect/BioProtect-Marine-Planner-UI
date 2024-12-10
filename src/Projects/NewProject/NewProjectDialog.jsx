@@ -1,4 +1,9 @@
 import React, { useEffect, useState } from "react";
+import {
+  toggleFeatureDialog,
+  toggleProjectDialog,
+} from "../../slices/uiSlice.js";
+import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import FeaturesDialog from "../../Features/FeaturesDialog";
@@ -7,15 +12,21 @@ import Metadata from "../../Metadata";
 import PlanningUnitsDialog from "../../PlanningGrids/PlanningUnitsDialog";
 import SelectCostFeatures from "../../SelectCostFeatures";
 import SelectFeatures from "../../SelectFeatures";
-import ToolbarButton from "../../ToolbarButton";
 
 const NewProjectDialog = (props) => {
+  const dispatch = useDispatch();
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+
   const [steps] = useState(["Info", "Planning units", "Features"]);
   const [stepIndex, setStepIndex] = useState(0);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [pu, setPU] = useState("");
-  const [featuresDialogOpen, setFeaturesDialogOpen] = useState(false);
   const [allFeatures, setAllFeatures] = useState([]);
   const [selectedFeatureIds, setSelectedFeatureIds] = useState([]);
 
@@ -26,16 +37,15 @@ const NewProjectDialog = (props) => {
   const handleNext = () => setStepIndex((prev) => prev + 1);
   const handlePrev = () => setStepIndex((prev) => Math.max(prev - 1, 0));
 
-  const openFeaturesDialog = () => setFeaturesDialogOpen(true);
-  const closeFeaturesDialog = () => setFeaturesDialogOpen(false);
-
   const updateSelectedFeatures = () => {
     const updatedFeatures = allFeatures.map((feature) => ({
       ...feature,
       selected: selectedFeatureIds.includes(feature.id),
     }));
     setAllFeatures(updatedFeatures);
-    closeFeaturesDialog();
+    dispatch(
+      toggleFeatureDialog({ dialogName: "featuresDialogOpen", isOpen: false })
+    );
   };
 
   const clickFeature = (feature) => {
@@ -64,15 +74,15 @@ const NewProjectDialog = (props) => {
       planning_grid_name: pu,
       features: allFeatures.filter((item) => item.selected),
     });
-    onOk();
+    closeDialog();
   };
 
-  const onOk = () => {
+  const closeDialog = () => {
     setStepIndex(0);
-    props.setNewProjectDialogOpen(false);
+    dispatch(
+      toggleProjectDialog({ dialogName: "newProjectDialogOpen", isOpen: false })
+    );
   };
-
-  const openCostsDialog = () => props.setCostsDialogOpen(true);
 
   const actions = (
     <div>
@@ -100,15 +110,15 @@ const NewProjectDialog = (props) => {
   return (
     <>
       <MarxanDialog
-        open={props.open}
+        open={projectDialogStates.newProjectDialogOpen}
         loading={props.loading}
         title="New project"
         fullWidth={true}
         actions={actions}
         okLabel="Cancel"
-        onOk={onOk}
-        onCancel={onOk}
-        onClose={onOk}
+        onOk={() => closeDialog()}
+        onCancel={() => closeDialog()}
+        onClose={() => closeDialog()}
         helpLink="user.html#creating-new-projects"
       >
         <div key="k3">
@@ -136,7 +146,14 @@ const NewProjectDialog = (props) => {
               <div className="tabTitle">Select the features</div>
               <SelectFeatures
                 features={allFeatures.filter((item) => item.selected)}
-                openFeaturesDialog={openFeaturesDialog}
+                openFeaturesDialog={() =>
+                  dispatch(
+                    toggleFeatureDialog({
+                      dialogName: "featuresDialogOpen",
+                      isOpen: true,
+                    })
+                  )
+                }
                 simple={true}
                 showTargetButton={false}
                 leftmargin="0px"
@@ -145,17 +162,21 @@ const NewProjectDialog = (props) => {
             </div>
           )}
           {stepIndex === 3 && (
-            <SelectCostFeatures
-              openCostsDialog={openCostsDialog}
-              selectedCosts={props.selectedCosts}
-            />
+            <SelectCostFeatures selectedCosts={props.selectedCosts} />
           )}
         </div>
       </MarxanDialog>
       <FeaturesDialog
-        open={featuresDialogOpen}
+        open={featureDialogStates.featuresDialogOpen}
         onOk={updateSelectedFeatures}
-        onCancel={closeFeaturesDialog}
+        onCancel={() =>
+          dispatch(
+            toggleFeatureDialog({
+              dialogName: "featuresDialogOpen",
+              isOpen: false,
+            })
+          )
+        }
         loadingFeatures={false} // Update this according to your loading state
         allFeatures={allFeatures}
         selectAllFeatures={selectAllFeatures}

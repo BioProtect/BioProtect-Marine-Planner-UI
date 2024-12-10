@@ -1,17 +1,45 @@
 import React, { useCallback, useState } from "react";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleFeatureDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "../slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import PlanningGridsToolbar from "./PlanningGridsToolbar";
 
 const PlanningGridsDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
   const [searchText, setSearchText] = useState("");
   const [selectedPlanningGrid, setSelectedPlanningGrid] = useState(undefined);
 
   const closeDialog = useCallback(() => {
     setSelectedPlanningGrid(undefined);
-    props.setPlanningGridsDialogOpen(false);
-  }, [props]);
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "planningGridsDialogOpen",
+        isOpen: false,
+      })
+    );
+  }, []);
 
   const handleDelete = useCallback(() => {
     props.deletePlanningGrid(selectedPlanningGrid.feature_class_name);
@@ -24,12 +52,22 @@ const PlanningGridsDialog = (props) => {
   }, [props, closeDialog]);
 
   const handleNewMarine = useCallback(() => {
-    props.setNewMarinePlanningGridDialogOpen(true);
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "newMarinePlanningGridDialogOpen",
+        isOpen: true,
+      })
+    );
     closeDialog();
-  }, [props, closeDialog]);
+  }, [closeDialog]);
 
   const openImportDialog = useCallback(() => {
-    props.setImportPlanningGridDialogOpen(true);
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "importPlanningGridDialogOpen",
+        isOpen: true,
+      })
+    );
     closeDialog();
   }, [props, closeDialog]);
 
@@ -116,7 +154,7 @@ const PlanningGridsDialog = (props) => {
 
   return (
     <MarxanDialog
-      open={props.open}
+      open={planningGridDialogStates.planningGridsDialogOpen}
       loading={props.loading}
       fullWidth={props.fullWidth}
       maxWidth={props.maxWidth}

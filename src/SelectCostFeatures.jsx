@@ -1,73 +1,80 @@
-import Icon from "@mui/material/Icon";
+import React, { useState } from "react";
+
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
+import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import MenuList from "@mui/material/MenuList";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
 import ToolbarButton from "./ToolbarButton";
-import grey from "@mui/material/colors/grey";
+import { toggleDialog } from "./slices/uiSlice";
+import { useDispatch } from "react-redux";
 
-class SelectCostFeatures extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { selectedFeature: undefined };
-  }
-  componentWillMount() {
-    ListItem.defaultProps.disableTouchRipple = true;
-    ListItem.defaultProps.disableFocusRipple = true;
-  }
-  changeFeature(event, feature) {
-    this.setState({ selectedFeature: feature });
-  }
-  clickListItem(event) {}
-  render() {
-    const iconButtonElement = (
-      <IconButton touch={true} tooltipPosition="bottom-left">
-        <MoreVertIcon color={grey[400]} />
-      </IconButton>
-    );
+const SelectCostFeatures = ({ selectedCosts }) => {
+  const dispatch = useDispatch();
+  const [selectedFeature, setSelectedFeature] = useState(undefined);
+  const [anchorEl, setAnchorEl] = useState(null);
 
-    const rightIconMenu = (
-      <MenuList iconButtonElement={iconButtonElement}>
-        <MenuItem>Info</MenuItem>
-        <MenuItem title="Not implemented">View</MenuItem>
-        <MenuItem title="Not implemented">Prioritise</MenuItem>
-      </MenuList>
-    );
+  // Handlers
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-    return (
-      <React.Fragment>
-        <div className={"newPUDialogPane"}>
-          <div>Select the costs</div>
-          <List>
-            {this.props.selectedCosts.map((item) => {
-              return (
-                <ListItem
-                  disableFocusRipple={true}
-                  primaryText={item.alias}
-                  secondaryText={item.description.toString()}
-                  key={item.id}
-                  value={item.alias}
-                  rightIconButton={rightIconMenu}
-                />
-              );
-            })}
-          </List>
-          <ToolbarButton label="Select" onClick={this.props.openCostsDialog} />
-        </div>
-      </React.Fragment>
-    );
-  }
-}
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleSelectFeature = (feature) => {
+    setSelectedFeature(feature);
+  };
+
+  return (
+    <div className="newPUDialogPane">
+      <div>Select the costs</div>
+      <List>
+        {selectedCosts.map((item) => (
+          <ListItem
+            key={item.id}
+            secondaryAction={
+              <>
+                <IconButton onClick={handleMenuOpen}>
+                  <MoreVertIcon />
+                </IconButton>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                >
+                  <MenuItem onClick={handleMenuClose}>Info</MenuItem>
+                  <MenuItem onClick={handleMenuClose} title="Not implemented">
+                    View
+                  </MenuItem>
+                  <MenuItem onClick={handleMenuClose} title="Not implemented">
+                    Prioritise
+                  </MenuItem>
+                </Menu>
+              </>
+            }
+          >
+            <div>
+              <div>{item.alias}</div>
+              <div style={{ fontSize: "0.875rem", color: "grey" }}>
+                {item.description}
+              </div>
+            </div>
+          </ListItem>
+        ))}
+      </List>
+      <ToolbarButton
+        label="Select"
+        onClick={() =>
+          dispatch(
+            toggleDialog({ dialogName: "costsDialogOpen", isOpen: true })
+          )
+        }
+      />
+    </div>
+  );
+};
 
 export default SelectCostFeatures;

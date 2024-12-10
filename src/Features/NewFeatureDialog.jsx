@@ -1,4 +1,15 @@
 import React, { useState } from "react";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleFeatureDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "../slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -12,6 +23,18 @@ import TextField from "@mui/material/TextField";
 
 // Functional component version using React 18 and MUI 5
 const NewFeatureDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
   // State for name and description
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -32,8 +55,9 @@ const NewFeatureDialog = (props) => {
 
   return (
     <Dialog
-      open={props.open}
-      onClose={props.onCancel}
+      open={featureDialogStates.newFeatureDialogOpen}
+      onOkay={props.closeNewFeatureDialog}
+      onClose={props.closeNewFeatureDialog}
       aria-labelledby="create-new-feature-dialog-title"
       maxWidth="sm"
       fullWidth

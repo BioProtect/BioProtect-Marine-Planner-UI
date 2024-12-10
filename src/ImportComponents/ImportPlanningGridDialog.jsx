@@ -1,24 +1,30 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
 import MarxanDialog from "../MarxanDialog";
 import TextField from "@mui/material/TextField";
+import { togglePlanningGridDialog } from "../slices/uiSlice";
 
 const ImportPlanningGridDialog = (props) => {
+  const dispatch = useDispatch();
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
   const [planningGridName, setPlanningGridName] = useState("");
   const [zipFilename, setZipFilename] = useState("");
   const [description, setDescription] = useState("");
 
   // Handles when OK is clicked
-  const onOk = () => {
+  const handleOk = () => {
     const _description =
       description === ""
         ? "Imported using the import planning grid dialog"
         : description;
 
     props
-      .onOk(zipFilename, planningGridName, _description)
+      .importPlanningUnitGrid(zipFilename, planningGridName, _description)
       .then(() => {
         // Reset the state after successful upload
         setPlanningGridName("");
@@ -31,23 +37,31 @@ const ImportPlanningGridDialog = (props) => {
       });
   };
 
+  const closeDialog = () =>
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "importPlanningGridDialogOpen",
+        isOpen: false,
+      })
+    );
+
   return (
     <MarxanDialog
-      {...props}
+      open={planningGridDialogStates.importPlanningGridDialogOpen}
       fullWidth={true}
       maxWidth="md"
       title="Import Planning grid"
       contentWidth={390}
       showCancelButton={true}
-      onOk={onOk}
+      onOk={handleOk}
       okDisabled={
         props.loading ||
         planningGridName === "" ||
         zipFilename === "" ||
         description === ""
       }
-      onClose={props.onCancel}
-      helpLink="user.html#importing-existing-planning-grids"
+      onClose={() => closeDialog()}
+      onCancel={() => closeDialog()}
     >
       <React.Fragment key="22">
         <FormControl fullWidth variant="outlined" margin="normal">

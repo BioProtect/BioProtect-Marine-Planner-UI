@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -13,9 +14,13 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
-import ToolbarButton from "../ToolbarButton";
+import { toggleFeatureDialog } from "../slices/uiSlice";
 
 const ImportFeaturesDialog = (props) => {
+  const dispatch = useDispatch();
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
   const [steps, setSteps] = useState([
     "shapefile",
     "single_or_multiple",
@@ -79,7 +84,12 @@ const ImportFeaturesDialog = (props) => {
     setDescription("");
     setShapeFile(null);
     props.setFeatureDatasetFilename("");
-    props.setFeaturesDialogOpen(true);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "featuresDialogOpen",
+        isOpen: true,
+      })
+    );
     props.setImportFeaturesDialogOpen(false);
   };
 
@@ -88,7 +98,12 @@ const ImportFeaturesDialog = (props) => {
     (stepIndex === 1 && props.loading);
 
   return (
-    <Dialog open={props.open} onClose={closeDialog} maxWidth="sm" fullWidth>
+    <Dialog
+      open={featureDialogStates.importFeaturesDialogOpen}
+      onClose={closeDialog}
+      maxWidth="sm"
+      fullWidth
+    >
       <DialogTitle>Import Features</DialogTitle>
       <DialogContent>
         {stepIndex === 0 && (

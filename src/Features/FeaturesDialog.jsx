@@ -1,4 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleFeatureDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "../slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import FeaturesToolbar from "./FeaturesToolbar";
@@ -6,6 +17,18 @@ import MarxanDialog from "../MarxanDialog";
 import { generateTableCols } from "../Helpers";
 
 const FeaturesDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
   const [selectedFeature, setSelectedFeature] = useState(undefined);
   const [previousRow, setPreviousRow] = useState(undefined);
   const [searchText, setSearchText] = useState("");
@@ -20,7 +43,12 @@ const FeaturesDialog = (props) => {
 
   const showNewFeaturePopover = (event) => {
     setNewFeatureAnchor(event.currentTarget);
-    props.setNewFeaturePopoverOpen(true);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: true,
+      })
+    );
   };
 
   const showImportFeaturePopover = (event) => {
@@ -29,17 +57,47 @@ const FeaturesDialog = (props) => {
   };
 
   const _openImportFeaturesDialog = () => {
-    props.setNewFeaturePopoverOpen(false);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
     props.setImportFeaturePopoverOpen(false);
-    props.setFeaturesDialogOpen(false);
-    props.setImportFeaturesDialogOpen(true);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "featuresDialogOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "importFeaturesDialogOpen",
+        isOpen: true,
+      })
+    );
   };
 
   const _openImportFromWebDialog = () => {
-    props.setNewFeaturePopoverOpen(false);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
     props.setImportFeaturePopoverOpen(false);
-    props.setImportFromWebDialogOpen(true);
-    props.setFeaturesDialogOpen(false);
+    dispatch(
+      toggleDialog({
+        dialogName: "importFromWebDialogOpen",
+        isOpen: true,
+      })
+    );
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "featuresDialogOpen",
+        isOpen: false,
+      })
+    );
   };
 
   const _newByDigitising = () => {
@@ -50,8 +108,18 @@ const FeaturesDialog = (props) => {
   const openImportGBIFDialog = () => {
     props.setImportGBIFDialogOpen(true);
     props.setImportFeaturePopoverOpen(false);
-    props.setNewFeaturePopoverOpen(false);
-    props.setFeaturesDialogOpen(false);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "featuresDialogOpen",
+        isOpen: false,
+      })
+    );
   };
 
   const clickRow = (event, rowInfo) => {
@@ -125,8 +193,18 @@ const FeaturesDialog = (props) => {
   const unselectFeature = () => {
     setSelectedFeature(undefined);
     props.setImportFeaturePopoverOpen(false);
-    props.setNewFeaturePopoverOpen(false);
-    props.setFeaturesDialogOpen(false);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "featuresDialogOpen",
+        isOpen: false,
+      })
+    );
   };
 
   const searchTextChanged = (value) => {
@@ -149,7 +227,7 @@ const FeaturesDialog = (props) => {
 
   return (
     <MarxanDialog
-      open={props.open}
+      open={featureDialogStates.featuresDialogOpen}
       loading={props.loading}
       autoDetectWindowHeight={false}
       title="Features"
@@ -164,7 +242,6 @@ const FeaturesDialog = (props) => {
           addingRemovingFeatures={props.addingRemovingFeatures}
           loading={props.loading}
           selectedFeature={selectedFeature}
-          openImportGBIFDialog={() => openImportGBIFDialog()}
           selectAllFeatures={() => selectAllFeatures()}
           _openImportFeaturesDialog={() => _openImportFeaturesDialog()}
           _openImportFromWebDialog={() => _openImportFromWebDialog()}

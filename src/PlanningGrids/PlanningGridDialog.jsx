@@ -8,38 +8,62 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useCallback, useState } from "react";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleFeatureDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "../slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
 
 const PlanningGridDialog = ({
-  open,
-  onOk,
-  setPlanningGridDialogOpen,
   planningGridMetadata,
   getTilesetMetadata,
   getProjectList,
 }) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpanded = useCallback(() => {
     setExpanded((prev) => !prev);
   }, []);
 
-  const handleClose = useCallback(() => {
-    setPlanningGridDialogOpen(false);
-  }, [setPlanningGridDialogOpen]);
-
   const handleProjectListClick = useCallback(() => {
     getProjectList(planningGridMetadata, "planning_grid");
   }, [getProjectList, planningGridMetadata]);
 
+  const closeDialog = () =>
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "planningGridDialogOpen",
+        isOpen: false,
+      })
+    );
+
   return (
     <div>
       <MarxanDialog
-        onOk={onOk}
-        open={open}
-        onClose={() => handleClose()}
+        open={planningGridDialogStates.planningGridDialogOpen}
+        onOk={() => closeDialog()}
+        onClose={() => closeDialog()}
         showCancelButton={false}
         title={planningGridMetadata.alias}
         helpLink={"user.html#the-planning-grid-details-window"}

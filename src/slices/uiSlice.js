@@ -9,12 +9,15 @@ const initialState = {
     projectsListDialogOpen: false,
     newProjectDialogOpen: false,
     projectsDialogOpen: false,
+    newProjectWizardDialogOpen: false,
   },
   featureDialogStates: {
     newFeatureDialogOpen: false,
     featureDialogOpen: false,
     featuresDialogOpen: false,
     importFeaturePopoverOpen: false,
+    importFeaturesDialogOpen: false,
+    newFeaturePopoverOpen: false,
   },
   planningGridDialogStates: {
     newMarinePlanningGridDialogOpen: false,
@@ -38,6 +41,7 @@ const initialState = {
     humanActivitiesDialogOpen: false,
     importedActivitiesDialogOpen: false,
     importImpactPopoverOpen: false,
+    importFromWebDialogOpen: false,
     infoPanelOpen: false,
     openInfoDialogOpen: false,
     openImportImpactsDialog: false,

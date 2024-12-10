@@ -94,12 +94,6 @@ const FeaturesToolbar = (props) => {
             Import one or more features from a web resource
           </MenuItem>
           <MenuItem
-            primaryText="From the Global Biodiversity Information Facility"
-            onClick={() => props.openImportGBIFDialog()}
-          >
-            The worlds largest provider of species observations
-          </MenuItem>
-          <MenuItem
             primaryText="From the IUCN Red List of Threatened Species"
             disabled={true}
           >
