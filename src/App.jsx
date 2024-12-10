@@ -235,6 +235,7 @@ const App = () => {
   const [projectImpacts, setProjectImpacts] = useState([]);
   const [paLayerVisible, setPaLayerVisible] = useState(false);
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
+  const [runlogTimer, setRunlogTimer] = useState(0);
 
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -4163,11 +4164,6 @@ const App = () => {
     setRunLogDialogOpen(true);
   };
 
-  const closeRunLogDialog = () => {
-    clearInterval(this.runlogTimer);
-    setRunLogDialogOpen(false);
-  };
-
   const openGapAnalysisDialog = async () => {
     setGapAnalysisDialogOpen(true);
     setGapAnalysis([]);
@@ -4387,7 +4383,9 @@ const App = () => {
     //recalculate the protected area intersections and refilter the vector tiles
     await changeIucnCategory(metadata.IUCN_CATEGORY);
     //close the dialog
-    setUpdateWDPADialogOpen(false);
+    dispatch(
+      toggleDialog({ dialogName: "updateWDPADialogOpen", isOpen: false })
+    );
     return message;
   };
 
@@ -4452,7 +4450,7 @@ const App = () => {
     //reset the paint properties in the clumping dialog
     resetPaintProperties();
     //return state to normal
-    setClumpingDialogOpen(false);
+    dispatch(toggleDialog({ dialogName: "clumpingDialogOpen", isOpen: false }));
   };
 
   //creates a group of 5 projects with UUIDs in the _clumping folder
@@ -4579,7 +4577,7 @@ const App = () => {
     };
 
     // Start polling at a set interval
-    this.runlogTimer = setInterval(pollLogs, 5000);
+    setRunlogTimer(setInterval(pollLogs, 5000));
   };
 
   //returns the log of all of the runs from the server
@@ -5030,10 +5028,8 @@ const App = () => {
             getProjectList={getProjectList}
           />
           <ProjectsListDialog
-            open={projectsListDialogOpen}
             projects={projectList}
             userRole={userData.ROLE}
-            onOk={() => setProjectsListDialogOpen(false)}
             title={projectListDialogTitle}
             heading={projectListDialogHeading}
           />
@@ -5052,9 +5048,6 @@ const App = () => {
             fileUpload={uploadFileToProject}
           />
           <RunSettingsDialog
-            open={settingsDialogOpen}
-            onOk={() => setSettingsDialogOpen(false)}
-            onCancel={() => setSettingsDialogOpen(false)}
             loading={loading || preprocessing}
             updateRunParams={updateRunParams}
             runParams={runParams}
@@ -5078,16 +5071,10 @@ const App = () => {
             />
           ) : null}
           <ClumpingDialog
-            open={clumpingDialogOpen}
-            onOk={hideClumpingDialog}
-            onCancel={hideClumpingDialog}
+            hideClumpingDialog={hideClumpingDialog}
             tileset={tileset}
             setMapPaintProperties={setMapPaintProperties}
-            map0_paintProperty={mapPaintProperties.mapPP0}
-            map1_paintProperty={mapPaintProperties.mapPP1}
-            map2_paintProperty={mapPaintProperties.mapPP2}
-            map3_paintProperty={mapPaintProperties.mapPP3}
-            map4_paintProperty={mapPaintProperties.mapPP4}
+            mapPaintProperties={mapPaintProperties}
             mapCentre={mapCentre}
             mapZoom={mapZoom}
             createProjectGroupAndRun={createProjectGroupAndRun}
@@ -5097,9 +5084,6 @@ const App = () => {
           />
           <ResetDialog onOk={resetServer} loading={loading} />
           <RunLogDialog
-            open={runLogDialogOpen}
-            onOk={closeRunLogDialog}
-            onClose={closeRunLogDialog}
             loading={loading}
             preprocessing={preprocessing}
             unauthorisedMethods={unauthorisedMethods}
@@ -5108,21 +5092,14 @@ const App = () => {
             clearRunLogs={clearRunLogs}
             stopMarxan={stopProcess}
             userRole={userData.ROLE}
+            runlogTimer={runlogTimer}
           />
           <ServerDetailsDialog
-            open={serverDetailsDialogOpen}
-            onOk={() => setServerDetailsDialogOpen(false)}
-            onCancel={() => setServerDetailsDialogOpen(false)}
-            onClose={() => setServerDetailsDialogOpen(false)}
             marxanServer={marxanServer}
             newWDPAVersion={newWDPAVersion}
             registry={registry}
-            setUpdateWDPADialogOpen={setUpdateWDPADialogOpen}
           />
           <UpdateWDPADialog
-            open={updateWDPADialogOpen}
-            onOk={() => setUpdateWDPADialogOpen(false)}
-            onCancel={() => setUpdateWDPADialogOpen(false)}
             newWDPAVersion={newWDPAVersion}
             updateWDPA={updateWDPA}
             loading={preprocessing}
@@ -5230,11 +5207,8 @@ const App = () => {
             updateTargetValueForFeatures={updateTargetValueForFeatures}
           />
           <GapAnalysisDialog
-            open={gapAnalysisDialogOpen}
             showCancelButton={true}
-            onOk={closeGapAnalysisDialog}
-            onCancel={closeGapAnalysisDialog}
-            closeGapAnalysisDialog={closeGapAnalysisDialog}
+            setGapAnalysis={setGapAnalysis}
             gapAnalysis={gapAnalysis}
             preprocessing={preprocessing}
             projectFeatures={projectFeatures}
@@ -5243,8 +5217,6 @@ const App = () => {
             reportUnits={userData.REPORTUNITS}
           />
           <ShareableLinkDialog
-            open={shareableLinkDialogOpen}
-            onOk={() => setShareableLinkDialogOpen(false)}
             shareableLinkUrl={`${window.location}?server=${marxanServer.name}&user=${user}&project=${project}`}
           />
           {dialogStates.atlasLayersDialogOpen ? (
@@ -5259,15 +5231,11 @@ const App = () => {
 
           <CumulativeImpactDialog
             loading={loading || uploading}
-            open={cumulativeImpactDialogOpen}
-            onOk={() => setCumulativeImpactDialogOpen(false)}
-            onCancel={() => setCumulativeImpactDialogOpen(false)}
             openHumanActivitiesDialog={openHumanActivitiesDialog}
             metadata={metadata}
             allImpacts={allImpacts}
             clickImpact={clickImpact}
             initialiseDigitising={initialiseDigitising}
-            setCumulativeImpactDialogOpen={setCumulativeImpactDialogOpen}
             setImportImpactPopoverOpen={setImportImpactPopoverOpen}
             setOpenImportImpactsDialog={setOpenImportImpactsDialog}
             selectedImpactIds={selectedImpactIds}

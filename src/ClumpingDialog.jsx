@@ -1,4 +1,15 @@
 import React, { useEffect, useState } from "react";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleFeatureDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "./slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "./constants";
 import MapContainer from "./MapContainer";
@@ -9,6 +20,18 @@ import ToolbarButton from "./ToolbarButton";
 const CLUMP_COUNT = 5;
 
 const ClumpingDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
   const [blmValues, setBlmValues] = useState([0.001, 0.01, 0.1, 1, 10]);
   const [blmMin, setBlmMin] = useState(0.001);
   const [blmMax, setBlmMax] = useState(10);
@@ -56,16 +79,16 @@ const ClumpingDialog = (props) => {
     setBlmChanged(false);
   };
 
-  const onClose = () => {
-    if (!props.clumpingRunning) props.onOk();
+  const closeDialog = () => {
+    if (!props.clumpingRunning) props.hideClumpingDialog();
   };
 
   return (
     <MarxanDialog
-      open={props.open}
-      onCancel={props.onCancel}
+      open={dialogStates.clumpingDialogOpen}
+      onCancel={props.hideClumpingDialog}
       showSpinner={props.clumpingRunning}
-      onOk={onClose}
+      onOk={closeDialog}
       okDisabled={props.clumpingRunning}
       showCancelButton={true}
       helpLink={"user.html#clumping-window"}
@@ -88,7 +111,7 @@ const ClumpingDialog = (props) => {
             selectBlm={selectBlm}
             tileset={props.tileset}
             RESULTS_LAYER_NAME={CONSTANTS.RESULTS_LAYER_NAME}
-            paintProperty={props[`map${i}_paintProperty`]}
+            paintProperty={props.mapPaintProperties[`mapPP${i}`]}
             blmValue={parseBlmValue(blmValues[i])}
             mapCentre={props.mapCentre}
             mapZoom={props.mapZoom}

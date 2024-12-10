@@ -1,51 +1,53 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import * as React from "react";
+import { Link, Typography } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
 
 import MarxanDialog from "./MarxanDialog";
+import React from "react";
 import ToolbarButton from "./ToolbarButton";
+import { toggleDialog } from "./slices/uiSlice";
 
-class UpdateWDPADialog extends React.PureComponent {
-  render() {
-    let html =
-      this.props.registry &&
-      this.props.registry.WDPA.latest_version +
-        " is available. Details <a href='" +
-        (this.props.registry && this.props.registry.WDPA.metadataUrl) +
-        "' target='_blank'>here</a>. Click below to update. ";
-    return (
-      <MarxanDialog
-        {...this.props}
-        contentWidth={380}
-        offsetY={260}
-        title="Update WDPA"
-      >
-        {
-          <React.Fragment>
-            <div
-              style={{ display: this.props.newWDPAVersion ? "block" : "none" }}
-            >
-              <br />
-              <div dangerouslySetInnerHTML={{ __html: html }} />
-              <br />
-              <ToolbarButton
-                title="Update WDPA"
-                onClick={this.props.updateWDPA}
-                label="Update"
-                disabled={this.props.loading}
-              />
-            </div>
-          </React.Fragment>
-        }
-      </MarxanDialog>
+const UpdateWDPADialog = ({
+  registry,
+  newWDPAVersion,
+  loading,
+  updateWDPA,
+}) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const htmlContent = registry
+    ? `${registry.WDPA.latest_version} is available. Details <a href='${registry.WDPA.metadataUrl}' target='_blank'>here</a>. Click below to update.`
+    : "";
+
+  const closeDialog = () =>
+    dispatch(
+      toggleDialog({ dialogName: "updateWDPADialogOpen", isOpen: false })
     );
-  }
-}
+
+  return (
+    <MarxanDialog
+      loading={loading}
+      open={dialogStates.updateWDPADialogOpen}
+      onOk={() => closeDialog()}
+      onCancel={() => closeDialog()}
+      contentWidth={380}
+      offsetY={260}
+      title="Update WDPA"
+    >
+      {newWDPAVersion && (
+        <div>
+          <Typography variant="body1" sx={{ marginTop: 2, marginBottom: 2 }}>
+            <span dangerouslySetInnerHTML={{ __html: htmlContent }} />
+          </Typography>
+          <ToolbarButton
+            title="Update WDPA"
+            onClick={updateWDPA}
+            label="Update"
+            disabled={loading}
+          />
+        </div>
+      )}
+    </MarxanDialog>
+  );
+};
 
 export default UpdateWDPADialog;

@@ -5,26 +5,26 @@ import {
   TableContainer,
   TableRow,
 } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../../MarxanDialog";
 import React from "react";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { toggleDialog } from "../../slices/uiSlice";
 
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-
-const ServerDetailsDialog = (props) => {
+const ServerDetailsDialog = ({
+  marxanServer,
+  newWDPAVersion,
+  registry,
+  setUpdateWDPADialogOpen,
+}) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
   const renderWithIcon = (cellInfo) => {
     const newServerSoftware =
       cellInfo.key === "Marxan Server version" &&
-      props.marxanServer.server_version !== props.registry.SERVER_VERSION;
+      marxanServer.server_version !== registry.SERVER_VERSION;
 
     return (
       <React.Fragment>
@@ -40,7 +40,7 @@ const ServerDetailsDialog = (props) => {
             icon={faExclamationTriangle}
             title={
               "A new version of Marxan Server is available (" +
-              props.registry.SERVER_VERSION +
+              registry.SERVER_VERSION +
               ")"
             }
           />
@@ -49,43 +49,59 @@ const ServerDetailsDialog = (props) => {
           <FontAwesomeIcon
             icon={faExclamationTriangle}
             title={"A new version of the WDPA is available - click for details"}
-            onClick={() => props.setUpdateWDPADialogOpen(true)}
+            onClick={() =>
+              dispatch(
+                toggleDialog({
+                  dialogName: "updateWDPADialogOpen",
+                  isOpen: true,
+                })
+              )
+            }
           />
         )}
       </React.Fragment>
     );
   };
 
-  const data = props.marxanServer
+  const data = marxanServer
     ? [
-        { key: "Name", value: props.marxanServer.name },
-        { key: "Description", value: props.marxanServer.description },
-        { key: "Host", value: props.marxanServer.host },
-        { key: "System", value: props.marxanServer.system },
-        { key: "Processors", value: props.marxanServer.processor_count },
-        { key: "Disk space", value: props.marxanServer.disk_space },
-        { key: "RAM", value: props.marxanServer.ram },
+        { key: "Name", value: marxanServer.name },
+        { key: "Description", value: marxanServer.description },
+        { key: "Host", value: marxanServer.host },
+        { key: "System", value: marxanServer.system },
+        { key: "Processors", value: marxanServer.processor_count },
+        { key: "Disk space", value: marxanServer.disk_space },
+        { key: "RAM", value: marxanServer.ram },
         {
           key: "Marxan Server version",
-          value: props.marxanServer.server_version,
+          value: marxanServer.server_version,
         },
-        { key: "WDPA version", value: props.marxanServer.wdpa_version },
+        { key: "WDPA version", value: marxanServer.wdpa_version },
         {
           key: "Planning grid units limit",
-          value: props.marxanServer.planning_grid_units_limit,
+          value: marxanServer.planning_grid_units_limit,
         },
         {
           key: "Shutdown",
-          value: props.marxanServer.shutdowntime
-            ? new Date(props.marxanServer.shutdowntime).toLocaleString()
+          value: marxanServer.shutdowntime
+            ? new Date(marxanServer.shutdowntime).toLocaleString()
             : "Never",
         },
       ]
     : [];
 
+  const closeDialog = () =>
+    dispatch(
+      toggleDialog({ dialogName: "serverDetailsDialogOpen", isOpen: false })
+    );
+
   return (
     <MarxanDialog
-      {...props}
+      loading={loading}
+      open={dialogStates.serverDetailsDialogOpen}
+      onOk={() => closeDialog()}
+      onCancel={() => closeDialog()}
+      onClose={() => closeDialog()}
       contentWidth={445}
       offsetY={80}
       title="Server Details"

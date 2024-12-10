@@ -1,4 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleFeatureDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "./slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "./MarxanDialog";
@@ -9,27 +20,45 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 
-const RunSettingsDialog = (props) => {
+const RunSettingsDialog = ({
+  loading,
+  updateRunParams,
+  runParams,
+  showClumpingDialog,
+  userRole,
+}) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
   const [data, setData] = useState([]);
   const [updateEnabled, setUpdateEnabled] = useState(false);
 
   useEffect(() => {
-    if (props.runParams !== data) {
+    if (runParams !== data) {
       setData(props.runParams);
     }
-  }, [props.runParams, data]);
+  }, [runParams, data]);
 
   const openParametersDialog = useCallback(() => {
     props.openParametersDialog();
-  }, [props]);
+  }, []);
 
-  const updateRunParams = useCallback(() => {
+  const handleUpdateRunParams = useCallback(() => {
     setUpdateEnabled(false);
-    if (props.userRole !== "ReadOnly") {
-      props.updateRunParams(data);
+    if (userRole !== "ReadOnly") {
+      updateRunParams(data);
     }
-    props.onOk();
-  }, [props, data]);
+    closeDialog();
+  }, [data, closeDialog]);
 
   const enableUpdate = useCallback(() => {
     setUpdateEnabled(true);
@@ -46,7 +75,7 @@ const RunSettingsDialog = (props) => {
 
   const renderEditable = useCallback(
     (cellInfo) => {
-      return props.userRole === "ReadOnly" ? (
+      return userRole === "ReadOnly" ? (
         <div>{data[cellInfo.index]["value"]}</div>
       ) : (
         <div style={{ display: "flex", alignItems: "center" }}>
@@ -66,7 +95,7 @@ const RunSettingsDialog = (props) => {
           {data[cellInfo.index]["key"] === "BLM" && (
             <FontAwesomeIcon
               icon={faExternalLinkAlt}
-              onClick={props.showClumpingDialog}
+              onClick={showClumpingDialog}
               title="Click to open the BLM comparison dialog"
               style={{
                 cursor: "pointer",
@@ -77,16 +106,20 @@ const RunSettingsDialog = (props) => {
         </div>
       );
     },
-    [props.userRole, data, enableUpdate, handleBlur, props.showClumpingDialog]
+    [userRole, data, enableUpdate, handleBlur, showClumpingDialog]
   );
+
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "settingsDialogOpen", isOpen: false }));
 
   return (
     <MarxanDialog
-      {...props}
+      loading={loading}
+      open={dialogStates.settingsDialogOpen}
+      onOk={handleUpdateRunParams}
+      onCancel={() => closeDialog()}
       fullWidth={false}
       maxWidth="md"
-      onOk={updateRunParams}
-      helpLink={"user.html#run-settings"}
       title="Run settings"
     >
       <Table aria-label="run settings table">

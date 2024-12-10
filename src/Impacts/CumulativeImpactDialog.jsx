@@ -1,4 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleFeatureDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "../slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import CumulativeImpactsToolbar from "./CumulativeImpactsToolbar";
@@ -6,6 +17,19 @@ import Loading from "../Loading";
 import MarxanDialog from "../MarxanDialog";
 
 const CumulativeImpactDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
+
   const [searchText, setSearchText] = useState("");
   const [selectedImpact, setSelectedImpact] = useState(undefined);
   const [filteredRows, setFilteredRows] = useState([]);
@@ -22,7 +46,9 @@ const CumulativeImpactDialog = (props) => {
   }, [props]);
 
   const _openImportImpactsDialog = useCallback(() => {
-    props.setCumulativeImpactDialogOpen(false);
+    dispatch(
+      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: false })
+    );
     props.setImportImpactPopoverOpen(false);
     props.setOpenImportImpactsDialog("import");
   }, [props]);
@@ -85,11 +111,6 @@ const CumulativeImpactDialog = (props) => {
     return selectedIds;
   };
 
-  const closeDialog = () => {
-    setSelectedActivity(undefined);
-    props.onOk();
-  };
-
   const preview = useCallback(
     (impact_metadata) => {
       props.previewImpact(impact_metadata);
@@ -134,12 +155,20 @@ const CumulativeImpactDialog = (props) => {
     },
   ];
 
+  const closeDialog = () => {
+    setSelectedActivity(undefined);
+
+    dispatch(
+      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: false })
+    );
+  };
+
   return (
     <MarxanDialog
-      open={props.open}
+      open={dialogStates.cumulativeImpactDialogOpen}
+      onOk={() => closeDialog()}
+      onCancel={() => closeDialog()}
       loading={props.loading}
-      onOk={props.onOk}
-      onCancel={props.onCancel}
       autoDetectWindowHeight={false}
       title="Impacts"
       showSearchBox={true}
