@@ -18,14 +18,17 @@ const AtlasLayersDialog = ({
   const tableColumns = generateTableCols([{ id: "title", label: "title" }]);
   const updateSelection = (event, rowInfo) => updateSelectedLayers(rowInfo);
 
+  const closeDialog = () =>
+    dispatch(
+      toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: false })
+    );
+
   if (atlasLayers.length > 0) {
     return (
       <MarxanDialog
         open={dialogStates.atlasLayersDialogOpen}
-        onOk={dispatch(
-          toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: false })
-        )}
-        onCancel={onCancel}
+        onOk={() => closeDialog()}
+        onCancel={() => onCancel()}
         loading={loading}
         title="Atlas Layers Selection"
         showCancelButton={true}

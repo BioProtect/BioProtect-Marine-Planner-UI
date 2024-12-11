@@ -27,6 +27,7 @@ import MetChart from "./MetChart";
 import { toggleDialog } from "./slices/uiSlice";
 
 const GapAnalysisDialog = ({
+  loading,
   setGapAnalysis,
   gapAnalysis,
   preprocessing,
@@ -120,11 +121,11 @@ const GapAnalysisDialog = ({
       open={dialogStates.gapAnalysisDialogOpen}
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}
+      onClose={() => closeDialog()}
       showSpinner={preprocessing}
       autoDetectWindowHeight={false}
       contentWidth={680}
       title="Gap Analysis"
-      onClose={closeGapAnalysisDialog}
       showCancelButton={false}
     >
       <Box className="analysisReport">

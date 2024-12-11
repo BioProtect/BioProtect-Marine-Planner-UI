@@ -53,7 +53,9 @@ const FeaturesDialog = (props) => {
 
   const showImportFeaturePopover = (event) => {
     setImportFeatureAnchor(event.currentTarget);
-    props.setImportFeaturePopoverOpen(true);
+    dispatch(
+      toggleFeatureDialog({ dialogName: "featuresDialogOpen", isOpen: true })
+    );
   };
 
   const _openImportFeaturesDialog = () => {
@@ -63,7 +65,12 @@ const FeaturesDialog = (props) => {
         isOpen: false,
       })
     );
-    props.setImportFeaturePopoverOpen(false);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "importFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
     dispatch(
       toggleFeatureDialog({
         dialogName: "featuresDialogOpen",
@@ -85,7 +92,12 @@ const FeaturesDialog = (props) => {
         isOpen: false,
       })
     );
-    props.setImportFeaturePopoverOpen(false);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "importFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
     dispatch(
       toggleDialog({
         dialogName: "importFromWebDialogOpen",
@@ -107,7 +119,12 @@ const FeaturesDialog = (props) => {
 
   const openImportGBIFDialog = () => {
     props.setImportGBIFDialogOpen(true);
-    props.setImportFeaturePopoverOpen(false);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "importFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
     dispatch(
       toggleFeatureDialog({
         dialogName: "newFeaturePopoverOpen",
@@ -192,7 +209,12 @@ const FeaturesDialog = (props) => {
 
   const unselectFeature = () => {
     setSelectedFeature(undefined);
-    props.setImportFeaturePopoverOpen(false);
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "importFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
     dispatch(
       toggleFeatureDialog({
         dialogName: "newFeaturePopoverOpen",

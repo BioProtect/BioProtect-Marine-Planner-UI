@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import Button from "@mui/material/Button";
@@ -9,6 +10,7 @@ import MarxanTextField from "../MarxanTextField";
 import Sync from "@mui/icons-material/Sync";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { generateTableCols } from "../Helpers";
+import { toggleDialog } from "../slices/uiSlice";
 
 // Initial state configuration
 const INITIAL_STATE = {
@@ -17,6 +19,18 @@ const INITIAL_STATE = {
 };
 
 const ImportImpactsDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
   const [stepIndex, setStepIndex] = useState(0);
   const [filename, setFilename] = useState("");
   const [description, setDescription] = useState("");
@@ -53,7 +67,9 @@ const ImportImpactsDialog = (props) => {
     setSearchText("");
     setSelectedActivity("");
     setMessage("");
-    props.onCancel();
+    dispatch(
+      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: false })
+    );
   };
 
   const tableColumns = generateTableCols([
@@ -97,14 +113,15 @@ const ImportImpactsDialog = (props) => {
 
   return (
     <MarxanDialog
-      {...props}
-      onOk={closeDialog}
+      loading={props.loading}
+      open={dialogStates.humanActivitiesDialogOpen}
+      onOk={() => closeDialog()}
+      onClose={() => closeDialog()}
       okLabel={"Cancel"}
       title={INITIAL_STATE.title[stepIndex]}
       showSearchBox={true}
       searchTextChanged={setSearchText}
       actions={actions}
-      onClose={closeDialog}
       helpLink={"user.html#importing-from-a-shapefile"}
     >
       {stepIndex === 0 && (

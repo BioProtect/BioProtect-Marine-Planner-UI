@@ -13,13 +13,12 @@ import wcmc from "./images/wcmc.png";
 const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "aboutDialogOpen", isOpen: false }));
   return (
     <MarxanDialog
       open={dialogStates.aboutDialogOpen}
-      onOk={dispatch(
-        toggleDialog({ dialogName: "aboutDialogOpen", isOpen: false })
-      )}
+      onOk={() => closeDialog()}
       contentWidth={500}
       offsetY={80}
       title="About"

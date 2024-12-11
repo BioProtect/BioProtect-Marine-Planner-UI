@@ -105,7 +105,7 @@ const ProjectsDialog = (props) => {
     return (
       <MarxanDialog
         open={projectDialogStates.projectsDialogOpen}
-        loading={loading}
+        loading={props.loading}
         okLabel={props.userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
         onOk={load}
         onCancel={() =>

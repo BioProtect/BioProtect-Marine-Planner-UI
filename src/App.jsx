@@ -808,7 +808,7 @@ const App = () => {
         setUnauthorisedMethods(userResp.unauthorisedMethods);
         setDismissedNotifications(userResp.dismissedNotifications || []);
         setResultsPanelOpen(true);
-        setInfoPanelOpen(true);
+        dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
 
         const current_basemap = basemaps.find(
           (item) => item.name === userResp.userData.BASEMAP
@@ -861,7 +861,7 @@ const App = () => {
     //clear the currently set cookies
     _get("logout").then((response) => {
       setLoggedIn(false);
-      setInfoPanelOpen(false);
+      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
     });
   };
 
@@ -3296,18 +3296,24 @@ const App = () => {
     if (atlasLayers.length < 1) {
       const data = await getAtlasLayers();
       setAtlasLayers(data);
-      setAtlasLayersDialogOpen(true);
+      dispatch(
+        toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true })
+      );
       setLoading(false);
     } else {
       // Open the dialog if there is data already loaded
-      setAtlasLayersDialogOpen(true);
+      dispatch(
+        toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true })
+      );
       setLoading(false);
     }
   };
 
   const openCumulativeImpactDialog = async () => {
     console.log("trying to get cumulative impacts");
-    setCumulativeImpactDialogOpen(true);
+    dispatch(
+      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
+    );
     try {
       await getImpacts();
     } catch (e) {
@@ -4168,11 +4174,6 @@ const App = () => {
     setGapAnalysisDialogOpen(true);
     setGapAnalysis([]);
     return await runGapAnalysis();
-  };
-
-  const closeGapAnalysisDialog = () => {
-    setGapAnalysis([]);
-    setGapAnalysisDialogOpen(false);
   };
 
   const openServerDetailsDialog = () => {
@@ -5095,6 +5096,7 @@ const App = () => {
             runlogTimer={runlogTimer}
           />
           <ServerDetailsDialog
+            loading={loading}
             marxanServer={marxanServer}
             newWDPAVersion={newWDPAVersion}
             registry={registry}
@@ -5207,6 +5209,7 @@ const App = () => {
             updateTargetValueForFeatures={updateTargetValueForFeatures}
           />
           <GapAnalysisDialog
+            loading={loading}
             showCancelButton={true}
             setGapAnalysis={setGapAnalysis}
             gapAnalysis={gapAnalysis}
@@ -5236,22 +5239,15 @@ const App = () => {
             allImpacts={allImpacts}
             clickImpact={clickImpact}
             initialiseDigitising={initialiseDigitising}
-            setImportImpactPopoverOpen={setImportImpactPopoverOpen}
-            setOpenImportImpactsDialog={setOpenImportImpactsDialog}
             selectedImpactIds={selectedImpactIds}
             openImportedActivitesDialog={openImportedActivitesDialog}
-            setSnackbarMessage={setSnackbarMessage}
             userRole={userData.ROLE}
           />
           <HumanActivitiesDialog
             loading={loading || uploading}
-            open={humanActivitiesDialogOpen}
-            onOk={() => setHumanActivitiesDialogOpen(false)}
-            onCancel={() => setHumanActivitiesDialogOpen(false)}
             metadata={metadata}
             activities={activities}
             initialiseDigitising={initialiseDigitising}
-            setSnackbarMessage={setSnackbarMessage}
             userRole={userData.ROLE}
             fileUpload={uploadRaster}
             saveActivityToDb={saveActivityToDb}
@@ -5259,12 +5255,8 @@ const App = () => {
           />
           <RunCumuluativeImpactDialog
             loading={loading || uploading}
-            open={importedActivitiesDialogOpen}
-            onOk={() => setImportedActivitiesDialogOpen(false)}
-            onCancel={() => setImportedActivitiesDialogOpen(false)}
             metadata={metadata}
             uploadedActivities={uploadedActivities}
-            setSnackbarMessage={setSnackbarMessage}
             userRole={userData.ROLE}
             runCumulativeImpact={runCumulativeImpact}
           />
@@ -5272,10 +5264,6 @@ const App = () => {
             open={loggedIn}
             user={user}
             userRole={userData.ROLE}
-            infoPanelOpen={infoPanelOpen}
-            resultsPanelOpen={resultsPanelOpen}
-            toggleInfoPanel={() => setInfoPanelOpen(!infoPanelOpen)}
-            toggleResultsPanel={() => setResultsPanelOpen(!resultsPanelOpen)}
             showToolsMenu={showToolsMenu}
             showUserMenu={showUserMenu}
             showHelpMenu={showHelpMenu}

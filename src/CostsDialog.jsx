@@ -44,9 +44,9 @@ const CostsDialog = (props) => {
   return (
     <MarxanDialog
       open={dialogStates.costsDialogOpen}
-      onOk={closeDialog()}
-      onCancel={closeDialog()}
-      onClose={closeDialog()}
+      onOk={() => closeDialog()}
+      onCancel={() => closeDialog()}
+      onClose={() => closeDialog()}
       title="Costs"
     >
       <div>

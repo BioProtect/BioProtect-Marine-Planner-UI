@@ -55,7 +55,6 @@ const ImportCostsDialog = ({
       onClose={() => handleClose()}
     >
       <FileUpload
-        {...props}
         fileUpload={fileUpload}
         fileMatch={".cost"}
         mandatory={true}

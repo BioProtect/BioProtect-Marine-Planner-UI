@@ -1,20 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  setActiveResultsTab,
-  setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
-  toggleDialog,
-  toggleFeatureDialog,
-  togglePlanningGridDialog,
-  toggleProjectDialog,
-} from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import CumulativeImpactsToolbar from "./CumulativeImpactsToolbar";
 import Loading from "../Loading";
 import MarxanDialog from "../MarxanDialog";
+import { toggleDialog } from "../slices/uiSlice";
 
 const CumulativeImpactDialog = (props) => {
   const dispatch = useDispatch();
@@ -41,7 +32,7 @@ const CumulativeImpactDialog = (props) => {
   }, [selectedImpact, props]);
 
   const openHumanActivitiesDialog = useCallback(() => {
-    props.onCancel();
+    closeDialog();
     props.openHumanActivitiesDialog();
   }, [props]);
 
@@ -49,9 +40,13 @@ const CumulativeImpactDialog = (props) => {
     dispatch(
       toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: false })
     );
-    props.setImportImpactPopoverOpen(false);
-    props.setOpenImportImpactsDialog("import");
-  }, [props]);
+    dispatch(
+      toggleDialog({ dialogName: "importImpactPopoverOpen", isOpen: false })
+    );
+    dispatch(
+      toggleDialog({ dialogName: "openImportImpactsDialog", isOpen: true })
+    );
+  }, []);
 
   const _newByDigitising = useCallback(() => {
     props.initialiseDigitising();

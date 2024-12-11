@@ -14,6 +14,7 @@ import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "../../slices/uiSlice";
 
 const ServerDetailsDialog = ({
+  loading,
   marxanServer,
   newWDPAVersion,
   registry,

@@ -49,6 +49,7 @@ const initialState = {
     registerDialogOpen: false,
     resendPasswordDialogOpen: false,
     resetDialogOpen: false,
+    resultsPanelOpen: false,
     runLogDialogOpen: false,
     serverDetailsDialogOpen: false,
     settingsDialogOpen: false,

@@ -8,20 +8,12 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useCallback, useState } from "react";
-import {
-  setActiveResultsTab,
-  setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
-  toggleDialog,
-  toggleFeatureDialog,
-  togglePlanningGridDialog,
-  toggleProjectDialog,
-} from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
+import MarxanDialog from "../MarxanDialog";
+import { togglePlanningGridDialog } from "../slices/uiSlice";
 
 const PlanningGridDialog = ({
   planningGridMetadata,
@@ -29,14 +21,6 @@ const PlanningGridDialog = ({
   getProjectList,
 }) => {
   const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
   const planningGridDialogStates = useSelector(
     (state) => state.ui.planningGridDialogStates
   );

@@ -1,254 +1,162 @@
+import {
+  Box,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from "@mui/material";
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
-import MarxanTable from "../MarxanTable";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
-import TableRow from "../TableRow";
-import ToolbarButton from "../ToolbarButton";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
+import { toggleDialog } from "../slices/uiSlice";
 
-class ImportedActivitiesDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      searchText: "",
-      description: "",
-      snackbarOpen: false,
-      snackbarMessage: "",
-      selectedUploadedActivityIds: [],
-    };
-  }
-  showNewActivityPopover(event) {
-    this.setState({ newActivityAnchor: event.currentTarget });
-    this.props.showNewActivityPopover();
-  }
-  showImportActivityPopover(event) {
-    this.setState({ importActivityAnchor: event.currentTarget });
-    this.props.showImportActivityPopover();
-  }
-  _openImportActivityDialog() {
-    //close the dialog
-    this.props.onCancel();
-    //show the new feature dialog
-    this.props.openImportActivityDialog();
-  }
-  _newByDigitising() {
-    //hide this dialog
-    this.onOk();
-    //show the drawing controls
-    this.props.initialiseDigitising();
-  }
+const ImportedActivitiesDialog = ({
+  loading,
+  metadata,
+  uploadedActivities,
+  userRole,
+  runCumulativeImpact,
+}) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
+  const [searchText, setSearchText] = useState("");
+  const [selectedActivityIds, setSelectedActivityIds] = useState([]);
 
-  runCumulativeImpact() {
-    this.props.runCumulativeImpact(this.state.selectedUploadedActivityIds);
-  }
+  const handleSearchChange = (event) =>
+    setSearchText(event.target.value.toLowerCase());
 
-  //when a user clicks a impact in the ImpactsDialog
-  clickActivity(event, rowInfo) {
-    if (this.state.selectedUploadedActivityIds.includes(rowInfo.original.id)) {
-      // remove the rowInfo.original
-      this.setState((prevState) => ({
-        selectedUploadedActivityIds:
-          prevState.selectedUploadedActivityIds.filter(
-            (act) => act !== rowInfo.original.id
-          ),
-      }));
-    } else {
-      // add the rowInfo.original id
-      this.setState((prevState) => ({
-        selectedUploadedActivityIds: [
-          ...prevState.selectedUploadedActivityIds,
-          rowInfo.original.id,
-        ],
-      }));
-    }
-  }
-
-  //toggles the selection state of the features between the first and last indices and returns an array of the selected featureIds
-  toggleSelectionState(selectedIds, features, first, last) {
-    //get the features between the first and last positions
-    let spannedActivitys = features.slice(first, last);
-    //iterate through them and toggle their selected state
-    spannedActivitys.forEach((feature) => {
-      if (selectedIds.includes(feature.id)) {
-        selectedIds.splice(selectedIds.indexOf(feature.id), 1);
-      } else {
-        selectedIds.push(feature.id);
-      }
-    });
-    return selectedIds;
-  }
-
-  closeDialog() {
-    this.props.onOk();
-  }
-
-  onOk(evt) {
-    this.props.onOk();
-  }
-
-  renderActivity(row) {
-    return <TableRow title={row.original.activity} />;
-  }
-  renderDescription(row) {
-    return <TableRow title={row.original.description} />;
-  }
-  renderFilename(row) {
-    return <TableRow title={row.original.filename} />;
-  }
-  renderCreatedBy(row) {
-    return <TableRow title={row.original.created_by} />;
-  }
-  renderDate(row) {
-    return (
-      <TableRow
-        title={row.original.creation_date}
-        htmlContent={row.original.creation_date.substr(0, 8)}
-      />
+  const toggleActivitySelection = (id) => {
+    setSelectedActivityIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((activityId) => activityId !== id)
+        : [...prev, id]
     );
-  }
-  title(title, subtitle) {
+  };
+
+  const title = (title, subtitle) => {
     return (
       <div>
         <div>{title}</div>
         <h6>{subtitle}</h6>
       </div>
     );
-  }
-  searchTextChanged(value) {
-    this.setState({ searchText: value.toLowerCase() });
-  }
-  //called when the data in the marxantable is filtered
-  dataFiltered(filteredRows) {
-    //set the local filteredRows variable which is used to get filtered features between clicked rows
-    this.filteredRows = filteredRows;
-  }
-  render() {
-    let tableColumns = [
-      {
-        Header: "Activity",
-        accessor: "activity",
-        width: 193,
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderActivity.bind(this),
-      },
-      {
-        Header: "Filename",
-        accessor: "filename",
-        width: 200,
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderFilename.bind(this),
-      },
-      {
-        Header: "Source",
-        accessor: "source",
-        width: 120,
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderDescription.bind(this),
-      },
-      {
-        Header: "Created by",
-        accessor: "created_by",
-        width: 70,
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderCreatedBy.bind(this),
-      },
-      {
-        Header: "Creation Date",
-        accessor: "created_date",
-        width: 70,
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderDate.bind(this),
-      },
-    ];
-    return (
-      <MarxanDialog
-        {...this.props}
-        autoDetectWindowHeight={false}
-        title={this.title(
-          "Uploaded Activities",
-          "Select an uploaded activity and then run"
-        )}
-        onOk={this.onOk.bind(this)}
-        showSearchBox={true}
-        searchTextChanged={this.searchTextChanged.bind(this)}
-      >
-        {
-          <React.Fragment key="k10">
-            <div id="projectsTable">
-              <MarxanTable
-                data={this.props.uploadedActivities}
-                searchColumns={["alias", "description", "source", "created_by"]}
-                searchText={this.state.searchText}
-                dataFiltered={this.dataFiltered.bind(this)}
-                selectedUploadedActivityIds={
-                  this.state.selectedUploadedActivityIds
-                }
-                clickActivity={this.clickActivity.bind(this)}
-                columns={tableColumns}
-                getTrProps={(state, rowInfo, column) => {
-                  return {
-                    style: {
-                      background: state.selectedUploadedActivityIds.includes(
-                        rowInfo.original.id
-                      )
-                        ? "aliceblue"
-                        : "",
-                    },
-                    onClick: (e) => {
-                      state.clickActivity(e, rowInfo);
-                    },
-                  };
-                }}
-                getTdProps={(state, rowInfo, column) => {
-                  return {
-                    onClick: (e) => {
-                      if (column.Header === "") state.preview(rowInfo.original);
-                    },
-                  };
-                }}
-              />
-            </div>
-            <div id="projectsToolbar">
-              <div
-                style={{
-                  display: this.props.metadata.OLDVERSION ? "block" : "none",
-                }}
-                className={"tabTitle"}
-              >
-                This is an imported project. Only features from this project are
-                shown.
-              </div>
-              <ToolbarButton
-                show={
-                  this.props.userRole !== "ReadOnly" &&
-                  !this.props.metadata.OLDVERSION
-                    ? "true"
-                    : "false"
-                }
-                icon={<FontAwesomeIcon icon={faPlusCircle} />}
-                title="Run Cumulative Impact Function"
-                primary={true}
-                disabled={
-                  this.props.loading ||
-                  this.state.selectedUploadedActivityIds.length < 1
-                }
-                onClick={this.runCumulativeImpact.bind(this)}
-                label={"Run Cumulative Impact Function"}
-              />
-            </div>
-          </React.Fragment>
-        }
-      </MarxanDialog>
+  };
+
+  const filteredActivities = uploadedActivities.filter(
+    (activity) =>
+      activity.activity.toLowerCase().includes(searchText) ||
+      activity.description.toLowerCase().includes(searchText) ||
+      activity.source.toLowerCase().includes(searchText) ||
+      activity.created_by.toLowerCase().includes(searchText)
+  );
+
+  const handleRunCumulativeImpact = () => {
+    runCumulativeImpact(selectedActivityIds);
+  };
+
+  const closeDialog = () =>
+    dispatch(
+      toggleDialog({
+        dialogName: "importedActivitiesDialogOpen",
+        isOpen: false,
+      })
     );
-  }
-}
+
+  return (
+    <MarxanDialog
+      open={dialogStates.importedActivitiesDialogOpen}
+      onOk={() => closeDialog()}
+      onCancel={() => closeDialog()}
+      autoDetectWindowHeight={false}
+      title={title(
+        "Uploaded Activities",
+        "Select an uploaded activity and then run"
+      )}
+      showSearchBox={true}
+      searchTextChanged={(e) => handleSearchChange(e)}
+    >
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell padding="checkbox"></TableCell>
+              <TableCell>Activity</TableCell>
+              <TableCell>Filename</TableCell>
+              <TableCell>Source</TableCell>
+              <TableCell>Created By</TableCell>
+              <TableCell>Creation Date</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredActivities.map((activity) => (
+              <TableRow
+                key={activity.id}
+                selected={selectedActivityIds.includes(activity.id)}
+                onClick={() => toggleActivitySelection(activity.id)}
+                hover
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={selectedActivityIds.includes(activity.id)}
+                    onChange={() => toggleActivitySelection(activity.id)}
+                  />
+                </TableCell>
+                <TableCell>{activity.activity}</TableCell>
+                <TableCell>{activity.filename}</TableCell>
+                <TableCell>{activity.source}</TableCell>
+                <TableCell>{activity.created_by}</TableCell>
+                <TableCell>{activity.creation_date.substring(0, 10)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      {metadata?.OLDVERSION && (
+        <Typography color="error" mt={2}>
+          This is an imported project. Only features from this project are
+          shown.
+        </Typography>
+      )}
+      <DialogActions>
+        <IconButton
+          color="primary"
+          disabled={
+            loading ||
+            selectedActivityIds.length === 0 ||
+            userRole === "ReadOnly"
+          }
+          onClick={handleRunCumulativeImpact}
+        >
+          <FontAwesomeIcon icon={faPlusCircle} />
+        </IconButton>
+        <Button onClick={() => closeDialog()}>Close</Button>
+      </DialogActions>
+    </MarxanDialog>
+  );
+};
 
 export default ImportedActivitiesDialog;

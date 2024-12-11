@@ -1,14 +1,4 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  setActiveResultsTab,
-  setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
-  toggleDialog,
-  toggleFeatureDialog,
-  togglePlanningGridDialog,
-  toggleProjectDialog,
-} from "./slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -19,6 +9,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import { toggleDialog } from "./slices/uiSlice";
 
 const RunSettingsDialog = ({
   loading,
@@ -27,29 +18,20 @@ const RunSettingsDialog = ({
   showClumpingDialog,
   userRole,
 }) => {
-  const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
   const [data, setData] = useState([]);
   const [updateEnabled, setUpdateEnabled] = useState(false);
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "settingsDialogOpen", isOpen: false }));
 
   useEffect(() => {
     if (runParams !== data) {
-      setData(props.runParams);
+      setData(runParams);
     }
   }, [runParams, data]);
 
   const openParametersDialog = useCallback(() => {
-    props.openParametersDialog();
+    openParametersDialog();
   }, []);
 
   const handleUpdateRunParams = useCallback(() => {
@@ -108,9 +90,6 @@ const RunSettingsDialog = ({
     },
     [userRole, data, enableUpdate, handleBlur, showClumpingDialog]
   );
-
-  const closeDialog = () =>
-    dispatch(toggleDialog({ dialogName: "settingsDialogOpen", isOpen: false }));
 
   return (
     <MarxanDialog

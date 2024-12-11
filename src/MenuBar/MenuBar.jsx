@@ -1,11 +1,3 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
 import React, { useCallback, useState } from "react";
 import {
   faArrowAltCircleLeft as a,
@@ -20,6 +12,7 @@ import {
   faThLarge,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
+import { useDispatch, useSelector } from "react-redux";
 
 import AppBar from "@mui/material/AppBar";
 import AppBarIcon from "./AppBarIcon";
@@ -29,9 +22,11 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import { toggleDialog } from "../slices/uiSlice";
 
 const MenuBar = (props) => {
-  console.log("props.infoPanelOpen ", props.infoPanelOpen);
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   //opens the features dialog without the ability to add/remove features (i.e. different from the dialog that is opened from a project)
   const openFeaturesDialog = useCallback(
@@ -81,19 +76,33 @@ const MenuBar = (props) => {
             />
             <span style={{ width: "16px" }} />
             <AppBarIcon
-              icon={props.infoPanelOpen ? faArrowAltCircleLeft : a}
-              onClick={props.toggleInfoPanel}
+              icon={dialogStates.infoPanelOpen ? faArrowAltCircleLeft : a}
+              onClick={() =>
+                dispatch(
+                  toggleDialog({
+                    dialogName: "infoPanelOpen",
+                    isOpen: !dialogStates.infoPanelOpen,
+                  })
+                )
+              }
               title={
-                props.infoPanelOpen
+                dialogStates.infoPanelOpen
                   ? "Hide the project window"
                   : "Show the project window"
               }
             />
             <AppBarIcon
-              icon={props.resultsPanelOpen ? faArrowAltCircleRight : b}
-              onClick={props.toggleResultsPanel}
+              icon={dialogStates.resultsPanelOpen ? faArrowAltCircleRight : b}
+              onClick={() =>
+                dispatch(
+                  toggleDialog({
+                    dialogName: "infoPanelOpen",
+                    isOpen: !dialogStates.resultsPanelOpen,
+                  })
+                )
+              }
               title={
-                props.resultsPanelOpen
+                dialogStates.resultsPanelOpen
                   ? "Hide the results window"
                   : "Show the results window"
               }
