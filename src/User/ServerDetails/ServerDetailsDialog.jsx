@@ -13,19 +13,15 @@ import React from "react";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "../../slices/uiSlice";
 
-const ServerDetailsDialog = ({
-  loading,
-  marxanServer,
-  newWDPAVersion,
-  registry,
-  setUpdateWDPADialogOpen,
-}) => {
+const ServerDetailsDialog = ({ loading, newWDPAVersion, registry }) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectState = useSelector((state) => state.project);
+  const server = projectState.bpServer;
   const renderWithIcon = (cellInfo) => {
     const newServerSoftware =
       cellInfo.key === "Marxan Server version" &&
-      marxanServer.server_version !== registry.SERVER_VERSION;
+      server.server_version !== registry.SERVER_VERSION;
 
     return (
       <React.Fragment>
@@ -64,28 +60,28 @@ const ServerDetailsDialog = ({
     );
   };
 
-  const data = marxanServer
+  const data = server
     ? [
-        { key: "Name", value: marxanServer.name },
-        { key: "Description", value: marxanServer.description },
-        { key: "Host", value: marxanServer.host },
-        { key: "System", value: marxanServer.system },
-        { key: "Processors", value: marxanServer.processor_count },
-        { key: "Disk space", value: marxanServer.disk_space },
-        { key: "RAM", value: marxanServer.ram },
+        { key: "Name", value: server.name },
+        { key: "Description", value: server.description },
+        { key: "Host", value: server.host },
+        { key: "System", value: server.system },
+        { key: "Processors", value: server.processor_count },
+        { key: "Disk space", value: server.disk_space },
+        { key: "RAM", value: server.ram },
         {
           key: "Marxan Server version",
-          value: marxanServer.server_version,
+          value: server.server_version,
         },
-        { key: "WDPA version", value: marxanServer.wdpa_version },
+        { key: "WDPA version", value: server.wdpa_version },
         {
           key: "Planning grid units limit",
-          value: marxanServer.planning_grid_units_limit,
+          value: server.planning_grid_units_limit,
         },
         {
           key: "Shutdown",
-          value: marxanServer.shutdowntime
-            ? new Date(marxanServer.shutdowntime).toLocaleString()
+          value: server.shutdowntime
+            ? new Date(server.shutdowntime).toLocaleString()
             : "Never",
         },
       ]

@@ -187,18 +187,6 @@ class UsersDialog extends React.Component {
                   onClick={this._delete.bind(this)}
                   label={"Delete"}
                 />
-                <Checkbox
-                  label="Enable guest user"
-                  style={{
-                    fontSize: "12px",
-                    paddingLeft: "10px",
-                    width: "200px",
-                    display: "inline-block",
-                    verticalAlign: "bottom",
-                  }}
-                  onClick={this.props.toggleEnableGuestUser}
-                  checked={this.props.guestUserEnabled}
-                />
               </div>
             </React.Fragment>
           }

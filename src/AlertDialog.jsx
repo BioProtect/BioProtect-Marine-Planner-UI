@@ -11,9 +11,9 @@ const AlertDialog = () => {
   return (
     <MarxanDialog
       open={dialogStates.alertDialogOpen}
-      onOk={dispatch(
-        toggleDialog({ dialogName: "alertDialogOpen", isOpen: false })
-      )}
+      onOk={() =>
+        dispatch(toggleDialog({ dialogName: "alertDialogOpen", isOpen: false }))
+      }
       contentWidth={500}
       offsetY={80}
       title="Alert"

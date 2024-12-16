@@ -33,11 +33,12 @@ const GapAnalysisDialog = ({
   preprocessing,
   projectFeatures,
   metadata,
-  marxanServer,
   reportUnits,
 }) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectState = useSelector((state) => state.project);
+
   const [showChart, setShowChart] = useState(false);
 
   const getRepresentationScore = (features) => {
@@ -131,7 +132,7 @@ const GapAnalysisDialog = ({
       <Box className="analysisReport">
         <Typography variant="body1">
           Gap Analysis for {metadata.pu_country} using the{" "}
-          {marxanServer.wdpa_version} version of the WDPA.
+          {projectState.bpServer.wdpa_version} version of the WDPA.
         </Typography>
         <Box
           className="analysisReportInner"

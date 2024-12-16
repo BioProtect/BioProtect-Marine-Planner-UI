@@ -20,6 +20,7 @@ const FeaturesDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectState = useSelector((state) => state.project);
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
   );

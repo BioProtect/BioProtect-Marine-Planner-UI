@@ -1,4 +1,3 @@
-import UserMenu from "../User/UserMenu";
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
@@ -39,6 +38,7 @@ const initialState = {
     importCostsDialogOpen: false,
     cumulativeImpactDialogOpen: false,
     gapAnalysisDialogOpen: false,
+    helpMenuOpen: false,
     humanActivitiesDialogOpen: false,
     importedActivitiesDialogOpen: false,
     importImpactPopoverOpen: false,
@@ -58,10 +58,9 @@ const initialState = {
     targetDialogOpen: false,
     updateWDPADialogOpen: false,
     usersDialogOpen: false,
-    UserMenuOpen: false,
+    userMenuOpen: false,
     userSettingsDialogOpen: false,
     welcomeDialogOpen: false,
-    toolsMenuOpen: false,
   },
 };
 

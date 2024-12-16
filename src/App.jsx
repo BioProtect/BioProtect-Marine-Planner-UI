@@ -1,6 +1,7 @@
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
+import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   addLocalServer,
@@ -10,7 +11,12 @@ import {
 // SERVICES
 import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
 import {
-  setActiveResultsTab,
+  initialiseServers,
+  selectServer,
+  setBpServer,
+  setBpServers,
+} from "./slices/projectSlice";
+import {
   setActiveTab,
   setSnackbarMessage,
   setSnackbarOpen,
@@ -26,7 +32,6 @@ import AboutDialog from "./AboutDialog";
 import AddToMap from "@mui/icons-material/Visibility";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
-import CONSTANTS from "./constants";
 import ClassificationDialog from "./ClassificationDialog";
 import ClumpingDialog from "./ClumpingDialog";
 import CostsDialog from "./CostsDialog";
@@ -101,6 +106,7 @@ import UsersDialog from "./User/UsersDialog";
 import Welcome from "./Welcome";
 import ZoomIn from "@mui/icons-material/ZoomIn";
 import classyBrew from "classybrew";
+import { dialogTitleClasses } from "@mui/material";
 /*eslint-disable no-unused-vars*/
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
@@ -125,9 +131,8 @@ const App = () => {
   const planningGridDialogStates = useSelector(
     (state) => state.ui.planningGridDialogStates
   );
+  const projectState = useSelector((state) => state.project);
 
-  const [marxanServers, setMarxanServers] = useState([]);
-  const [marxanServer, setMarxanServer] = useState({});
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
   const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState("");
@@ -162,7 +167,6 @@ const App = () => {
   const [featureMetadata, setFeatureMetadata] = useState({});
   const [files, setFiles] = useState({});
   const [gapAnalysis, setGapAnalysis] = useState([]);
-  const [helpMenuOpen, setHelpMenuOpen] = useState(false);
   const [identifyFeatures, setIdentifyFeatures] = useState([]);
   const [identifyPlanningUnits, setIdentifyPlanningUnits] = useState({});
   const [identifyProtectedAreas, setidentifyProtectedAreas] = useState([]);
@@ -216,7 +220,6 @@ const App = () => {
   const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
   const [uploadedActivities, setUploadedActivities] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [visibleLayers, setVisibleLayers] = useState([]);
   const [wdpaAttribution, setWdpaAttribution] = useState("");
@@ -240,29 +243,25 @@ const App = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
 
-  const initialiseServers = useCallback(async (servers) => {
-    try {
-      addLocalServer(servers);
-      const updatedServers = await getAllServerCapabilities(servers);
-      const filteredAndSortedServers = filterAndSortServers(updatedServers);
-      setMarxanServers(filteredAndSortedServers);
-      return "ServerData retrieved";
-    } catch (error) {
-      console.error("Failed to initialise servers:", error);
-      throw error;
-    }
-  }, []);
+  useEffect(() => {
+    dispatch(initialiseServers(INITIAL_VARS.MARXAN_SERVERS))
+      .unwrap()
+      .then((message) => console.log(message))
+      .catch((error) => console.error("Error:", error));
+  }, [dispatch, INITIAL_VARS.MARXAN_SERVERS]);
 
   const selectServerByName = useCallback(
     (servername) => {
       // Remove the search part of the URL
       window.history.replaceState({}, document.title, "/");
-      const server = marxanServers.find((item) => item.name === servername);
+      const server = projectState.bpServers.find(
+        (item) => item.name === servername
+      );
       if (server) {
-        selectServer(server);
+        dispatch(selectServer(server));
       }
     },
-    [marxanServers]
+    [dispatch, projectState.bpServers]
   );
 
   useEffect(() => {
@@ -274,15 +273,11 @@ const App = () => {
 
     const fetchGlobalVariables = async () => {
       try {
-        const response = await fetch(CONSTANTS.MARXAN_REGISTRY);
-        const registryData = await response.json();
-        console.log("registryData ", registryData);
-
+        initialiseServers(INITIAL_VARS.MARXAN_SERVERS);
         setBrew(new classyBrew());
-        await initialiseServers(registryData.MARXAN_SERVERS);
 
-        setBasemaps(registryData.MAPBOX_BASEMAPS);
-        setRegistry(registryData);
+        setBasemaps(INITIAL_VARS.MAPBOX_BASEMAPS);
+        setRegistry(INITIAL_VARS);
         setInitialLoading(false);
 
         if (searchParams.has("project")) openShareableLink(searchParams);
@@ -298,11 +293,6 @@ const App = () => {
 
   useEffect(() => {
     if (planningCostsTrigger && projectLoaded && owner !== "" && user !== "") {
-      console.log("user ", user);
-      console.log("owner ", owner);
-      console.log("projectLoaded ", projectLoaded);
-      console.log("planningCostsTrigger ", planningCostsTrigger);
-      console.log("loggedIn ", loggedIn);
       (async () => {
         await getPlanningUnitsCostData();
         setPlanningCostsTrigger(false);
@@ -408,7 +398,7 @@ const App = () => {
     (params, timeout = CONSTANTS.TIMEOUT) => {
       setLoading(true);
       return new Promise((resolve, reject) => {
-        jsonp(marxanServer.endpoint + params, { timeout })
+        jsonp(projectState.bpServer.endpoint + params, { timeout })
           .promise.then((response) => {
             setLoading(false);
             !checkForErrors(response)
@@ -443,11 +433,15 @@ const App = () => {
         // Set a timeout to abort the request if it takes too long
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-        const response = await fetch(marxanServer.endpoint + method, formData, {
-          method: "POST",
-          credentials: withCredentials,
-          signal, // Pass the AbortSignal to the fetch call
-        });
+        const response = await fetch(
+          projectState.bpServer.endpoint + method,
+          formData,
+          {
+            method: "POST",
+            credentials: withCredentials,
+            signal, // Pass the AbortSignal to the fetch call
+          }
+        );
         clearTimeout(timeoutId);
         const data = await response.json();
 
@@ -467,7 +461,7 @@ const App = () => {
         setLoading(false);
       }
     },
-    [marxanServer.endpoint, checkForErrors, setSnackBar]
+    [projectState.bpServer.endpoint, checkForErrors, setSnackBar]
   );
 
   // Memoized WebSocket function
@@ -475,7 +469,9 @@ const App = () => {
     (params, msgCallback) => {
       return new Promise((resolve, reject) => {
         // Create a new WebSocket instance
-        const ws = new WebSocket(marxanServer.websocketEndpoint + params);
+        const ws = new WebSocket(
+          projectState.bpServer.websocketEndpoint + params
+        );
 
         // WebSocket event handlers
         ws.onMessage = (evt) => {
@@ -515,7 +511,7 @@ const App = () => {
         };
       });
     },
-    [marxanServer.websocketEndpoint, checkForErrors]
+    [projectState.bpServer.websocketEndpoint, checkForErrors]
   );
 
   //called when any websocket message is received - this logic removes duplicate messages
@@ -623,35 +619,6 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
-  const selectServer = useCallback(
-    (server) => {
-      setMarxanServer(server);
-      // Check if there is a new version of the WDPA
-      setNewWDPAVersion(server.wdpa_version !== registry.WDPA.latest_version);
-      // Set the link to the WDPA vector tiles layer name based on the version
-      setWDPAVectorTilesLayerName(server.wdpa_version);
-      // If server is online, not CORS-enabled, and guest user is enabled, switch to guest user
-      if (!server.offline && !server.corsEnabled && server.guestUserEnabled) {
-        switchToGuestUser();
-      }
-    },
-    [registry]
-  );
-
-  //gets the capabilities of all servers
-  // Function to get capabilities for all servers
-  const getAllServerCapabilities = useCallback(async (marxanServers) => {
-    try {
-      const promises = marxanServers.map(async (server) => {
-        const updatedServer = await getServerCapabilities(server);
-        return updatedServer;
-      });
-      return await Promise.all(promises);
-      // setServerCapabilities(results);
-    } catch (error) {
-      console.error("Error getting server capabilities:", error);
-    }
-  }, []);
 
   const startLogging = (clearLog = false) => {
     //switches the results pane to the log tab and clears log if needs be
@@ -842,8 +809,7 @@ const App = () => {
   };
   //log out and reset some state
   const logout = () => {
-    console.log("logged out triggered.....");
-    setUserMenuOpen(false);
+    dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
     setBrew(new classyBrew());
     setPassword("");
     setRunParams([]);
@@ -870,7 +836,9 @@ const App = () => {
       const response = await _get(`resendPassword?user=${user}`);
       dispatch(setSnackbarMessage(response.info));
       // Close the resend password dialog
-      setResendPasswordDialogOpen(false);
+      dispatch(
+        toggleDialog({ dialogName: "resendPasswordDialogOpen", isOpen: false })
+      );
     } catch (error) {
       console.error("Failed to resend password:", error);
     }
@@ -883,16 +851,6 @@ const App = () => {
     );
     // Update the state with the modified user list
     setUsers(updatedUsers);
-  };
-
-  //toggles if the guest user is enabled on the server or not
-  const toggleEnableGuestUser = async () => {
-    const response = await _get("toggleEnableGuestUser");
-    // Update the marxanServer object with the new guestUserEnabled status
-    setMarxanServer((prevMarxanServer) => ({
-      ...prevMarxanServer,
-      guestUserEnabled: response.enabled,
-    }));
   };
 
   const toggleProjectPrivacy = async (newValue) => {
@@ -948,7 +906,7 @@ const App = () => {
       ]);
     }
     //see if there is a new version of the marxan-server software
-    if (marxanServer.server_version !== registry.SERVER_VERSION) {
+    if (projectState.bpServer.server_version !== registry.SERVER_VERSION) {
       addNotifications([
         {
           id: "marxan_server_update_" + registry.SERVER_VERSION,
@@ -962,7 +920,7 @@ const App = () => {
       ]);
     }
     //check that there is enough disk space
-    if (marxanServer.disk_space < 1000) {
+    if (projectState.bpServer.disk_space < 1000) {
       addNotifications([
         {
           id: "hardware_1000",
@@ -971,7 +929,7 @@ const App = () => {
           showForRoles: ["Admin"],
         },
       ]);
-    } else if (marxanServer.disk_space < 2000) {
+    } else if (projectState.bpServer.disk_space < 2000) {
       addNotifications([
         {
           id: "hardware_2000",
@@ -980,7 +938,7 @@ const App = () => {
           showForRoles: ["Admin"],
         },
       ]);
-    } else if (marxanServer.disk_space < 3000) {
+    } else if (projectState.bpServer.disk_space < 3000) {
       addNotifications([
         {
           id: "hardware_3000",
@@ -1092,7 +1050,6 @@ const App = () => {
   //gets the planning unit grids
   const getPlanningUnitGrids = async () => {
     const response = await _get("getPlanningUnitGrids");
-    console.log("planning unit grids response ", response);
     setPlanningUnitGrids(response.planning_unit_grids);
   };
 
@@ -1104,7 +1061,6 @@ const App = () => {
 
       resetResults();
       const projectResp = await _get(`getProject?user=${user}&project=${proj}`);
-      console.log("projectResp ", projectResp);
       setRunParams(projectResp.runParameters);
       setProtectedAreaIntersections(projectResp.protectedAreaIntersections);
       setRenderer(projectResp.renderer);
@@ -1119,11 +1075,9 @@ const App = () => {
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
       if (projectResp.metadata.PLANNING_UNIT_NAME) {
-        console.log("changePlanningGrid....");
         await changePlanningGrid(
           `${CONSTANTS.MAPBOX_USER}.${projectResp.metadata.PLANNING_UNIT_NAME}`
         );
-        console.log("gettingResults user....");
         await getResults(user, projectResp.project);
       }
       // Set a local variable - Dont need to track state with these variables as they are not bound to anything
@@ -1136,8 +1090,6 @@ const App = () => {
         projectResp.feature_preprocessing,
         allFeaturesData
       );
-      console.log("Setting project tabv to active......");
-      console.log("logged in......", loggedIn);
 
       // Activate the project tab
       dispatch(setActiveTab("project"));
@@ -1172,10 +1124,6 @@ const App = () => {
     featurePrePro,
     allFeaturesData
   ) => {
-    console.log("projFeatures ", projFeatures);
-    console.log("allFeatures ", allFeatures);
-    console.log("oldVersion ", oldVersion);
-
     const allFeats = allFeatures.length > 0 ? allFeatures : allFeaturesData;
 
     // Determine features based on project version
@@ -1188,12 +1136,10 @@ const App = () => {
 
     // Process features
     const processedFeatures = features.map((feature) => {
-      console.log("feature ", feature);
       // Check if the feature is part of the current project
       const projectFeature = projectFeatureIds.includes(feature.id)
         ? projFeatures[projectFeatureIds.indexOf(feature.id)]
         : null;
-      console.log("projectFeature ", projectFeature);
       const preprocess = getArrayItem(featurePrePro, feature.id);
 
       // Add required attributes
@@ -1213,11 +1159,6 @@ const App = () => {
       }
       return feature;
     });
-    console.log("processedFeatures ", processedFeatures);
-    console.log(
-      "proj Features ",
-      processedFeatures.filter((item) => item.selected)
-    );
 
     // Get the selected feature ids
     getSelectedFeatureIds();
@@ -1383,7 +1324,7 @@ const App = () => {
         `exportProject?user=${user}project=${proj}`,
         wsMessageCallback
       );
-      return marxanServer.endpoint + "exports/" + message.filename;
+      return projectState.bpServer.endpoint + "exports/" + message.filename;
     } catch (error) {
       console.log(error);
     }
@@ -1460,7 +1401,6 @@ const App = () => {
       await getRunLogs(); //update the run log
 
       if (!checkForErrors(response)) {
-        console.log("getResults from 1646 - runmarxan");
         await getResults(response.user, response.project); //run completed - get the results
         setPUTabInactive(); //switch to the features tab
       } else {
@@ -2242,12 +2182,9 @@ const App = () => {
     map.current.on("click", mapClick); // Triggered on map click events
     map.current.on("styledata", mapStyleChanged); // Triggered when map style changes
 
-    console.log("Map initialized with style: ", url);
-
     // Return a promise to resolve when the map's style is fully loaded
     return new Promise((resolve) => {
       map.current.on("style.load", () => {
-        console.log("Map style loaded.");
         resolve("Map style loaded");
       });
     });
@@ -2270,7 +2207,7 @@ const App = () => {
       })
     );
     map.current.on("moveend", (evt) => {
-      if (clumpingDialogOpen) updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
+      if (dialogStates.clumpingDialogOpen) updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
     });
     map.current.on("draw.create", polygonDrawn);
   };
@@ -2435,7 +2372,6 @@ const App = () => {
 
         // Get the results, if any
         if (owner) {
-          console.log("calling get results from setBasemap....");
           await getResults(owner, project);
         }
 
@@ -2656,8 +2592,8 @@ const App = () => {
   //adds the WDPA vector tile layer source - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
   const addWDPASource = () => {
     //add the source for the wdpa
-    const yr = marxanServer.wdpa_version.substr(-4); //get the year from the wdpa_version
-    const attribution = `IUCN and UNEP-WCMC (${yr}), The World Database on Protected Areas (WDPA) ${marxanServer.wdpa_version}, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
+    const yr = projectState.bpServer.wdpa_version.substr(-4); //get the year from the wdpa_version
+    const attribution = `IUCN and UNEP-WCMC (${yr}), The World Database on Protected Areas (WDPA) ${projectState.bpServer.wdpa_version}, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
 
     const tiles = [
       `${registry.WDPA.tilesUrl}layer=marxan:${wdpaVectorTileLayer}&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}`,
@@ -3020,7 +2956,6 @@ const App = () => {
   };
   //creates a new planning grid unit
   const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
-    console.log("createNewPlanningUnitGrid ");
     startLogging();
     const message = await _ws(
       `createPlanningUnitGrid?iso3=${iso3}&domain=${domain}&areakm2=${areakm2}&shape=${shape}`,
@@ -3132,7 +3067,7 @@ const App = () => {
       const response = await _get(
         `exportPlanningUnitGrid?name=${feature_class_name}`
       );
-      return `${marxanServer.endpoint}exports/${response.filename}`;
+      return `${projectState.bpServer.endpoint}exports/${response.filename}`;
     } catch (error) {
       throw new Error("Failed to export planning grid");
     }
@@ -3239,8 +3174,7 @@ const App = () => {
 
   const openFeaturesDialog = async (showClearSelectAll) => {
     // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
-    if (marxanServer.system !== "Windows" && !metadata.OLDVERSION) {
-      console.log("should be refershing features here... ");
+    if (projectState.bpServer.system !== "Windows" && !metadata.OLDVERSION) {
       await refreshFeatures();
     }
     setAddingRemovingFeatures(showClearSelectAll);
@@ -3264,7 +3198,7 @@ const App = () => {
 
   const openPlanningGridsDialog = async () => {
     //refresh planning grids if using a hosted service - other users could have created/deleted items
-    if (marxanServer.system !== "Windows") {
+    if (projectState.bpServer.system !== "Windows") {
       await getPlanningUnitGrids();
     }
     dispatch(
@@ -3310,7 +3244,6 @@ const App = () => {
   };
 
   const openCumulativeImpactDialog = async () => {
-    console.log("trying to get cumulative impacts");
     dispatch(
       toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
     );
@@ -3368,9 +3301,12 @@ const App = () => {
 
   const getAtlasLayers = async () => {
     try {
-      const response = await fetch(marxanServer.endpoint + "getAtlasLayers", {
-        credentials: "include",
-      });
+      const response = await fetch(
+        projectState.bpServer.endpoint + "getAtlasLayers",
+        {
+          credentials: "include",
+        }
+      );
       const data = await response.json();
       const parsedData = data.map(JSON.parse);
 
@@ -3415,7 +3351,6 @@ const App = () => {
   };
 
   const updateSelectedLayers = (layer) => {
-    console.log("layer ", layer);
     // Determine the new visibility
     const currentVisibility = map.current.getLayoutProperty(
       layer.layer,
@@ -4111,52 +4046,32 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
-  const showUserMenu = (e) => {
-    e.preventDefault();
-    setUserMenuOpen(true);
-    setMenuAnchor(e.currentTarget);
-  };
-
-  const showHelpMenu = (e) => {
-    e.preventDefault();
-    setMenuAnchor(e.currentTarget);
-    setHelpMenuOpen(true);
-  };
-
-  const showToolsMenu = (e) => {
-    e.preventDefault();
-    setToolsMenuOpen(true);
-    setMenuAnchor(e.currentTarget);
-  };
 
   const openProjectsDialog = async () => {
-    dispatch(toggleDialog({ dialogName: "projectsDialogOpen", isOpen: true }));
     await getProjects();
+    dispatch(
+      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: true })
+    );
   };
 
   const openNewProjectWizardDialog = async () => {
     await getCountries();
-    setNewProjectWizardDialogOpen(true);
+    dispatch(
+      toggleProjectDialog({
+        dialogName: "newPlanningGridDialogOpen",
+        isOpen: true,
+      })
+    );
   };
 
   const openNewPlanningGridDialog = async () => {
     await getCountries();
-    setNewPlanningGridDialogOpen(true);
-  };
-
-  const openUserSettingsDialog = () => {
-    setUserSettingsDialogOpen(true);
-    setUserMenuOpen(false);
-  };
-
-  const openProfileDialog = () => {
-    setProfileDialogOpen(true);
-    setUserMenuOpen(false);
-  };
-
-  const openAboutDialog = () => {
-    setAboutDialogOpen(true);
-    setHelpMenuOpen(false);
+    dispatch(
+      togglePlanningGridDialog({
+        dialogName: "newPlanningGridDialogOpen",
+        isOpen: true,
+      })
+    );
   };
 
   const openUsersDialog = async () => {
@@ -4171,19 +4086,11 @@ const App = () => {
   };
 
   const openGapAnalysisDialog = async () => {
-    setGapAnalysisDialogOpen(true);
+    dispatch(
+      toggleDialog({ dialogName: "gapAnalysisDialogOpen", isOpen: true })
+    );
     setGapAnalysis([]);
     return await runGapAnalysis();
-  };
-
-  const openServerDetailsDialog = () => {
-    setServerDetailsDialogOpen(true);
-    setHelpMenuOpen(false);
-  };
-
-  const openChangePasswordDialog = () => {
-    setUserMenuOpen(false);
-    setChangePasswordDialogOpen(true);
   };
 
   const showProjectListDialog = (
@@ -4194,7 +4101,12 @@ const App = () => {
     setProjectList(projectList);
     setProjectListDialogHeading(projectListDialogHeading);
     setProjectListDialogTitle(projectListDialogTitle);
-    setProjectsListDialogOpen(true);
+    dispatch(
+      toggleProjectDialog({
+        dialogName: "projectsListDialogOpen",
+        isOpen: true,
+      })
+    );
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -4364,7 +4276,7 @@ const App = () => {
     // Websocket has finished - set the new version of the wdpa
 
     setNewWDPAVersion(false);
-    setMarxanServer({
+    setBpServer({
       ...prev,
       wdpa_version: registry.WDPA.latest_version,
     });
@@ -4655,7 +4567,6 @@ const App = () => {
       setOwner(user);
     }
     const url = `getPlanningUnitsCostData?user=${owner}&project=${project}`;
-    console.log("url ", url);
     try {
       // If cost data is already loaded and reload is not forced
       if (costData && !forceReload) {
@@ -4736,9 +4647,6 @@ const App = () => {
             password={password}
             changeUserName={(user) => setUser(user)}
             changePassword={(pass) => setPassword(pass)}
-            marxanServers={marxanServers}
-            selectServer={selectServer}
-            marxanServer={marxanServer}
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
           />
           <ResendPasswordDialog
@@ -4750,40 +4658,21 @@ const App = () => {
             email={resendEmail}
           />
           <ToolsMenu
-            open={toolsMenuOpen}
-            setResetDialogOpen={() =>
-              dispatch(
-                toggleDialog({ dialogName: "resetDialogOpen", isOpen: false })
-              )
-            }
             menuAnchor={menuAnchor}
-            hideToolsMenu={() => setToolsMenuOpen(false)}
             openUsersDialog={openUsersDialog}
             openRunLogDialog={openRunLogDialog}
             openGapAnalysisDialog={openGapAnalysisDialog}
             userRole={userData.ROLE}
-            marxanServer={marxanServer}
             metadata={metadata}
             cleanup={cleanup}
           />
           <UserMenu
-            open={userMenuOpen}
             menuAnchor={menuAnchor}
             user={user}
             userRole={userData.ROLE}
-            hideUserMenu={() => setUserMenuOpen(false)}
-            openUserSettingsDialog={openUserSettingsDialog}
-            openProfileDialog={openProfileDialog}
             logout={logout}
-            marxanServer={marxanServer}
-            openChangePasswordDialog={openChangePasswordDialog}
           />
-          <HelpMenu
-            open={helpMenuOpen}
-            menuAnchor={menuAnchor}
-            hideHelpMenu={() => setHelpMenuOpen(false)}
-            openAboutDialog={openAboutDialog}
-          />
+          <HelpMenu menuAnchor={menuAnchor} />
           <UserSettingsDialog
             open={dialogStates.userSettingsDialogOpen}
             onOk={() => setUserSettingsDialogOpen(false)}
@@ -4804,8 +4693,7 @@ const App = () => {
             users={users}
             deleteUser={handleDeleteUser}
             changeRole={changeRole}
-            guestUserEnabled={marxanServer.guestUserEnabled}
-            toggleEnableGuestUser={toggleEnableGuestUser}
+            guestUserEnabled={projectState.bpServer.guestUserEnabled}
           />
           <ProfileDialog
             open={dialogStates.profileDialogOpen}
@@ -4844,7 +4732,6 @@ const App = () => {
             userRole={userData.ROLE}
             toggleProjectPrivacy={toggleProjectPrivacy}
             getShareableLink={() => setShareableLinkDialogOpen(true)}
-            marxanServer={marxanServer}
             toggleFeatureLayer={toggleFeatureLayer}
             toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
             useFeatureColors={userData.USEFEATURECOLORS}
@@ -4966,7 +4853,6 @@ const App = () => {
             setSelectedFeatureIds={setSelectedFeatureIds}
             initialiseDigitising={initialiseDigitising}
             previewFeature={previewFeature}
-            marxanServer={marxanServer}
             refreshFeatures={refreshFeatures}
           />
           <FeatureDialog
@@ -5019,7 +4905,6 @@ const App = () => {
             exportPlanningGrid={exportPlanningGrid}
             deletePlanningGrid={deletePlanningUnitGrid}
             previewPlanningGrid={previewPlanningGrid}
-            marxanServer={marxanServer}
             fullWidth={true}
             maxWidth="false"
           />
@@ -5097,7 +4982,6 @@ const App = () => {
           />
           <ServerDetailsDialog
             loading={loading}
-            marxanServer={marxanServer}
             newWDPAVersion={newWDPAVersion}
             registry={registry}
           />
@@ -5216,11 +5100,10 @@ const App = () => {
             preprocessing={preprocessing}
             projectFeatures={projectFeatures}
             metadata={metadata}
-            marxanServer={marxanServer}
             reportUnits={userData.REPORTUNITS}
           />
           <ShareableLinkDialog
-            shareableLinkUrl={`${window.location}?server=${marxanServer.name}&user=${user}&project=${project}`}
+            shareableLinkUrl={`${window.location}?server=${projectState.bpServer.name}&user=${user}&project=${project}`}
           />
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog
@@ -5264,12 +5147,7 @@ const App = () => {
             open={loggedIn}
             user={user}
             userRole={userData.ROLE}
-            showToolsMenu={showToolsMenu}
-            showUserMenu={showUserMenu}
-            showHelpMenu={showHelpMenu}
-            marxanServer={marxanServer.name}
             openProjectsDialog={openProjectsDialog}
-            openServerDetailsDialog={openServerDetailsDialog}
             openActivitiesDialog={openActivitiesDialog}
             openFeaturesDialog={openFeaturesDialog}
             openPlanningGridsDialog={openPlanningGridsDialog}

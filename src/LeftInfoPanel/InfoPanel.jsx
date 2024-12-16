@@ -1,20 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  faEraser,
-  faLock,
-  faSave,
-  faShareAlt,
-} from "@fortawesome/free-solid-svg-icons";
-import {
-  setActiveResultsTab,
-  setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
-  toggleDialog,
-  toggleFeatureDialog,
-  togglePlanningGridDialog,
-  toggleProjectDialog,
-} from "../slices/uiSlice";
+import { faLock, faShareAlt } from "@fortawesome/free-solid-svg-icons";
+import { setActiveTab, toggleDialog } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -35,15 +21,7 @@ const InfoPanel = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
+  const projectState = useSelector((state) => state.project);
 
   const [editingProjectName, setEditingProjectName] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
@@ -324,7 +302,7 @@ const InfoPanel = (props) => {
               pb={2}
               pt={2}
             >
-              {props.marxanServer.type === "remote" ? (
+              {projectState.bpServer.type === "remote" ? (
                 <Button
                   variant="contained"
                   startIcon={<FontAwesomeIcon icon={faShareAlt} />}

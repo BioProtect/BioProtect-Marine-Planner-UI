@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   faBroom,
   faChartBar,
@@ -6,36 +6,46 @@ import {
   faRunning,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
+import { useDispatch, useSelector } from "react-redux";
 
 import Menu from "@mui/material/Menu";
 import MenuBarListItem from "./MenuBarListItem";
+import { toggleDialog } from "./slices/uiSlice";
 
 const ToolsMenu = (props) => {
+  const dispatch = useDispatch();
+  const [selectOpen, setSelectOpen] = useState(false);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectState = useSelector((state) => state.project);
+
   const openUsersDialog = useCallback(() => {
     props.openUsersDialog();
-    props.hideToolsMenu();
+    closeDialog();
   }, [props]);
 
   const openRunLogDialog = useCallback(() => {
     props.openRunLogDialog();
-    props.hideToolsMenu();
+    closeDialog();
   }, [props]);
 
   const openGapAnalysisDialog = useCallback(() => {
     props.openGapAnalysisDialog();
-    props.hideToolsMenu();
+    closeDialog();
   }, [props]);
 
   const openResetDialog = useCallback(() => {
-    props.setResetDialogOpen(true);
-    props.hideToolsMenu();
-  }, [props]);
+    dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: true }));
+    closeDialog();
+  }, []);
+
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "toolsMenuOpen", isOpen: false }));
 
   return (
     <Menu
-      open={props.open}
+      open={dialogStates.toolsMenuOpen}
       anchorEl={props.menuAnchor}
-      onClose={props.hideToolsMenu}
+      onClose={() => closeDialog()}
       slotProps={{
         paper: {
           elevation: 0,
@@ -73,7 +83,7 @@ const ToolsMenu = (props) => {
           text="Users"
         />
       )}
-      {props.userRole === "Admin" && props.marxanServer.enable_reset && (
+      {props.userRole === "Admin" && projectState.bpServer.enable_reset && (
         <MenuBarListItem
           handleClick={openResetDialog}
           title="Reset database"

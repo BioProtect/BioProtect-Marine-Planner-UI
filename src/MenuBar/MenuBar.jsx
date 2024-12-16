@@ -27,6 +27,7 @@ import { toggleDialog } from "../slices/uiSlice";
 const MenuBar = (props) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectState = useSelector((state) => state.project);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   //opens the features dialog without the ability to add/remove features (i.e. different from the dialog that is opened from a project)
   const openFeaturesDialog = useCallback(
@@ -35,6 +36,30 @@ const MenuBar = (props) => {
     },
     [props]
   );
+
+  const hanldeMenuOpen = (e, val) => {
+    e.preventDefault();
+    setMenuAnchor(e.currentTarget);
+    dispatch(toggleDialog({ dialogName: val, isOpen: true }));
+  };
+
+  const openDialog = (e, val) => {
+    dispatch(toggleDialog({ dialogName: val, isOpen: true }));
+    dispatch(toggleDialog({ dialogName: "helpMenuOpen", isOpen: false }));
+  };
+
+  const togglePanel = (e, val) => {
+    const valueToToggle =
+      val === "infoPanelOpen"
+        ? dialogStates.infoPanelOpen
+        : dialogStates.resultsPanelOpen;
+    dispatch(
+      toggleDialog({
+        dialogName: val,
+        isOpen: !valueToToggle,
+      })
+    );
+  };
 
   return (
     <Box
@@ -77,14 +102,7 @@ const MenuBar = (props) => {
             <span style={{ width: "16px" }} />
             <AppBarIcon
               icon={dialogStates.infoPanelOpen ? faArrowAltCircleLeft : a}
-              onClick={() =>
-                dispatch(
-                  toggleDialog({
-                    dialogName: "infoPanelOpen",
-                    isOpen: !dialogStates.infoPanelOpen,
-                  })
-                )
-              }
+              onClick={(e) => togglePanel(e, "infoPanelOpen")}
               title={
                 dialogStates.infoPanelOpen
                   ? "Hide the project window"
@@ -93,14 +111,7 @@ const MenuBar = (props) => {
             />
             <AppBarIcon
               icon={dialogStates.resultsPanelOpen ? faArrowAltCircleRight : b}
-              onClick={() =>
-                dispatch(
-                  toggleDialog({
-                    dialogName: "infoPanelOpen",
-                    isOpen: !dialogStates.resultsPanelOpen,
-                  })
-                )
-              }
+              onClick={(e) => togglePanel(e, "resultsPanelOpen")}
               title={
                 dialogStates.resultsPanelOpen
                   ? "Hide the results window"
@@ -110,28 +121,28 @@ const MenuBar = (props) => {
             <span style={{ width: "16px" }} />
             <AppBarIcon
               icon={faWrench}
-              onClick={props.showToolsMenu}
               title={"Tools and analysis"}
+              onClick={(e) => hanldeMenuOpen(e, "toolsMenuOpen")}
             />
             <AppBarIcon
               icon={faQuestionCircle}
-              onClick={props.showHelpMenu}
               title={"Help and support"}
+              onClick={(e) => hanldeMenuOpen(e, "helpMenuOpen")}
             />
           </Typography>
           <Button
             color="inherit"
             className={"marxanServer"}
             title={"Click to open the Server Details window"}
-            onClick={props.openServerDetailsDialog}
+            onClick={(e) => openDialog(e, "serverDetailsDialogOpen")}
           >
-            {props.marxanServer}
+            {projectState.bpServer.name}
           </Button>
           <Button
             color="inherit"
             className={"username"}
             title={"Click to open the User menu"}
-            onClick={props.showUserMenu}
+            onClick={(e) => hanldeMenuOpen(e, "userMenuOpen")}
           >
             {props.user}
           </Button>

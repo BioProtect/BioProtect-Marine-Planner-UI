@@ -77,19 +77,15 @@ const getServerCapabilities = async (server) => {
 
 // function to add the local server
 const addLocalServer = (servers) => {
-  const currentDomain =
-    window.location.hostname === "localhost"
-      ? "localhost"
-      : window.location.hostname;
-
-  return servers.push({
-    name: currentDomain,
+  const newServer = {
+    name: window.location.hostname,
     protocol: window.location.protocol,
     host: window.location.hostname,
     port: 5000,
     description: "Local machine",
     type: "local",
-  });
+  };
+  return [...servers, newServer];
 };
 
 // function to filter and sort the servers

@@ -2,6 +2,7 @@ import {
   faInfoCircle,
   faQuestionCircle,
 } from "@fortawesome/free-solid-svg-icons";
+import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -9,17 +10,30 @@ import Menu from "@mui/material/Menu";
 import MenuBarListItem from "./MenuBarListItem";
 import MenuItem from "@mui/material/MenuItem";
 import React from "react";
+import { toggleDialog } from "./slices/userSlice";
 
 const HelpMenu = (props) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  console.log("dialogStates ", dialogStates);
+
   const openDocumentation = () => {
     window.open(CONSTANTS.DOCS_ROOT);
   };
 
+  const handleOpenAboutDialog = () => {
+    dispatch(toggleDialog({ dialogName: "aboutDialogOpen", isOpen: true }));
+    closeDialog();
+  };
+
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "helpMenuOpen", isOpen: false }));
+
   return (
     <Menu
-      open={props.open}
+      open={dialogStates.helpMenuOpen}
       anchorEl={props.menuAnchor}
-      onClose={props.hideHelpMenu}
+      onClose={closeDialog}
       PaperProps={{
         elevation: 0,
         sx: {
@@ -54,7 +68,7 @@ const HelpMenu = (props) => {
         text="Documentation"
       />
       <MenuBarListItem
-        handleClick={props.openAboutDialog}
+        handleClick={handleOpenAboutDialog}
         title="About"
         icon={faInfoCircle}
         text="About"
