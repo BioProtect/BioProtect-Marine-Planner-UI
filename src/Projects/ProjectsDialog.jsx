@@ -1,12 +1,5 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
 import React, { useCallback, useState } from "react";
+import { setActiveTab, toggleDialog } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -17,6 +10,10 @@ import { toggleProjectDialog } from "../slices/uiSlice";
 
 const ProjectsDialog = (props) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectState = useSelector((state) => state.project);
+
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
   );

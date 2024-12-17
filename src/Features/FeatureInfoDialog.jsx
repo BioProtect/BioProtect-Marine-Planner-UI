@@ -9,18 +9,29 @@ import {
   Typography,
 } from "@mui/material";
 import { getArea, isNumber, isValidTargetValue } from "../Helpers";
+import {
+  setActiveTab,
+  toggleDialog,
+  toggleFeatureDialog,
+} from "../slices/uiSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
 
-const FeatureInfoDialog = ({
-  feature,
-  userRole,
-  updateFeature,
-  reportUnits,
-  onOk,
-  ...props
-}) => {
+const FeatureInfoDialog = ({ loading, feature, updateFeature, userData }) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const featureStates = useSelector((state) => state.ui.featureDialogStates);
+
+  const closeDialog = () =>
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "featureInfoDialogOpen",
+        isOpen: false,
+      })
+    );
+
   const updateFeatureValue = useCallback(
     (key, e) => {
       const value = e.currentTarget.textContent;
@@ -41,10 +52,10 @@ const FeatureInfoDialog = ({
     (key, e) => {
       if (e.key === "Enter" || e.key === "Escape") {
         updateFeatureValue(key, e);
-        onOk(); // Close the dialog
+        closeDialog(); // Close the dialog
       }
     },
-    [updateFeatureValue, onOk]
+    [updateFeatureValue, closeDialog]
   );
 
   const getHTML = (value, title = "") => (
@@ -59,8 +70,11 @@ const FeatureInfoDialog = ({
         : "rgba(0, 0, 0, 0.6)";
 
     return (
-      <div title={getArea(value, reportUnits, false, 6)} style={{ color }}>
-        {getArea(value, reportUnits, true)}
+      <div
+        title={getArea(value, userData.REPORTUNITS, false, 6)}
+        style={{ color }}
+      >
+        {getArea(value, userData.REPORTUNITS, true)}
       </div>
     );
   };
@@ -97,7 +111,7 @@ const FeatureInfoDialog = ({
 
       case "Target percent":
       case "Species Penalty Factor":
-        return userRole === "ReadOnly" ? (
+        return userData.ROLE === "ReadOnly" ? (
           <Typography>{row.value}</Typography>
         ) : (
           <div
@@ -174,10 +188,12 @@ const FeatureInfoDialog = ({
 
   return (
     <MarxanDialog
+      open={featureStates.featureInfoDialogOpen}
+      loading={loading}
+      onOk={closeDialog}
+      onCancel={closeDialog}
       title="Properties"
-      {...props}
       contentWidth={380}
-      helpLink="user.html#feature-properties-window"
       offsetX={135}
       offsetY={250}
     >

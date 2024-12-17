@@ -141,8 +141,6 @@ const FeaturesDialog = (props) => {
   };
 
   const clickRow = (event, rowInfo) => {
-    console.log("rowInfo ", rowInfo);
-    console.log("event ", event);
     if (props.addingRemovingFeatures) {
       if (event.shiftKey) {
         const selectedIds = getFeaturesBetweenRows(previousRow, rowInfo);

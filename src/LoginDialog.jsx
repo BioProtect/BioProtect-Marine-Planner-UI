@@ -22,12 +22,10 @@ const LoginDialog = (props) => {
   const [selectOpen, setSelectOpen] = useState(false);
   const dialogState = useSelector((state) => state.ui.dialogState);
   const projectState = useSelector((state) => state.project);
-  console.log("projectState ", projectState);
 
   const {
     open,
     validateUser,
-    onCancel,
     loading,
     user,
     password,

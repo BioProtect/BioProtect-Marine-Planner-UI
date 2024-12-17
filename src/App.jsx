@@ -29,7 +29,6 @@ import { strToBool, zoomToBounds } from "./Helpers";
 import { useDispatch, useSelector } from "react-redux";
 
 import AboutDialog from "./AboutDialog";
-import AddToMap from "@mui/icons-material/Visibility";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import ClassificationDialog from "./ClassificationDialog";
@@ -38,6 +37,7 @@ import CostsDialog from "./CostsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
 import FeatureDialog from "./Features/FeatureDialog";
 import FeatureInfoDialog from "./Features/FeatureInfoDialog";
+import FeatureMenu from "./Features/FeatureMenu";
 import FeaturesDialog from "./Features/FeaturesDialog";
 import GapAnalysisDialog from "./GapAnalysisDialog";
 import HelpMenu from "./HelpMenu";
@@ -54,7 +54,6 @@ import LoginDialog from "./LoginDialog";
 //mapbox imports
 import { Map } from "mapbox-gl"; // Assuming you're using mapbox-gl
 import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw";
-import Menu from "@mui/material/Menu";
 //project components
 import MenuBar from "./MenuBar/MenuBar";
 import MenuItemWithButton from "./MenuItemWithButton";
@@ -66,12 +65,9 @@ import NewProjectWizardDialog from "./Projects/NewProject/NewProjectWizardDialog
 import PlanningGridDialog from "./PlanningGrids/PlanningGridDialog";
 import PlanningGridsDialog from "./PlanningGrids/PlanningGridsDialog";
 //@mui/material components and icons
-import Popover from "@mui/material/Popover";
-import Preprocess from "@mui/icons-material/Autorenew";
 import ProfileDialog from "./User/ProfileDialog";
 import ProjectsDialog from "./Projects/ProjectsDialog";
 import ProjectsListDialog from "./Projects/ProjectsListDialog";
-import Properties from "@mui/icons-material/ErrorOutline";
 /*
  * Copyright (c) 2020 Andrew Cottam.
  *
@@ -84,8 +80,6 @@ import Properties from "@mui/icons-material/ErrorOutline";
 /*global URLSearchParams*/
 /*global AbortController*/
 import RegisterDialog from "./RegisterDialog";
-import RemoveFromMap from "@mui/icons-material/VisibilityOff";
-import RemoveFromProject from "@mui/icons-material/Remove";
 import ResendPasswordDialog from "./ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./RightInfoPanel/ResultsPanel";
@@ -104,7 +98,6 @@ import UserMenu from "./User/UserMenu";
 import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
 import Welcome from "./Welcome";
-import ZoomIn from "@mui/icons-material/ZoomIn";
 import classyBrew from "classybrew";
 import { dialogTitleClasses } from "@mui/material";
 /*eslint-disable no-unused-vars*/
@@ -163,7 +156,6 @@ const App = () => {
   const [countries, setCountries] = useState([]);
   const [currentFeature, setCurrentFeature] = useState({});
   const [featureDatasetFilename, setFeatureDatasetFilename] = useState("");
-  const [featureMenuOpen, setFeatureMenuOpen] = useState(false);
   const [featureMetadata, setFeatureMetadata] = useState({});
   const [files, setFiles] = useState({});
   const [gapAnalysis, setGapAnalysis] = useState([]);
@@ -1472,7 +1464,9 @@ const App = () => {
   //preprocess a single feature
 
   const preprocessSingleFeature = async (feature) => {
-    setFeatureMenuOpen(false);
+    dispatch(
+      toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: false })
+    );
     startLogging();
     preprocessFeature(feature);
   };
@@ -2246,11 +2240,6 @@ const App = () => {
       console.error(message);
     }
   }, []);
-
-  const handleInfoMenuItemClick = () => {
-    setOpenInfoDialogOpen(true);
-    setFeatureMenuOpen(false);
-  };
 
   const mapClick = async (e) => {
     //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
@@ -3903,7 +3892,9 @@ const App = () => {
   const openFeatureMenu = (evt, feature) => {
     setCurrentFeature(feature);
     setMenuAnchor(evt.currentTarget);
-    setFeatureMenuOpen(true);
+    dispatch(
+      toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: true })
+    );
   };
 
   //hides the feature layer
@@ -3923,7 +3914,6 @@ const App = () => {
       );
       return;
     }
-    // setFeatureMenuOpen(false);
     const layerId = `marxan_feature_layer_${feature.tilesetid.split(".")[1]}`;
 
     if (map.current.getLayer(layerId)) {
@@ -3964,7 +3954,6 @@ const App = () => {
 
   //toggles the planning unit feature layer on the map
   const toggleFeaturePUIDLayer = async (feature) => {
-    // setFeatureMenuOpen(false);
     let layerName = `marxan_puid_${feature.id}`;
 
     if (current.getLayer(layerName)) {
@@ -4014,13 +4003,17 @@ const App = () => {
 
   //removes the current feature from the project
   const removeFromProject = (feature) => {
-    setFeatureMenuOpen(false);
+    dispatch(
+      toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: false })
+    );
     unselectItem(feature);
   };
 
   //zooms to a features extent
   const zoomToFeature = (feature) => {
-    setFeatureMenuOpen(false);
+    dispatch(
+      toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: false })
+    );
     //transform from BOX(-174.173506487 -18.788241791,-173.86528589 -18.5190063499999) to [[-73.9876, 40.7661], [-73.9397, 40.8002]]
     const points = feature.extent
       .substr(4, feature.extent.length - 5)
@@ -4638,17 +4631,19 @@ const App = () => {
             className="map-container absolute top right left bottom"
           />
           {loading ? <Loading /> : null}
-          <LoginDialog
-            open={!loggedIn}
-            validateUser={(name, pass) => login(name, pass)}
-            // onCancel={() => setRegisterDialogOpen(true)}
-            loading={loading}
-            user={user}
-            password={password}
-            changeUserName={(user) => setUser(user)}
-            changePassword={(pass) => setPassword(pass)}
-            marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
-          />
+          {!loggedIn ? (
+            <LoginDialog
+              open={!loggedIn}
+              validateUser={(name, pass) => login(name, pass)}
+              loading={loading}
+              user={user}
+              password={password}
+              changeUserName={(user) => setUser(user)}
+              changePassword={(pass) => setPassword(pass)}
+              marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
+            />
+          ) : null}
+
           <ResendPasswordDialog
             open={dialogStates.resendPasswordDialogOpen}
             onOk={resendPassword}
@@ -4672,7 +4667,9 @@ const App = () => {
             userRole={userData.ROLE}
             logout={logout}
           />
-          <HelpMenu menuAnchor={menuAnchor} />
+          {dialogStates.helpMenuOpen ? (
+            <HelpMenu menuAnchor={menuAnchor} />
+          ) : null}
           <UserSettingsDialog
             open={dialogStates.userSettingsDialogOpen}
             onOk={() => setUserSettingsDialogOpen(false)}
@@ -4773,14 +4770,10 @@ const App = () => {
             costsLoading={costsLoading}
           />
           <FeatureInfoDialog
-            open={dialogStates.openInfoDialogOpen}
-            onOk={() => setOpenInfoDialogOpen(false)}
-            onCancel={() => setOpenInfoDialogOpen(false)}
             loading={loading}
             feature={currentFeature}
             updateFeature={updateFeature}
-            userRole={userData.ROLE}
-            reportUnits={userData.REPORTUNITS}
+            userData={userData}
           />
           <IdentifyPopup
             visible={identifyVisible}
@@ -4998,96 +4991,17 @@ const App = () => {
             onClose={() => dispatch(setSnackbarOpen(false))}
             style={{ maxWidth: "800px !important" }}
           />
-          <Popover
-            open={featureMenuOpen}
+          <FeatureMenu
             anchorEl={menuAnchor}
-            onClose={() => setFeatureMenuOpen(false)}
-            style={{ width: "307px" }}
-          >
-            <Menu
-              style={{ width: "207px" }}
-              onMouseLeave={() => setFeatureMenuOpen(false)}
-              open={false}
-            >
-              <MenuItemWithButton
-                leftIcon={<Properties style={{ margin: "1px" }} />}
-                onClick={() => handleInfoMenuItemClick()}
-              >
-                Properties
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
-                style={{
-                  display:
-                    currentFeature?.old_version || userData.ROLE === "ReadOnly"
-                      ? "none"
-                      : "block",
-                }}
-                onClick={removeFromProject.bind(this, currentFeature)}
-              >
-                Remove from project
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={
-                  currentFeature?.feature_layer_loaded ? (
-                    <RemoveFromMap style={{ margin: "1px" }} />
-                  ) : (
-                    <AddToMap style={{ margin: "1px" }} />
-                  )
-                }
-                style={{
-                  display: currentFeature?.tilesetid ? "block" : "none",
-                }}
-                onClick={toggleFeatureLayer.bind(this, currentFeature)}
-              >
-                {currentFeature?.feature_layer_loaded
-                  ? "Remove from map"
-                  : "Add to map"}
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={
-                  currentFeature?.feature_puid_layer_loaded ? (
-                    <RemoveFromMap style={{ margin: "1px" }} />
-                  ) : (
-                    <AddToMap style={{ margin: "1px" }} />
-                  )
-                }
-                onClick={toggleFeaturePUIDLayer.bind(this, currentFeature)}
-                disabled={
-                  !(
-                    currentFeature?.preprocessed &&
-                    currentFeature.occurs_in_planning_grid
-                  )
-                }
-              >
-                {currentFeature?.feature_puid_layer_loaded
-                  ? "Remove planning unit outlines"
-                  : "Outline planning units where the feature occurs"}
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={<ZoomIn style={{ margin: "1px" }} />}
-                style={{
-                  display: currentFeature?.extent ? "block" : "none",
-                }}
-                onClick={zoomToFeature.bind(this, currentFeature)}
-              >
-                Zoom to feature extent
-              </MenuItemWithButton>
-              <MenuItemWithButton
-                leftIcon={<Preprocess style={{ margin: "1px" }} />}
-                style={{
-                  display:
-                    currentFeature?.old_version || userData.ROLE === "ReadOnly"
-                      ? "none"
-                      : "block",
-                }}
-                onClick={preprocessSingleFeature.bind(this, currentFeature)}
-                disabled={currentFeature?.preprocessed || preprocessing}
-              >
-                Pre-process
-              </MenuItemWithButton>
-            </Menu>
-          </Popover>
+            removeFromProject={removeFromProject}
+            toggleFeatureLayer={toggleFeatureLayer}
+            toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
+            zoomToFeature={zoomToFeature}
+            preprocessSingleFeature={preprocessSingleFeature}
+            currentFeature={currentFeature}
+            userData={userData}
+            preprocessing={preprocessing}
+          />
           <TargetDialog
             showCancelButton={true}
             updateTargetValueForFeatures={updateTargetValueForFeatures}

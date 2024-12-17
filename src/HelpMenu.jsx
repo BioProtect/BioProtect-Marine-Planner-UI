@@ -15,7 +15,6 @@ import { toggleDialog } from "./slices/userSlice";
 const HelpMenu = (props) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  console.log("dialogStates ", dialogStates);
 
   const openDocumentation = () => {
     window.open(CONSTANTS.DOCS_ROOT);

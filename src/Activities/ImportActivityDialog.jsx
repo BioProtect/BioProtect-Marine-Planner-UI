@@ -1,258 +1,159 @@
-/*
- * Copyright (c) 2021 Carlos Tighe.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import * as React from "react";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Typography,
+} from "@mui/material";
+import React, { useCallback, useState } from "react";
 
 import FileUpload from "../FileUpload";
-import MarxanDialog from "../MarxanDialog";
 import MarxanTable from "../MarxanTable";
-import MarxanTextField from "../MarxanTextField";
-import Sync from "@mui/icons-material/Sync";
-import TableRow from "../TableRow";
-import ToolbarButton from "../ToolbarButton";
-
-let INITIAL_STATE = {
-  steps: ["Select Activity", "Raster Upload"],
-  stepIndex: 0,
-  filename: "",
-  description: "",
-  searchText: "",
-  selectedActivity: "",
-  message: "",
-};
+import SyncIcon from "@mui/icons-material/Sync";
 
 const title = ["Import Activity", "Upload Raster File"];
 
-class ImportActivityDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = INITIAL_STATE;
-  }
+const ImportActivityDialog = ({
+  onCancel,
+  saveActivityToDb,
+  activities,
+  loading,
+}) => {
+  const [steps, setSteps] = useState(["Select Activity", "Raster Upload"]);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [filename, setFilename] = useState("");
+  const [description, setDescription] = useState("");
+  const [searchtext, setSearchtext] = useState("");
+  const [selectedActivity, setSelectedActivity] = useState("");
+  const [message, setMessage] = useState("");
 
-  handleNext() {
-    const { stepIndex } = this.state;
-    switch (stepIndex) {
-      case this.state.steps.length - 1:
-        this.saveActivityToDb();
-        break;
-      default:
-        this.setState({ stepIndex: stepIndex + 1 });
+  const handleNext = () => {
+    if (stepIndex === steps.length - 1) {
+      saveActivityToDb(filename, selectedActivity, description)
+        .then((response) => {
+          setMessage(response);
+          closeDialog();
+        })
+        .catch((error) => console.error(error));
+    } else {
+      setStepIndex((prev) => prev.stepIndex + 1);
     }
-  }
+  };
 
-  handlePrev() {
-    const { stepIndex } = this.state;
-    this.setState({ stepIndex: stepIndex - 1 });
-  }
+  const handlePrev = () => {
+    setStepIndex((prev) => prev.stepIndex - 1);
+  };
 
-  setSelectedActivity(activity) {
-    this.setState({ selectedActivity: activity });
-  }
+  const closeDialog = () => {
+    setStepIndex(0);
+    setFilename("");
+    setDescription("");
+    setSearchtext("");
+    setSelectedActivity("");
+    setMessage("");
+    onCancel();
+  };
 
-  setFilename(newValue) {
-    this.setState({ filename: newValue });
-  }
+  const tableColumns = [
+    {
+      id: "category",
+      label: "category",
+      width: 269,
+      Cell: ({ value }) => <Typography>{value}</Typography>,
+    },
+    {
+      id: "activity",
+      label: "activity",
+      width: 290,
+      Cell: ({ value }) => <Typography>{value}</Typography>,
+    },
+  ];
 
-  changeFileName(event, newValue) {
-    this.setState({ filename: newValue });
-  }
+  const isNextDisabled =
+    (stepIndex === 0 && selectedActivity === "") ||
+    (stepIndex === 1 && filename === "");
 
-  changeDescription(event, newValue) {
-    this.setState({ description: newValue });
-  }
-
-  searchTextChanged(value) {
-    this.setState({ searchText: value });
-  }
-
-  setMessage(newValue) {
-    this.setState({ message: newValue });
-  }
-
-  saveActivityToDb() {
-    this.props
-      .saveActivityToDb(
-        this.state.filename,
-        this.state.selectedActivity,
-        this.state.description
-      )
-      .then((response) => {
-        this.setMessage(response);
-        this.closeDialog();
-      });
-  }
-
-  renderActivity(row) {
-    return <TableRow title={row.original.activity} />;
-  }
-  renderCategory(row) {
-    return <TableRow title={row.original.category} />;
-  }
-
-  closeDialog() {
-    //delete the zip file and shapefile
-    this.setState({
-      steps: ["Select Activity", "Raster Upload"],
-      stepIndex: 0,
-      filename: "",
-      description: "",
-      searchText: "",
-      selectedActivity: "",
-      message: "",
-    });
-    this.props.onCancel();
-  }
-
-  render() {
-    let _disabled = false;
-    const { stepIndex } = this.state;
-    const contentStyle = { margin: "0 16px" };
-    let tableColumns = [
-      {
-        Header: "Category",
-        accessor: "category",
-        width: 269,
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderCategory.bind(this),
-      },
-      {
-        Header: "Activity",
-        accessor: "activity",
-        width: 290,
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderActivity.bind(this),
-      },
-    ];
-
-    //get the disabled state for the next/finish button
-    switch (stepIndex) {
-      case 0:
-        _disabled = this.state.selectedActivity === "";
-        break;
-      case 1:
-        _disabled = this.state.filename === "";
-        break;
-      default:
-    }
-    const actions = [
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "500px",
-          margin: "auto",
-          textAlign: "center",
-        }}
-      >
-        <div style={contentStyle}>
-          <div style={{ marginTop: 12 }}>
-            <ToolbarButton
-              label="Back"
-              disabled={stepIndex === 0 || this.props.loading}
-              onClick={this.handlePrev.bind(this)}
-            />
-            <ToolbarButton
-              label={
-                stepIndex === this.state.steps.length - 1
-                  ? "Save Activity"
-                  : "Next"
-              }
-              onClick={this.handleNext.bind(this)}
-              disabled={
-                _disabled ||
-                this.props.loading ||
-                (stepIndex === 2 &&
-                  (this.state.filename === "" || this.state.description === ""))
-              }
-              primary={true}
-            />
-          </div>
-        </div>
-      </div>,
-    ];
-    let children = (
-      <div key="k12">
-        {stepIndex === 0 ? (
-          <div id="activityTable">
-            <h4>Select an activity then upload your raster file...</h4>
+  return (
+    <Dialog open={true} onClose={closeDialog} fullWidth maxWidth="sm">
+      <DialogTitle>{title[stepIndex]}</DialogTitle>
+      <DialogContent>
+        {stepIndex === 0 && (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Select an activity, then upload your raster file...
+            </Typography>
             <MarxanTable
-              data={this.props.activities}
+              data={activities}
               columns={tableColumns}
               searchColumns={["category", "activity"]}
-              searchText={this.state.searchText}
-              selectedActivity={this.state.selectedActivity}
-              getTrProps={(state, rowInfo) => {
-                return {
-                  style: {
-                    background:
-                      rowInfo.original.activity === this.state.selectedActivity
-                        ? "rgb(0, 188, 212)"
-                        : "",
-                    color:
-                      rowInfo.original.activity === this.state.selectedActivity
-                        ? "white"
-                        : "",
-                  },
-
-                  onClick: (e) => {
-                    this.setSelectedActivity(rowInfo.original.activity);
-                  },
-                };
-              }}
-              getTdProps={(state, rowInfo, column) => {
-                return {
-                  onClick: (e) => {
-                    this.setSelectedActivity(rowInfo.original.activity);
-                  },
-                };
-              }}
+              searchText={searchtext}
+              selectedActivity={selectedActivity}
+              getTrProps={(rowInfo) => ({
+                style: {
+                  background:
+                    rowInfo.original.activity === selectedActivity
+                      ? "rgb(0, 188, 212)"
+                      : "",
+                  color:
+                    rowInfo.original.activity === selectedActivity
+                      ? "white"
+                      : "",
+                },
+                onClick: () => setSelectedActivity(rowInfo.original.activity),
+              })}
             />
-          </div>
-        ) : null}
-        {stepIndex === 1 ? (
-          <div>
-            <MarxanTextField
-              value={this.state.description}
-              onChange={this.changeDescription.bind(this)}
-              multiLine={true}
+          </Box>
+        )}
+        {stepIndex === 1 && (
+          <Box>
+            <TextField
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              multiline
               rows={2}
-              floatingLabelText="Enter activity description..."
+              fullWidth
+              label="Enter activity description..."
+              variant="outlined"
+              margin="normal"
             />
             <FileUpload
-              {...this.props}
-              selectedActivity={this.state.selectedActivity}
+              selectedActivity={selectedActivity}
               fileMatch={".tif"}
               mandatory={true}
-              filename={this.state.filename}
-              setFilename={this.setFilename.bind(this)}
+              filename={filename}
+              setFilename={() => setFilename(filename)}
               destFolder={"imports"}
               label="Select raster to upload..."
               style={{ paddingTop: "10px" }}
             />
-          </div>
-        ) : null}
-      </div>
-    );
-    return (
-      <MarxanDialog
-        {...this.props}
-        onOk={this.closeDialog.bind(this)}
-        okLabel={"Cancel"}
-        title={title[this.state.stepIndex]}
-        showSearchBox={true}
-        searchTextChanged={this.searchTextChanged.bind(this)}
-        actions={actions}
-        onClose={this.closeDialog.bind(this)}
-        helpLink={"user.html#importing-from-a-shapefile"}
-      >
-        {children}
-      </MarxanDialog>
-    );
-  }
-}
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button
+          variant="outlined"
+          onClick={handlePrev}
+          disabled={stepIndex === 0 || loading}
+        >
+          Back
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleNext}
+          disabled={isNextDisabled || loading}
+          startIcon={stepIndex === steps.length - 1 ? <SyncIcon /> : null}
+        >
+          {stepIndex === steps.length - 1 ? "Save Activity" : "Next"}
+        </Button>
+        <Button variant="text" onClick={closeDialog}>
+          Cancel
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 export default ImportActivityDialog;

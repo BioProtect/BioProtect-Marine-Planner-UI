@@ -10,6 +10,7 @@ import {
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPTableRow from "../BPComponents/BPTableRow";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
@@ -43,26 +44,20 @@ const FeatureDialog = ({
     : featureMetadata.area;
   const unit = isShapefile ? "Area" : "Amount";
 
+  const closeDialog = () =>
+    dispatch(
+      toggleFeatureDialog({
+        dialogName: "featureDialogOpen",
+        isOpen: false,
+      })
+    );
+
   return (
     <MarxanDialog
       open={featureDialogStates.featureDialogOpen}
       loading={loading}
-      onOk={() =>
-        dispatch(
-          toggleFeatureDialog({
-            dialogName: "featureDialogOpen",
-            isOpen: false,
-          })
-        )
-      }
-      onClose={() =>
-        dispatch(
-          toggleFeatureDialog({
-            dialogName: "featureDialogOpen",
-            isOpen: false,
-          })
-        )
-      }
+      onOk={closeDialog}
+      onClose={closeDialog}
       showCancelButton={false}
       title={featureMetadata.alias}
       contentWidth={768}
@@ -89,47 +84,38 @@ const FeatureDialog = ({
                   </Typography>
                 </TableCell>
               </TableRow>
-              <TableRow>
-                <TableCell>{unit}:</TableCell>
-                <TableCell>{amount}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Created:</TableCell>
-                <TableCell>{featureMetadata.creation_date}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Created by:</TableCell>
-                <TableCell>{featureMetadata.created_by}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Source:</TableCell>
-                <TableCell>{featureMetadata.source}</TableCell>
-              </TableRow>
+              <BPTableRow val1={unit} val2={amount} />
+              <BPTableRow
+                val1="Created:"
+                val2={featureMetadata.creation_date}
+              />
+              <BPTableRow
+                val1="Created by:"
+                val2={featureMetadata.created_by}
+              />
+              <BPTableRow val1="Source:" val2={featureMetadata.source} />
               {expanded && (
                 <>
-                  <TableRow>
-                    <TableCell>id:</TableCell>
-                    <TableCell>{featureMetadata.id}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>guid:</TableCell>
-                    <TableCell>{featureMetadata.feature_class_name}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>tileset:</TableCell>
-                    <TableCell>{featureMetadata.tilesetid}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Projects:</TableCell>
-                    <TableCell>
+                  <BPTableRow val1="ID:" val2={featureMetadata.id} />
+                  <BPTableRow
+                    val1="guid:"
+                    val2={featureMetadata.feature_class_name}
+                  />
+                  <BPTableRow
+                    val1="tileset:"
+                    val2={featureMetadata.tilesetid}
+                  />
+                  <BPTableRow
+                    val1="Projects:"
+                    val2={
                       <FontAwesomeIcon
                         icon="external-link-alt"
                         onClick={fetchProjectList}
                         title="View a list of projects that this feature is used in"
                         style={{ cursor: "pointer", paddingTop: "6px" }}
                       />
-                    </TableCell>
-                  </TableRow>
+                    }
+                  />
                 </>
               )}
             </TableBody>
