@@ -1,6 +1,6 @@
-import React, { useState } from "react";
 import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import BioProtectLogo from "./images/bioprotect_project_logo.jpeg";
 import Button from "@mui/material/Button";
@@ -13,55 +13,84 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
+import React from "react";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import { selectServer } from "./slices/projectSlice";
+import { setCredentials } from "./slices/authSlice";
+import { useLoginMutation } from "./slices/authApiSlice";
 
-const LoginDialog = (props) => {
-  const dispatch = useDispatch();
+const LoginDialog = ({
+  open,
+  validateUser,
+  loading,
+  password,
+  changeUserName,
+  changePassword,
+  marxanClientReleaseVersion,
+}) => {
   const [selectOpen, setSelectOpen] = useState(false);
   const dialogState = useSelector((state) => state.ui.dialogState);
   const projectState = useSelector((state) => state.project);
+  const userRef = useRef(null);
+  const errRef = useRef(null);
+  const [user, setUser] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [errMsg, setErrMsg] = useState("");
 
-  const {
-    open,
-    validateUser,
-    loading,
-    user,
-    password,
-    changeUserName,
-    changePassword,
-    marxanClientReleaseVersion,
-  } = props;
+  const [login, { isLoading }] = useLoginMutation();
+  const dispatch = useDispatch();
 
-  const okDisabled =
-    !user ||
-    !password ||
-    !projectState.bpServer ||
-    projectState.bpServer.offline;
-  const okLabel =
-    projectState.bpServer &&
-    !projectState.bpServer.offline &&
-    !projectState.bpServer.corsEnabled &&
-    projectState.bpServer.guestUserEnabled
-      ? "Login (Read-Only)"
-      : "Login";
-  const cancelDisabled =
-    !projectState.bpServer ||
-    projectState.bpServer.offline ||
-    !projectState.bpServer.corsEnabled;
+  useLayoutEffect(() => {
+    if (userRef.current) {
+      userRef.current.focus();
+    }
+  }, []);
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  useEffect(() => {
+    if (open && userRef.current) {
+      userRef.current.focus();
+    }
+  }, [open]);
 
-    console.log("event ", event);
-    const data = new FormData(event.currentTarget);
-    const name = data.get("username");
-    const pass = data.get("password");
-    changeUserName(name);
-    changePassword(pass);
-    validateUser(name, pass);
+  useEffect(() => {
+    setErrMsg("");
+  }, [user, pwd]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // const data = new FormData(event.currentTarget);
+    // const name = data.get("username");
+    // const pass = data.get("password");
+    // changeUserName(name);
+    // changePassword(pass);
+    // validateUser(name, pass);
+
+    try {
+      const userData = await login({ user, pwd }).unwrap();
+      dispatch(setCredentials({ ...userData, user }));
+      setUser("");
+      setPwd("");
+      navigate("/welcome");
+    } catch (err) {
+      if (!err?.originalStatus) {
+        // isLoading: true until timeout occurs
+        setErrMsg("No Server Response");
+      } else if (err.originalStatus === 400) {
+        setErrMsg("Missing Username or Password");
+      } else if (err.originalStatus === 401) {
+        setErrMsg("Unauthorized");
+      } else {
+        setErrMsg("Login Failed");
+      }
+      errRef.current.focus();
+    }
   };
+
+  const handleUserInput = (e) => setUser(e.target.value);
+
+  const handlePwdInput = (e) => setPwd(e.target.value);
 
   const handleClose = () => {
     setSelectOpen(false);
@@ -87,6 +116,14 @@ const LoginDialog = (props) => {
       onSubmit={handleSubmit}
       noValidate
     >
+      <p
+        ref={errRef}
+        className={errMsg ? "errmsg" : "offscreen"}
+        aria-live="assertive"
+      >
+        {errMsg}
+      </p>
+
       <DialogTitle>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <CardMedia>
@@ -145,7 +182,17 @@ const LoginDialog = (props) => {
               );
             })}
           </Select>
-          <TextField
+          <label htmlFor="username">Username:</label>
+          <input
+            type="text"
+            id="username"
+            ref={userRef}
+            value={user}
+            onChange={handleUserInput}
+            autoComplete="off"
+            required
+          />
+          {/* <TextField
             margin="normal"
             required
             fullWidth
@@ -153,8 +200,8 @@ const LoginDialog = (props) => {
             label="Username"
             name="username"
             autoFocus
-          />
-          <TextField
+          /> */}
+          {/* <TextField
             margin="normal"
             required
             fullWidth
@@ -162,6 +209,14 @@ const LoginDialog = (props) => {
             label="Password"
             type="password"
             id="password"
+          /> */}
+          <label htmlFor="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            onChange={handlePwdInput}
+            value={pwd}
+            required
           />
         </FormControl>
       </DialogContent>

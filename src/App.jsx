@@ -4636,7 +4636,6 @@ const App = () => {
               open={!loggedIn}
               validateUser={(name, pass) => login(name, pass)}
               loading={loading}
-              user={user}
               password={password}
               changeUserName={(user) => setUser(user)}
               changePassword={(pass) => setPassword(pass)}
