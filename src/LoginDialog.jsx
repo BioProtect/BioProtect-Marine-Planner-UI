@@ -1,7 +1,10 @@
+import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
+import { setSnackbarMessage, setSnackbarOpen } from "./slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import AccountCircle from "@mui/icons-material/AccountCircle";
 import BioProtectLogo from "./images/bioprotect_project_logo.jpeg";
 import Button from "@mui/material/Button";
 import CardMedia from "@mui/material/CardMedia";
@@ -11,11 +14,15 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FormControl from "@mui/material/FormControl";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import React from "react";
 import Select from "@mui/material/Select";
-import TextField from "@mui/material/TextField";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { selectServer } from "./slices/projectSlice";
 import { setCredentials } from "./slices/authSlice";
 import { useLoginMutation } from "./slices/authApiSlice";
@@ -33,11 +40,9 @@ const LoginDialog = ({
   const dialogState = useSelector((state) => state.ui.dialogState);
   const projectState = useSelector((state) => state.project);
   const userRef = useRef(null);
-  const errRef = useRef(null);
   const [user, setUser] = useState("");
   const [pwd, setPwd] = useState("");
-  const [errMsg, setErrMsg] = useState("");
-
+  const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
   const dispatch = useDispatch();
 
@@ -54,8 +59,12 @@ const LoginDialog = ({
   }, [open]);
 
   useEffect(() => {
-    setErrMsg("");
+    dispatch(setSnackbarOpen(false));
+    dispatch(setSnackbarMessage(""));
   }, [user, pwd]);
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => event.preventDefault();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,17 +83,19 @@ const LoginDialog = ({
       setPwd("");
       navigate("/welcome");
     } catch (err) {
+      let errMsg = null;
       if (!err?.originalStatus) {
         // isLoading: true until timeout occurs
-        setErrMsg("No Server Response");
+        errMsg = "No Server Response";
       } else if (err.originalStatus === 400) {
-        setErrMsg("Missing Username or Password");
+        errMsg = "Missing Username or Password";
       } else if (err.originalStatus === 401) {
-        setErrMsg("Unauthorized");
+        errMsg = "Unauthorized";
       } else {
-        setErrMsg("Login Failed");
+        errMsg = "Login Failed";
       }
-      errRef.current.focus();
+      dispatch(setSnackbarMessage(errMsg));
+      dispatch(setSnackbarOpen(true));
     }
   };
 
@@ -92,13 +103,8 @@ const LoginDialog = ({
 
   const handlePwdInput = (e) => setPwd(e.target.value);
 
-  const handleClose = () => {
-    setSelectOpen(false);
-  };
-
-  const handleOpen = () => {
-    setSelectOpen(true);
-  };
+  const handleClose = () => setSelectOpen(false);
+  const handleOpen = () => setSelectOpen(true);
 
   const handleSelectServer = (event) => {
     const selectedServer = projectState.bpServers.find(
@@ -116,14 +122,6 @@ const LoginDialog = ({
       onSubmit={handleSubmit}
       noValidate
     >
-      <p
-        ref={errRef}
-        className={errMsg ? "errmsg" : "offscreen"}
-        aria-live="assertive"
-      >
-        {errMsg}
-      </p>
-
       <DialogTitle>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <CardMedia>
@@ -151,7 +149,6 @@ const LoginDialog = ({
             label="BioProtect Server"
           >
             {projectState.bpServers.map((item) => {
-              if (item.name === "localhost") console.log("item ", item);
               //if the server is offline - just put that otherwise: if CORS is enabled for this domain then it is read/write otherwise: if the guest user is enabled then put the domain and read only otherwise: put the domain and guest user disabled
               let text =
                 item.offline || item.corsEnabled || item.guestUserEnabled
@@ -182,38 +179,43 @@ const LoginDialog = ({
               );
             })}
           </Select>
-          <label htmlFor="username">Username:</label>
-          <input
-            type="text"
+        </FormControl>
+        <FormControl fullWidth variant="outlined" margin="normal">
+          <InputLabel htmlFor="username">Username</InputLabel>
+          <OutlinedInput
             id="username"
+            type="text"
+            endAdornment={
+              <InputAdornment position="end">
+                <AccountCircle />
+              </InputAdornment>
+            }
+            label="Username"
             ref={userRef}
             value={user}
             onChange={handleUserInput}
             autoComplete="off"
             required
           />
-          {/* <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="Username"
-            label="Username"
-            name="username"
-            autoFocus
-          /> */}
-          {/* <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
+        </FormControl>
+        <FormControl fullWidth variant="outlined" margin="normal">
+          <InputLabel htmlFor="password">Password</InputLabel>
+          <OutlinedInput
+            id="password"
+            type={showPassword ? "text" : "password"}
+            endAdornment={
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={handleClickShowPassword}
+                  onMouseDown={handleMouseDownPassword}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            }
             label="Password"
-            type="password"
-            id="password"
-          /> */}
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
             onChange={handlePwdInput}
             value={pwd}
             required
@@ -225,9 +227,6 @@ const LoginDialog = ({
           Sign In
         </Button>
       </DialogActions>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        {marxanClientReleaseVersion}
-      </div>
     </Dialog>
   );
 };

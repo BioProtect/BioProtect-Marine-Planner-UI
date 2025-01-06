@@ -3,11 +3,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  addLocalServer,
-  filterAndSortServers,
-  getServerCapabilities,
-} from "./Server/serverFunctions";
+import { addLocalServer, filterAndSortServers } from "./Server/serverFunctions";
 // SERVICES
 import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
 import {
@@ -643,9 +639,7 @@ const App = () => {
     // Create a shallow copy of the object to avoid mutating the original
     const newObj = { ...obj };
     // Iterate over the keys and delete each key from the new object
-    keys.forEach((key) => {
-      delete newObj[key];
-    });
+    keys.forEach((key) => delete newObj[key]);
     return newObj;
   };
 
@@ -4617,8 +4611,10 @@ const App = () => {
     return await _get("cleanup?");
   };
 
-  const handleProjectsDialogCancel = () =>
-    dispatch(toggleDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
+  const closeProjectsDialog = () =>
+    dispatch(
+      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+    );
 
   return (
     <div>
@@ -4786,7 +4782,7 @@ const App = () => {
             metadata={metadata}
           />
           <ProjectsDialog
-            onCancel={() => handleProjectsDialogCancel()}
+            onCancel={() => closeProjectsDialog()}
             project={project}
             loading={loading}
             projects={projects}

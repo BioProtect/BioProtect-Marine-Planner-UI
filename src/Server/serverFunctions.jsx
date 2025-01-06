@@ -1,4 +1,4 @@
-import CONSTANTS from "../constants";
+import { CONSTANTS, INITIAL_VARS } from "../bpVars";
 
 const getServerCapabilities = async (server) => {
   // Construct the endpoints
