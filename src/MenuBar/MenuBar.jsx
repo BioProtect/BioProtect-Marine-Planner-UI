@@ -39,7 +39,7 @@ const MenuBar = (props) => {
 
   const hanldeMenuOpen = (e, val) => {
     e.preventDefault();
-    setMenuAnchor(e.currentTarget);
+    props.setMenuAnchor(e.currentTarget);
     dispatch(toggleDialog({ dialogName: val, isOpen: true }));
   };
 

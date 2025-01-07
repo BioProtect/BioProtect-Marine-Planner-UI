@@ -23,19 +23,12 @@ import React from "react";
 import Select from "@mui/material/Select";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { selectCurrentToken } from "./slices/authSlice";
 import { selectServer } from "./slices/projectSlice";
 import { setCredentials } from "./slices/authSlice";
 import { useLoginMutation } from "./slices/authApiSlice";
 
-const LoginDialog = ({
-  open,
-  validateUser,
-  loading,
-  password,
-  changeUserName,
-  changePassword,
-  marxanClientReleaseVersion,
-}) => {
+const LoginDialog = ({open, postLoginSetup}) => {
   const [selectOpen, setSelectOpen] = useState(false);
   const dialogState = useSelector((state) => state.ui.dialogState);
   const projectState = useSelector((state) => state.project);
@@ -69,19 +62,14 @@ const LoginDialog = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // const data = new FormData(event.currentTarget);
-    // const name = data.get("username");
-    // const pass = data.get("password");
-    // changeUserName(name);
-    // changePassword(pass);
-    // validateUser(name, pass);
-
     try {
       const userData = await login({ user, pwd }).unwrap();
+      console.log("userdata ", userData)
       dispatch(setCredentials({ ...userData, user }));
+      postLoginSetup();
       setUser("");
       setPwd("");
-      navigate("/welcome");
+      
     } catch (err) {
       let errMsg = null;
       if (!err?.originalStatus) {

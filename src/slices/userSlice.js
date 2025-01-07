@@ -1,55 +1,31 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { apiSlice } from "./apiSlice";
 
-const initialState = {
-  snackbarOpen: false,
-  snackbarMessage: "",
-  activeTab: "project",
-  activeResultsTab: "legend",
-};
+export const userApiSlice = apiSlice.injectEndpoints({
+  endpoints: (builder) => ({
+    getUser: builder.query({
+      query: () => "getUser",
+    }),
+    createUser: builder.mutation({
+      query: (user) => ({
+        url: "users",
+        method: "POST",
+        body: user,
+      }),
+    }),
+    updateUser: builder.mutation({
+      query: ({ id, user }) => ({
+        url: `users/${id}`,
+        method: "PUT",
+        body: user,
+      }),
+    }),
+    deleteUser: builder.mutation({
+      query: (id) => ({
+        url: `users/${id}`,
+        method: "DELETE",
+      }),
+    }),
+  }),
+})
 
-const uiSlice = createSlice({
-  name: "ui",
-  initialState,
-  reducers: {
-    setSnackbarOpen(state, action) {
-      state.snackbarOpen = action.payload;
-    },
-    setSnackbarMessage(state, action) {
-      state.snackbarMessage = action.payload;
-    },
-    setActiveTab(state, action) {
-      state.activeTab = action.payload;
-    },
-    setActiveResultsTab(state, action) {
-      state.activeResultsTab = action.payload;
-    },
-    toggleProjectDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.projectDialogStates[dialogName] = isOpen;
-    },
-    toggleFeatureDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.featureDialogStates[dialogName] = isOpen;
-    },
-    togglePlanningGridDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.planningGridDialogStates[dialogName] = isOpen;
-    },
-    toggleDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.dialogStates[dialogName] = isOpen;
-    },
-  },
-});
-
-export const {
-  setSnackbarOpen,
-  setSnackbarMessage,
-  setActiveTab,
-  setActiveResultsTab,
-  toggleProjectDialog,
-  toggleFeatureDialog,
-  togglePlanningGridDialog,
-  toggleDialog,
-} = uiSlice.actions;
-export default uiSlice.reducer;
+export const { useGetUsersQuery, useCreateUserMutation, useUpdateUserMutation, useDeleteUserMutation } = userApiSlice;

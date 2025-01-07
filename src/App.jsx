@@ -100,6 +100,7 @@ import { dialogTitleClasses } from "@mui/material";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
+import { selectCurrentToken } from "./slices/authSlice";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -161,7 +162,7 @@ const App = () => {
   const [identifyVisible, setIdentifyVisible] = useState(false);
   /////////////////////////////////////////////////////////////////////////////
   const [logMessages, setLogMessages] = useState([]);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [setLoggedIn] = useState(false);
   const [mapPaintProperties, setMapPaintProperties] = useState({
     mapPP0: [],
     mapPP1: [],
@@ -231,6 +232,8 @@ const App = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
 
+  const token = useSelector(selectCurrentToken);
+
   useEffect(() => {
     dispatch(initialiseServers(INITIAL_VARS.MARXAN_SERVERS))
       .unwrap()
@@ -256,7 +259,7 @@ const App = () => {
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has("project")) {
       setShareableLink(true);
-      setLoggedIn(true);
+      // setLoggedIn(true);
     }
 
     const fetchGlobalVariables = async () => {
@@ -750,11 +753,8 @@ const App = () => {
     await _get(`validateUser?user=${user}&password=${password}`, 1000);
 
   //the user is validated so login
-  const login = async (user, password) => {
+  const postLoginSetup = async (user, password) => {
     try {
-      const checkedPass = await checkPassword(user, password);
-      if (checkedPass) {
-        setLoggedIn(true);
         const userResp = await _get(`getUser?user=${user}`);
         setUser(user);
         setUserData(userResp.userData);
@@ -812,7 +812,7 @@ const App = () => {
     resetResults();
     //clear the currently set cookies
     _get("logout").then((response) => {
-      setLoggedIn(false);
+      // setLoggedIn(false);
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
     });
   };
@@ -1085,7 +1085,7 @@ const App = () => {
       console.log("error", error);
 
       if (error.toString().includes("Logged on as read-only guest user")) {
-        setLoggedIn(true);
+        // setLoggedIn(true);
         return "No project loaded - logged on as read-only guest user";
       }
 
@@ -4627,18 +4627,13 @@ const App = () => {
             className="map-container absolute top right left bottom"
           />
           {loading ? <Loading /> : null}
-          {!loggedIn ? (
+          {token ? null: (
             <LoginDialog
-              open={!loggedIn}
-              validateUser={(name, pass) => login(name, pass)}
+              open={!token}
               loading={loading}
-              password={password}
-              changeUserName={(user) => setUser(user)}
-              changePassword={(pass) => setPassword(pass)}
-              marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
+              postLoginSetup={postLoginSetup}
             />
-          ) : null}
-
+          )}
           <ResendPasswordDialog
             open={dialogStates.resendPasswordDialogOpen}
             onOk={resendPassword}
@@ -5053,7 +5048,7 @@ const App = () => {
             runCumulativeImpact={runCumulativeImpact}
           />
           <MenuBar
-            open={loggedIn}
+            open={token}
             user={user}
             userRole={userData.ROLE}
             openProjectsDialog={openProjectsDialog}
@@ -5062,6 +5057,7 @@ const App = () => {
             openPlanningGridsDialog={openPlanningGridsDialog}
             openCumulativeImpactDialog={openCumulativeImpactDialog}
             openAtlasLayersDialog={openAtlasLayersDialog}
+            setMenuAnchor={setMenuAnchor}
           />
         </React.Fragment>
       )}
