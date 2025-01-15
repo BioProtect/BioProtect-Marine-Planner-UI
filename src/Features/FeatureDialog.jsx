@@ -20,11 +20,11 @@ import { toggleFeatureDialog } from "../slices/uiSlice";
 
 const FeatureDialog = ({
   loading,
-  featureMetadata,
   getTilesetMetadata,
   getProjectList,
 }) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const featureDialogStates = useSelector(
     (state) => state.ui.featureDialogStates
   );
@@ -34,13 +34,13 @@ const FeatureDialog = ({
 
   const toggleExpand = () => setExpanded(!expanded);
 
-  const fetchProjectList = () => getProjectList(featureMetadata, "feature");
+  const fetchProjectList = () => getProjectList(uiState.featureMetadata, "feature");
 
   // Determine unit type and value
-  const isShapefile = featureMetadata.source === "Imported shapefile";
+  const isShapefile = uiState.featureMetadata.source === "Imported shapefile";
   const amount = isShapefile
-    ? getArea(featureMetadata.area, userData.report_units, true)
-    : featureMetadata.area;
+    ? getArea(uiState.featureMetadata.area, userData.report_units, true)
+    : uiState.featureMetadata.area;
   const unit = isShapefile ? "Area" : "Amount";
 
   const closeDialog = () =>
@@ -58,14 +58,14 @@ const FeatureDialog = ({
       onOk={closeDialog}
       onClose={closeDialog}
       showCancelButton={false}
-      title={featureMetadata.alias}
+      title={uiState.featureMetadata.alias}
       contentWidth={768}
     >
       <Box>
         <MapContainer2
-          planningGridMetadata={featureMetadata}
+          planningGridMetadata={uiState.featureMetadata}
           getTilesetMetadata={getTilesetMetadata}
-          color={featureMetadata.color}
+          color={uiState.featureMetadata.color}
           outlineColor="rgba(0, 0, 0, 0.2)"
         />
         <Box className="metadataPanel" mt={2}>
@@ -79,30 +79,30 @@ const FeatureDialog = ({
               <TableRow>
                 <TableCell colSpan={2}>
                   <Typography variant="body2">
-                    {featureMetadata.description}
+                    {uiState.featureMetadata.description}
                   </Typography>
                 </TableCell>
               </TableRow>
               <BPTableRow val1={unit} val2={amount} />
               <BPTableRow
                 val1="Created:"
-                val2={featureMetadata.creation_date}
+                val2={uiState.featureMetadata.creation_date}
               />
               <BPTableRow
                 val1="Created by:"
-                val2={featureMetadata.created_by}
+                val2={uiState.featureMetadata.created_by}
               />
-              <BPTableRow val1="Source:" val2={featureMetadata.source} />
+              <BPTableRow val1="Source:" val2={uiState.featureMetadata.source} />
               {expanded && (
                 <>
-                  <BPTableRow val1="ID:" val2={featureMetadata.id} />
+                  <BPTableRow val1="ID:" val2={uiState.featureMetadata.id} />
                   <BPTableRow
                     val1="guid:"
-                    val2={featureMetadata.feature_class_name}
+                    val2={uiState.featureMetadata.feature_class_name}
                   />
                   <BPTableRow
                     val1="tileset:"
-                    val2={featureMetadata.tilesetid}
+                    val2={uiState.featureMetadata.tilesetid}
                   />
                   <BPTableRow
                     val1="Projects:"

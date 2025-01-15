@@ -15,6 +15,12 @@ import {
 import { selectCurrentToken, selectCurrentUserId, selectUserData, setUserData } from "./slices/authSlice";
 import {
   setActiveTab,
+  setAddingRemovingFeatures,
+  setAllFeatures,
+  setCurrentFeature,
+  setFeatureMetadata,
+  setIdentifyFeatures,
+  setSelectedFeatureIds,
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
@@ -117,6 +123,21 @@ const App = () => {
   const planningGrids = useSelector((state) => state.ui.planningGridDialogStates);
   const projectState = useSelector((state) => state.project);
 
+  const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
+
+
+  const [addToProject, setAddToProject] = useState(true);
+  const [project, setProject] = useState("");
+  const [projects, setProjects] = useState([]);
+  const [projectList, setProjectList] = useState([]);
+  const [projectListDialogHeading, setProjectListDialogHeading] = useState("");
+  const [projectListDialogTitle, setProjectListDialogTitle] = useState("");
+  const [projectLoaded, setProjectLoaded] = useState(false);
+  const [projectImpacts, setProjectImpacts] = useState([]);
+  const [projectFeatures, setProjectFeatures] = useState([]);
+
+
+
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
   const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState("");
@@ -128,14 +149,10 @@ const App = () => {
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [runMarxanResponse, setRunMarxanResponse] = useState({});
   const [costData, setCostData] = useState(null);
-  const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
   const [previousIucnCategory, setPreviousIucnCategory] = useState(null);
   const [planningCostsTrigger, setPlanningCostsTrigger] = useState(false);
   const [activities, setActivities] = useState([]);
-  const [addToProject, setAddToProject] = useState(true);
-  const [addingRemovingFeatures, setAddingRemovingFeatures] = useState(false);
   const [pid, setPid] = useState("");
-  const [allFeatures, setAllFeatures] = useState([]);
   const [allImpacts, setAllImpacts] = useState([]);
   const [atlasLayers, setAtlasLayers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -145,18 +162,13 @@ const App = () => {
   const [costnames, setCostnames] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
   const [countries, setCountries] = useState([]);
-  const [currentFeature, setCurrentFeature] = useState({});
-  const [featureDatasetFilename, setFeatureDatasetFilename] = useState("");
-  const [featureMetadata, setFeatureMetadata] = useState({});
   const [files, setFiles] = useState({});
   const [gapAnalysis, setGapAnalysis] = useState([]);
-  const [identifyFeatures, setIdentifyFeatures] = useState([]);
   const [identifyPlanningUnits, setIdentifyPlanningUnits] = useState({});
   const [identifyProtectedAreas, setidentifyProtectedAreas] = useState([]);
   const [identifyVisible, setIdentifyVisible] = useState(false);
   /////////////////////////////////////////////////////////////////////////////
   const [logMessages, setLogMessages] = useState([]);
-  const [setLoggedIn] = useState(false);
   const [mapPaintProperties, setMapPaintProperties] = useState({
     mapPP0: [],
     mapPP1: [],
@@ -173,14 +185,8 @@ const App = () => {
   const [planningUnitGrids, setPlanningUnitGrids] = useState([]);
   const [planningUnits, setPlanningUnits] = useState([]);
   const [preprocessing, setPreprocessing] = useState(false);
-  const [project, setProject] = useState("");
-  const [projectFeatures, setProjectFeatures] = useState([]);
   const [user, setUser] = useState("");
-  const [projects, setProjects] = useState([]);
-  const [projectList, setProjectList] = useState([]);
-  const [projectListDialogHeading, setProjectListDialogHeading] = useState("");
-  const [projectListDialogTitle, setProjectListDialogTitle] = useState("");
-  const [projectLoaded, setProjectLoaded] = useState(false);
+
   const [protectedAreaIntersections, setProtectedAreaIntersections] = useState(
     []
   );
@@ -193,7 +199,6 @@ const App = () => {
   const [runningImpactMessage, setRunningImpactMessage] =
     useState("Import Activity");
   const [selectedCosts, setSelectedCosts] = useState([]);
-  const [selectedFeatureIds, setSelectedFeatureIds] = useState([]);
   const [selectedImpactIds, setSelectedImpactIds] = useState([]);
   const [selectedLayers, setSelectedLayers] = useState([]);
   const [shareableLink, setShareableLink] = useState(false);
@@ -214,7 +219,6 @@ const App = () => {
   const [wdpaLayer, setWdpaLayer] = useState();
   const [resultsLayer, setResultsLayer] = useState({});
   const [summaryStats, setSummaryStats] = useState([]);
-  const [projectImpacts, setProjectImpacts] = useState([]);
   const [paLayerVisible, setPaLayerVisible] = useState(false);
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
   const [runlogTimer, setRunlogTimer] = useState(0);
@@ -763,7 +767,7 @@ const App = () => {
       console.log("loaded basemap....")
       const speciesData = await _get("getAllSpeciesData");
       console.log("speciesData")
-      setAllFeatures(speciesData.data);
+      dispatch(setAllFeatures(speciesData.data));
 
       await loadProject(
         userResp.last_project,
@@ -1096,7 +1100,7 @@ const App = () => {
     featurePrePro,
     allFeaturesData
   ) => {
-    const allFeats = allFeatures.length > 0 ? allFeatures : allFeaturesData;
+    const allFeats = uiState.allFeatures.length > 0 ? uiState.allFeatures : allFeaturesData;
 
     // Determine features based on project version
     const features = oldVersion
@@ -1136,7 +1140,7 @@ const App = () => {
     getSelectedFeatureIds();
 
     // Update state
-    setAllFeatures(processedFeatures);
+    dispatch(setAllFeatures(processedFeatures));
     setProjectFeatures(processedFeatures.filter((item) => item.selected));
   };
 
@@ -1397,14 +1401,14 @@ const App = () => {
   const marxanStopped = async () => await getRunLogs();
 
   const resetProtectedAreas = () => {
-    const updatedFeatures = allFeatures.map((feature) => ({
+    const updatedFeatures = uiState.allFeatures.map((feature) => ({
       ...feature,
       protected_area: -1,
       target_area: -1,
     }));
 
     // Set the state with updated features
-    setAllFeatures(updatedFeatures);
+    dispatch(setAllFeatures(updatedFeatures));
   };
 
   //updates the species file with any target values that have changed
@@ -1561,7 +1565,7 @@ const App = () => {
     );
 
     // Update features with corresponding data from mvData
-    const updatedFeatures = allFeatures.map((feature) => {
+    const updatedFeatures = uiState.allFeatures.map((feature) => {
       const mvItem = mvDataMap.get(feature.id);
       if (mvItem) {
         return {
@@ -1574,7 +1578,7 @@ const App = () => {
     });
 
     // Update state with the updated features
-    setAllFeatures(updatedFeatures);
+    dispatch(setAllFeatures(updatedFeatures));
     setProjectFeatures(updatedFeatures.filter((item) => item.selected));
   };
 
@@ -2268,7 +2272,7 @@ const App = () => {
 
       //set the state to populate the identify popup
       setIdentifyVisible(true);
-      setIdentifyFeatures(idFeatures);
+      dispatch(setIdentifyFeatures(idFeatures));
       setidentifyProtectedAreas(idProtectedAreas);
     }
   };
@@ -3133,7 +3137,9 @@ const App = () => {
     clearInterval(timerToClear.timer);
     //remove the timer from the timers array
     timers = timers.filter((timer) => timer.uploadid !== uploadid);
-    if (timers.length === 0) setUploading(false);
+    if (timers.length === 0) {
+      setUploading(false);
+    }
   };
 
   const openWelcomeDialog = () => {
@@ -3531,50 +3537,51 @@ const App = () => {
   const updateFeature = (feature, newProps) => {
     console.log("feature, newProps ", feature, newProps);
     console.log("updateFeature........ ");
-    let features = [...allFeatures];
+    let features = [...uiState.allFeatures];
     const index = features.findIndex((element) => element.id === feature.id);
     if (index !== -1) {
       features[index] = { ...features[index], ...newProps };
-      setAllFeatures(features);
+      dispatch(setAllFeatures(features));
       setProjectFeatures(features.filter((item) => item.selected));
     }
   };
 
   //gets the ids of the selected features
   const getSelectedFeatureIds = () => {
-    const selectedFeatureIds = allFeatures
+    const updatedFeatureIds = uiState.allFeatures
       .filter((feature) => feature.selected)
       .map((feature) => feature.id);
 
-    setSelectedFeatureIds(selectedFeatureIds);
+    dispatch(setSelectedFeatureIds(updatedFeatureIds));
   };
 
   //when a user clicks a feature in the FeaturesDialog
   const clickFeature = (feature) => {
-    return [...selectedFeatureIds].includes(feature.id)
+    return [...uiState.selectedFeatureIds].includes(feature.id)
       ? removeFeature(feature)
       : addFeature(feature);
   };
 
   //removes a feature from the selectedFeatureIds array
   const removeFeature = (feature) => {
-    const updatedFeatureIds = selectedFeatureIds.filter(
+    const updatedFeatureIds = uiState.selectedFeatureIds.filter(
       (id) => id !== feature.id
     );
-    setSelectedFeatureIds(updatedFeatureIds);
+    dispatch(setSelectedFeatureIds(updatedFeatureIds));
   };
 
   //adds a feature to the selectedFeatureIds array
   const addFeature = (feature) =>
-    setSelectedFeatureIds((prevState) =>
+    dispatch(setSelectedFeatureIds((prevState) =>
       prevState.includes(feature.id) ? prevState : [...prevState, feature.id]
-    );
+    ));
 
   //starts a digitising session
   const initialiseDigitising = () => {
     // Show digitising controls if not already present, mapbox-gl-draw-cold + mapbox-gl-draw-hot
-    if (!map.current.getSource("mapbox-gl-draw-cold"))
+    if (!map.current.getSource("mapbox-gl-draw-cold")) {
       map.current.addControl(mapboxDrawControls);
+    }
   };
 
   //finalises the digitising
@@ -3591,7 +3598,7 @@ const App = () => {
 
   //selects all the features
   const selectAllFeatures = () =>
-    setSelectedFeatureIds(allFeatures.map((feature) => feature.id));
+    dispatch(setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id)));
 
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
   const updateSelectedFeatures = async () => {
@@ -3599,14 +3606,17 @@ const App = () => {
     await deleteGapAnalysis();
 
     // Get the updated features
-    let updatedFeatures = allFeatures.map((feature) => {
-      if (selectedFeatureIds.includes(feature.id)) {
+    let updatedFeatures = uiState.allFeatures.map((feature) => {
+      if (uiState.selectedFeatureIds.includes(feature.id)) {
         // Feature is selected
         return { ...feature, selected: true };
       } else {
-        if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
-        if (feature.feature_puid_layer_loaded) toggleFeaturePUIDLayer(feature);
-        // Feature is not selected
+        if (feature.feature_layer_loaded) {
+          toggleFeatureLayer(feature);
+        }
+        if (feature.feature_puid_layer_loaded) {
+          toggleFeaturePUIDLayer(feature);
+        }// Feature is not selected
         if (metadata.OLDVERSION) {
           // For imported projects, only update selection status
           return { ...feature, selected: false };
@@ -3627,7 +3637,7 @@ const App = () => {
     });
 
     // Apply updates to state
-    setAllFeatures(updatedFeatures);
+    dispatch(setAllFeatures(updatedFeatures));
     setProjectFeatures(updatedFeatures.filter((item) => item.selected));
     // Persist changes to the server if the user is not read-only
     if (userData.role !== "ReadOnly") {
@@ -3657,13 +3667,13 @@ const App = () => {
 
   //updates the target values for all features in the project to the passed value
   const updateTargetValueForFeatures = async (target_value) => {
-    const features = allFeatures.map((feature) => ({
+    const features = uiState.allFeatures.map((feature) => ({
       ...feature,
       target_value,
     }));
 
     // Set the features in app state
-    setAllFeatures(features);
+    dispatch(setAllFeatures(features));
     setProjectFeatures(features.filter((item) => item.selected));
     // Persist the changes to the server
     if (userData.role !== "ReadOnly") {
@@ -3679,7 +3689,7 @@ const App = () => {
 
   //previews the feature
   const previewFeature = (featureMetadata) => {
-    setFeatureMetadata(featureMetadata);
+    dispatch(setFeatureMetadata(featureMetadata));
     setFeatureDialogOpen(true);
   };
 
@@ -3783,13 +3793,13 @@ const App = () => {
 
   //adds a new feature to the allFeatures array
   const addNewFeature = (newFeatures) => {
-    setAllFeatures((prevFeatures) => {
+    dispatch(setAllFeatures((prevFeatures) => {
       const featuresCopy = [...prevFeatures, ...newFeatures];
       featuresCopy.sort((a, b) =>
         a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
       );
       return featuresCopy;
-    });
+    }));
   };
 
   //attempts to delete a feature - if the feature is in use in a project then it will not be deleted and the list of projects will be shown
@@ -3830,10 +3840,10 @@ const App = () => {
 
   //removes a feature from the allFeatures array
   const removeFeatureFromAllFeatures = (feature) => {
-    const updatedFeatures = allFeatures.filter(
+    const updatedFeatures = uiState.allFeatures.filter(
       (item) => item.id !== feature.id
     );
-    setAllFeatures(updatedFeatures);
+    dispatch(setAllFeatures(updatedFeatures));
   };
 
   //gets the feature ids as a set from the allFeatures array
@@ -3847,7 +3857,7 @@ const App = () => {
     const newFeatures = response.data;
 
     // Extract existing and new feature IDs
-    const existingFeatureIds = getFeatureIds(allFeatures);
+    const existingFeatureIds = getFeatureIds(uiState.allFeatures);
     const newFeatureIds = getFeatureIds(newFeatures);
 
     // Determine which features have been removed or added
@@ -3872,7 +3882,7 @@ const App = () => {
   };
 
   const openFeatureMenu = (evt, feature) => {
-    setCurrentFeature(feature);
+    dispatch(setCurrentFeature(feature));
     setMenuAnchor(evt.currentTarget);
     dispatch(
       toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: true })
@@ -3882,7 +3892,9 @@ const App = () => {
   //hides the feature layer
   const hideFeatureLayer = () => {
     projectFeatures.forEach((feature) => {
-      if (feature.feature_layer_loaded) toggleFeatureLayer(feature);
+      if (feature.feature_layer_loaded) {
+        toggleFeatureLayer(feature);
+      }
     });
   };
 
@@ -4747,7 +4759,6 @@ const App = () => {
           />
           <FeatureInfoDialog
             loading={loading}
-            feature={currentFeature}
             updateFeature={updateFeature}
           />
           {identifyVisible ? (
@@ -4756,7 +4767,6 @@ const App = () => {
               xy={popupPoint}
               identifyPlanningUnits={identifyPlanningUnits}
               identifyProtectedAreas={identifyProtectedAreas}
-              identifyFeatures={identifyFeatures}
               hideIdentifyPopup={hideIdentifyPopup}
               metadata={metadata}
             />) : null}
@@ -4773,7 +4783,6 @@ const App = () => {
             cloneProject={cloneProject}
             unauthorisedMethods={unauthorisedMethods}
             userRole={userData.role}
-            allFeatures={allFeatures}
           />
           <NewProjectDialog
             registry={registry}
@@ -4781,7 +4790,6 @@ const App = () => {
             getPlanningUnitGrids={getPlanningUnitGrids}
             planningUnitGrids={planningUnitGrids}
             openFeaturesDialog={openFeaturesDialog}
-            features={allFeatures}
             selectedCosts={selectedCosts}
             createNewProject={createNewProject}
             previewFeature={previewFeature}
@@ -4810,21 +4818,16 @@ const App = () => {
             onOk={updateSelectedFeatures}
             loading={loading || uploading}
             metadata={metadata}
-            allFeatures={allFeatures}
             deleteFeature={deleteFeature}
             selectAllFeatures={selectAllFeatures}
             userRole={userData.role}
             clickFeature={clickFeature}
-            addingRemovingFeatures={addingRemovingFeatures}
-            selectedFeatureIds={selectedFeatureIds}
-            setSelectedFeatureIds={setSelectedFeatureIds}
             initialiseDigitising={initialiseDigitising}
             previewFeature={previewFeature}
             refreshFeatures={refreshFeatures}
           />
           <FeatureDialog
             loading={loading}
-            featureMetadata={featureMetadata}
             getTilesetMetadata={getMetadata}
             getProjectList={getProjectList}
           />
@@ -4838,8 +4841,6 @@ const App = () => {
           <ImportFeaturesDialog
             importFeatures={importFeatures}
             loading={loading || preprocessing || uploading}
-            filename={featureDatasetFilename}
-            setFeatureDatasetFilename={setFeatureDatasetFilename}
             fileUpload={uploadFileToFolder}
             unzipShapefile={unzipShapefile}
             getShapefileFieldnames={getShapefileFieldnames}
@@ -4971,7 +4972,6 @@ const App = () => {
             toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
             zoomToFeature={zoomToFeature}
             preprocessSingleFeature={preprocessSingleFeature}
-            currentFeature={currentFeature}
             preprocessing={preprocessing}
           />
           <TargetDialog

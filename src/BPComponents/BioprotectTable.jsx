@@ -5,6 +5,7 @@ import {
   objInArray,
   stableSort,
 } from "../Helpers";
+import { useDispatch, useSelector } from "react-redux";
 
 import BPTableHeadWithSort from "./BPTableHeadWithSort";
 import BPTableTitleWithSearch from "./BPTableTitleWithSearch";
@@ -52,9 +53,9 @@ const BioprotectTable = (props) => {
   };
 
   const filteredData = useMemo(() => {
-    if (!searchQuery)
+    if (!searchQuery) {
       return stableSort(props.data, getComparator(order, orderBy));
-
+    }
     const lowerCaseQuery = searchQuery.toLowerCase();
 
     const filteredResult = props.data.filter((row) =>

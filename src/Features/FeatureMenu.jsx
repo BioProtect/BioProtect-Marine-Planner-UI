@@ -21,10 +21,10 @@ const FeatureMenu = ({
   toggleFeaturePUIDLayer,
   zoomToFeature,
   preprocessSingleFeature,
-  currentFeature,
   preprocessing,
 }) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const featureStates = useSelector((state) => state.ui.featureDialogStates);
   const userData = useSelector(selectUserData);
 
@@ -57,57 +57,57 @@ const FeatureMenu = ({
           leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
           style={{
             display:
-              currentFeature?.old_version || userData.role === "ReadOnly"
+              uiState.currentFeature?.old_version || userData.role === "ReadOnly"
                 ? "none"
                 : "block",
           }}
-          onClick={() => removeFromProject(currentFeature)}
+          onClick={() => removeFromProject(uiState.currentFeature)}
         >
           Remove from project
         </MenuItemWithButton>
         <MenuItemWithButton
           leftIcon={
-            currentFeature?.feature_layer_loaded ? (
+            uiState.currentFeature?.feature_layer_loaded ? (
               <RemoveFromMap style={{ margin: "1px" }} />
             ) : (
               <AddToMap style={{ margin: "1px" }} />
             )
           }
           style={{
-            display: currentFeature?.tilesetid ? "block" : "none",
+            display: uiState.currentFeature?.tilesetid ? "block" : "none",
           }}
-          onClick={() => toggleFeatureLayer(currentFeature)}
+          onClick={() => toggleFeatureLayer(uiState.currentFeature)}
         >
-          {currentFeature?.feature_layer_loaded
+          {uiState.currentFeature?.feature_layer_loaded
             ? "Remove from map"
             : "Add to map"}
         </MenuItemWithButton>
         <MenuItemWithButton
           leftIcon={
-            currentFeature?.feature_puid_layer_loaded ? (
+            uiState.currentFeature?.feature_puid_layer_loaded ? (
               <RemoveFromMap style={{ margin: "1px" }} />
             ) : (
               <AddToMap style={{ margin: "1px" }} />
             )
           }
-          onClick={() => toggleFeaturePUIDLayer(currentFeature)}
+          onClick={() => toggleFeaturePUIDLayer(uiState.currentFeature)}
           disabled={
             !(
-              currentFeature?.preprocessed &&
-              currentFeature.occurs_in_planning_grid
+              uiState.currentFeature?.preprocessed &&
+              uiState.currentFeature.occurs_in_planning_grid
             )
           }
         >
-          {currentFeature?.feature_puid_layer_loaded
+          {uiState.currentFeature?.feature_puid_layer_loaded
             ? "Remove planning unit outlines"
             : "Outline planning units where the feature occurs"}
         </MenuItemWithButton>
         <MenuItemWithButton
           leftIcon={<ZoomIn style={{ margin: "1px" }} />}
           style={{
-            display: currentFeature?.extent ? "block" : "none",
+            display: uiState.currentFeature?.extent ? "block" : "none",
           }}
-          onClick={() => zoomToFeature(currentFeature)}
+          onClick={() => zoomToFeature(uiState.currentFeature)}
         >
           Zoom to feature extent
         </MenuItemWithButton>
@@ -115,12 +115,12 @@ const FeatureMenu = ({
           leftIcon={<Preprocess style={{ margin: "1px" }} />}
           style={{
             display:
-              currentFeature?.old_version || userData.role === "ReadOnly"
+              uiState.currentFeature?.old_version || userData.role === "ReadOnly"
                 ? "none"
                 : "block",
           }}
-          onClick={() => preprocessSingleFeature(currentFeature)}
-          disabled={currentFeature?.preprocessed || preprocessing}
+          onClick={() => preprocessSingleFeature(uiState.currentFeature)}
+          disabled={uiState.currentFeature?.preprocessed || preprocessing}
         >
           Pre-process
         </MenuItemWithButton>

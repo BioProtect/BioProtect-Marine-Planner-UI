@@ -20,8 +20,9 @@ import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
 import { selectUserData } from "../slices/authSlice";
 
-const FeatureInfoDialog = ({ loading, feature, updateFeature }) => {
+const FeatureInfoDialog = ({ loading, updateFeature }) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const featureStates = useSelector((state) => state.ui.featureDialogStates);
   const userData = useSelector(selectUserData);
@@ -42,12 +43,12 @@ const FeatureInfoDialog = ({ loading, feature, updateFeature }) => {
         (key === "spf" && isNumber(value))
       ) {
         const updatedProps = { [key]: value };
-        updateFeature(feature, updatedProps);
+        updateFeature(uiState.feature, updatedProps);
       } else {
         alert("Invalid value");
       }
     },
-    [feature, updateFeature]
+    [uiState.feature, updateFeature]
   );
 
   const onKeyDown = useCallback(
@@ -66,7 +67,7 @@ const FeatureInfoDialog = ({ loading, feature, updateFeature }) => {
 
   const getAreaHTML = (rowKey, value) => {
     const color =
-      feature.protected_area < feature.target_area &&
+      uiState.feature.protected_area < uiState.feature.target_area &&
         rowKey === "Area protected"
         ? "red"
         : "rgba(0, 0, 0, 0.6)";
@@ -168,25 +169,29 @@ const FeatureInfoDialog = ({ loading, feature, updateFeature }) => {
     }
   };
 
-  if (!feature) {
+  if (!uiState.feature) {
     return null;
   }
 
-  const data = (
-    feature.source === "Imported shapefile"
+  const isOldVersion = uiState.feature.old_version;
+  // Select the appropriate feature properties based on the source
+  const featureProperties =
+    uiState.feature.source === "Imported shapefile"
       ? CONSTANTS.FEATURE_PROPERTIES_POLYGONS
-      : CONSTANTS.FEATURE_PROPERTIES_POINTS
-  )
-    .filter((item) => {
-      if (!feature.old_version && item.showForNew) return true;
-      if (feature.old_version && item.showForOld) return true;
-      return false;
-    })
-    .map((item) => ({
-      key: item.key,
-      value: feature[item.name],
-      hint: item.hint,
-    }));
+      : CONSTANTS.FEATURE_PROPERTIES_POINTS;
+
+  // Filter the items based on version compatibility
+  const filteredProperties = featureProperties.filter((item) =>
+    (isOldVersion && item.showForOld) || (!isOldVersion && item.showForNew)
+  );
+
+  // Map the filtered items to the desired structure
+  const data = filteredProperties.map((item) => ({
+    key: item.key,
+    value: uiState.feature[item.name],
+    hint: item.hint,
+  }));
+
 
   return (
     <MarxanDialog
@@ -203,7 +208,7 @@ const FeatureInfoDialog = ({ loading, feature, updateFeature }) => {
         <Table
           key="k9"
           size="small"
-          className={feature.old_version ? "infoTableOldVersion" : "infoTable"}
+          className={uiState.feature.old_version ? "infoTableOldVersion" : "infoTable"}
         >
           <TableHead>
             <TableRow>

@@ -22,10 +22,10 @@ const IdentifyPopup = ({
   xy,
   metadata,
   identifyPlanningUnits,
-  identifyFeatures,
   identifyProtectedAreas,
   hideIdentifyPopup,
 }) => {
+  const uiState = useSelector((state) => state.ui);
   const [selectedTab, setSelectedTab] = useState("pu");
   const [timer, setTimer] = useState(null);
   const userData = useSelector(selectUserData);
@@ -133,8 +133,8 @@ const IdentifyPopup = ({
     </div>
   );
 
-  const featuresTab = identifyFeatures?.length > 0 && (
-    renderTabContent(identifyFeatures, [
+  const featuresTab = uiState.identifiedFeatures?.length > 0 && (
+    renderTabContent(uiState.identifiedFeatures, [
       {
         render: (row) => <div title={row.alias}>{row.alias}</div>,
       },

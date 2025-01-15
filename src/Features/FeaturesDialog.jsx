@@ -1,13 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  setActiveResultsTab,
-  setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
+  setAddingRemovingFeatures,
+  setSelectedFeatureIds,
   toggleDialog,
   toggleFeatureDialog,
-  togglePlanningGridDialog,
-  toggleProjectDialog,
 } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -141,7 +137,7 @@ const FeaturesDialog = (props) => {
   };
 
   const clickRow = (event, rowInfo) => {
-    if (props.addingRemovingFeatures) {
+    if (uiState.addingRemovingFeatures) {
       if (event.shiftKey) {
         const selectedIds = getFeaturesBetweenRows(previousRow, rowInfo);
         props.update(selectedIds);
@@ -172,17 +168,17 @@ const FeaturesDialog = (props) => {
     const idx2 =
       previousRow.index < thisRow.index ? thisRow.index + 1 : previousRow.index;
 
-    if (filteredRows.length < props.allFeatures.length) {
+    if (filteredRows.length < uiState.allFeatures.length) {
       return toggleSelectionState(
-        props.selectedFeatureIds,
+        uiState.selectedFeatureIds,
         filteredRows,
         idx1,
         idx2
       );
     } else {
       return toggleSelectionState(
-        props.selectedFeatureIds,
-        props.allFeatures,
+        uiState.selectedFeatureIds,
+        uiState.allFeatures,
         idx1,
         idx2
       );
@@ -190,16 +186,16 @@ const FeaturesDialog = (props) => {
   };
 
   const selectAllFeatures = () => {
-    if (filteredRows.length < props.allFeatures.length) {
+    if (filteredRows.length < uiState.allFeatures.length) {
       const selectedIds = filteredRows.map((feature) => feature.id);
-      props.setSelectedFeatureIds(selectedIds);
+      dispatch(setSelectedFeatureIds(selectedIds));
     } else {
       props.selectAllFeatures();
     }
   };
 
   const onOk = () => {
-    if (props.addingRemovingFeatures) {
+    if (uiState.addingRemovingFeatures) {
       props.onOk();
     } else {
       unselectFeature();
@@ -236,7 +232,9 @@ const FeaturesDialog = (props) => {
     setFilteredRows(filteredRows);
   };
 
-  if (!props.allFeatures) return null;
+  if (!uiState.allFeatures) {
+    return null;
+  }
 
   const columns = generateTableCols([
     { id: "alias", label: "alias" },
@@ -253,14 +251,13 @@ const FeaturesDialog = (props) => {
       autoDetectWindowHeight={false}
       title="Features"
       onOk={onOk}
-      showCancelButton={props.addingRemovingFeatures}
+      showCancelButton={uiState.addingRemovingFeatures}
       showSearchBox={true}
       searchTextChanged={searchTextChanged}
       actions={
         <FeaturesToolbar
           metadata={props.metadata}
           userRole={props.userRole}
-          addingRemovingFeatures={props.addingRemovingFeatures}
           loading={props.loading}
           selectedFeature={selectedFeature}
           selectAllFeatures={() => selectAllFeatures()}
@@ -268,19 +265,17 @@ const FeaturesDialog = (props) => {
           _openImportFromWebDialog={() => _openImportFromWebDialog()}
           _delete={() => _delete()}
           _newByDigitising={_newByDigitising}
-          setSelectedFeatureIds={props.setSelectedFeatureIds}
         />
       }
     >
       <div id="react-features-dialog-table">
         <BioprotectTable
-          data={props.allFeatures}
+          data={uiState.allFeatures}
           tableColumns={columns}
           searchColumns={["alias", "description", "source", "created_by"]}
           dataFiltered={dataFiltered}
-          addingRemovingFeatures={props.addingRemovingFeatures}
-          selected={props.selectedFeatureIds}
-          selectedFeatureIds={props.selectedFeatureIds}
+          selected={uiState.selectedFeatureIds}
+          selectedFeatureIds={uiState.selectedFeatureIds}
           selectedFeature={selectedFeature}
           clickRow={clickRow}
           preview={() => props.previewFeature(feature_metadata)}

@@ -4,9 +4,13 @@ import {
   Sync as SyncIcon,
   UploadFile as UploadFileIcon,
 } from "@mui/icons-material";
+import { useDispatch, useSelector } from "react-redux";
+
+import { setFeatureDatasetFilename } from "../slices/uiSlice";
 
 // FileUpload component refactored to use React 18 and MUI 5
 const FileUpload = (props) => {
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(false);
   const [destinationFolder, setDestinationFolder] = useState("");
@@ -37,7 +41,7 @@ const FileUpload = (props) => {
             destinationFolder
           );
         }
-        props.setFilename(response.file);
+        dispatch(setFeatureDatasetFilename(response.file));
         props.setMessage(response.info);
       } catch (error) {
         console.error("File upload error: ", error);

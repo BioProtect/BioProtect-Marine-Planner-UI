@@ -5,6 +5,7 @@ import {
   faTimesCircle,
   faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
@@ -12,12 +13,16 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Import from "@mui/icons-material/GetApp";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import { setSelectedFeatureIds } from "../slices/uiSlice";
 
 const FeaturesToolbar = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const [newAnchorEl, setNewAnchorEl] = useState(null);
   const [importAnchorEl, setImportAnchorEl] = useState(null);
   const newOpen = Boolean(newAnchorEl);
   const importOpen = Boolean(importAnchorEl);
+
 
   const handleNewClick = (event) => setNewAnchorEl(event.currentTarget);
   const handleImportClick = (event) => setImportAnchorEl(event.currentTarget);
@@ -39,8 +44,8 @@ const FeaturesToolbar = (props) => {
 
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
         {props.userRole !== "ReadOnly" &&
-        !props.metadata.OLDVERSION &&
-        !props.addingRemovingFeatures ? (
+          !props.metadata.OLDVERSION &&
+          !uiState.addingRemovingFeatures ? (
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="New feature"
@@ -65,8 +70,8 @@ const FeaturesToolbar = (props) => {
         </Menu>
 
         {!props.metadata.OLDVERSION &&
-        !props.addingRemovingFeatures &&
-        props.userRole !== "ReadOnly" ? (
+          !uiState.addingRemovingFeatures &&
+          props.userRole !== "ReadOnly" ? (
           <Button
             startIcon={<Import style={{ height: "20px", width: "20px" }} />}
             title="Create new features from existing data"
@@ -102,8 +107,8 @@ const FeaturesToolbar = (props) => {
         </Menu>
 
         {props.userRole === "Admin" &&
-        !props.metadata.OLDVERSION &&
-        !props.addingRemovingFeatures ? (
+          !props.metadata.OLDVERSION &&
+          !uiState.addingRemovingFeatures ? (
           <Button
             startIcon={
               <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
@@ -121,16 +126,16 @@ const FeaturesToolbar = (props) => {
           </Button>
         ) : null}
 
-        {props.addingRemovingFeatures ? (
+        {uiState.addingRemovingFeatures ? (
           <Button
             startIcon={<FontAwesomeIcon icon={faTimesCircle} />}
             title="Clear all features"
-            onClick={() => props.setSelectedFeatureIds([])}
+            onClick={() => dispatch(setSelectedFeatureIds([]))}
           >
             Clear all
           </Button>
         ) : null}
-        {props.addingRemovingFeatures ? (
+        {uiState.addingRemovingFeatures ? (
           <Button
             startIcon={<FontAwesomeIcon icon={faCheckCircle} />}
             title="Select all features"

@@ -1,11 +1,22 @@
+import { createSlice, current } from "@reduxjs/toolkit";
+
 import UserMenu from "../User/UserMenu";
-import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   snackbarOpen: false,
   snackbarMessage: "",
   activeTab: "project",
   activeResultsTab: "legend",
+
+  addingRemovingFeatures: false,
+  allFeatures: [],
+  currentFeature: {},
+  featureMetadata: {},
+  identifiedFeatures: [],
+  selectedFselectedFeatureIds: [],
+  featureDatasetFilename: "",
+
+
   projectDialogStates: {
     projectsListDialogOpen: false,
     newProjectDialogOpen: false,
@@ -15,6 +26,7 @@ const initialState = {
   featureDialogStates: {
     newFeatureDialogOpen: false,
     featureDialogOpen: false,
+    featuresDialogOpen: false,
     featuresDialogOpen: false,
     importFeaturePopoverOpen: false,
     importFeaturesDialogOpen: false,
@@ -83,6 +95,27 @@ const uiSlice = createSlice({
     setActiveResultsTab(state, action) {
       state.activeResultsTab = action.payload;
     },
+    setAddingRemovingFeatures(state, action) {
+      state.addingRemovingFeatures = action.payload;
+    },
+    setAllFeatures(state, action) {
+      state.allFeatures = action.payload;
+    },
+    setCurrentFeature(state, action) {
+      state.currentFeature = action.payload;
+    },
+    setFeatureMetadata(state, action) {
+      state.featureMetadata = action.payload;
+    },
+    setIdentifyFeatures(state, action) {
+      state.identifiedFeatures = action.payload;
+    },
+    setSelectedFeatureIds(state, action) {
+      state.selectedFeatureIds = action.payload;
+    },
+    setFeatureDatasetFilename(state, action) {
+      state.featureDatasetFilename = action.payload;
+    },
     toggleProjectDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.projectDialogStates[dialogName] = isOpen;
@@ -107,6 +140,13 @@ export const {
   setSnackbarMessage,
   setActiveTab,
   setActiveResultsTab,
+  setAddingRemovingFeatures,
+  setAllFeatures,
+  setCurrentFeature,
+  setFeatureMetadata,
+  setIdentifyFeatures,
+  setSelectedFeatureIds,
+  setFeatureDatasetFilename,
   toggleProjectDialog,
   toggleFeatureDialog,
   togglePlanningGridDialog,

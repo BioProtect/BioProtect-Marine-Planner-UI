@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  setAllFeatures,
   toggleFeatureDialog,
   toggleProjectDialog,
 } from "../../slices/uiSlice.js";
@@ -15,6 +16,7 @@ import SelectFeatures from "../../LeftInfoPanel/FeaturesTab.jsx";
 
 const NewProjectDialog = (props) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
   );
@@ -27,22 +29,21 @@ const NewProjectDialog = (props) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [pu, setPU] = useState("");
-  const [allFeatures, setAllFeatures] = useState([]);
   const [selectedFeatureIds, setSelectedFeatureIds] = useState([]);
 
   useEffect(() => {
-    setAllFeatures(JSON.parse(JSON.stringify(props.features || [])));
-  }, [props.features]);
+    dispatch(setAllFeatures(JSON.parse(JSON.stringify(uiState.allFeatures || []))));
+  }, [uiState.allFeatures]);
 
   const handleNext = () => setStepIndex((prev) => prev + 1);
   const handlePrev = () => setStepIndex((prev) => Math.max(prev - 1, 0));
 
   const updateSelectedFeatures = () => {
-    const updatedFeatures = allFeatures.map((feature) => ({
+    const updatedFeatures = uiState.allFeatures.map((feature) => ({
       ...feature,
       selected: selectedFeatureIds.includes(feature.id),
     }));
-    setAllFeatures(updatedFeatures);
+    dispatch(setAllFeatures(updatedFeatures));
     dispatch(
       toggleFeatureDialog({ dialogName: "featuresDialogOpen", isOpen: false })
     );
@@ -64,7 +65,7 @@ const NewProjectDialog = (props) => {
     );
 
   const selectAllFeatures = () =>
-    setSelectedFeatureIds(allFeatures.map((feature) => feature.id));
+    setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id));
   const clearAllFeatures = () => setSelectedFeatureIds([]);
 
   const createNewProject = () => {
@@ -72,7 +73,7 @@ const NewProjectDialog = (props) => {
       name,
       description,
       planning_grid_name: pu,
-      features: allFeatures.filter((item) => item.selected),
+      features: uiState.allFeatures.filter((item) => item.selected),
     });
     closeDialog();
   };
@@ -145,7 +146,7 @@ const NewProjectDialog = (props) => {
             <div style={{ height: "390px" }}>
               <div className="tabTitle">Select the features</div>
               <SelectFeatures
-                features={allFeatures.filter((item) => item.selected)}
+                features={uiState.allFeatures.filter((item) => item.selected)}
                 openFeaturesDialog={() =>
                   dispatch(
                     toggleFeatureDialog({
@@ -178,12 +179,10 @@ const NewProjectDialog = (props) => {
           )
         }
         loadingFeatures={false} // Update this according to your loading state
-        allFeatures={allFeatures}
         selectAllFeatures={selectAllFeatures}
         clearAllFeatures={clearAllFeatures}
         selectFeatures={setSelectedFeatureIds}
         clickFeature={clickFeature}
-        addingRemovingFeatures
         selectedFeatureIds={selectedFeatureIds}
         metadata={{ OLDVERSION: false }}
         userRole="User"
