@@ -22,7 +22,6 @@ import {
   togglePlanningGridDialog,
   toggleProjectDialog,
 } from "./slices/uiSlice";
-import { strToBool, zoomToBounds } from "./Helpers";
 import { useDispatch, useSelector } from "react-redux";
 
 import AboutDialog from "./AboutDialog";
@@ -101,6 +100,7 @@ import { dialogTitleClasses } from "@mui/material";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
+import { zoomToBounds } from "./Helpers";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -112,15 +112,9 @@ const App = () => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
+  const projectDialogs = useSelector((state) => state.ui.projectDialogStates);
+  const featureDialogs = useSelector((state) => state.ui.featureDialogStates);
+  const planningGrids = useSelector((state) => state.ui.planningGridDialogStates);
   const projectState = useSelector((state) => state.project);
 
   const [brew, setBrew] = useState(null);
