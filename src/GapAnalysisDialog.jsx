@@ -33,7 +33,6 @@ const GapAnalysisDialog = ({
   preprocessing,
   projectFeatures,
   metadata,
-  reportUnits,
 }) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
@@ -61,7 +60,9 @@ const GapAnalysisDialog = ({
         item[totalAmountProperty] /
         (item.target_value / 100);
 
-      if (!isNaN(val)) sum += val > 1 ? 1 : val;
+      if (!isNaN(val)) {
+        sum += val > 1 ? 1 : val;
+      }
     });
 
     return Number((sum / features.length) * 100).toFixed(1);
@@ -95,7 +96,6 @@ const GapAnalysisDialog = ({
       title={item._alias}
       color={item.color}
       key={item._feature_class_name}
-      reportUnits={reportUnits}
       showCountryArea={false}
       dataKey={item._feature_class_name}
     />
@@ -171,7 +171,7 @@ const GapAnalysisDialog = ({
                   offset={30}
                 />
               </YAxis>
-              <Tooltip content={<CustomTooltip reportUnits={reportUnits} />} />
+              <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="current_protected_percent" fill="#8884d8">
                 {preparedData.map((entry) => (
                   <Cell fill={entry.color} key={entry.color} />

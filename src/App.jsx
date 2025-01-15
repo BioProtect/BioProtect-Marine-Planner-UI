@@ -12,6 +12,7 @@ import {
   setBpServer,
   setBpServers,
 } from "./slices/projectSlice";
+import { selectCurrentToken, selectCurrentUserId, selectUserData, setUserData } from "./slices/authSlice";
 import {
   setActiveTab,
   setSnackbarMessage,
@@ -100,7 +101,6 @@ import { dialogTitleClasses } from "@mui/material";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
-import { selectCurrentToken } from "./slices/authSlice";
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
@@ -214,10 +214,6 @@ const App = () => {
   const [wdpaAttribution, setWdpaAttribution] = useState("");
   const [password, setPassword] = useState("");
   const [popupPoint, setPopupPoint] = useState({ x: 0, y: 0 });
-  const [userData, setUserData] = useState({
-    SHOWWELCOMESCREEN: true,
-    REPORTUNITS: "Ha",
-  });
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
   const [resendEmail, setResendEmail] = useState("");
   const [solutions, setSolutions] = useState([]);
@@ -233,6 +229,7 @@ const App = () => {
   const map = useRef(null);
 
   const token = useSelector(selectCurrentToken);
+  const userData = useSelector(selectUserData);
 
   useEffect(() => {
     dispatch(initialiseServers(INITIAL_VARS.MARXAN_SERVERS))
@@ -352,8 +349,8 @@ const App = () => {
         const error = response.hasOwnProperty("trace")
           ? response.trace
           : response.hasOwnProperty("error")
-          ? response.error
-          : "No error message returned";
+            ? response.error
+            : "No error message returned";
         console.error("Error message from server: " + error);
       }
       return isError;
@@ -392,11 +389,11 @@ const App = () => {
         jsonp(projectState.bpServer.endpoint + params, { timeout })
           .promise.then((response) => {
             setLoading(false);
-            !checkForErrors(response)
-              ? resolve(response)
-              : reject(response.error);
+            checkForErrors(response)
+              ? reject(response.error) : resolve(response);
           })
           .catch((err) => {
+            console.log("err ", err);
             setLoading(false);
             setSnackBar(
               `Request timeout - See <a href='${CONSTANTS.ERRORS_PAGE}#request-timeout' target='blank'>here</a>`
@@ -691,8 +688,8 @@ const App = () => {
         const newUserData = { ...userData, ...filteredParameters };
         // Update state
         setUserData(newUserData);
+        return newUserData; // Optionally return response if needed elsewhere
       }
-      return newUserData; // Optionally return response if needed elsewhere
     } catch (error) {
       console.error("Error updating user:", error);
       throw error; // Optional: rethrow error if you want to handle it further up the call stack
@@ -753,40 +750,35 @@ const App = () => {
     await _get(`validateUser?user=${user}&password=${password}`, 1000);
 
   //the user is validated so login
-  const postLoginSetup = async (user, password) => {
+  const postLoginSetup = async ({ userId, accessToken }) => {
     try {
-        const userResp = await _get(`getUser?user=${user}`);
-        setUser(user);
-        setUserData(userResp.userData);
-        setUnauthorisedMethods(userResp.unauthorisedMethods);
-        setDismissedNotifications(userResp.dismissedNotifications || []);
-        setResultsPanelOpen(true);
-        dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
+      const userResp = await _get(`users/${userId}`);
+      console.log("userResp", userResp)
+      dispatch(setUserData(userResp));
+      console.log("dispatch(setUserData(userResp)) ");
+      setDismissedNotifications(userResp.dismissedNotifications || []);
+      console.log("setDismissedNotifications(userResp.dismissedNotifications || [])");
+      setResultsPanelOpen(true);
+      console.log("setResultsPanelOpen(true); ")
+      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
+      console.log("set InfoPanel open....")
+      const current_basemap = basemaps.find(
+        (item) => item.name === userResp.basemap
+      );
+      await loadBasemap(current_basemap);
+      console.log("loaded basemap....")
+      const speciesData = await _get("getAllSpeciesData");
+      console.log("speciesData")
+      setAllFeatures(speciesData.data);
 
-        const current_basemap = basemaps.find(
-          (item) => item.name === userResp.userData.BASEMAP
-        );
-        userResp.userData.USEFEATURECOLORS = strToBool(
-          userResp.userData.USEFEATURECOLORS
-        );
-        userResp.userData.SHOWWELCOMESCREEN = strToBool(
-          userResp.userData.SHOWWELCOMESCREEN
-        );
-        userResp.userData.SHOWPOPUP = strToBool(userResp.userData.SHOWPOPUP);
-
-        await loadBasemap(current_basemap);
-        const speciesData = await _get("getAllSpeciesData");
-        setAllFeatures(speciesData.data);
-
-        await loadProject(
-          userResp.userData.LASTPROJECT,
-          user,
-          userResp,
-          speciesData.data
-        );
-        await getPlanningUnitGrids();
-        return "Logged in";
-      }
+      await loadProject(
+        userResp.last_project,
+        user,
+        userResp,
+        speciesData.data
+      );
+      await getPlanningUnitGrids();
+      return "Logged in";
     } catch (error) {
       console.error("Login failed:", error);
       // Handle error appropriately
@@ -831,9 +823,9 @@ const App = () => {
   };
 
   const changeRole = async (user, role) => {
-    await handleUserUpdate({ ROLE: role }, user);
+    await handleUserUpdate({ role: role }, user);
     const updatedUsers = users.map((item) =>
-      item.user === user ? { ...item, ROLE: role } : item
+      item.user === user ? { ...item, role: role } : item
     );
     // Update the state with the modified user list
     setUsers(updatedUsers);
@@ -940,7 +932,7 @@ const App = () => {
     const currentNotifications = [...notifications];
     // Process and filter notifications based on role, dismissal, and expiry
     const processedNotifications = newNotifications.map((item) => {
-      const allowedForRole = item.showForRoles.includes(userData.ROLE);
+      const allowedForRole = item.showForRoles.includes(userData.role);
       const notDismissed = !dismissedNotifications.includes(String(item.id));
       let notExpired = true;
       // Check if the notification has an expiry date and if it is still valid
@@ -1346,7 +1338,7 @@ const App = () => {
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
       (proj) =>
-        !(proj.private && proj.user !== user && userData.ROLE !== "Admin")
+        !(proj.private && proj.user !== user && userData.role !== "Admin")
     );
     setProjects(projects);
   };
@@ -1443,7 +1435,7 @@ const App = () => {
   };
 
   //updates the planning unit file with any changes - not implemented yet
-  const updatePuFile = () => {};
+  const updatePuFile = () => { };
 
   const updatePuvsprFile = async () => {
     try {
@@ -1908,7 +1900,7 @@ const App = () => {
   //called when the renderer state has been updated - renders the solution and saves the renderer back to the server
   const rendererStateUpdated = async (parameter, value) => {
     renderSolution(runMarxanResponse.ssoln, true);
-    if (userData.ROLE !== "ReadOnly")
+    if (userData.role !== "ReadOnly")
       await updateProjectParameter(parameter, value);
   };
 
@@ -3543,6 +3535,8 @@ const App = () => {
 
   //updates the properties of a feature and then updates the features state
   const updateFeature = (feature, newProps) => {
+    console.log("feature, newProps ", feature, newProps);
+    console.log("updateFeature........ ");
     let features = [...allFeatures];
     const index = features.findIndex((element) => element.id === feature.id);
     if (index !== -1) {
@@ -3642,7 +3636,7 @@ const App = () => {
     setAllFeatures(updatedFeatures);
     setProjectFeatures(updatedFeatures.filter((item) => item.selected));
     // Persist changes to the server if the user is not read-only
-    if (userData.ROLE !== "ReadOnly") {
+    if (userData.role !== "ReadOnly") {
       await updateSpecFile();
     }
 
@@ -3678,7 +3672,7 @@ const App = () => {
     setAllFeatures(features);
     setProjectFeatures(features.filter((item) => item.selected));
     // Persist the changes to the server
-    if (userData.ROLE !== "ReadOnly") {
+    if (userData.role !== "ReadOnly") {
       await updateSpecFile();
     }
   };
@@ -4627,7 +4621,7 @@ const App = () => {
             className="map-container absolute top right left bottom"
           />
           {loading ? <Loading /> : null}
-          {token ? null: (
+          {token ? null : (
             <LoginDialog
               open={!token}
               loading={loading}
@@ -4647,14 +4641,14 @@ const App = () => {
             openUsersDialog={openUsersDialog}
             openRunLogDialog={openRunLogDialog}
             openGapAnalysisDialog={openGapAnalysisDialog}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             metadata={metadata}
             cleanup={cleanup}
           />
           <UserMenu
             menuAnchor={menuAnchor}
             user={user}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             logout={logout}
           />
           {dialogStates.helpMenuOpen ? (
@@ -4665,7 +4659,7 @@ const App = () => {
             onOk={() => setUserSettingsDialogOpen(false)}
             onCancel={() => setUserSettingsDialogOpen(false)}
             loading={loading}
-            userData={userData}
+            selectUserData={selectUserData}
             saveOptions={saveOptions}
             changeBasemap={setBasemap}
             basemaps={basemaps}
@@ -4687,7 +4681,7 @@ const App = () => {
             onOk={() => setProfileDialogOpen(false)}
             onCancel={() => setProfileDialogOpen(false)}
             loading={loading}
-            userData={userData}
+            selectUserData={selectUserData}
             updateUser={handleUserUpdate}
           />
           <AboutDialog
@@ -4695,7 +4689,6 @@ const App = () => {
             wdpaAttribution={wdpaAttribution}
           />
           <InfoPanel
-            user={user}
             owner={owner}
             project={project}
             metadata={metadata}
@@ -4716,12 +4709,11 @@ const App = () => {
             openFeaturesDialog={openFeaturesDialog}
             changeIucnCategory={changeIucnCategory}
             updateFeature={updateFeature}
-            userRole={userData.ROLE}
             toggleProjectPrivacy={toggleProjectPrivacy}
             getShareableLink={() => setShareableLinkDialogOpen(true)}
             toggleFeatureLayer={toggleFeatureLayer}
             toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
-            useFeatureColors={userData.USEFEATURECOLORS}
+            useFeatureColors={selectUserData.USEFEATURECOLORS}
             smallLinearGauge={smallLinearGauge}
             openCostsDialog={openCostsDialog}
             costname={metadata?.COSTS}
@@ -4729,7 +4721,7 @@ const App = () => {
             changeCostname={changeCostname}
             loadCostsLayer={loadCostsLayer}
             loading={loading}
-            // protectedAreaIntersections={protectedAreaIntersections}
+          // protectedAreaIntersections={protectedAreaIntersections}
           />
           <ResultsPanel
             open={resultsPanelOpen}
@@ -4754,7 +4746,7 @@ const App = () => {
             wdpaLayer={wdpaLayer}
             paLayerVisible={paLayerVisible}
             changeOpacity={changeOpacity}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             visibleLayers={visibleLayers}
             metadata={metadata}
             costsLoading={costsLoading}
@@ -4763,19 +4755,17 @@ const App = () => {
             loading={loading}
             feature={currentFeature}
             updateFeature={updateFeature}
-            userData={userData}
           />
-          <IdentifyPopup
-            visible={identifyVisible}
-            xy={popupPoint}
-            identifyPlanningUnits={identifyPlanningUnits}
-            identifyProtectedAreas={identifyProtectedAreas}
-            identifyFeatures={identifyFeatures}
-            loading={loading}
-            hideIdentifyPopup={hideIdentifyPopup}
-            reportUnits={userData.REPORTUNITS}
-            metadata={metadata}
-          />
+          {identifyVisible ? (
+            <IdentifyPopup
+              visible={identifyVisible}
+              xy={popupPoint}
+              identifyPlanningUnits={identifyPlanningUnits}
+              identifyProtectedAreas={identifyProtectedAreas}
+              identifyFeatures={identifyFeatures}
+              hideIdentifyPopup={hideIdentifyPopup}
+              metadata={metadata}
+            />) : null}
           <ProjectsDialog
             onCancel={() => closeProjectsDialog()}
             project={project}
@@ -4788,7 +4778,7 @@ const App = () => {
             exportProject={exportProject}
             cloneProject={cloneProject}
             unauthorisedMethods={unauthorisedMethods}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             allFeatures={allFeatures}
           />
           <NewProjectDialog
@@ -4829,7 +4819,7 @@ const App = () => {
             allFeatures={allFeatures}
             deleteFeature={deleteFeature}
             selectAllFeatures={selectAllFeatures}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             clickFeature={clickFeature}
             addingRemovingFeatures={addingRemovingFeatures}
             selectedFeatureIds={selectedFeatureIds}
@@ -4842,7 +4832,6 @@ const App = () => {
             loading={loading}
             featureMetadata={featureMetadata}
             getTilesetMetadata={getMetadata}
-            reportUnits={userData.REPORTUNITS}
             getProjectList={getProjectList}
           />
           <NewFeatureDialog
@@ -4898,7 +4887,7 @@ const App = () => {
           />
           <ProjectsListDialog
             projects={projectList}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             title={projectListDialogTitle}
             heading={projectListDialogHeading}
           />
@@ -4921,7 +4910,7 @@ const App = () => {
             updateRunParams={updateRunParams}
             runParams={runParams}
             showClumpingDialog={showClumpingDialog}
-            userRole={userData.ROLE}
+            userRole={userData.role}
           />
           {dialogStates.classificationDialogOpen ? (
             <ClassificationDialog
@@ -4960,7 +4949,7 @@ const App = () => {
             getRunLogs={getRunLogs}
             clearRunLogs={clearRunLogs}
             stopMarxan={stopProcess}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             runlogTimer={runlogTimer}
           />
           <ServerDetailsDialog
@@ -4989,7 +4978,6 @@ const App = () => {
             zoomToFeature={zoomToFeature}
             preprocessSingleFeature={preprocessSingleFeature}
             currentFeature={currentFeature}
-            userData={userData}
             preprocessing={preprocessing}
           />
           <TargetDialog
@@ -5004,7 +4992,6 @@ const App = () => {
             preprocessing={preprocessing}
             projectFeatures={projectFeatures}
             metadata={metadata}
-            reportUnits={userData.REPORTUNITS}
           />
           <ShareableLinkDialog
             shareableLinkUrl={`${window.location}?server=${projectState.bpServer.name}&user=${user}&project=${project}`}
@@ -5028,14 +5015,14 @@ const App = () => {
             initialiseDigitising={initialiseDigitising}
             selectedImpactIds={selectedImpactIds}
             openImportedActivitesDialog={openImportedActivitesDialog}
-            userRole={userData.ROLE}
+            userRole={userData.role}
           />
           <HumanActivitiesDialog
             loading={loading || uploading}
             metadata={metadata}
             activities={activities}
             initialiseDigitising={initialiseDigitising}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             fileUpload={uploadRaster}
             saveActivityToDb={saveActivityToDb}
             openImportedActivitesDialog={openImportedActivitesDialog}
@@ -5044,13 +5031,12 @@ const App = () => {
             loading={loading || uploading}
             metadata={metadata}
             uploadedActivities={uploadedActivities}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             runCumulativeImpact={runCumulativeImpact}
           />
           <MenuBar
             open={token}
-            user={user}
-            userRole={userData.ROLE}
+            userRole={userData.role}
             openProjectsDialog={openProjectsDialog}
             openActivitiesDialog={openActivitiesDialog}
             openFeaturesDialog={openFeaturesDialog}

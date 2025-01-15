@@ -1,5 +1,6 @@
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
+import { selectCurrentToken, setUserData } from "./slices/authSlice";
 import { setSnackbarMessage, setSnackbarOpen } from "./slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -23,12 +24,11 @@ import React from "react";
 import Select from "@mui/material/Select";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { selectCurrentToken } from "./slices/authSlice";
 import { selectServer } from "./slices/projectSlice";
 import { setCredentials } from "./slices/authSlice";
 import { useLoginMutation } from "./slices/authApiSlice";
 
-const LoginDialog = ({open, postLoginSetup}) => {
+const LoginDialog = ({ open, postLoginSetup }) => {
   const [selectOpen, setSelectOpen] = useState(false);
   const dialogState = useSelector((state) => state.ui.dialogState);
   const projectState = useSelector((state) => state.project);
@@ -64,12 +64,10 @@ const LoginDialog = ({open, postLoginSetup}) => {
 
     try {
       const userData = await login({ user, pwd }).unwrap();
-      console.log("userdata ", userData)
       dispatch(setCredentials({ ...userData, user }));
-      postLoginSetup();
+      postLoginSetup({ ...userData });
       setUser("");
       setPwd("");
-      
     } catch (err) {
       let errMsg = null;
       if (!err?.originalStatus) {

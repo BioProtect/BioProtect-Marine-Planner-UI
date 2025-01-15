@@ -7,16 +7,20 @@ import Checkbox from "@mui/material/Checkbox";
 import { FormControlLabel } from "@mui/material";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Typography from "@mui/material/Typography";
+import { selectUserData } from "../slices/authSlice";
+import { useSelector } from "react-redux";
 
-const ProjectTabContent = (props) => {
+const ProjectTabContent = ({
+  toggleProjectPrivacy,
+  metadata,
+  owner,
+  updateDetails
+}) => {
+  const userData = useSelector(selectUserData);
   const [editing, setEditing] = useState(false);
-  const toggleProjectPrivacy = (event) => {
-    props.toggleProjectPrivacy(event.target.checked);
-  };
-
   const handleChange = (e) => {
     setEditing(false);
-    props.handleChange(e);
+    updateDetails(e);
   };
 
   return (
@@ -29,12 +33,12 @@ const ProjectTabContent = (props) => {
           <Typography variant="body2" color="text.secondary">
             {editing ? (
               <span onClick={setEditing(true)}>
-                {props.metadata.DESCRIPTION}
+                {metadata.DESCRIPTION}
               </span>
             ) : (
               <input
                 id="descriptionEdit"
-                value={props.metadata.DESCRIPTION || ""}
+                value={metadata.DESCRIPTION || ""}
                 className="descriptionEditBox"
                 onChange={(e) => handleChange(e)}
               ></input>
@@ -44,14 +48,14 @@ const ProjectTabContent = (props) => {
             Created
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            <span className="createDate">{props.metadata.CREATEDATE}</span>
-            {props.user !== props.owner && (
+            <span className="createDate">{metadata.CREATEDATE}</span>
+            {userData.username !== owner && (
               <span>
                 <span className="tabTitle tabTitleTopMargin">Created by</span>
-                <span className="createDate">{props.owner}</span>
+                <span className="createDate">{owner}</span>
               </span>
             )}
-            {props.metadata.OLDVERSION && (
+            {metadata.OLDVERSION && (
               <span className="tabTitle tabTitleTopMargin">
                 Imported project
               </span>
@@ -59,12 +63,12 @@ const ProjectTabContent = (props) => {
           </Typography>
         </CardContent>
         <CardActions>
-          {props.userRole !== "ReadOnly" && (
+          {userData.role !== "ReadOnly" && (
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={Boolean(props.metadata.PRIVATE)}
-                  onChange={props.toggleProjectPrivacy}
+                  checked={Boolean(metadata.PRIVATE)}
+                  onChange={toggleProjectPrivacy}
                   size="small"
                 />
               }

@@ -22,6 +22,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import { selectUserData } from "../slices/authSlice";
 import { toggleDialog } from "../slices/uiSlice";
 
 const MenuBar = (props) => {
@@ -29,6 +30,7 @@ const MenuBar = (props) => {
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectState = useSelector((state) => state.project);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const userData = useSelector(selectUserData);
   //opens the features dialog without the ability to add/remove features (i.e. different from the dialog that is opened from a project)
   const openFeaturesDialog = useCallback(
     (evt) => {
@@ -144,7 +146,7 @@ const MenuBar = (props) => {
             title={"Click to open the User menu"}
             onClick={(e) => hanldeMenuOpen(e, "userMenuOpen")}
           >
-            {props.user}
+            {userData.username}
           </Button>
         </Toolbar>
       </AppBar>

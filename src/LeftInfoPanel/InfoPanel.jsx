@@ -5,15 +5,16 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import CONSTANTS from "../constants";
+import FeaturesTab from "./FeaturesTab";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Paper from "@mui/material/Paper";
 import PlanningUnitsTab from "./PlanningUnitsTab";
 import ProjectTabContent from "./ProjectTab";
-import SelectFeatures from "../SelectFeatures";
 import Settings from "@mui/icons-material/Settings";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import { selectUserData } from "../slices/authSlice";
 
 const activeTabArr = ["project", "features", "planning_units"];
 
@@ -22,6 +23,7 @@ const InfoPanel = (props) => {
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectState = useSelector((state) => state.project);
+  const userData = useSelector(selectUserData);
 
   const [editingProjectName, setEditingProjectName] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
@@ -83,7 +85,7 @@ const InfoPanel = (props) => {
   };
 
   const startEditingDescription = () => {
-    if (props.project && props.userRole !== "ReadOnly") {
+    if (props.project && userData.role !== "ReadOnly") {
       setEditingDescription(true);
     }
   };
@@ -205,7 +207,7 @@ const InfoPanel = (props) => {
       <div className={"infoPanel"} style={combinedDisplayStyles}>
         <Paper elevation={2} className="InfoPanelPaper" mb={4}>
           <Paper elevation={2} className="titleBar">
-            {props.userRole === "ReadOnly" ? (
+            {userData.role === "ReadOnly" ? (
               <span
                 className={"projectNameEditBox"}
                 title={props.project + " (Read-only)"}
@@ -222,7 +224,7 @@ const InfoPanel = (props) => {
                 {props.project}
               </span>
             )}
-            {props.userRole === "ReadOnly" ? null : (
+            {userData.role === "ReadOnly" ? null : (
               <input
                 id="projectName"
                 ref={projectNameRef}
@@ -238,28 +240,25 @@ const InfoPanel = (props) => {
             <Tab
               label="Project"
               value={0}
-              disabled={props.puEditing ? true : false}
+              disabled={!!props.puEditing}
             />
             <Tab
               label="Features"
               value={1}
-              disabled={props.puEditing ? true : false}
+              disabled={!!props.puEditing}
             />
             <Tab label="Planning units" value={2} />
           </Tabs>
           {currentTabIndex === 0 && (
             <ProjectTabContent
               toggleProjectPrivacy={toggleProjectPrivacy}
-              project={props.project}
-              userRole={props.userRole}
               metadata={props.metadata}
-              user={props.user}
               owner={props.owner}
-              handleChange={handleChange}
+              updateDetails={handleChange}
             />
           )}
           {currentTabIndex === 1 && (
-            <SelectFeatures
+            <FeaturesTab
               features={props.features}
               openFeatureMenu={props.openFeatureMenu}
               openFeaturesDialog={props.openFeaturesDialog}
@@ -269,7 +268,6 @@ const InfoPanel = (props) => {
               maxheight={"409px"}
               simple={false}
               showTargetButton={true}
-              userRole={props.userRole}
               toggleFeatureLayer={props.toggleFeatureLayer}
               toggleFeaturePUIDLayer={props.toggleFeaturePUIDLayer}
               selectedFeatures={props.selectedFeatures}
@@ -282,7 +280,7 @@ const InfoPanel = (props) => {
           {currentTabIndex === 2 && (
             <PlanningUnitsTab
               metadata={props.metadata}
-              userRole={props.userRole}
+              userRole={userData.role}
               puEditing={props.puEditing}
               startStopPuEditSession={startStopPuEditSession}
               clearManualEdits={props.clearManualEdits}
@@ -333,7 +331,7 @@ const InfoPanel = (props) => {
                 Settings
               </Button>
 
-              {props.userRole !== "ReadOnly" ? (
+              {userData.role !== "ReadOnly" ? (
                 <>
                   <Button
                     variant="contained"

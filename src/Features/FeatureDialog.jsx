@@ -15,6 +15,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
 import { getArea } from "../Helpers";
+import { selectUserData } from "../slices/authSlice";
 import { toggleFeatureDialog } from "../slices/uiSlice";
 
 const FeatureDialog = ({
@@ -22,25 +23,23 @@ const FeatureDialog = ({
   featureMetadata,
   getTilesetMetadata,
   getProjectList,
-  reportUnits,
 }) => {
   const dispatch = useDispatch();
   const featureDialogStates = useSelector(
     (state) => state.ui.featureDialogStates
   );
+  const userData = useSelector(selectUserData);
 
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpand = () => setExpanded(!expanded);
 
-  const fetchProjectList = () => {
-    getProjectList(featureMetadata, "feature");
-  };
+  const fetchProjectList = () => getProjectList(featureMetadata, "feature");
 
   // Determine unit type and value
   const isShapefile = featureMetadata.source === "Imported shapefile";
   const amount = isShapefile
-    ? getArea(featureMetadata.area, reportUnits, true)
+    ? getArea(featureMetadata.area, userData.report_units, true)
     : featureMetadata.area;
   const unit = isShapefile ? "Area" : "Amount";
 

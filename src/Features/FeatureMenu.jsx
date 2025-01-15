@@ -11,6 +11,7 @@ import RemoveFromMap from "@mui/icons-material/VisibilityOff";
 import RemoveFromProject from "@mui/icons-material/Remove";
 import ZoomIn from "@mui/icons-material/ZoomIn";
 import { generateTableCols } from "../Helpers";
+import { selectUserData } from "../slices/authSlice";
 import { toggleFeatureDialog } from "../slices/uiSlice";
 
 const FeatureMenu = ({
@@ -21,11 +22,11 @@ const FeatureMenu = ({
   zoomToFeature,
   preprocessSingleFeature,
   currentFeature,
-  userData,
   preprocessing,
 }) => {
   const dispatch = useDispatch();
   const featureStates = useSelector((state) => state.ui.featureDialogStates);
+  const userData = useSelector(selectUserData);
 
   const handleInfoMenuItemClick = () => {
     dispatch(
@@ -56,7 +57,7 @@ const FeatureMenu = ({
           leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
           style={{
             display:
-              currentFeature?.old_version || userData.ROLE === "ReadOnly"
+              currentFeature?.old_version || userData.role === "ReadOnly"
                 ? "none"
                 : "block",
           }}
@@ -114,7 +115,7 @@ const FeatureMenu = ({
           leftIcon={<Preprocess style={{ margin: "1px" }} />}
           style={{
             display:
-              currentFeature?.old_version || userData.ROLE === "ReadOnly"
+              currentFeature?.old_version || userData.role === "ReadOnly"
                 ? "none"
                 : "block",
           }}

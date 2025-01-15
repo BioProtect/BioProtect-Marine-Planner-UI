@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Menu from "@mui/material/Menu";
 import MenuBarListItem from "../MenuBarListItem";
 import React from "react";
-import { toggleDialog } from "../slices/userSlice";
+import { toggleDialog } from "../slices/uiSlice";
 
 const UserMenu = (props) => {
   const dispatch = useDispatch();

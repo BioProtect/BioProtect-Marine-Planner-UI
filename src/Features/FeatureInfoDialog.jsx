@@ -18,11 +18,13 @@ import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
+import { selectUserData } from "../slices/authSlice";
 
-const FeatureInfoDialog = ({ loading, feature, updateFeature, userData }) => {
+const FeatureInfoDialog = ({ loading, feature, updateFeature }) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const featureStates = useSelector((state) => state.ui.featureDialogStates);
+  const userData = useSelector(selectUserData);
 
   const closeDialog = () =>
     dispatch(
@@ -65,16 +67,16 @@ const FeatureInfoDialog = ({ loading, feature, updateFeature, userData }) => {
   const getAreaHTML = (rowKey, value) => {
     const color =
       feature.protected_area < feature.target_area &&
-      rowKey === "Area protected"
+        rowKey === "Area protected"
         ? "red"
         : "rgba(0, 0, 0, 0.6)";
 
     return (
       <div
-        title={getArea(value, userData.REPORTUNITS, false, 6)}
+        title={getArea(value, userData.report_units, false, 6)}
         style={{ color }}
       >
-        {getArea(value, userData.REPORTUNITS, true)}
+        {getArea(value, userData.report_units, true)}
       </div>
     );
   };
@@ -94,16 +96,16 @@ const FeatureInfoDialog = ({ loading, feature, updateFeature, userData }) => {
         return row.value === "" || row.value === null
           ? getHTML("Not available", "The feature was not uploaded to Mapbox")
           : getHTML(
-              row.value,
-              "The feature was uploaded to Mapbox with this identifier"
-            );
+            row.value,
+            "The feature was uploaded to Mapbox with this identifier"
+          );
 
       case "Total area":
         return row.value === -1
           ? getHTML(
-              "Not calculated",
-              "Total areas are not available for imported projects"
-            )
+            "Not calculated",
+            "Total areas are not available for imported projects"
+          )
           : getAreaHTML(row.key, row.value);
 
       case "Total":
@@ -111,7 +113,7 @@ const FeatureInfoDialog = ({ loading, feature, updateFeature, userData }) => {
 
       case "Target percent":
       case "Species Penalty Factor":
-        return userData.ROLE === "ReadOnly" ? (
+        return userData.role === "ReadOnly" ? (
           <Typography>{row.value}</Typography>
         ) : (
           <div
@@ -138,13 +140,13 @@ const FeatureInfoDialog = ({ loading, feature, updateFeature, userData }) => {
       case "Preprocessed":
         return row.value
           ? getHTML(
-              "Yes",
-              "The feature has been intersected with the planning units"
-            )
+            "Yes",
+            "The feature has been intersected with the planning units"
+          )
           : getHTML(
-              "No",
-              "The feature has not yet been intersected with the planning units"
-            );
+            "No",
+            "The feature has not yet been intersected with the planning units"
+          );
 
       case "Planning grid area":
       case "Target area":

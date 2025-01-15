@@ -1,17 +1,18 @@
+import { selectUserData, setUserData } from "../slices/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
-import FeaturesList from "./LeftInfoPanel/FeaturesList";
+import FeaturesList from "./FeaturesList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 import Stack from "@mui/material/Stack";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "../slices/uiSlice";
 
-const SelectFeatures = (props) => {
+const FeaturesTab = (props) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-
+  const userData = useSelector(selectUserData);
   const openFeaturesDialog = (evt) => {
     props.openFeaturesDialog(true);
   };
@@ -20,12 +21,10 @@ const SelectFeatures = (props) => {
     <React.Fragment>
       <div className="newPUDialogPane">
         <FeaturesList
-          {...props}
           features={props.features}
           openFeatureMenu={props.openFeatureMenu}
           simple={props.simple}
           updateFeature={props.updateFeature}
-          userRole={props.userRole}
           toggleFeatureLayer={props.toggleFeatureLayer}
           toggleFeaturePUIDLayer={props.toggleFeaturePUIDLayer}
           useFeatureColors={props.useFeatureColors}
@@ -37,10 +36,10 @@ const SelectFeatures = (props) => {
           justifyContent="center"
           alignItems="center"
         >
-          {props.userRole !== "ReadOnly" && props.showTargetButton ? (
+          {userData.role !== "ReadOnly" && props.showTargetButton ? (
             <Button
               variant="contained"
-              onClick={dispatch(
+              onClick={() => dispatch(
                 toggleDialog({
                   dialogName: "targetDialogOpen",
                   isOpen: true,
@@ -52,7 +51,7 @@ const SelectFeatures = (props) => {
             </Button>
           ) : null}
           {(props.metadata && props.metadata.OLDVERSION) ||
-          props.userRole === "ReadOnly" ? null : (
+            userData.role === "ReadOnly" ? null : (
             <Button
               variant="contained"
               label="+/-"
@@ -68,4 +67,4 @@ const SelectFeatures = (props) => {
   );
 };
 
-export default SelectFeatures;
+export default FeaturesTab;

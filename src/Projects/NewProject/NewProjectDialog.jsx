@@ -11,7 +11,7 @@ import MarxanDialog from "../../MarxanDialog";
 import Metadata from "../../Metadata";
 import PlanningUnitsDialog from "../../PlanningGrids/PlanningUnitsDialog";
 import SelectCostFeatures from "../../SelectCostFeatures";
-import SelectFeatures from "../../SelectFeatures";
+import SelectFeatures from "../../LeftInfoPanel/FeaturesTab.jsx";
 
 const NewProjectDialog = (props) => {
   const dispatch = useDispatch();

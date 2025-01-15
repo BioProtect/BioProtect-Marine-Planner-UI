@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import Checkbox from "@mui/material/Checkbox";
 import { Divider } from "@mui/material";
@@ -12,10 +13,12 @@ import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
+import { selectUserData } from "../slices/authSlice";
 
 const UserSettingsDialog = (props) => {
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [options, setOptions] = useState({});
+  const userData = useSelector(selectUserData);
 
   const setOption = (key, value) => {
     setSaveEnabled(true);
@@ -47,7 +50,7 @@ const UserSettingsDialog = (props) => {
   };
 
   const setReportUnit = (event) => {
-    setOption("REPORTUNITS", event.target.value);
+    setOption("report_units", event.target.value);
   };
 
   return (
@@ -87,7 +90,7 @@ const UserSettingsDialog = (props) => {
           <FormLabel id="reportUnitType-label">Area Units</FormLabel>
           <RadioGroup
             aria-labelledby="reportUnitType-label"
-            value={props.userData.REPORTUNITS}
+            value={userData.report_units}
             name="reportUnitType"
             onChange={setReportUnit}
           >
@@ -102,20 +105,11 @@ const UserSettingsDialog = (props) => {
           <FormControlLabel
             control={
               <Checkbox
-                checked={props.userData.USEFEATURECOLORS}
+                checked={userData.use_feature_colors}
                 onChange={toggleUseFeatureColors}
               />
             }
             label="Use Feature Colours"
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={props.userData.SHOWWELCOMESCREEN}
-                onChange={toggleShowWelcomeScreen}
-              />
-            }
-            label="Show welcome screen at startup"
           />
         </FormGroup>
       </div>
