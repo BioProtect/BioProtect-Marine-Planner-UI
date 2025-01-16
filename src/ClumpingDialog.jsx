@@ -70,17 +70,96 @@ const ClumpingDialog = (props) => {
     !isNaN(parseFloat(value)) && isFinite(value) ? value : "";
 
   const selectBlm = (blmValue) => {
-    props.setBlmValue(blmValue);
+    setBlmValue(blmValue);
     props.onOk();
   };
 
+  // Load a solution from another project - used in the clumping dialog - when the solution is loaded the paint properties are set on the individual maps through state changes
+  const loadOtherSolution = async (user, proj, solution) => {
+    const response = await getSolution(user, proj, solution);
+    const paintProperties = getPaintProperties(response.solution, false, false);
+    // Get the proj that matches the proj name from the this.projs property - this was set when the projGroup was created
+    if (projState.projects) {
+      const _projects = projState.projects.filter((item) => item.projectName === proj);
+      // Get which clump it is
+      const { clump } = _projects[0];
+      setMapPaintProperties({ [`mapPP${clump}`]: paintProperties });
+    }
+  };
+
+  const runProjects = async (projects) => {
+    //reset the counter
+    let projectsRun = 0;
+    setClumpingRunning(true);
+    // Iterate through projects using a for...of loop to handle async/await correctly
+    try {
+      for (const proj of projects) {
+        // Start the Marxan job and wait for the response
+        const response = await props.startMarxanJob(
+          "_clumping",
+          proj.projectName,
+          false
+        );
+
+        // Check for errors and proceed if no errors are found
+        if (!this.checkForErrors(response, false)) {
+          await loadOtherSolution(response.user, response.project, 1);
+        }
+        projectsRun += 1;
+        if (projectsRun === 5) {
+          setClumpingRunning(false);
+        }
+      }
+    } catch (error) {
+      // Handle errors if any occur during the process
+      console.error("An error occurred while running projects:", error);
+    }
+  };
+
+  const setBlmValue = async (blmValue) => {
+    const newRunParams = runParams.map((item) => ({
+      key: item.key,
+      value: item.key === "BLM" ? String(blmValue) : item.value,
+    }));
+
+    // Update the run parameters
+    return await updateRunParams(newRunParams);
+  };
+
+  //creates a group of 5 projects with UUIDs in the _clumping folder
+  const createProjectGroupAndRun = async (blmValues) => {
+    const response = await _get(
+      `createProjectGroup?user=${owner}&project=${project}&copies=5&blmValues=${blmValues.join(
+        ","
+      )}`
+    );
+    //run the projects
+    await runProjects(response.data);
+    return "Project group created";
+  };
+
+  const rerunProjects = async (blmChanged, blmValues) => {
+    //reset the paint properties in the clumping dialog
+    resetPaintProperties();
+    //if the blmValues have changed then recreate the project group and run
+    if (blmChanged) {
+      await createProjectGroupAndRun(blmValues);
+    } else {
+      //rerun the projects
+      await runProjects(this.projects);
+    }
+  };
+
   const rerun = () => {
-    props.rerunProjects(blmChanged, blmValues);
+    rerunProjects(blmChanged, blmValues);
     setBlmChanged(false);
   };
 
+
   const closeDialog = () => {
-    if (!props.clumpingRunning) props.hideClumpingDialog();
+    if (!props.clumpingRunning) {
+      props.hideClumpingDialog();
+    }
   };
 
   return (

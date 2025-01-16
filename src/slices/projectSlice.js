@@ -14,6 +14,15 @@ const initialState = {
   registry: INITIAL_VARS,
   status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
+  addToProject: true,
+  project: null,
+  projects: [],
+  projectList: [],
+  projectListDialogHeading: "",
+  projectListDialogTitle: "",
+  projectLoaded: false,
+  projectImpacts: [],
+  projectFeatures: [],
 };
 
 // Thunk to handle server initialization
@@ -62,23 +71,62 @@ const projectSlice = createSlice({
         state.bpServer.isGuestUser = true;
       }
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(initialiseServers.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
-      .addCase(initialiseServers.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.error = null;
-      })
-      .addCase(initialiseServers.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload || "Failed to initialise servers";
-      });
-  },
-});
+    setAddToProject(state, action) {
+      state.addToProject = action.payload;
+    },
+    setProject(state, action) {
+      state.project = action.payload;
+    },
+    setProjectFeatures(state, action) {
+      state.projectFeatures = action.payload;
+    },
+    setProjectImpacts(state, action) {
+      state.projectImpacts = action.payload;
+    },
+    setProjectLoaded(state, action) {
+      state.projectLoaded = action.payload;
+    },
+    setProjectListDialogHeading(state, action) {
+      state.projectListDialogHeading = action.payload;
+    },
+    setProjectListDialogTitle(state, action) {
+      state.projectListDialogTitle = action.payload;
+    },
+    setProjectList(state, action) {
+      state.projectList = action.payload;
+    },
+    setProjects(state, action) {
+      state.projects = action.payload;
+    },
+    extraReducers: (builder) => {
+      builder
+        .addCase(initialiseServers.pending, (state) => {
+          state.status = "loading";
+          state.error = null;
+        })
+        .addCase(initialiseServers.fulfilled, (state, action) => {
+          state.status = "succeeded";
+          state.error = null;
+        })
+        .addCase(initialiseServers.rejected, (state, action) => {
+          state.status = "failed";
+          state.error = action.payload || "Failed to initialise servers";
+        });
+    },
+  });
 
-export const { setBpServers, setBpServer, selectServer } = projectSlice.actions;
+export const {
+  setBpServers,
+  setBpServer,
+  selectServer,
+  setAddToProject,
+  setProjectFeatures,
+  setProjectImpacts,
+  setProjectLoaded,
+  setProjectListDialogHeading,
+  setProjectListDialogTitle,
+  setProjectList,
+  setProjects,
+
+} = projectSlice.actions;
 export default projectSlice.reducer;

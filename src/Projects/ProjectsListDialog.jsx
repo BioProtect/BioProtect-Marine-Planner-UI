@@ -14,14 +14,16 @@ import MarxanDialog from "../MarxanDialog";
 import React from "react";
 import { toggleProjectDialog } from "../slices/uiSlice";
 
-const ProjectsListDialog = ({ userRole, projects, title, heading }) => {
+const ProjectsListDialog = () => {
   const dispatch = useDispatch();
+  const userData = useSelector(selectUserData);
+  const projState = useSelector((state) => state.project);
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
   );
   // Determine the columns based on the user role
   const tableColumns = [
-    ...(userRole === "Admin"
+    ...(userData.userRole === "Admin"
       ? [{ Header: "User", accessor: "user", width: 90 }]
       : []),
     { Header: "Name", accessor: "name", width: 200 },
@@ -42,7 +44,9 @@ const ProjectsListDialog = ({ userRole, projects, title, heading }) => {
     </div>
   );
 
-  if (!projects) return null;
+  if (!projState.projectList) {
+    return null;
+  }
 
   const closeDialog = () =>
     dispatch(
@@ -57,12 +61,12 @@ const ProjectsListDialog = ({ userRole, projects, title, heading }) => {
       open={projectDialogStates.projectsListDialogOpen}
       showCancelButton={false}
       autoDetectWindowHeight={false}
-      title={title}
+      title={projState.projectListDialogTitle}
       contentWidth={500}
       helpLink={"user.html#projects-list"}
       onOk={() => closeDialog()}
     >
-      <div style={{ marginBottom: "5px" }}>{heading}</div>
+      <div style={{ marginBottom: "5px" }}>{projState.projectListDialogHeading}</div>
       <div id="failedProjectsTable">
         <TableContainer component={Paper}>
           <Table>
@@ -79,7 +83,7 @@ const ProjectsListDialog = ({ userRole, projects, title, heading }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {projects.map((row, index) => (
+              {projState.projectList.map((row, index) => (
                 <TableRow key={index}>
                   {tableColumns.map((col) => (
                     <TableCell key={col.accessor}>

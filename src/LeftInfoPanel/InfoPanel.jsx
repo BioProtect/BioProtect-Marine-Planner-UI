@@ -21,6 +21,7 @@ const activeTabArr = ["project", "features", "planning_units"];
 const InfoPanel = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const projState = useSelector((state) => state.project);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectState = useSelector((state) => state.project);
   const userData = useSelector(selectUserData);
@@ -259,7 +260,6 @@ const InfoPanel = (props) => {
           )}
           {currentTabIndex === 1 && (
             <FeaturesTab
-              features={props.features}
               openFeatureMenu={props.openFeatureMenu}
               openFeaturesDialog={props.openFeaturesDialog}
               metadata={props.metadata}
@@ -351,7 +351,7 @@ const InfoPanel = (props) => {
                     onClick={props.runMarxan}
                     disabled={
                       props.preprocessing ||
-                      props.features.length === 0 ||
+                      projState.projectFeatures.length === 0 ||
                       props.puEditing
                     }
                     secondary="true"

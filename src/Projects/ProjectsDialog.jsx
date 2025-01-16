@@ -1,18 +1,17 @@
 import React, { useCallback, useState } from "react";
-import { setActiveTab, toggleDialog } from "../slices/uiSlice";
+import { setActiveTab, toggleDialog, toggleProjectDialog } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
-import { toggleProjectDialog } from "../slices/uiSlice";
 
 const ProjectsDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectState = useSelector((state) => state.project);
+  const projState = useSelector((state) => state.project);
 
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
@@ -81,9 +80,13 @@ const ProjectsDialog = (props) => {
     const dateA = new Date(a.split("/").reverse().join(" "));
     const dateB = new Date(b.split("/").reverse().join(" "));
 
-    if (dateA > dateB) return desc ? -1 : 1;
-    if (dateA < dateB) return desc ? 1 : -1;
-    return 0;
+    if (dateA > dateB) {
+      return desc ? -1 : 1;
+    } else if (dateA < dateB) {
+      return desc ? 1 : -1;
+    } else {
+      return 0;
+    }
   }, []);
 
   const baseColumns = [
@@ -98,7 +101,7 @@ const ProjectsDialog = (props) => {
 
   const columns = generateTableCols(tableColumns);
 
-  if (props.projects) {
+  if (projState.projects) {
     return (
       <MarxanDialog
         open={projectDialogStates.projectsDialogOpen}
@@ -137,7 +140,7 @@ const ProjectsDialog = (props) => {
         <div id="projectsTable">
           <BioprotectTable
             title="Projects"
-            data={props.projects}
+            data={projState.projects}
             tableColumns={columns}
             selected={[props.project]}
             ableToSelectAll={false}

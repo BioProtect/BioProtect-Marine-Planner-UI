@@ -20,11 +20,13 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
+import { setAddToProject } from "../slices/projectSlice";
 
 // Functional component version using React 18 and MUI 5
 const NewFeatureDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const projState = useSelector((state) => state.project);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
@@ -49,9 +51,7 @@ const NewFeatureDialog = (props) => {
     props.createNewFeature(name, description);
   };
 
-  const handleAddToProjectChange = (evt) => {
-    this.props.setAddToProject(evt.target.checked);
-  };
+  const handleAddToProjectChange = (evt) => dispatch(setAddToProject(evt.target.checked));
 
   return (
     <Dialog
@@ -87,7 +87,7 @@ const NewFeatureDialog = (props) => {
           />
         </FormControl>
         <FormControlLabel
-          control={<Checkbox checked={props.addToProject} />}
+          control={<Checkbox checked={projState.addToProject} />}
           label="Add to Project"
           onChange={handleAddToProjectChange}
         />
@@ -100,9 +100,9 @@ const NewFeatureDialog = (props) => {
           onClick={handleCreateNewFeature}
           color="primary"
           variant="contained"
-          // disabled={
-          //   !(name !== "" && description !== "" && props.loading === false)
-          // }
+        // disabled={
+        //   !(name !== "" && description !== "" && props.loading === false)
+        // }
         >
           Create
         </Button>

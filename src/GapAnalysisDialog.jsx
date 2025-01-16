@@ -31,12 +31,11 @@ const GapAnalysisDialog = ({
   setGapAnalysis,
   gapAnalysis,
   preprocessing,
-  projectFeatures,
   metadata,
 }) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectState = useSelector((state) => state.project);
+  const projState = useSelector((state) => state.project);
 
   const [showChart, setShowChart] = useState(false);
 
@@ -70,7 +69,7 @@ const GapAnalysisDialog = ({
 
   const preparedData = useMemo(() => {
     let data = gapAnalysis.map((item) => {
-      const stats = projectFeatures.find(
+      const stats = projState.projectFeatures.find(
         (feature) => feature.feature_class_name === item._feature_class_name
       );
 
@@ -84,7 +83,7 @@ const GapAnalysisDialog = ({
     );
 
     return data.filter((item) => item.country_area > 0);
-  }, [gapAnalysis, projectFeatures]);
+  }, [gapAnalysis, projState.projectFeatures]);
 
   const targetsMetCount = preparedData.filter(
     (item) => item.current_protected_percent >= item.target_value
@@ -132,7 +131,7 @@ const GapAnalysisDialog = ({
       <Box className="analysisReport">
         <Typography variant="body1">
           Gap Analysis for {metadata.pu_country} using the{" "}
-          {projectState.bpServer.wdpa_version} version of the WDPA.
+          {projState.bpServer.wdpa_version} version of the WDPA.
         </Typography>
         <Box
           className="analysisReportInner"

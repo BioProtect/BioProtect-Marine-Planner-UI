@@ -15,10 +15,12 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
+import { setAddToProject } from "../slices/projectSlice";
 
 const ImportFeaturesDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const projState = useSelector((state) => state.project);
   const featureDialogStates = useSelector(
     (state) => state.ui.featureDialogStates
   );
@@ -52,9 +54,6 @@ const ImportFeaturesDialog = (props) => {
   const handleDescriptionChange = (event) => setDescription(event.target.value);
   const handleSplitFieldChange = (event) => setSplitField(event.target.value);
   const resetFieldnames = () => setFieldNames([]);
-  const setFilename = (filename) => {
-    dispatch(setFeatureDatasetFilename(filename));
-  };
 
   const getShapefileFieldnames = () => {
     props.getShapefileFieldnames(shapeFile).then((response) => {
@@ -70,9 +69,7 @@ const ImportFeaturesDialog = (props) => {
       });
   };
 
-  const handleAddToProjectChange = (evt) => {
-    props.setAddToProject(evt.target.checked);
-  };
+  const handleAddToProjectChange = (evt) => dispatch(setAddToProject(evt.target.checked));
 
   const closeDialog = () => {
     if (shapeFile) {
@@ -114,7 +111,6 @@ const ImportFeaturesDialog = (props) => {
             fileMatch=".zip"
             mandatory={true}
             filename={uiState.featureDatasetFilename}
-            setFilename={setFilename}
             destFolder="imports"
             label="Shapefile"
           />
@@ -179,7 +175,7 @@ const ImportFeaturesDialog = (props) => {
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={props.addToProject}
+                  checked={projState.addToProject}
                   onChange={handleAddToProjectChange}
                 />
               }

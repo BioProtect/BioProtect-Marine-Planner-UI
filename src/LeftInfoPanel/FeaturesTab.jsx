@@ -21,7 +21,6 @@ const FeaturesTab = (props) => {
     <React.Fragment>
       <div className="newPUDialogPane">
         <FeaturesList
-          features={props.features}
           openFeatureMenu={props.openFeatureMenu}
           simple={props.simple}
           updateFeature={props.updateFeature}

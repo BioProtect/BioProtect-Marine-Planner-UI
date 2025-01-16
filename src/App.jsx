@@ -11,6 +11,13 @@ import {
   selectServer,
   setBpServer,
   setBpServers,
+  setProjectFeatures,
+  setProjectImpacts,
+  setProjectList,
+  setProjectListDialogHeading,
+  setProjectListDialogTitle,
+  setProjectLoaded,
+  setProjects,
 } from "./slices/projectSlice";
 import { selectCurrentToken, selectCurrentUserId, selectUserData, setUserData } from "./slices/authSlice";
 import {
@@ -70,14 +77,6 @@ import PlanningGridsDialog from "./PlanningGrids/PlanningGridsDialog";
 import ProfileDialog from "./User/ProfileDialog";
 import ProjectsDialog from "./Projects/ProjectsDialog";
 import ProjectsListDialog from "./Projects/ProjectsListDialog";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
 /*global fetch*/
 /*global URLSearchParams*/
 /*global AbortController*/
@@ -117,25 +116,17 @@ mapboxgl.accessToken =
 const App = () => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const projState = useSelector((state) => state.project);
+
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectDialogs = useSelector((state) => state.ui.projectDialogStates);
   const featureDialogs = useSelector((state) => state.ui.featureDialogStates);
   const planningGrids = useSelector((state) => state.ui.planningGridDialogStates);
-  const projectState = useSelector((state) => state.project);
 
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
 
 
-  const [addToProject, setAddToProject] = useState(true);
   const [project, setProject] = useState("");
-  const [projects, setProjects] = useState([]);
-  const [projectList, setProjectList] = useState([]);
-  const [projectListDialogHeading, setProjectListDialogHeading] = useState("");
-  const [projectListDialogTitle, setProjectListDialogTitle] = useState("");
-  const [projectLoaded, setProjectLoaded] = useState(false);
-  const [projectImpacts, setProjectImpacts] = useState([]);
-  const [projectFeatures, setProjectFeatures] = useState([]);
-
 
 
   const [brew, setBrew] = useState(null);
@@ -240,14 +231,14 @@ const App = () => {
     (servername) => {
       // Remove the search part of the URL
       window.history.replaceState({}, document.title, "/");
-      const server = projectState.bpServers.find(
+      const server = projState.bpServers.find(
         (item) => item.name === servername
       );
       if (server) {
         dispatch(selectServer(server));
       }
     },
-    [dispatch, projectState.bpServers]
+    [dispatch, projState.bpServers]
   );
 
   useEffect(() => {
@@ -266,9 +257,12 @@ const App = () => {
         setRegistry(INITIAL_VARS);
         setInitialLoading(false);
 
-        if (searchParams.has("project")) openShareableLink(searchParams);
-        if (searchParams.has("server"))
+        if (searchParams.has("project")) {
+          openShareableLink(searchParams);
+        }
+        if (searchParams.has("server")) {
           selectServerByName(searchParams.get("server"));
+        }
       } catch (error) {
         console.error("Error fetching global variables:", error);
       }
@@ -278,7 +272,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (planningCostsTrigger && projectLoaded && owner !== "" && user !== "") {
+    if (planningCostsTrigger && projState.projectLoaded && owner !== "" && user !== "") {
       (async () => {
         await getPlanningUnitsCostData();
         setPlanningCostsTrigger(false);
@@ -317,20 +311,16 @@ const App = () => {
           response.metadata.hasOwnProperty("error") &&
           response.metadata.error != null)
       ) {
-        const err = response.error ? response.error : response.metadata.error;
+        const err = response.error || response.metadata.error;
         if (snackbarOpen) {
           setSnackBar(err);
         }
         return true;
-      } else {
+      } else if (response && response.warning && snackbarOpen) {
         // Handle warnings from server responses
-        if (response && response.warning) {
-          if (snackbarOpen) {
-            setSnackBar(response.warning);
-          }
-        }
-        return false;
+        setSnackBar(response.warning);
       }
+      return false;
     },
     [setSnackBar]
   );
@@ -363,12 +353,6 @@ const App = () => {
     setWdpaVectorTileLayer(`wdpa_${version}_polygons`);
   }, []);
 
-  const switchToGuestUser = useCallback(async () => {
-    // Set the state to switch to guest user
-    setPassword("password");
-    setUser("guets");
-    return "Switched to guest user";
-  }, []);
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -384,7 +368,7 @@ const App = () => {
     (params, timeout = CONSTANTS.TIMEOUT) => {
       setLoading(true);
       return new Promise((resolve, reject) => {
-        jsonp(projectState.bpServer.endpoint + params, { timeout })
+        jsonp(projState.bpServer.endpoint + params, { timeout })
           .promise.then((response) => {
             setLoading(false);
             checkForErrors(response)
@@ -420,7 +404,7 @@ const App = () => {
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         const response = await fetch(
-          projectState.bpServer.endpoint + method,
+          projState.bpServer.endpoint + method,
           formData,
           {
             method: "POST",
@@ -437,17 +421,15 @@ const App = () => {
           throw new Error(data.error);
         }
       } catch (err) {
-        if (err.name !== "AbortError") {
-          if (err.message !== "Network Error") {
-            setSnackBar(err.message);
-          }
+        if (err.name !== "AbortError" && err.message !== "Network Error") {
+          setSnackBar(err.message);
         }
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    [projectState.bpServer.endpoint, checkForErrors, setSnackBar]
+    [projState.bpServer.endpoint, checkForErrors, setSnackBar]
   );
 
   // Memoized WebSocket function
@@ -456,7 +438,7 @@ const App = () => {
       return new Promise((resolve, reject) => {
         // Create a new WebSocket instance
         const ws = new WebSocket(
-          projectState.bpServer.websocketEndpoint + params
+          projState.bpServer.websocketEndpoint + params
         );
 
         // WebSocket event handlers
@@ -497,14 +479,15 @@ const App = () => {
         };
       });
     },
-    [projectState.bpServer.websocketEndpoint, checkForErrors]
+    [projState.bpServer.websocketEndpoint, checkForErrors]
   );
 
   //called when any websocket message is received - this logic removes duplicate messages
   const wsMessageCallback = async (message) => {
     //dont log any clumping projects
-    if (message.user === "_clumping") return;
-    //log the message
+    if (message.user === "_clumping") {
+      return;
+    }//log the message
     logMessage(message);
     switch (message.status) {
       case "Started": //from the open method of all MarxanWebSocketHandler subclasses
@@ -530,12 +513,12 @@ const App = () => {
     }
   };
 
+
+
+
   //logs the message if necessary - this removes duplicates
   const logMessage = useCallback((message) => {
-    if (message.status === "SocketClosedUnexpectedly") {
-      // Server closed WebSocket unexpectedly
-      // Remove the "Preprocessing" messages
-      // Reset the PID
+    const handleSocketClosedUnexpectedly = () => {
       messageLogger({
         method: message.method,
         status: "Finished",
@@ -543,46 +526,52 @@ const App = () => {
       });
       removeMessageFromLog("Preprocessing");
       setPid(0);
-    } else {
-      // Check if the message has a PID and handle accordingly
-      if (message.hasOwnProperty("pid") && message.status !== "RunningMarxan") {
-        const existingMessages = logMessages.filter(
-          (_message) =>
-            _message.hasOwnProperty("pid") && _message.pid === message.pid
-        );
+    };
 
-        if (existingMessages.length > 0) {
-          // Compare with the latest status
-          if (
-            message.status !==
-            existingMessages[existingMessages.length - 1].status
-          ) {
-            // Remove the processing message if status is "Finished"
-            if (message.status === "Finished") {
-              removeMessageFromLog("RunningQuery", message.pid);
-            }
-            messageLogger(message);
+    const handlePidMessage = () => {
+      if (message.status === "RunningMarxan") {
+        return;
+      }
+      const existingMessages = logMessages.filter(
+        (_message) => _message.pid === message.pid
+      );
+
+      if (existingMessages.length > 0) {
+        const latestStatus = existingMessages[existingMessages.length - 1].status;
+
+        if (message.status !== latestStatus) {
+          if (message.status === "Finished") {
+            removeMessageFromLog("RunningQuery", message.pid);
           }
-        } else {
-          // Log the first message for that PID
           messageLogger(message);
         }
       } else {
-        // Remove duplicate messages from the log (unless they have specific statuses)
-        if (
-          !(
-            message.status === "RunningMarxan" ||
-            message.status === "Started" ||
-            message.status === "Finished"
-          )
-        ) {
-          removeMessageFromLog(message.status);
-        }
-        // Log the message
+        // First message for this PID
         messageLogger(message);
       }
+    };
+
+    const handleGeneralMessage = () => {
+      const isDuplicateAllowed =
+        message.status === "RunningMarxan" ||
+        message.status === "Started" ||
+        message.status === "Finished";
+
+      if (!isDuplicateAllowed) {
+        removeMessageFromLog(message.status);
+      }
+      messageLogger(message);
+    };
+
+    // Main logic
+    if (message.status === "SocketClosedUnexpectedly") {
+      handleSocketClosedUnexpectedly();
+    } else if (message.hasOwnProperty("pid")) {
+      handlePidMessage();
+    } else {
+      handleGeneralMessage();
     }
-  }, []);
+  }, [logMessages, messageLogger, removeMessageFromLog, setPid]);
 
   // removes a message from the log by matching on pid and status or just status
   // update the messages state - filter previous messages state by pid and status
@@ -609,7 +598,9 @@ const App = () => {
   const startLogging = (clearLog = false) => {
     //switches the results pane to the log tab and clears log if needs be
     setActiveTab("log");
-    if (clearLog) setLogMessages([]);
+    if (clearLog) {
+      setLogMessages([]);
+    }
   };
 
   // Main logging method - all log messages use this method
@@ -643,8 +634,8 @@ const App = () => {
 
   //deletes all of the projects belonging to the passed user from the state
   const deleteProjectsForUser = (user) => {
-    const updatedProjects = projects.filter((project) => project.user !== user);
-    setProjects(updatedProjects);
+    const updatedProjects = projState.projects.filter((project) => project.user !== user);
+    dispatch(setProjects(updatedProjects));
   };
 
   const createNewUser = async (user, password, name, email) => {
@@ -711,7 +702,7 @@ const App = () => {
         );
 
         // Load the next available project
-        const nextProject = projects.find((project) => project.user !== user);
+        const nextProject = projState.projects.find((project) => project.user !== user);
         if (nextProject) {
           // Import loadProject from the appropriate file if necessary
           await loadProject(nextProject.name, nextProject.user);
@@ -751,22 +742,15 @@ const App = () => {
   const postLoginSetup = async ({ userId, accessToken }) => {
     try {
       const userResp = await _get(`users/${userId}`);
-      console.log("userResp", userResp)
       dispatch(setUserData(userResp));
-      console.log("dispatch(setUserData(userResp)) ");
       setDismissedNotifications(userResp.dismissedNotifications || []);
-      console.log("setDismissedNotifications(userResp.dismissedNotifications || [])");
       setResultsPanelOpen(true);
-      console.log("setResultsPanelOpen(true); ")
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
-      console.log("set InfoPanel open....")
       const current_basemap = basemaps.find(
         (item) => item.name === userResp.basemap
       );
       await loadBasemap(current_basemap);
-      console.log("loaded basemap....")
       const speciesData = await _get("getAllSpeciesData");
-      console.log("speciesData")
       dispatch(setAllFeatures(speciesData.data));
 
       await loadProject(
@@ -792,7 +776,7 @@ const App = () => {
     setResultsPanelOpen(false);
     setRenderer({});
     setUser("");
-    setProjectFeatures([]);
+    dispatch(setProjectFeatures([]));
     setProject("");
     setPlanningUnits([]);
     setOwner("");
@@ -882,7 +866,7 @@ const App = () => {
       ]);
     }
     //see if there is a new version of the marxan-server software
-    if (projectState.bpServer.server_version !== registry.SERVER_VERSION) {
+    if (projState.bpServer.server_version !== registry.SERVER_VERSION) {
       addNotifications([
         {
           id: "marxan_server_update_" + registry.SERVER_VERSION,
@@ -896,7 +880,7 @@ const App = () => {
       ]);
     }
     //check that there is enough disk space
-    if (projectState.bpServer.disk_space < 1000) {
+    if (projState.bpServer.disk_space < 1000) {
       addNotifications([
         {
           id: "hardware_1000",
@@ -905,7 +889,7 @@ const App = () => {
           showForRoles: ["Admin"],
         },
       ]);
-    } else if (projectState.bpServer.disk_space < 2000) {
+    } else if (projState.bpServer.disk_space < 2000) {
       addNotifications([
         {
           id: "hardware_2000",
@@ -914,7 +898,7 @@ const App = () => {
           showForRoles: ["Admin"],
         },
       ]);
-    } else if (projectState.bpServer.disk_space < 3000) {
+    } else if (projState.bpServer.disk_space < 3000) {
       addNotifications([
         {
           id: "hardware_3000",
@@ -1046,7 +1030,7 @@ const App = () => {
       setFiles({ ...projectResp.files });
       setCostnames(projectResp.costnames);
       setOwner(user);
-      setProjectLoaded(true);
+      dispatch(setProjectLoaded(true));
       setPlanningCostsTrigger(true);
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
@@ -1141,7 +1125,7 @@ const App = () => {
 
     // Update state
     dispatch(setAllFeatures(processedFeatures));
-    setProjectFeatures(processedFeatures.filter((item) => item.selected));
+    dispatch(setProjectFeatures(processedFeatures.filter((item) => item.selected)));
   };
 
   //adds the required attributes for the features to work in the marxan web app - these are the default values
@@ -1280,7 +1264,7 @@ const App = () => {
         );
 
         // Find the next available project
-        const nextProject = projects.find((p) => p.name !== project);
+        const nextProject = projState.projects.find((p) => p.name !== project);
 
         if (nextProject) {
           await loadProject(nextProject.name, user);
@@ -1300,7 +1284,7 @@ const App = () => {
         `exportProject?user=${user}project=${proj}`,
         wsMessageCallback
       );
-      return projectState.bpServer.endpoint + "exports/" + message.filename;
+      return projState.bpServer.endpoint + "exports/" + message.filename;
     } catch (error) {
       console.log(error);
     }
@@ -1338,7 +1322,7 @@ const App = () => {
       (proj) =>
         !(proj.private && proj.user !== user && userData.role !== "Admin")
     );
-    setProjects(projects);
+    dispatch(setProjects(projects));
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -1416,19 +1400,14 @@ const App = () => {
     const formData = new FormData();
     formData.append("user", owner);
     formData.append("project", project);
-    //prepare the data that will populate the spec.dat file
-    formData.append(
-      "interest_features",
-      projectFeatures.map((item) => item.id).join(",")
-    );
-    formData.append(
-      "target_values",
-      projectFeatures.map((item) => item.target_value).join(",")
-    );
-    formData.append(
-      "spf_values",
-      projectFeatures.map((item) => item.spf).join(",")
-    );
+    // Helper function to join feature properties
+    const joinFeatureProperties = (property) =>
+      projState.projectFeatures.map((item) => item[property]).join(",");
+
+    // Append dynamic values
+    formData.append("interest_features", joinFeatureProperties("id"));
+    formData.append("target_values", joinFeatureProperties("target_value"));
+    formData.append("spf_values", joinFeatureProperties("spf"));
     return await _post("updateSpecFile", formData);
   };
 
@@ -1457,7 +1436,7 @@ const App = () => {
 
   //preprocess synchronously, i.e. one after another
   const preprocessAllFeatures = async () => {
-    for (const feature of projectFeatures) {
+    for (const feature of projState.projectFeatures) {
       if (!feature.preprocessed) {
         await preprocessFeature(feature);
       }
@@ -1579,7 +1558,7 @@ const App = () => {
 
     // Update state with the updated features
     dispatch(setAllFeatures(updatedFeatures));
-    setProjectFeatures(updatedFeatures.filter((item) => item.selected));
+    dispatch(setProjectFeatures(updatedFeatures.filter((item) => item.selected)));
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -1787,18 +1766,7 @@ const App = () => {
     }
   };
 
-  // Load a solution from another project - used in the clumping dialog - when the solution is loaded the paint properties are set on the individual maps through state changes
-  const loadOtherSolution = async (user, proj, solution) => {
-    const response = await getSolution(user, proj, solution);
-    const paintProperties = getPaintProperties(response.solution, false, false);
-    // Get the proj that matches the proj name from the this.projs property - this was set when the projGroup was created
-    if (projects) {
-      const _projects = projects.filter((item) => item.projectName === proj);
-      // Get which clump it is
-      const clump = _projects[0].clump;
-      setMapPaintProperties({ [`mapPP${clump}`]: paintProperties });
-    }
-  };
+
 
   // Gets a solution
   const getSolution = async (user, proj, solution) =>
@@ -2259,7 +2227,7 @@ const App = () => {
         new Set(idFeatures.map((item) => item.sourceLayer))
       );
       idFeatures = uniqueSourceLayers.map((sourceLayer) =>
-        projectFeatures.find(
+        projState.projectFeatures.find(
           (feature) => feature.feature_class_name === sourceLayer
         )
       );
@@ -2304,7 +2272,7 @@ const App = () => {
     );
     if (response.data.features.length) {
       //if there are some features for the planning unit join the ids onto the full feature data from the state.projectFeatures array
-      joinArrays(response.data.features, projectFeatures, "species", "id");
+      joinArrays(response.data.features, projState.projectFeatures, "species", "id");
     }
     //set the state to update the identify popup
     setIdentifyPlanningUnits({
@@ -2565,8 +2533,8 @@ const App = () => {
   //adds the WDPA vector tile layer source - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
   const addWDPASource = () => {
     //add the source for the wdpa
-    const yr = projectState.bpServer.wdpa_version.substr(-4); //get the year from the wdpa_version
-    const attribution = `IUCN and UNEP-WCMC (${yr}), The World Database on Protected Areas (WDPA) ${projectState.bpServer.wdpa_version}, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
+    const yr = projState.bpServer.wdpa_version.substr(-4); //get the year from the wdpa_version
+    const attribution = `IUCN and UNEP-WCMC (${yr}), The World Database on Protected Areas (WDPA) ${projState.bpServer.wdpa_version}, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
 
     const tiles = [
       `${registry.WDPA.tilesUrl}layer=marxan:${wdpaVectorTileLayer}&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}`,
@@ -3040,7 +3008,7 @@ const App = () => {
       const response = await _get(
         `exportPlanningUnitGrid?name=${feature_class_name}`
       );
-      return `${projectState.bpServer.endpoint}exports/${response.filename}`;
+      return `${projState.bpServer.endpoint}exports/${response.filename}`;
     } catch (error) {
       throw new Error("Failed to export planning grid");
     }
@@ -3065,8 +3033,7 @@ const App = () => {
         300000
       );
       setLoading(true);
-      const poll = await pollMapbox(response.uploadid);
-      return poll;
+      return await pollMapbox(response.uploadid);
     } catch (error) {
       console.error();
       throw error;
@@ -3149,7 +3116,7 @@ const App = () => {
 
   const openFeaturesDialog = async (showClearSelectAll) => {
     // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
-    if (projectState.bpServer.system !== "Windows" && !metadata.OLDVERSION) {
+    if (projState.bpServer.system !== "Windows" && !metadata.OLDVERSION) {
       await refreshFeatures();
     }
     setAddingRemovingFeatures(showClearSelectAll);
@@ -3173,7 +3140,7 @@ const App = () => {
 
   const openPlanningGridsDialog = async () => {
     //refresh planning grids if using a hosted service - other users could have created/deleted items
-    if (projectState.bpServer.system !== "Windows") {
+    if (projState.bpServer.system !== "Windows") {
       await getPlanningUnitGrids();
     }
     dispatch(
@@ -3277,7 +3244,7 @@ const App = () => {
   const getAtlasLayers = async () => {
     try {
       const response = await fetch(
-        projectState.bpServer.endpoint + "getAtlasLayers",
+        projState.bpServer.endpoint + "getAtlasLayers",
         {
           credentials: "include",
         }
@@ -3444,7 +3411,7 @@ const App = () => {
       setAllImpacts(impacts);
 
       // Update projectImpacts based on the selected impacts
-      setProjectImpacts(impacts.filter((item) => item.selected));
+      dispatch(setProjectImpacts(impacts.filter((item) => item.selected)));
     }
   };
 
@@ -3542,7 +3509,7 @@ const App = () => {
     if (index !== -1) {
       features[index] = { ...features[index], ...newProps };
       dispatch(setAllFeatures(features));
-      setProjectFeatures(features.filter((item) => item.selected));
+      dispatch(setProjectFeatures(features.filter((item) => item.selected)));
     }
   };
 
@@ -3638,7 +3605,7 @@ const App = () => {
 
     // Apply updates to state
     dispatch(setAllFeatures(updatedFeatures));
-    setProjectFeatures(updatedFeatures.filter((item) => item.selected));
+    dispatch(setProjectFeatures(updatedFeatures.filter((item) => item.selected)));
     // Persist changes to the server if the user is not read-only
     if (userData.role !== "ReadOnly") {
       await updateSpecFile();
@@ -3674,7 +3641,7 @@ const App = () => {
 
     // Set the features in app state
     dispatch(setAllFeatures(features));
-    setProjectFeatures(features.filter((item) => item.selected));
+    dispatch(setProjectFeatures(features.filter((item) => item.selected)));
     // Persist the changes to the server
     if (userData.role !== "ReadOnly") {
       await updateSpecFile();
@@ -3891,7 +3858,7 @@ const App = () => {
 
   //hides the feature layer
   const hideFeatureLayer = () => {
-    projectFeatures.forEach((feature) => {
+    projState.projectFeatures.forEach((feature) => {
       if (feature.feature_layer_loaded) {
         toggleFeatureLayer(feature);
       }
@@ -4080,14 +4047,10 @@ const App = () => {
     return await runGapAnalysis();
   };
 
-  const showProjectListDialog = (
-    projectList,
-    projectListDialogTitle,
-    projectListDialogHeading
-  ) => {
-    setProjectList(projectList);
-    setProjectListDialogHeading(projectListDialogHeading);
-    setProjectListDialogTitle(projectListDialogTitle);
+  const showProjectListDialog = (listOfProjects, title, heading) => {
+    dispatch(setProjectList(listOfProjects));
+    dispatch(setProjectListDialogHeading(heading));
+    dispatch(setProjectListDialogTitle(title));
     dispatch(
       toggleProjectDialog({
         dialogName: "projectsListDialogOpen",
@@ -4353,31 +4316,15 @@ const App = () => {
     dispatch(toggleDialog({ dialogName: "clumpingDialogOpen", isOpen: false }));
   };
 
-  //creates a group of 5 projects with UUIDs in the _clumping folder
-  const createProjectGroupAndRun = async (blmValues) => {
-    //clear any exists projects
-    let _projects = undefined;
-    if (_projects) {
-      await deleteProjects();
-    }
-    const response = await _get(
-      `createProjectGroup?user=${owner}&project=${project}&copies=5&blmValues=${blmValues.join(
-        ","
-      )}`
-    );
-    // Set the local variable for the projects
-    _projects = response.data;
-    //run the projects
-    await runProjects(response.data);
-    return "Project group created";
-  };
+
 
   //deletes the projects from the _clumping folder
   const deleteProjects = async () => {
-    if (this.projects) {
-      const projectNames = this.projects.map((item) => item.projectName);
+    let _projects = [...projState.projects];
+    if (_projects) {
+      const projectNames = _projects.map((item) => item.projectName);
       //clear the local variable
-      this.projects = undefined;
+      _projects = undefined;
       try {
         await _get(`deleteProjects?projectNames=${projectNames.join(",")}`);
         return "Projects deleted";
@@ -4387,62 +4334,7 @@ const App = () => {
     }
   };
 
-  const runProjects = async (projects) => {
-    //reset the counter
-    this.projectsRun = 0;
-    //set the intitial state
-    setClumpingRunning(true);
-    // Iterate through projects using a for...of loop to handle async/await correctly
-    try {
-      for (const proj of projects) {
-        // Start the Marxan job and wait for the response
-        const response = await startMarxanJob(
-          "_clumping",
-          proj.projectName,
-          false
-        );
 
-        // Check for errors and proceed if no errors are found
-        if (!this.checkForErrors(response, false)) {
-          // Run completed - get a single solution
-          await loadOtherSolution(response.user, response.project, 1);
-        }
-
-        // Increment the project counter
-        this.projectsRun += 1;
-
-        // Update the state when the counter reaches 5
-        if (this.projectsRun === 5) {
-          setClumpingRunning(false);
-        }
-      }
-    } catch (error) {
-      // Handle errors if any occur during the process
-      console.error("An error occurred while running projects:", error);
-    }
-  };
-
-  const rerunProjects = async (blmChanged, blmValues) => {
-    //reset the paint properties in the clumping dialog
-    resetPaintProperties();
-    //if the blmValues have changed then recreate the project group and run
-    if (blmChanged) {
-      await createProjectGroupAndRun(blmValues);
-    } else {
-      //rerun the projects
-      await runProjects(this.projects);
-    }
-  };
-
-  const setBlmValue = async (blmValue) => {
-    const newRunParams = runParams.map((item) => ({
-      key: item.key,
-      value: item.key === "BLM" ? String(blmValue) : item.value,
-    }));
-
-    // Update the run parameters
-    return await updateRunParams(newRunParams);
-  };
 
   const resetPaintProperties = () => {
     //reset the paint properties
@@ -4680,7 +4572,7 @@ const App = () => {
             users={users}
             deleteUser={handleDeleteUser}
             changeRole={changeRole}
-            guestUserEnabled={projectState.bpServer.guestUserEnabled}
+            guestUserEnabled={projState.bpServer.guestUserEnabled}
           />
           <ProfileDialog
             open={dialogStates.profileDialogOpen}
@@ -4703,7 +4595,6 @@ const App = () => {
             pid={pid}
             renameProject={renameProject}
             renameDescription={renameDescription}
-            features={projectFeatures}
             setPUTabInactive={setPUTabInactive}
             setPUTabActive={setPUTabActive}
             startPuEditSession={startPuEditSession}
@@ -4774,7 +4665,6 @@ const App = () => {
             onCancel={() => closeProjectsDialog()}
             project={project}
             loading={loading}
-            projects={projects}
             oldVersion={metadata?.OLDVERSION}
             setProject={setProject}
             deleteProject={deleteProject}
@@ -4784,6 +4674,7 @@ const App = () => {
             unauthorisedMethods={unauthorisedMethods}
             userRole={userData.role}
           />
+          <ProjectsListDialog />
           <NewProjectDialog
             registry={registry}
             loading={loading}
@@ -4835,8 +4726,6 @@ const App = () => {
             closeNewFeatureDialog={closeNewFeatureDialog}
             loading={loading || uploading}
             createNewFeature={createNewFeature}
-            addToProject={addToProject}
-            setAddToProject={setAddToProject}
           />
           <ImportFeaturesDialog
             importFeatures={importFeatures}
@@ -4845,8 +4734,6 @@ const App = () => {
             unzipShapefile={unzipShapefile}
             getShapefileFieldnames={getShapefileFieldnames}
             deleteShapefile={deleteShapefile}
-            addToProject={addToProject}
-            setAddToProject={setAddToProject}
           />
           <ImportFromWebDialog
             open={dialogStates.importFromWebDialogOpen}
@@ -4860,8 +4747,6 @@ const App = () => {
             }
             loading={loading || preprocessing || uploading}
             importFeatures={importFeaturesFromWeb}
-            addToProject={addToProject}
-            setAddToProject={setAddToProject}
           />
           <PlanningGridsDialog
             loading={loading}
@@ -4879,12 +4764,6 @@ const App = () => {
             planningGridMetadata={planningGridMetadata}
             getTilesetMetadata={getMetadata}
             getProjectList={getProjectList}
-          />
-          <ProjectsListDialog
-            projects={projectList}
-            userRole={userData.role}
-            title={projectListDialogTitle}
-            heading={projectListDialogHeading}
           />
           <CostsDialog
             unauthorisedMethods={unauthorisedMethods}
@@ -4930,10 +4809,9 @@ const App = () => {
             mapPaintProperties={mapPaintProperties}
             mapCentre={mapCentre}
             mapZoom={mapZoom}
-            createProjectGroupAndRun={createProjectGroupAndRun}
-            rerunProjects={rerunProjects}
-            setBlmValue={setBlmValue}
+            startMarxanJob={startMarxanJob}
             clumpingRunning={clumpingRunning}
+            updateRunParams={updateRunParams}
           />
           <ResetDialog onOk={resetServer} loading={loading} />
           <RunLogDialog
@@ -4984,11 +4862,10 @@ const App = () => {
             setGapAnalysis={setGapAnalysis}
             gapAnalysis={gapAnalysis}
             preprocessing={preprocessing}
-            projectFeatures={projectFeatures}
             metadata={metadata}
           />
           <ShareableLinkDialog
-            shareableLinkUrl={`${window.location}?server=${projectState.bpServer.name}&user=${user}&project=${project}`}
+            shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${user}&project=${project}`}
           />
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog

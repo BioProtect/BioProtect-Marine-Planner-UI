@@ -18,7 +18,6 @@ import { selectUserData } from "../slices/authSlice";
 import { useSelector } from "react-redux";
 
 const FeaturesList = ({
-  features,
   openFeatureMenu,
   simple,
   updateFeature,
@@ -28,6 +27,7 @@ const FeaturesList = ({
   smallLinearGauge,
 }) => {
   const userData = useSelector(selectUserData);
+  const projState = useSelector((state) => state.project);
   const iconClick = (feature, evt) => {
     openFeatureMenu(evt, feature);
   };
@@ -54,7 +54,7 @@ const FeaturesList = ({
 
   return (
     <List>
-      {features.map((item) => {
+      {projState.projectFeatures.map((item) => {
         // Get the total area of the feature in the planning unit
         let { pu_area } = item;
 
