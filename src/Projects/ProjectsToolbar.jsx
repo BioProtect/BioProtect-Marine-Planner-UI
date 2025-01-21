@@ -23,9 +23,7 @@ const ProjectsToolbar = (props) => {
   };
 
   const style = (method) => {
-    display: !props.unauthorisedMethods.includes(method)
-      ? "inline-block"
-      : "none";
+    display: props.unauthorisedMethods.includes(method) ? "none" : "inline-block";
   };
 
   return (
@@ -35,15 +33,13 @@ const ProjectsToolbar = (props) => {
       }}
     >
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
-        {props.unauthorisedMethods.includes("createProject") ? null : (
-          <Button
-            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-            title="New project"
-            onClick={props.handleNew}
-          >
-            New
-          </Button>
-        )}
+        <Button
+          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+          title="New project"
+          onClick={props.handleNew}
+        >
+          New
+        </Button>
 
         {props.userRole === "ReadOnly" ? null : (
           <Button

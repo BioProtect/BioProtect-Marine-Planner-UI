@@ -18,19 +18,19 @@ const ProjectsDialog = (props) => {
   );
 
   const _delete = useCallback(() => {
-    props.deleteProject(props.project.user, props.project.name);
-  }, [props.project]);
+    props.deleteProject(projState.project.user, projState.project.name);
+  }, [projState.project]);
 
   const load = useCallback(() => {
     loadAndClose();
   }, []);
 
   const loadAndClose = useCallback(() => {
-    props.loadProject(props.project.name, props.project.user);
+    props.loadProject(projState.project.name, projState.project.user);
     dispatch(
       toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
-  }, [props.project]);
+  }, [projState.project]);
 
   const _new = useCallback(() => {
     dispatch(
@@ -42,11 +42,11 @@ const ProjectsDialog = (props) => {
   }, []);
 
   const cloneProject = useCallback(() => {
-    props.cloneProject(props.project.user, props.project.name);
+    props.cloneProject(projState.project.user, projState.project.name);
   }, [props]);
 
   const exportProject = useCallback(() => {
-    props.exportProject(props.project.user, props.project.name).then((url) => {
+    props.exportProject(projState.project.user, projState.project.name).then((url) => {
       window.location = url;
     });
     dispatch(
@@ -116,7 +116,7 @@ const ProjectsDialog = (props) => {
             })
           )
         }
-        okDisabled={!props.project}
+        okDisabled={!projState.project}
         showCancelButton={true}
         helpLink={"user.html#the-projects-window"}
         autoDetectWindowHeight={false}
@@ -131,7 +131,6 @@ const ProjectsDialog = (props) => {
             openImportMXWDialog={openImportMXWDialog}
             openImportProjectDialog={openImportProjectDialog}
             exportProject={exportProject}
-            project={props.project}
             cloneProject={cloneProject}
             handleDelete={() => _delete()}
           />
@@ -142,7 +141,7 @@ const ProjectsDialog = (props) => {
             title="Projects"
             data={projState.projects}
             tableColumns={columns}
-            selected={[props.project]}
+            selected={[projState.project]}
             ableToSelectAll={false}
             showSearchBox={true}
             searchColumns={["user", "name", "description"]}

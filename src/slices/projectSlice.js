@@ -98,6 +98,9 @@ const projectSlice = createSlice({
     setProjects(state, action) {
       state.projects = action.payload;
     },
+    setProject(state, action) {
+      state.project = action.payload;
+    },
     extraReducers: (builder) => {
       builder
         .addCase(initialiseServers.pending, (state) => {

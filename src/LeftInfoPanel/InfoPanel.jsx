@@ -23,7 +23,6 @@ const InfoPanel = (props) => {
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectState = useSelector((state) => state.project);
   const userData = useSelector(selectUserData);
 
   const [editingProjectName, setEditingProjectName] = useState(false);
@@ -40,7 +39,7 @@ const InfoPanel = (props) => {
 
   useEffect(() => {
     if (editingProjectName && projectNameRef.current) {
-      projectNameRef.current.value = props.project;
+      projectNameRef.current.value = projState.project;
       projectNameRef.current.focus();
     }
 
@@ -51,7 +50,7 @@ const InfoPanel = (props) => {
   }, [
     editingProjectName,
     editingDescription,
-    props.project,
+    projState.project,
     props.metadata.DESCRIPTION,
   ]);
 
@@ -80,13 +79,13 @@ const InfoPanel = (props) => {
   };
 
   const startEditingProjectName = () => {
-    if (props.project) {
+    if (projState.project) {
       setEditingProjectName(true);
     }
   };
 
   const startEditingDescription = () => {
-    if (props.project && userData.role !== "ReadOnly") {
+    if (projState.project && userData.role !== "ReadOnly") {
       setEditingDescription(true);
     }
   };
@@ -211,10 +210,10 @@ const InfoPanel = (props) => {
             {userData.role === "ReadOnly" ? (
               <span
                 className={"projectNameEditBox"}
-                title={props.project + " (Read-only)"}
+                title={projState.project + " (Read-only)"}
               >
                 <FontAwesomeIcon style={iconStyle} icon={faLock} />
-                {props.project}
+                {projState.project}
               </span>
             ) : (
               <span
@@ -222,7 +221,7 @@ const InfoPanel = (props) => {
                 className={"projectNameEditBox"}
                 title="Click to rename the project"
               >
-                {props.project}
+                {projState.project}
               </span>
             )}
             {userData.role === "ReadOnly" ? null : (
@@ -300,7 +299,7 @@ const InfoPanel = (props) => {
               pb={2}
               pt={2}
             >
-              {projectState.bpServer.type === "remote" ? (
+              {projState.bpServer.type === "remote" ? (
                 <Button
                   variant="contained"
                   startIcon={<FontAwesomeIcon icon={faShareAlt} />}

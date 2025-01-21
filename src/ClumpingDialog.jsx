@@ -128,12 +128,23 @@ const ClumpingDialog = (props) => {
 
   //creates a group of 5 projects with UUIDs in the _clumping folder
   const createProjectGroupAndRun = async (blmValues) => {
-    const response = await _get(
-      `createProjectGroup?user=${owner}&project=${project}&copies=5&blmValues=${blmValues.join(
-        ","
-      )}`
-    );
-    //run the projects
+    // OLD
+    // const response = await _get(
+    //   `createProjectGroup?user=${owner}&project=${project}&copies=5&blmValues=${blmValues.join(
+    //     ","
+    //   )}`
+    // );
+    // Define the request payload
+    const payload = {
+      user: owner,
+      project: project,
+      copies: 5,
+      blmValues: blmValues.join(","),
+    };
+
+    // Make a POST request to create the project group
+    const response = await _post("projects?action=create_group", payload);
+    // Run the created projects
     await runProjects(response.data);
     return "Project group created";
   };

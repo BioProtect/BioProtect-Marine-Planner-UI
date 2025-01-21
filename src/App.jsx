@@ -11,6 +11,7 @@ import {
   selectServer,
   setBpServer,
   setBpServers,
+  setProject,
   setProjectFeatures,
   setProjectImpacts,
   setProjectList,
@@ -124,10 +125,6 @@ const App = () => {
   const planningGrids = useSelector((state) => state.ui.planningGridDialogStates);
 
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
-
-
-  const [project, setProject] = useState("");
-
 
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
@@ -777,7 +774,7 @@ const App = () => {
     setRenderer({});
     setUser("");
     dispatch(setProjectFeatures([]));
-    setProject("");
+    dispatch(setProject(""));
     setPlanningUnits([]);
     setOwner("");
     setNotifications([]);
@@ -987,14 +984,24 @@ const App = () => {
     formData.append("user", owner);
     formData.append("proj", proj);
     appendToFormData(formData, parameters);
+    console.log("formData ", formData);
     //post to the server and return a promise
-    return await _post("updateProjectParameters", formData);
+    // return await _post("updateProjectParameters", formData); - old 
+    // # POST /projects?action=update
+    // # Body:
+    // # {
+    // #     "user": "username",
+    // #     "project": "project_name",
+    // #     "param1": "value1",
+    // #     "param2": "value2"
+    // # }
+    return await _post("projects?action=update", formData);
   };
 
   //updates a single parameter in the input.dat file directly
 
   const updateProjectParameter = async (parameter, value) =>
-    await updateProjectParams(project, { [parameter]: value });
+    await updateProjectParams(projState.project, { [parameter]: value });
 
   //updates the run parameters for the current project
   const updateRunParams = async (array) => {
@@ -1003,7 +1010,7 @@ const App = () => {
       acc[obj.key] = obj.value;
       return acc;
     }, {});
-    await updateProjectParams(project, parameters);
+    await updateProjectParams(projState.project, parameters);
     setRunParams(parameters);
   };
 
@@ -1020,11 +1027,11 @@ const App = () => {
       const allFeaturesData = options[1];
 
       resetResults();
-      const projectResp = await _get(`getProject?user=${user}&project=${proj}`);
+      const projectResp = await _get(`projects?action=get&user=${user}&project=${proj}`);
       setRunParams(projectResp.runParameters);
       setProtectedAreaIntersections(projectResp.protectedAreaIntersections);
       setRenderer(projectResp.renderer);
-      setProject(projectResp.project);
+      dispatch(setProject(projectResp.project));
       setPlanningUnits(projectResp.planningUnits);
       setMetadata(projectResp.metadata);
       setFiles({ ...projectResp.files });
@@ -1223,11 +1230,33 @@ const App = () => {
     const formData = new FormData();
     formData.append("user", user);
     formData.append("project", proj);
-    return await _post("createImportProject", formData);
+    console.log("formData ", formData);
+    // return await _post("createImportProject", formData); - old
+    // new is this format 
+    // POST /projects?action=create_import
+    // Body:
+    // {
+    //     "user": "username",
+    //     "project": "project_name"
+    // }
+    return await _post("projects?action=create_import", formData);
   };
+
   const createNewProject = async (proj) => {
     const formData = prepareFormDataNewProject(proj, user);
-    const response = await _post("createProject", formData);
+    console.log("formData ", formData);
+    // formData should be in the following format
+    // {
+    //     "user": "username",
+    //     "project": "project_name",
+    //     "description": "Project description",
+    //     "planning_grid_name": "grid_name",
+    //     "interest_features": "feature1,feature2",
+    //     "target_values": "value1,value2",
+    //     "spf_values": "spf1,spf2"
+    // }
+    // const response = await _post("createProject", formData); - old
+    const response = await _post("projects?action=create", formData);
 
     dispatch(setSnackbarMessage(response.info));
     dispatch(toggleDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
@@ -1247,7 +1276,8 @@ const App = () => {
   const deleteProject = async (user, proj, silent = false) => {
     try {
       // Make the request to delete the project
-      const response = await _get(`deleteProject?user=${user}&project=${proj}`);
+      // const response = await _get(`deleteProject?user=${user}&project=${proj}`); - old 
+      const response = await _get(`projects?action=delete&user=${user}&project=${proj}`);
 
       // Fetch the updated list of projects
       await getProjects();
@@ -1256,7 +1286,7 @@ const App = () => {
       dispatch(setSnackbarMessage(response.info, silent));
 
       // Check if the deleted project is the current one
-      if (response.project === project) {
+      if (response.project === projState.project) {
         dispatch(
           setSnackbarMessage(
             "Current project deleted - loading first available"
@@ -1264,7 +1294,7 @@ const App = () => {
         );
 
         // Find the next available project
-        const nextProject = projState.projects.find((p) => p.name !== project);
+        const nextProject = projState.projects.find((p) => p.name !== projState.project);
 
         if (nextProject) {
           await loadProject(nextProject.name, user);
@@ -1291,18 +1321,20 @@ const App = () => {
   };
 
   const cloneProject = async (user, proj) => {
-    const response = await _get(`cloneProject?user=${user}&project=${proj}`);
+    // const response = await _get(`cloneProject?user=${user}&project=${proj}`); - old 
+    const response = await _get(`projects?action=clone&user=${user}&project=${proj}`);
     getProjects();
     dispatch(setSnackbarMessage(response.info));
   };
 
   //rename a specific project on the server
   const renameProject = async (newName) => {
-    if (newName !== "" && newName !== project) {
+    if (newName !== "" && newName !== projState.project) {
       const response = await _get(
-        `renameProject?user=${owner}&project=${project}&newName=${newName}`
+        `projects?action=rename&user=${owner}&project=${projState.project}&newName=${newName}`
       );
-      setProject(newName);
+
+      dispatch(setProject(newName));
       dispatch(setSnackbarMessage(response.info));
       return "Project renamed";
     }
@@ -1316,7 +1348,8 @@ const App = () => {
   };
 
   const getProjects = async () => {
-    const response = await _get(`getProjects?user=${user}`);
+    // const response = await _get(`getProjects?user=${user}`); - old 
+    const response = await _get(`projects?action=list&user=${user}`);
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
       (proj) =>
@@ -1357,7 +1390,7 @@ const App = () => {
     }
 
     try {
-      const response = await startMarxanJob(owner, project); //start the marxan job
+      const response = await startMarxanJob(owner, projState.project); //start the marxan job
       await getRunLogs(); //update the run log
 
       if (!checkForErrors(response)) {
@@ -1399,7 +1432,7 @@ const App = () => {
   const updateSpecFile = async () => {
     const formData = new FormData();
     formData.append("user", owner);
-    formData.append("project", project);
+    formData.append("project", projState.project);
     // Helper function to join feature properties
     const joinFeatureProperties = (property) =>
       projState.projectFeatures.map((item) => item[property]).join(",");
@@ -1451,7 +1484,7 @@ const App = () => {
 
       // Call the WebSocket
       const message = await _ws(
-        `preprocessFeature?user=${owner}&project=${project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}&feature_class_name=${feature.feature_class_name}&alias=${feature.alias}&id=${feature.id}`,
+        `preprocessFeature?user=${owner}&project=${projState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}&feature_class_name=${feature.feature_class_name}&alias=${feature.alias}&id=${feature.id}`,
         wsMessageCallback
       );
 
@@ -1614,7 +1647,7 @@ const App = () => {
   const uploadFileToProject = async (value, filename) => {
     const formData = new FormData();
     formData.append("user", owner);
-    formData.append("project", project);
+    formData.append("project", projState.project);
     formData.append("filename", `input/${filename}`);
     formData.append("value", value);
 
@@ -1760,7 +1793,7 @@ const App = () => {
       //load the sum of solutions which will already be loaded
       renderSolution(runMarxanResponse.ssoln, true);
     } else {
-      const response = await getSolution(owner, project, solution);
+      const response = await getSolution(owner, projState.project, solution);
       updateProtectedAmount(response.mv);
       renderSolution(response.solution, false);
     }
@@ -2268,7 +2301,7 @@ const App = () => {
   //gets a list of features for the planning unit
   const getPUData = async (puid) => {
     const response = await _get(
-      `getPUData?user=${owner}&project=${project}&puid=${puid}`
+      `getPUData?user=${owner}&project=${projState.project}&puid=${puid}`
     );
     if (response.data.features.length) {
       //if there are some features for the planning unit join the ids onto the full feature data from the state.projectFeatures array
@@ -2313,7 +2346,7 @@ const App = () => {
 
         // Get the results, if any
         if (owner) {
-          await getResults(owner, project);
+          await getResults(owner, projState.project);
         }
 
         // Turn on/off layers depending on which tab is selected
@@ -2757,7 +2790,7 @@ const App = () => {
     //initialise the form data
     let formData = new FormData();
     formData.append("user", owner);
-    formData.append("project", project);
+    formData.append("project", projState.project);
     //add the planning unit manual exceptions
     if (planningUnits.length > 0) {
       planningUnits.forEach((item) =>
@@ -3483,7 +3516,7 @@ const App = () => {
   const createCostsFromImpact = async (data) => {
     setLoading(true);
     startLogging();
-    const url = `createCostsFromImpact?user=${owner}&project=${project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`;
+    const url = `createCostsFromImpact?user=${owner}&project=${projState.project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`;
     await _ws(url, wsMessageCallback);
     setLoading(false);
     addCost(data.alias);
@@ -3923,7 +3956,7 @@ const App = () => {
     } else {
       //get the planning units where the feature occurs
       const response = await _get(
-        `getFeaturePlanningUnits?user=${owner}&project=${project}&oid=${feature.id}`
+        `getFeaturePlanningUnits?user=${owner}&project=${projState.project}&oid=${feature.id}`
       );
 
       addMapLayer({
@@ -4195,7 +4228,7 @@ const App = () => {
 
         // Call the websocket
         const message = await _ws(
-          `preprocessProtectedAreas?user=${owner}&project=${project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}`,
+          `preprocessProtectedAreas?user=${owner}&project=${projState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}`,
           wsMessageCallback
         );
         setProtectedAreaIntersections(message.intersections);
@@ -4274,7 +4307,7 @@ const App = () => {
 
       // Call the websocket and wait for the response
       const message = await _ws(
-        `preprocessPlanningUnits?user=${owner}&project=${project}`,
+        `preprocessPlanningUnits?user=${owner}&project=${projState.project}`,
         wsMessageCallback
       );
 
@@ -4326,7 +4359,8 @@ const App = () => {
       //clear the local variable
       _projects = undefined;
       try {
-        await _get(`deleteProjects?projectNames=${projectNames.join(",")}`);
+        // await _get(`deleteProjects?projectNames=${projectNames.join(",")}`); - old 
+        await _get(`projects?action=delete_cluster&projectNames=${projectNames.join(",")}`);
         return "Projects deleted";
       } catch (error) {
         throw error;
@@ -4399,7 +4433,7 @@ const App = () => {
   const runGapAnalysis = async () => {
     setActiveTab("log");
     const message = await _ws(
-      `runGapAnalysis?user=${owner}&project=${project}`,
+      `runGapAnalysis?user=${owner}&project=${projState.project}`,
       wsMessageCallback
     );
     setGapAnalysis(message.data);
@@ -4408,7 +4442,7 @@ const App = () => {
 
   //deletes a stored gap analysis on the server
   const deleteGapAnalysis = async () =>
-    await _get(`deleteGapAnalysis?user=${owner}&project=${project}`);
+    await _get(`deleteGapAnalysis?user=${owner}&project=${projState.project}`);
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -4423,7 +4457,7 @@ const App = () => {
   //changes the cost profile for a project
   const changeCostname = async (costname) => {
     await _get(
-      `updateCosts?user=${owner}&project=${project}&costname=${costname}`
+      `updateCosts?user=${owner}&project=${projState.project}&costname=${costname}`
     );
     setMetadata((prevState) => ({
       ...prevState.metadata,
@@ -4445,7 +4479,7 @@ const App = () => {
     if (owner === "") {
       setOwner(user);
     }
-    const url = `getPlanningUnitsCostData?user=${owner}&project=${project}`;
+    const url = `getPlanningUnitsCostData?user=${owner}&project=${projState.project}`;
     try {
       // If cost data is already loaded and reload is not forced
       if (costData && !forceReload) {
@@ -4484,7 +4518,7 @@ const App = () => {
   //deletes a cost file on the server
   const deleteCost = async (costname) => {
     await _get(
-      `deleteCost?user=${owner}&project=${project}&costname=${costname}`
+      `deleteCost?user=${owner}&project=${projState.project}&costname=${costname}`
     );
     const _costnames = costnames.filter((item) => item !== costname);
     setCostnames(_costnames);
@@ -4588,7 +4622,6 @@ const App = () => {
           />
           <InfoPanel
             owner={owner}
-            project={project}
             metadata={metadata}
             runMarxan={runMarxan}
             stopProcess={stopProcess}
@@ -4663,10 +4696,8 @@ const App = () => {
             />) : null}
           <ProjectsDialog
             onCancel={() => closeProjectsDialog()}
-            project={project}
             loading={loading}
             oldVersion={metadata?.OLDVERSION}
-            setProject={setProject}
             deleteProject={deleteProject}
             loadProject={loadProject}
             exportProject={exportProject}
@@ -4865,7 +4896,7 @@ const App = () => {
             metadata={metadata}
           />
           <ShareableLinkDialog
-            shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${user}&project=${project}`}
+            shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${user}&project=${projState.project}`}
           />
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog
