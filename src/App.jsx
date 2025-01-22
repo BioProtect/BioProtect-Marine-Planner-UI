@@ -36,6 +36,19 @@ import {
   togglePlanningGridDialog,
   toggleProjectDialog,
 } from "./slices/uiSlice";
+import {
+  setLoggedIn,
+  setUser,
+  setUsers,
+  useCreateUserMutation,
+  useDeleteUserMutation,
+  useGetUserQuery,
+  useListUsersQuery,
+  useLogoutUserMutation,
+  useResendPasswordQuery,
+  useUpdateUserMutation,
+  useValidateUserMutation
+} from "./slices/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import AboutDialog from "./AboutDialog";
@@ -118,6 +131,7 @@ const App = () => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
+  const userState = useSelector((state) => state.user)
 
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectDialogs = useSelector((state) => state.ui.projectDialogStates);
@@ -173,7 +187,6 @@ const App = () => {
   const [planningUnitGrids, setPlanningUnitGrids] = useState([]);
   const [planningUnits, setPlanningUnits] = useState([]);
   const [preprocessing, setPreprocessing] = useState(false);
-  const [user, setUser] = useState("");
 
   const [protectedAreaIntersections, setProtectedAreaIntersections] = useState(
     []
@@ -196,13 +209,11 @@ const App = () => {
   const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
   const [uploadedActivities, setUploadedActivities] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [users, setUsers] = useState([]);
   const [visibleLayers, setVisibleLayers] = useState([]);
   const [wdpaAttribution, setWdpaAttribution] = useState("");
   const [password, setPassword] = useState("");
   const [popupPoint, setPopupPoint] = useState({ x: 0, y: 0 });
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
-  const [resendEmail, setResendEmail] = useState("");
   const [solutions, setSolutions] = useState([]);
   const [wdpaLayer, setWdpaLayer] = useState();
   const [resultsLayer, setResultsLayer] = useState({});
@@ -210,6 +221,9 @@ const App = () => {
   const [paLayerVisible, setPaLayerVisible] = useState(false);
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
   const [runlogTimer, setRunlogTimer] = useState(0);
+
+  const [logoutUser] = useLogoutUserMutation();
+  const [updateUser] = useUpdateUserMutation();
 
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -269,7 +283,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (planningCostsTrigger && projState.projectLoaded && owner !== "" && user !== "") {
+    if (planningCostsTrigger && projState.projectLoaded && owner !== "" && userState.user !== "") {
       (async () => {
         await getPlanningUnitsCostData();
         setPlanningCostsTrigger(false);
@@ -636,6 +650,7 @@ const App = () => {
   };
 
   const createNewUser = async (user, password, name, email) => {
+    const [createUser] = useCreateUserMutation();
     const formData = new FormData();
     formData.append("user", user);
     formData.append("password", password);
@@ -643,20 +658,20 @@ const App = () => {
     formData.append("email", email);
 
     try {
-      const response = await _post("createUser", formData);
+      const response = createUser(formData);
       // UI feedback
       setSnackBar(response.info);
       dispatch(
         toggleDialog({ dialogName: "registerDialogOpen", isOpen: false })
       );
       setPassword("");
-      setUser(user);
+      dispatch(setUser(user));
     } catch (error) {
       console.error("Error creating user:", error);
     }
   };
 
-  const updateUser = async (parameters, user = user) => {
+  const handleUpdateUser = async (parameters, user = userState.user) => {
     try {
       // Remove keys that are not part of the user's information
       const filteredParameters = removeKeys(parameters, [
@@ -664,12 +679,13 @@ const App = () => {
         "validEmail",
       ]);
       const formData = new FormData();
+      formData.append("id", user.id)
       formData.append("user", user);
       appendToFormData(formData, filteredParameters);
 
-      const response = await _post("updateUserParameters", formData);
+      await updateUser(formData);
       // If successful, update the state if the current user is being updated
-      if (user === user) {
+      if (user === userState.user) {
         // Update local user data
         const newUserData = { ...userData, ...filteredParameters };
         // Update state
@@ -683,62 +699,55 @@ const App = () => {
   };
 
   const deleteUser = async (user) => {
+    const [deleteUser, { isLoading, isSuccess, isError, error }] = useDeleteUserMutation();
     try {
       // Send request to delete the user
-      await _get(`deleteUser?user=${user}`);
-      setSnackBar("User deleted");
-
+      await deleteUser(user).unwrap();
+      dispatch(setSnackbarMessage("User Deleted"))
       // Update local state to remove the deleted user
-      const usersCopy = users.filter((item) => item.user !== user);
-      setUsers(usersCopy);
-
+      const usersCopy = userState.users.filter((item) => item.user !== user);
+      dispatch(setUsers(usersCopy));
       // Check if the current project belongs to the deleted user
       if (owner === user) {
-        setSnackBar(
-          "Current project no longer exists. Loading next available."
-        );
-
+        dispatch(setSnackbarMessage("Current project no longer exists. Loading next available."))
         // Load the next available project
         const nextProject = projState.projects.find((project) => project.user !== user);
         if (nextProject) {
           // Import loadProject from the appropriate file if necessary
           await loadProject(nextProject.name, nextProject.user);
         }
-
         // Import deleteProjectsForUser from the appropriate file if necessary
         deleteProjectsForUser(user);
       }
     } catch (error) {
       // Handle errors
-      console.error("Failed to delete user:", error);
-      setSnackBar("Failed to delete user");
+      dispatch(setSnackbarMessage("Failed to delete user: ", error))
     }
   };
 
   const getUsers = async () => {
     try {
-      const response = await _get("getUsers");
-      setUsers(response.users);
+      const { data: response, error, isLoading } = useListUsersQuery();
+      dispatch(setUsers(response.users));
     } catch (error) {
-      setUsers([]);
+      dispatch(setUsers([]));
     }
   };
 
   const handleCreateUser = async (user, password, name, email) =>
     await createNewUser(user, password, name, email);
 
-  const handleUserUpdate = async (parameters, user = user) =>
-    await updateUser(parameters, user);
-
   const handleDeleteUser = async (user) => await deleteUser(user);
 
-  const checkPassword = async (user, password) =>
-    await _get(`validateUser?user=${user}&password=${password}`, 1000);
-
+  const checkPassword = async (user, password) => {
+    const [validateUser] = useValidateUserMutation();
+    await validateUser({ user: "user", password: "password" });
+  }
   //the user is validated so login
   const postLoginSetup = async ({ userId, accessToken }) => {
     try {
-      const userResp = await _get(`users/${userId}`);
+      const { data: userResp, error, isLoading } = useGetUserQuery(userId);
+
       dispatch(setUserData(userResp));
       setDismissedNotifications(userResp.dismissedNotifications || []);
       setResultsPanelOpen(true);
@@ -752,7 +761,7 @@ const App = () => {
 
       await loadProject(
         userResp.last_project,
-        user,
+        userState.user,
         userResp,
         speciesData.data
       );
@@ -765,14 +774,14 @@ const App = () => {
     }
   };
   //log out and reset some state
-  const logout = () => {
+  const logout = async () => {
     dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
     setBrew(new classyBrew());
     setPassword("");
     setRunParams([]);
     setResultsPanelOpen(false);
     setRenderer({});
-    setUser("");
+    dispatch(setUser(""));
     dispatch(setProjectFeatures([]));
     dispatch(setProject(""));
     setPlanningUnits([]);
@@ -782,32 +791,19 @@ const App = () => {
     setFiles({});
     resetResults();
     //clear the currently set cookies
-    _get("logout").then((response) => {
-      // setLoggedIn(false);
-      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
-    });
+    await logoutUser();
+    dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
   };
 
-  const resendPassword = async () => {
-    try {
-      const response = await _get(`resendPassword?user=${user}`);
-      dispatch(setSnackbarMessage(response.info));
-      // Close the resend password dialog
-      dispatch(
-        toggleDialog({ dialogName: "resendPasswordDialogOpen", isOpen: false })
-      );
-    } catch (error) {
-      console.error("Failed to resend password:", error);
-    }
-  };
+
 
   const changeRole = async (user, role) => {
-    await handleUserUpdate({ role: role }, user);
-    const updatedUsers = users.map((item) =>
+    await handleUpdateUser({ role: role }, user);
+    const updatedUsers = userState.users.map((item) =>
       item.user === user ? { ...item, role: role } : item
     );
     // Update the state with the modified user list
-    setUsers(updatedUsers);
+    dispatch(setUsers(updatedUsers));
   };
 
   const toggleProjectPrivacy = async (newValue) => {
@@ -950,13 +946,13 @@ const App = () => {
   //dismisses a notification on the server
   const dismissNotification = async (notification) => {
     await _get(
-      `dismissNotification?user=${user}&notificationid=${notification.id}`
+      `dismissNotification?user=${userState.user}&notificationid=${notification.id}`
     );
   };
 
   //clears all of the dismissed notifications on the server
   const resetNotifications = async () => {
-    await _get(`resetNotifications?user=${user}`);
+    await _get(`resetNotifications?user=${userState.user}`);
     setDismissedNotifications([]);
     setNotifications([]);
     parseNotifications();
@@ -971,11 +967,11 @@ const App = () => {
   };
 
   // saveOptions - Options are in users data - use updateUser to update them
-  const saveOptions = async (options) => await handleUserUpdate(options);
+  const saveOptions = async (options) => await handleUpdateUser(options);
 
   //updates the project from the old version to the new version
   const upgradeProject = async (proj) =>
-    await _get(`upgradeProject?user=${user}&project=${proj}`);
+    await _get(`upgradeProject?user=${userState.user}&project=${proj}`);
 
   //updates the proj parameters back to the server (i.e. the input.dat file)
   const updateProjectParams = async (proj, parameters) => {
@@ -1349,11 +1345,11 @@ const App = () => {
 
   const getProjects = async () => {
     // const response = await _get(`getProjects?user=${user}`); - old 
-    const response = await _get(`projects?action=list&user=${user}`);
+    const response = await _get(`projects?action=list&user=${userState.user}`);
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
       (proj) =>
-        !(proj.private && proj.user !== user && userData.role !== "Admin")
+        !(proj.private && proj.user !== userState.user && userData.role !== "Admin")
     );
     dispatch(setProjects(projects));
   };
@@ -1699,7 +1695,7 @@ const App = () => {
         info: "Planning grid imported",
       });
     } catch (error) {
-      deleteProject(user, proj, true);
+      deleteProject(userState.user, proj, true);
       throw error;
     }
 
@@ -1750,7 +1746,7 @@ const App = () => {
       });
 
       // Load the proj
-      await loadProject(proj, user);
+      await loadProject(proj, userState.user);
       return "Import complete";
     } catch (error) {
       messageLogger({
@@ -1770,11 +1766,11 @@ const App = () => {
   const importMXWProject = async (proj, description, filename) => {
     startLogging();
     await _ws(
-      `importProject?user=${user}&project=${proj}&filename=${filename}&description=$description}`,
+      `importProject?user=${userState.user}&project=${proj}&filename=${filename}&description=$description}`,
       wsMessageCallback
     );
     refreshFeatures();
-    loadProject(proj, user);
+    loadProject(proj, userState.user);
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -4063,7 +4059,7 @@ const App = () => {
 
   const openUsersDialog = async () => {
     await getUsers();
-    setUsersDialogOpen(true);
+    dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: true }));
   };
 
   const openRunLogDialog = async () => {
@@ -4562,11 +4558,7 @@ const App = () => {
           )}
           <ResendPasswordDialog
             open={dialogStates.resendPasswordDialogOpen}
-            onOk={resendPassword}
-            onCancel={() => setResendPasswordDialogOpen(false)}
             loading={loading}
-            changeEmail={() => setResendEmail(value)}
-            email={resendEmail}
           />
           <ToolsMenu
             menuAnchor={menuAnchor}
@@ -4579,7 +4571,6 @@ const App = () => {
           />
           <UserMenu
             menuAnchor={menuAnchor}
-            user={user}
             userRole={userData.role}
             logout={logout}
           />
@@ -4588,8 +4579,7 @@ const App = () => {
           ) : null}
           <UserSettingsDialog
             open={dialogStates.userSettingsDialogOpen}
-            onOk={() => setUserSettingsDialogOpen(false)}
-            onCancel={() => setUserSettingsDialogOpen(false)}
+            onCancel={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
             loading={loading}
             selectUserData={selectUserData}
             saveOptions={saveOptions}
@@ -4599,11 +4589,7 @@ const App = () => {
           />
           <UsersDialog
             open={dialogStates.usersDialogOpen}
-            onOk={() => setUsersDialogOpen(false)}
-            onCancel={() => setUsersDialogOpen(false)}
             loading={loading}
-            user={user}
-            users={users}
             deleteUser={handleDeleteUser}
             changeRole={changeRole}
             guestUserEnabled={projState.bpServer.guestUserEnabled}
@@ -4614,7 +4600,7 @@ const App = () => {
             onCancel={() => setProfileDialogOpen(false)}
             loading={loading}
             selectUserData={selectUserData}
-            updateUser={handleUserUpdate}
+            updateUser={handleUpdateUser}
           />
           <AboutDialog
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
@@ -4896,7 +4882,7 @@ const App = () => {
             metadata={metadata}
           />
           <ShareableLinkDialog
-            shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${user}&project=${projState.project}`}
+            shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${userState.user}&project=${projState.project}`}
           />
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog

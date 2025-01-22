@@ -15,6 +15,8 @@ const UserMenu = (props) => {
   const dispatch = useDispatch();
   const projectState = useSelector((state) => state.project);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const userState = useSelector((state) => state.user);
+
 
   const closeDialog = () =>
     dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
