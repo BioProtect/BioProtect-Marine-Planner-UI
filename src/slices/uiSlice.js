@@ -8,31 +8,11 @@ const initialState = {
   activeTab: "project",
   activeResultsTab: "legend",
 
-  addingRemovingFeatures: false,
-  allFeatures: [],
-  currentFeature: {},
-  featureMetadata: {},
-  identifiedFeatures: [],
-  selectedFselectedFeatureIds: [],
-  featureDatasetFilename: "",
-
-
   projectDialogStates: {
     projectsListDialogOpen: false,
     newProjectDialogOpen: false,
     projectsDialogOpen: false,
     newProjectWizardDialogOpen: false,
-  },
-  featureDialogStates: {
-    newFeatureDialogOpen: false,
-    featureDialogOpen: false,
-    featuresDialogOpen: false,
-    featuresDialogOpen: false,
-    importFeaturePopoverOpen: false,
-    importFeaturesDialogOpen: false,
-    newFeaturePopoverOpen: false,
-    featureInfoDialogOpen: false,
-    featureMenuOpen: false,
   },
   planningGridDialogStates: {
     newMarinePlanningGridDialogOpen: false,
@@ -95,18 +75,6 @@ const uiSlice = createSlice({
     setActiveResultsTab(state, action) {
       state.activeResultsTab = action.payload;
     },
-    setAddingRemovingFeatures(state, action) {
-      state.addingRemovingFeatures = action.payload;
-    },
-    setAllFeatures(state, action) {
-      state.allFeatures = action.payload;
-    },
-    setCurrentFeature(state, action) {
-      state.currentFeature = action.payload;
-    },
-    setFeatureMetadata(state, action) {
-      state.featureMetadata = action.payload;
-    },
     setIdentifyFeatures(state, action) {
       state.identifiedFeatures = action.payload;
     },
@@ -119,10 +87,6 @@ const uiSlice = createSlice({
     toggleProjectDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.projectDialogStates[dialogName] = isOpen;
-    },
-    toggleFeatureDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.featureDialogStates[dialogName] = isOpen;
     },
     togglePlanningGridDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
@@ -140,15 +104,10 @@ export const {
   setSnackbarMessage,
   setActiveTab,
   setActiveResultsTab,
-  setAddingRemovingFeatures,
-  setAllFeatures,
-  setCurrentFeature,
-  setFeatureMetadata,
   setIdentifyFeatures,
   setSelectedFeatureIds,
   setFeatureDatasetFilename,
   toggleProjectDialog,
-  toggleFeatureDialog,
   togglePlanningGridDialog,
   toggleDialog,
 } = uiSlice.actions;

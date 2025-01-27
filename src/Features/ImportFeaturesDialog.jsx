@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { setFeatureDatasetFilename, toggleFeatureDialog } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -16,6 +15,8 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import { setAddToProject } from "../slices/projectSlice";
+import { setFeatureDatasetFilename } from "../slices/uiSlice";
+import { toggleFeatureD } from "../slices/featureSlice";
 
 const ImportFeaturesDialog = (props) => {
   const dispatch = useDispatch();
@@ -83,7 +84,7 @@ const ImportFeaturesDialog = (props) => {
     setShapeFile(null);
     dispatch(setFeatureDatasetFilename(""));
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: true,
       })

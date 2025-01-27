@@ -4,7 +4,6 @@ import {
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
-  toggleFeatureDialog,
   togglePlanningGridDialog,
   toggleProjectDialog,
 } from "../slices/uiSlice";
@@ -234,7 +233,7 @@ class ImportedActivitiesDialog extends React.Component {
               <ToolbarButton
                 show={
                   this.props.userRole !== "ReadOnly" &&
-                  !this.props.metadata.OLDVERSION
+                    !this.props.metadata.OLDVERSION
                     ? "true"
                     : "false"
                 }

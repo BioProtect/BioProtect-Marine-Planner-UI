@@ -23,19 +23,27 @@ import {
 import { selectCurrentToken, selectCurrentUserId, selectUserData, setUserData } from "./slices/authSlice";
 import {
   setActiveTab,
+  setIdentifyFeatures,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  togglePlanningGridDialog,
+  toggleProjectDialog,
+} from "./slices/uiSlice";
+import {
   setAddingRemovingFeatures,
   setAllFeatures,
   setCurrentFeature,
   setFeatureMetadata,
-  setIdentifyFeatures,
   setSelectedFeatureIds,
-  setSnackbarMessage,
-  setSnackbarOpen,
-  toggleDialog,
-  toggleFeatureDialog,
-  togglePlanningGridDialog,
-  toggleProjectDialog,
-} from "./slices/uiSlice";
+  toggleFeatureD,
+  useCreateFeatureFromLinestringMutation,
+  useDeleteFeatureQuery,
+  useExportFeatureQuery,
+  useGetFeatureQuery,
+  useListFeaturePUsQuery,
+  useListFeatureProjectsQuery,
+} from "./slices/featureSlice";
 import {
   setLoggedIn,
   setUser,
@@ -746,7 +754,7 @@ const App = () => {
   //the user is validated so login
   const postLoginSetup = async ({ userId, accessToken }) => {
     try {
-      const { data: userResp, error, isLoading } = useGetUserQuery(userId);
+      const { data: userResp, error, isLoading } = await useGetUserQuery(userId);
 
       dispatch(setUserData(userResp));
       setDismissedNotifications(userResp.dismissedNotifications || []);
@@ -1198,9 +1206,7 @@ const App = () => {
   //gets a list of projects for a feature
   const getProjectsForFeature = async (feature) => {
     // Fetch the projects associated with the given feature
-    const response = await this._get(
-      `listProjectsForFeature?feature_class_id=${feature.id}`
-    );
+    const { response, error, loading } = await useListFeatureProjectsQuery(feature.id)
     return response.projects;
   };
 
@@ -1457,7 +1463,7 @@ const App = () => {
 
   const preprocessSingleFeature = async (feature) => {
     dispatch(
-      toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
     );
     startLogging();
     preprocessFeature(feature);
@@ -3148,9 +3154,9 @@ const App = () => {
     if (projState.bpServer.system !== "Windows" && !metadata.OLDVERSION) {
       await refreshFeatures();
     }
-    setAddingRemovingFeatures(showClearSelectAll);
+    dispatch(setAddingRemovingFeatures(showClearSelectAll));
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: true,
       })
@@ -3162,7 +3168,7 @@ const App = () => {
 
   const closeNewFeatureDialog = () => {
     dispatch(
-      toggleFeatureDialog({ dialogName: "newFeatureDialogOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "newFeatureDialogOpen", isOpen: false })
     );
     finaliseDigitising();
   };
@@ -3642,19 +3648,19 @@ const App = () => {
 
     // Close dialogs
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "newFeaturePopoverOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "importFeaturePopoverOpen",
         isOpen: false,
       })
@@ -3762,7 +3768,7 @@ const App = () => {
       .join(",");
 
     formData.append("linestring", "Linestring(" + coords + ")");
-    const response = await _post("createFeatureFromLinestring", formData);
+    const { response, error, loading } = await useCreateFeatureFromLinestringMutation(formData)
     messageLogger({
       method: "createNewFeature",
       status: "Finished",
@@ -3775,7 +3781,7 @@ const App = () => {
 
   //gets the new feature information and updates the state
   const newFeatureCreated = async (id) => {
-    const response = await _get(`getFeature?oid=${id}&format=json`);
+    const { response, error, isLoading } = await useGetFeatureQuery(id);
     const feature = response.data[0];
     addFeatureAttributes(feature);
     addNewFeature([feature]);
@@ -3826,9 +3832,7 @@ const App = () => {
 
   //deletes a feature
   const _deleteFeature = async (feature) => {
-    const response = await _get(
-      `deleteFeature?feature_name=${feature.feature_class_name}`
-    );
+    const { response, error, loading } = await useDeleteFeatureQuery(feature.feature_class_name)
     dispatch(setSnackbarMessage("Feature deleted"));
     removeFeature(feature);
     removeFeatureFromAllFeatures(feature); //remove it from the allFeatures array
@@ -3881,7 +3885,7 @@ const App = () => {
     dispatch(setCurrentFeature(feature));
     setMenuAnchor(evt.currentTarget);
     dispatch(
-      toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: true })
+      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: true })
     );
   };
 
@@ -3951,9 +3955,7 @@ const App = () => {
       updateFeature(feature, { feature_puid_layer_loaded: false });
     } else {
       //get the planning units where the feature occurs
-      const response = await _get(
-        `getFeaturePlanningUnits?user=${owner}&project=${projState.project}&oid=${feature.id}`
-      );
+      const { response, error, loading } = await useListFeaturePUsQuery(owner, projState.project, feature.id)
 
       addMapLayer({
         id: layerName,
@@ -3994,7 +3996,7 @@ const App = () => {
   //removes the current feature from the project
   const removeFromProject = (feature) => {
     dispatch(
-      toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
     );
     unselectItem(feature);
   };
@@ -4002,7 +4004,7 @@ const App = () => {
   //zooms to a features extent
   const zoomToFeature = (feature) => {
     dispatch(
-      toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
     );
     //transform from BOX(-174.173506487 -18.788241791,-173.86528589 -18.5190063499999) to [[-73.9876, 40.7661], [-73.9397, 40.8002]]
     const points = feature.extent

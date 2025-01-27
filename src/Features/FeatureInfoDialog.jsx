@@ -12,13 +12,13 @@ import { getArea, isNumber, isValidTargetValue } from "../Helpers";
 import {
   setActiveTab,
   toggleDialog,
-  toggleFeatureDialog,
 } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
 import { selectUserData } from "../slices/authSlice";
+import { toggleFeatureD } from "../slices/featureSlice";
 
 const FeatureInfoDialog = ({ loading, updateFeature }) => {
   const dispatch = useDispatch();
@@ -29,7 +29,7 @@ const FeatureInfoDialog = ({ loading, updateFeature }) => {
 
   const closeDialog = () =>
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "featureInfoDialogOpen",
         isOpen: false,
       })

@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
-import {
-  setAllFeatures,
-  toggleFeatureDialog,
-  toggleProjectDialog,
-} from "../../slices/uiSlice.js";
+import { selectedFeatureIds, setSelectedFeatureIds } from "../../slices/featureSlice.js"
+import { setAllFeatures, toggleFeatureD } from "../../slices/featureSlice.js";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -13,10 +10,14 @@ import Metadata from "../../Metadata";
 import PlanningUnitsDialog from "../../PlanningGrids/PlanningUnitsDialog";
 import SelectCostFeatures from "../../SelectCostFeatures";
 import SelectFeatures from "../../LeftInfoPanel/FeaturesTab.jsx";
+import {
+  toggleProjectDialog,
+} from "../../slices/uiSlice";
 
 const NewProjectDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const featureState = useSelector((state) => state.feature)
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
   );
@@ -29,7 +30,7 @@ const NewProjectDialog = (props) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [pu, setPU] = useState("");
-  const [selectedFeatureIds, setSelectedFeatureIds] = useState([]);
+  const [selectedFeatureIds] = useState([]);
 
   useEffect(() => {
     dispatch(setAllFeatures(JSON.parse(JSON.stringify(uiState.allFeatures || []))));
@@ -41,16 +42,16 @@ const NewProjectDialog = (props) => {
   const updateSelectedFeatures = () => {
     const updatedFeatures = uiState.allFeatures.map((feature) => ({
       ...feature,
-      selected: selectedFeatureIds.includes(feature.id),
+      selected: featureState.selectedFeatureIds.includes(feature.id),
     }));
     dispatch(setAllFeatures(updatedFeatures));
     dispatch(
-      toggleFeatureDialog({ dialogName: "featuresDialogOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
     );
   };
 
   const clickFeature = (feature) => {
-    if (selectedFeatureIds.includes(feature.id)) {
+    if (featureState.selectedFeatureIds.includes(feature.id)) {
       removeFeature(feature);
     } else {
       addFeature(feature);
@@ -58,15 +59,16 @@ const NewProjectDialog = (props) => {
   };
 
   const addFeature = (feature) =>
-    setSelectedFeatureIds((prevIds) => [...prevIds, feature.id]);
+    dispatch(setSelectedFeatureIds((prevIds) => [...prevIds, feature.id]));
+
   const removeFeature = (feature) =>
     setSelectedFeatureIds((prevIds) =>
       prevIds.filter((id) => id !== feature.id)
     );
 
   const selectAllFeatures = () =>
-    setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id));
-  const clearAllFeatures = () => setSelectedFeatureIds([]);
+    dispatch(setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id)));
+  const clearAllFeatures = () => dispatch(setSelectedFeatureIds([]));
 
   const createNewProject = () => {
     props.createNewProject({
@@ -100,7 +102,7 @@ const NewProjectDialog = (props) => {
         disabled={
           (stepIndex === 0 && (name === "" || description === "")) ||
           (stepIndex === 1 && pu === "") ||
-          (stepIndex === 2 && selectedFeatureIds.length === 0)
+          (stepIndex === 2 && featureState.selectedFeatureIds.length === 0)
         }
       >
         {stepIndex === steps.length - 1 ? "Finish" : "Next"}
@@ -149,7 +151,7 @@ const NewProjectDialog = (props) => {
                 features={uiState.allFeatures.filter((item) => item.selected)}
                 openFeaturesDialog={() =>
                   dispatch(
-                    toggleFeatureDialog({
+                    toggleFeatureD({
                       dialogName: "featuresDialogOpen",
                       isOpen: true,
                     })
@@ -172,7 +174,7 @@ const NewProjectDialog = (props) => {
         onOk={updateSelectedFeatures}
         onCancel={() =>
           dispatch(
-            toggleFeatureDialog({
+            toggleFeatureD({
               dialogName: "featuresDialogOpen",
               isOpen: false,
             })
@@ -181,9 +183,7 @@ const NewProjectDialog = (props) => {
         loadingFeatures={false} // Update this according to your loading state
         selectAllFeatures={selectAllFeatures}
         clearAllFeatures={clearAllFeatures}
-        selectFeatures={setSelectedFeatureIds}
         clickFeature={clickFeature}
-        selectedFeatureIds={selectedFeatureIds}
         metadata={{ OLDVERSION: false }}
         userRole="User"
         previewFeature={props.previewFeature}

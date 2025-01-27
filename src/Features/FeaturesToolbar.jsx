@@ -13,7 +13,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Import from "@mui/icons-material/GetApp";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import { setSelectedFeatureIds } from "../slices/uiSlice";
+import { setSelectedFeatureIds } from "../slices/featureSlice";
 
 const FeaturesToolbar = (props) => {
   const dispatch = useDispatch();

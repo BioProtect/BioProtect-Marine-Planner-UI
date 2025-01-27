@@ -12,7 +12,7 @@ import RemoveFromProject from "@mui/icons-material/Remove";
 import ZoomIn from "@mui/icons-material/ZoomIn";
 import { generateTableCols } from "../Helpers";
 import { selectUserData } from "../slices/authSlice";
-import { toggleFeatureDialog } from "../slices/uiSlice";
+import { toggleFeatureD } from "../slices/featureSlice";
 
 const FeatureMenu = ({
   anchorEl,
@@ -30,14 +30,14 @@ const FeatureMenu = ({
 
   const handleInfoMenuItemClick = () => {
     dispatch(
-      toggleFeatureDialog({ dialogName: "featureInfoDialogOpen", isOpen: true })
+      toggleFeatureD({ dialogName: "featureInfoDialogOpen", isOpen: true })
     );
     closeDialog();
   };
 
   const closeDialog = () =>
     dispatch(
-      toggleFeatureDialog({ dialogName: "featureMenuOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
     );
   return (
     <Popover

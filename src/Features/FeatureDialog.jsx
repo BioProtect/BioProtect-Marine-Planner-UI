@@ -16,7 +16,7 @@ import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
 import { getArea } from "../Helpers";
 import { selectUserData } from "../slices/authSlice";
-import { toggleFeatureDialog } from "../slices/uiSlice";
+import { toggleFeatureD } from "../slices/featureSlice";
 
 const FeatureDialog = ({
   loading,
@@ -45,7 +45,7 @@ const FeatureDialog = ({
 
   const closeDialog = () =>
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "featureDialogOpen",
         isOpen: false,
       })

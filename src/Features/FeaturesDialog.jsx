@@ -1,20 +1,19 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  setAddingRemovingFeatures,
-  setSelectedFeatureIds,
-  toggleDialog,
-  toggleFeatureDialog,
-} from "../slices/uiSlice";
+import { selectAllFeatures, setSelectedFeatureIds, toggleFeatureD } from "../slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import FeaturesToolbar from "./FeaturesToolbar";
 import MarxanDialog from "../MarxanDialog";
 import { generateTableCols } from "../Helpers";
+import {
+  toggleDialog,
+} from "../slices/uiSlice";
 
 const FeaturesDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const featureState = useSelector((state) => state.feature);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectState = useSelector((state) => state.project);
   const projectDialogStates = useSelector(
@@ -41,7 +40,7 @@ const FeaturesDialog = (props) => {
   const showNewFeaturePopover = (event) => {
     setNewFeatureAnchor(event.currentTarget);
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "newFeaturePopoverOpen",
         isOpen: true,
       })
@@ -51,31 +50,31 @@ const FeaturesDialog = (props) => {
   const showImportFeaturePopover = (event) => {
     setImportFeatureAnchor(event.currentTarget);
     dispatch(
-      toggleFeatureDialog({ dialogName: "featuresDialogOpen", isOpen: true })
+      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
     );
   };
 
   const _openImportFeaturesDialog = () => {
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "newFeaturePopoverOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "importFeaturePopoverOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "importFeaturesDialogOpen",
         isOpen: true,
       })
@@ -84,13 +83,13 @@ const FeaturesDialog = (props) => {
 
   const _openImportFromWebDialog = () => {
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "newFeaturePopoverOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "importFeaturePopoverOpen",
         isOpen: false,
       })
@@ -102,7 +101,7 @@ const FeaturesDialog = (props) => {
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: false,
       })
@@ -117,19 +116,19 @@ const FeaturesDialog = (props) => {
   const openImportGBIFDialog = () => {
     props.setImportGBIFDialogOpen(true);
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "importFeaturePopoverOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "newFeaturePopoverOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: false,
       })
@@ -170,14 +169,14 @@ const FeaturesDialog = (props) => {
 
     if (filteredRows.length < uiState.allFeatures.length) {
       return toggleSelectionState(
-        uiState.selectedFeatureIds,
+        featureState.selectedFeatureIds,
         filteredRows,
         idx1,
         idx2
       );
     } else {
       return toggleSelectionState(
-        uiState.selectedFeatureIds,
+        featureState.selectedFeatureIds,
         uiState.allFeatures,
         idx1,
         idx2
@@ -205,19 +204,19 @@ const FeaturesDialog = (props) => {
   const unselectFeature = () => {
     setSelectedFeature(undefined);
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "importFeaturePopoverOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "newFeaturePopoverOpen",
         isOpen: false,
       })
     );
     dispatch(
-      toggleFeatureDialog({
+      toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: false,
       })
@@ -274,11 +273,11 @@ const FeaturesDialog = (props) => {
           tableColumns={columns}
           searchColumns={["alias", "description", "source", "created_by"]}
           dataFiltered={dataFiltered}
-          selected={uiState.selectedFeatureIds}
-          selectedFeatureIds={uiState.selectedFeatureIds}
+          selected={featureState.selectedFeatureIds}
+          selectedFeatureIds={featureState.selectedFeatureIds}
           selectedFeature={selectedFeature}
           clickRow={clickRow}
-          preview={() => props.previewFeature(feature_metadata)}
+          preview={() => props.previewFeature(featureMetadata)}
         />
       </div>
     </MarxanDialog>

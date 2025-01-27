@@ -5,7 +5,6 @@ import {
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
-  toggleFeatureDialog,
   togglePlanningGridDialog,
   toggleProjectDialog,
 } from "./slices/uiSlice";
@@ -16,6 +15,7 @@ import MapContainer from "./MapContainer";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
 import ToolbarButton from "./ToolbarButton";
+import { toggleFeatureD } from "./slices/featureSlice";
 
 const CLUMP_COUNT = 5;
 

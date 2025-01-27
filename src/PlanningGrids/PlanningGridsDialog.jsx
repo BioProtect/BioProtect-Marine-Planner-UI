@@ -5,7 +5,6 @@ import {
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
-  toggleFeatureDialog,
   togglePlanningGridDialog,
   toggleProjectDialog,
 } from "../slices/uiSlice";
