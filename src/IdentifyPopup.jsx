@@ -21,11 +21,11 @@ const IdentifyPopup = ({
   visible,
   xy,
   metadata,
-  identifyPlanningUnits,
   identifyProtectedAreas,
   hideIdentifyPopup,
 }) => {
   const uiState = useSelector((state) => state.ui);
+  const puState = useSelector((state) => state.planningUnit)
   const [selectedTab, setSelectedTab] = useState("pu");
   const [timer, setTimer] = useState(null);
   const userData = useSelector(selectUserData);
@@ -58,10 +58,10 @@ const IdentifyPopup = ({
   }, [xy, clearTimer, startTimer]);
 
   const getItemStatus = () => {
-    if (!identifyPlanningUnits?.puData) {
+    if (!puState.identifyPlanningUnits?.puData) {
       return CONSTANTS.PU_STATUS_DEFAULT;
     }
-    switch (identifyPlanningUnits.puData.status) {
+    switch (puState.identifyPlanningUnits.puData.status) {
       case 2:
         return CONSTANTS.PU_STATUS_LOCKED_IN;
       case 3:
@@ -107,7 +107,7 @@ const IdentifyPopup = ({
     </Table>
   );
 
-  const planningUnitTab = identifyPlanningUnits?.puData && (
+  const planningUnitTab = puState.identifyPlanningUnits?.puData && (
     <div>
       <div className="identifyPlanningUnitsHeader">
         <span>
@@ -115,11 +115,11 @@ const IdentifyPopup = ({
           <span style={{ paddingLeft: "5px" }} />
           {getItemStatus().label}
         </span>
-        <span>Cost: {identifyPlanningUnits.puData.cost}</span>
-        <span>ID: {identifyPlanningUnits.puData.id}</span>
+        <span>Cost: {puState.identifyPlanningUnits.puData.cost}</span>
+        <span>ID: {puState.identifyPlanningUnits.puData.id}</span>
       </div>
-      {identifyPlanningUnits.features?.length > 0 ? (
-        renderTabContent(identifyPlanningUnits.features, [
+      {puState.identifyPlanningUnits.features?.length > 0 ? (
+        renderTabContent(puState.identifyPlanningUnits.features, [
           {
             render: (row) => <div title={row.alias}>{row.alias}</div>,
           },

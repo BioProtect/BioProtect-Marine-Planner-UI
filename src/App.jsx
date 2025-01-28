@@ -44,6 +44,7 @@ import {
   useListFeaturePUsQuery,
   useListFeatureProjectsQuery,
 } from "./slices/featureSlice";
+import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD } from "./slices/planningUnitSlice";
 import {
   setLoggedIn,
   setUser,
@@ -140,6 +141,7 @@ const App = () => {
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
   const userState = useSelector((state) => state.user)
+  const puState = useSelector((state) => state.planningUnit)
 
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectDialogs = useSelector((state) => state.ui.projectDialogStates);
@@ -174,7 +176,6 @@ const App = () => {
   const [countries, setCountries] = useState([]);
   const [files, setFiles] = useState({});
   const [gapAnalysis, setGapAnalysis] = useState([]);
-  const [identifyPlanningUnits, setIdentifyPlanningUnits] = useState({});
   const [identifyProtectedAreas, setidentifyProtectedAreas] = useState([]);
   const [identifyVisible, setIdentifyVisible] = useState(false);
   /////////////////////////////////////////////////////////////////////////////
@@ -192,14 +193,14 @@ const App = () => {
   const [metadata, setMetadata] = useState({});
   const [notifications, setNotifications] = useState([]);
   const [owner, setOwner] = useState("");
-  const [planningUnitGrids, setPlanningUnitGrids] = useState([]);
-  const [planningUnits, setPlanningUnits] = useState([]);
+
+
+
   const [preprocessing, setPreprocessing] = useState(false);
 
   const [protectedAreaIntersections, setProtectedAreaIntersections] = useState(
     []
   );
-  const [puEditing, setPuEditing] = useState(false);
   const [registry, setRegistry] = useState(undefined);
   const [renderer, setRenderer] = useState({});
   const [resultsPanelOpen, setResultsPanelOpen] = useState(false);
@@ -792,7 +793,7 @@ const App = () => {
     dispatch(setUser(""));
     dispatch(setProjectFeatures([]));
     dispatch(setProject(""));
-    setPlanningUnits([]);
+    dispatch(setPlanningUnits([]));
     setOwner("");
     setNotifications([]);
     setMetadata({});
@@ -1036,7 +1037,7 @@ const App = () => {
       setProtectedAreaIntersections(projectResp.protectedAreaIntersections);
       setRenderer(projectResp.renderer);
       dispatch(setProject(projectResp.project));
-      setPlanningUnits(projectResp.planningUnits);
+      dispatch(setPlanningUnits(projectResp.planningUnits));
       setMetadata(projectResp.metadata);
       setFiles({ ...projectResp.files });
       setCostnames(projectResp.costnames);
@@ -2079,7 +2080,7 @@ const App = () => {
       return expression;
     };
 
-    const expression = buildExpression(planningUnits);
+    const expression = buildExpression(puState.planningUnits);
 
     //set the render paint property
     map.current.setPaintProperty(
@@ -2230,7 +2231,7 @@ const App = () => {
 
   const mapClick = async (e) => {
     //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
-    if (!puEditing && !map.current.getSource("mapbox-gl-draw-cold")) {
+    if (!puState.puEditing && !map.current.getSource("mapbox-gl-draw-cold")) {
       //get a list of the layers that we want to query for features
       const featureLayers = getLayers([
         CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
@@ -2310,10 +2311,10 @@ const App = () => {
       joinArrays(response.data.features, projState.projectFeatures, "species", "id");
     }
     //set the state to update the identify popup
-    setIdentifyPlanningUnits({
+    dispatch(setIdentifyPlanningUnits({
       puData: response.data.pu_data,
       features: response.data.features,
-    });
+    }));
   };
 
   //joins a set of data from one object array to another
@@ -2331,7 +2332,7 @@ const App = () => {
   //hides the identify popup
   const hideIdentifyPopup = (e) => {
     setIdentifyVisible(false);
-    setIdentifyPlanningUnits({});
+    dispatch(setIdentifyPlanningUnits({}));
   };
   //sets the basemap either on project load, or if the user changes it
   const loadBasemap = async (basemap) => {
@@ -2753,7 +2754,7 @@ const App = () => {
 
   const startPuEditSession = () => {
     //set the state
-    setPuEditing(true);
+    dispatch(setPuEditing(true));
     //set the cursor to a crosshair
     map.current.getCanvas().style.cursor = "crosshair";
     //add the left mouse click event to the planning unit layer
@@ -2766,7 +2767,7 @@ const App = () => {
 
   const stopPuEditSession = () => {
     //set the state
-    setPuEditing(false);
+    dispatch(setPuEditing(false));
     //reset the cursor
     map.current.getCanvas().style.cursor = "pointer";
     //remove the mouse left click event
@@ -2780,7 +2781,7 @@ const App = () => {
   //clears all of the manual edits from the pu edit layer (except the protected area units)
   const clearManualEdits = () => {
     // Clear all the planning unit statuses
-    setPlanningUnits([]);
+    dispatch(setPlanningUnits([]));
     // Get the puids for the current IUCN category
     const puids = getPuidsFromIucnCategory(metadata.IUCN_CATEGORY);
     // Update the planning units
@@ -2794,8 +2795,8 @@ const App = () => {
     formData.append("user", owner);
     formData.append("project", projState.project);
     //add the planning unit manual exceptions
-    if (planningUnits.length > 0) {
-      planningUnits.forEach((item) =>
+    if (puState.planningUnits.length > 0) {
+      puState.planningUnits.forEach((item) =>
         formData.append(`status${item[0]}`, item[1])
       );
     }
@@ -2819,13 +2820,13 @@ const App = () => {
       const status = getStatusLevel(puid);
       const next_status = getNextStatusLevel(status, direction);
       //copy the current planning unit statuses
-      const statuses = [...planningUnits];
+      const statuses = [...puState.planningUnits];
       // If planning unit is not level 0 (in which case it will not be in the planningUnits state) - remove it from the puids array for that status
       if (status !== 0) removePuidFromArray(statuses, status, puid);
       //add it to the new status array
       if (next_status !== 0) addPuidToArray(statuses, next_status, puid);
       //set the state
-      setPlanningUnits(statuses);
+      dispatch(setPlanningUnits(statuses));
       //re-render the planning unit edit layer
       renderPuEditLayer();
     }
@@ -2842,14 +2843,14 @@ const App = () => {
 
   //gets the array index position for the passed status in the planningUnits state
   const getStatusPosition = (status) =>
-    planningUnits.findIndex((item) => item[0] === status);
+    puState.planningUnits.findIndex((item) => item[0] === status);
 
   //returns the planning units with a particular status, e.g. 1,2,3
   const getPlanningUnitsByStatus = (status) => {
     //get the position of the status items in the planningUnits
     let position = getStatusPosition(status);
     //get the array of planning units
-    return position > -1 ? planningUnits[position][1] : [];
+    return position > -1 ? puState.planningUnits[position][1] : [];
   };
 
   //returns the next status level for a planning unit depending on the direction
@@ -4193,7 +4194,7 @@ const App = () => {
   //updates the planning units by reconciling the passed arrays of puids
   const updatePlanningUnits = async (previousPuids, puids) => {
     //copy the current planning units state
-    const statuses = [...planningUnits];
+    const statuses = [...puState.planningUnits];
     //get the new puids that need to be added
     const newPuids = getNewPuids(previousPuids, puids);
     if (newPuids.length === 0) {
@@ -4205,7 +4206,7 @@ const App = () => {
       appPuidsToPlanningUnits(statuses, 2, newPuids);
     }
     //update the state
-    setPlanningUnits(statuses);
+    dispatch(setPlanningUnits(statuses));
     //re-render the layer
     renderPuEditLayer();
     //update the pu.dat file
@@ -4620,7 +4621,6 @@ const App = () => {
             setPUTabActive={setPUTabActive}
             startPuEditSession={startPuEditSession}
             stopPuEditSession={stopPuEditSession}
-            puEditing={puEditing}
             clearManualEdits={clearManualEdits}
             openFeatureMenu={openFeatureMenu}
             preprocessing={preprocessing}
@@ -4677,7 +4677,6 @@ const App = () => {
             <IdentifyPopup
               visible={identifyVisible}
               xy={popupPoint}
-              identifyPlanningUnits={identifyPlanningUnits}
               identifyProtectedAreas={identifyProtectedAreas}
               hideIdentifyPopup={hideIdentifyPopup}
               metadata={metadata}
@@ -4698,7 +4697,6 @@ const App = () => {
             registry={registry}
             loading={loading}
             getPlanningUnitGrids={getPlanningUnitGrids}
-            planningUnitGrids={planningUnitGrids}
             openFeaturesDialog={openFeaturesDialog}
             selectedCosts={selectedCosts}
             createNewProject={createNewProject}
@@ -4771,7 +4769,6 @@ const App = () => {
             loading={loading}
             getPlanningUnitGrids={getPlanningUnitGrids}
             unauthorisedMethods={unauthorisedMethods}
-            planningGrids={planningUnitGrids}
             openNewPlanningGridDialog={openNewPlanningGridDialog}
             exportPlanningGrid={exportPlanningGrid}
             deletePlanningGrid={deletePlanningUnitGrid}

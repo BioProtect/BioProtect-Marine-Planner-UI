@@ -22,6 +22,7 @@ const InfoPanel = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
+  const puState = useSelector((state) => state.planningUnit)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const userData = useSelector(selectUserData);
 
@@ -126,7 +127,7 @@ const InfoPanel = (props) => {
   };
 
   const startStopPuEditSession = () =>
-    props.puEditing ? stopPuEditSession() : startPuEditSession();
+    puState.puEditing ? stopPuEditSession() : startPuEditSession();
 
   const startPuEditSession = () => {
     setShowPlanningGrid(true);
@@ -240,12 +241,12 @@ const InfoPanel = (props) => {
             <Tab
               label="Project"
               value={0}
-              disabled={!!props.puEditing}
+              disabled={!!puState.puEditing}
             />
             <Tab
               label="Features"
               value={1}
-              disabled={!!props.puEditing}
+              disabled={!!puState.puEditing}
             />
             <Tab label="Planning units" value={2} />
           </Tabs>
@@ -271,7 +272,6 @@ const InfoPanel = (props) => {
               toggleFeaturePUIDLayer={props.toggleFeaturePUIDLayer}
               selectedFeatures={props.selectedFeatures}
               trigger={props.trigger}
-              puEditing={props.puEditing}
               stopProcess={props.stopProcess}
               processId={props.processId}
             />
@@ -280,7 +280,6 @@ const InfoPanel = (props) => {
             <PlanningUnitsTab
               metadata={props.metadata}
               userRole={userData.role}
-              puEditing={props.puEditing}
               startStopPuEditSession={startStopPuEditSession}
               clearManualEdits={props.clearManualEdits}
               preprocessing={props.preprocessing}
@@ -351,7 +350,7 @@ const InfoPanel = (props) => {
                     disabled={
                       props.preprocessing ||
                       projState.projectFeatures.length === 0 ||
-                      props.puEditing
+                      puState.puEditing
                     }
                     secondary="true"
                     key="runButton"

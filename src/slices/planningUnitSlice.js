@@ -1,7 +1,7 @@
 import { apiSlice } from "./apiSlice";
 import { createSlice } from "@reduxjs/toolkit";
 
-export const featureApiSlice = apiSlice.injectEndpoints({
+export const planningUnitApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getFeature: builder.query({
       query: (id) => ({
@@ -52,43 +52,34 @@ export const {
   useListFeatureProjectsQuery,
   useListFeaturePUsQuery,
   useCreateFeatureFromLinestringMutation,
-} = featureApiSlice;
+} = planningUnitApiSlice;
 
 
 
 // Thunk to handle server initialization
-const featureSlice = createSlice({
-  name: "feature",
+const planningUnitSlice = createSlice({
+  name: "planning-unit",
   initialState: {
-    addingRemovingFeatures: false,
-    allFeatures: [], //all of the interest features in the metadata_interest_features table
-    currentFeature: {},
-    featureMetadata: {},
-    identifiedFeatures: [],
-    selectedFeatureIds: [],
-    featureDatasetFilename: "",
+    identifyPlanningUnits: {},
+    planningUnitGrids: [],
+    planningUnits: [],
+    puEditing: false,
+
     dialogs: {
-      newFeatureDialogOpen: false,
-      featureDialogOpen: false,
-      featuresDialogOpen: false,
-      importFeaturePopoverOpen: false,
-      importFeaturesDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      featureInfoDialogOpen: false,
-      featureMenuOpen: false,
+
     },
   },
   reducers: {
-    setAddingRemovingFeatures(state, action) {
-      state.addingRemovingFeatures = action.payload;
+    setIdentifyPlanningUnits(state, action) {
+      state.identifyPlanningUnits = action.payload;
     },
-    setAllFeatures(state, action) {
-      state.allFeatures = action.payload;
+    setPlanningUnitGrids(state, action) {
+      state.planningUnitGrids = action.payload;
     },
-    setCurrentFeature(state, action) {
-      state.currentFeature = action.payload;
+    setPlanningUnits(state, action) {
+      state.planningUnits = action.payload;
     },
-    setFeatureMetadata(state, action) {
+    setPuEditing(state, action) {
       state.featureMetadata = action.payload;
     },
     setIdentifiedFeatures(state, action) {
@@ -100,7 +91,7 @@ const featureSlice = createSlice({
     setFeatureDatasetFilename(state, action) {
       state.featureDatasetFilename = action.payload;
     },
-    toggleFeatureD(state, action) {
+    togglePUD(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
     }
@@ -108,13 +99,14 @@ const featureSlice = createSlice({
 });
 
 export const {
-  setAddingRemovingFeatures,
-  setAllFeatures,
-  setCurrentFeature,
-  setFeatureMetadata,
+  setIdentifyPlanningUnits,
+  setPlanningUnitGrids,
+  setPlanningUnits,
+  setPuEditing,
+
   setIdentifiedFeatures,
   setSelectedFeatureIds,
   setFeatureDatasetFilename,
-  toggleFeatureD,
-} = featureSlice.actions;
-export default featureSlice.reducer;
+  togglePUD,
+} = planningUnitSlice.actions;
+export default planningUnitSlice.reducer;

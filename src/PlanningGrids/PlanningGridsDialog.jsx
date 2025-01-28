@@ -17,6 +17,7 @@ import PlanningGridsToolbar from "./PlanningGridsToolbar";
 const PlanningGridsDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const puState = useSelector((state) => state.planningUnit)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
@@ -180,7 +181,7 @@ const PlanningGridsDialog = (props) => {
       <div id="react-planning-grids-table">
         <BioprotectTable
           title="Planning Grids"
-          data={props.planningGrids}
+          data={puState.planningUnitGrids}
           tableColumns={columns}
           searchColumns={[
             "country",

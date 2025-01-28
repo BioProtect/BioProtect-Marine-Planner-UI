@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import SelectMapboxLayer from "../SelectMapboxLayer";
 import mapboxgl from "mapbox-gl";
 
 const PlanningUnitsDialog = (props) => {
-  console.log("props ", props);
   const [map, setMap] = useState(null);
   const [planningUnitGridsReceived, setPlanningUnitGridsReceived] =
     useState(false);
 
   // Reference for the map container div
   const mapContainer = useRef(null);
+  const puState = useSelector((state) => state.planningUnit)
 
   // Initialize the Mapbox map once the component is mounted
   useEffect(() => {
@@ -53,7 +54,7 @@ const PlanningUnitsDialog = (props) => {
             selectedValue={props.pu}
             map={map}
             mapboxUser={"craicerjack"}
-            items={props.planning_unit_grids}
+            items={puState.planningUnitGrids}
             changeItem={props.changeItem}
             disabled={!planningUnitGridsReceived}
             width={"352px"}

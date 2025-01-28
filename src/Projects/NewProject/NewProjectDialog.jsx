@@ -138,7 +138,6 @@ const NewProjectDialog = (props) => {
             <PlanningUnitsDialog
               previewFeature={previewFeature}
               getPlanningUnitGrids={props.getPlanningUnitGrids}
-              planning_unit_grids={props.planning_unit_grids}
               changeItem={setPU}
               pu={pu}
               openImportPlanningGridDialog={props.openImportPlanningGridDialog}
