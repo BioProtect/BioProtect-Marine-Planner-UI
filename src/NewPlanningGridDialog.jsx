@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import {
   setSnackbarMessage,
   setSnackbarOpen,
-  togglePlanningGridDialog,
+  togglePUD,
 } from "./slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -65,7 +65,7 @@ const NewPlanningGridDialog = ({
 
   const closeDialog = () =>
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "newPlanningGridDialogOpen",
         isOpen: false,
       })

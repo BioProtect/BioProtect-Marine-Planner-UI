@@ -4,7 +4,7 @@ import {
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
-  togglePlanningGridDialog,
+  togglePUD,
   toggleProjectDialog,
 } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";

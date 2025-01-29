@@ -3,55 +3,33 @@ import { createSlice } from "@reduxjs/toolkit";
 
 export const planningUnitApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getFeature: builder.query({
-      query: (id) => ({
-        url: `features?action=get&unique_id=${id}`,
-        method: "GET",
-      }),
-    }),
-    deleteFeature: builder.mutation({
+    deletePlanningUnit: builder.mutation({
       query: (featureName) => ({
-        url: `features?action=delete&feature_name=${featureName}`,
+        url: `planning-units?action=delete&feature_name=${featureName}`,
+        method: "GET",
+      }),
+      invalidatesTags: ["PlanningUnits"],
+    }),
+    exportPlanningUnit: builder.query({
+      query: (featureName) => ({
+        url: `planning-units?action=export&name=${featureName}`,
         method: "GET",
       }),
     }),
-    exportFeature: builder.query({
+    listPlanningUnits: builder.query({
       query: () => ({
-        url: "features?action=export",
+        url: `planning-units?action=list`,
         method: "GET",
       }),
+      providesTags: ["PlanningUnits"],
     }),
-    listFeatureProjects: builder.query({
-      query: (featureId) => ({
-        url: `features?action=list_projects&feature_class_id=${featureId}`,
-        method: "GET",
-      }),
-    }),
-    listFeaturePUs: builder.query({
-      query: (user, project, featureId) => ({
-        url: `features?action=planning_units&user=${user}&project=${project}&unique_id=${featureId}`,
-        method: "GET",
-      }),
-    }),
-
-    createFeatureFromLinestring: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `features?action=create_from_linestring`,
-        method: "POST",
-        body: { id, ...data },
-      }),
-    }),
-
   }),
 })
 
 export const {
-  useGetFeatureQuery,
-  useDeleteFeatureQuery,
-  useExportFeatureQuery,
-  useListFeatureProjectsQuery,
-  useListFeaturePUsQuery,
-  useCreateFeatureFromLinestringMutation,
+  useDeletePlanningUnitQuery,
+  useExportPlanningUnitQuery,
+  useListPlanningUnitsQuery,
 } = planningUnitApiSlice;
 
 
@@ -64,9 +42,12 @@ const planningUnitSlice = createSlice({
     planningUnitGrids: [],
     planningUnits: [],
     puEditing: false,
-
     dialogs: {
-
+      newMarinePlanningGridDialogOpen: false,
+      newPlanningGridDialogOpen: false,
+      importPlanningGridDialogOpen: false,
+      planningGridDialogOpen: false,
+      planningGridsDialogOpen: false,
     },
   },
   reducers: {
@@ -82,15 +63,6 @@ const planningUnitSlice = createSlice({
     setPuEditing(state, action) {
       state.featureMetadata = action.payload;
     },
-    setIdentifiedFeatures(state, action) {
-      state.identifiedFeatures = action.payload;
-    },
-    setSelectedFeatureIds(state, action) {
-      state.selectedFeatureIds = action.payload;
-    },
-    setFeatureDatasetFilename(state, action) {
-      state.featureDatasetFilename = action.payload;
-    },
     togglePUD(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
@@ -103,10 +75,6 @@ export const {
   setPlanningUnitGrids,
   setPlanningUnits,
   setPuEditing,
-
-  setIdentifiedFeatures,
-  setSelectedFeatureIds,
-  setFeatureDatasetFilename,
   togglePUD,
 } = planningUnitSlice.actions;
 export default planningUnitSlice.reducer;

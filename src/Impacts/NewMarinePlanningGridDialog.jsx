@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import CONSTANTS from "../constants";
 import FileUpload from "../Uploads/FileUpload";
 import MarxanDialog from "../MarxanDialog";
-import { togglePlanningGridDialog } from "../slices/uiSlice";
+import { togglePUD } from "../slices/uiSlice";
 
 const NewMarinePlanningGridDialog = ({
   loading,
@@ -38,7 +38,7 @@ const NewMarinePlanningGridDialog = ({
 
   const closeDialog = () =>
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "newMarinePlanningGridDialogOpen",
         isOpen: false,
       })

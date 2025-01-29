@@ -5,7 +5,7 @@ import {
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
-  togglePlanningGridDialog,
+  togglePUD,
   toggleProjectDialog,
 } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -34,7 +34,7 @@ const PlanningGridsDialog = (props) => {
   const closeDialog = useCallback(() => {
     setSelectedPlanningGrid(undefined);
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "planningGridsDialogOpen",
         isOpen: false,
       })
@@ -53,7 +53,7 @@ const PlanningGridsDialog = (props) => {
 
   const handleNewMarine = useCallback(() => {
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "newMarinePlanningGridDialogOpen",
         isOpen: true,
       })
@@ -63,7 +63,7 @@ const PlanningGridsDialog = (props) => {
 
   const openImportDialog = useCallback(() => {
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "importPlanningGridDialogOpen",
         isOpen: true,
       })

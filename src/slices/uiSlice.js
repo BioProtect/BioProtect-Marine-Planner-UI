@@ -14,13 +14,6 @@ const initialState = {
     projectsDialogOpen: false,
     newProjectWizardDialogOpen: false,
   },
-  planningGridDialogStates: {
-    newMarinePlanningGridDialogOpen: false,
-    newPlanningGridDialogOpen: false,
-    importPlanningGridDialogOpen: false,
-    planningGridDialogOpen: false,
-    planningGridsDialogOpen: false,
-  },
   dialogStates: {
     aboutDialogOpen: false,
     activitiesDialogOpen: false,
@@ -88,10 +81,6 @@ const uiSlice = createSlice({
       const { dialogName, isOpen } = action.payload;
       state.projectDialogStates[dialogName] = isOpen;
     },
-    togglePlanningGridDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.planningGridDialogStates[dialogName] = isOpen;
-    },
     toggleDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogStates[dialogName] = isOpen;
@@ -108,7 +97,7 @@ export const {
   setSelectedFeatureIds,
   setFeatureDatasetFilename,
   toggleProjectDialog,
-  togglePlanningGridDialog,
+  togglePUD,
   toggleDialog,
 } = uiSlice.actions;
 export default uiSlice.reducer;

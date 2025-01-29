@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
-import { togglePlanningGridDialog } from "../slices/uiSlice";
+import { togglePUD } from "../slices/uiSlice";
 
 const PlanningGridDialog = ({
   planningGridMetadata,
@@ -36,7 +36,7 @@ const PlanningGridDialog = ({
 
   const closeDialog = () =>
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "planningGridDialogOpen",
         isOpen: false,
       })

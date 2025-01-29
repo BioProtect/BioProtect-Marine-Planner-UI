@@ -3,14 +3,11 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { addLocalServer, filterAndSortServers } from "./Server/serverFunctions";
-// SERVICES
 import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
 import {
   initialiseServers,
   selectServer,
   setBpServer,
-  setBpServers,
   setProject,
   setProjectFeatures,
   setProjectImpacts,
@@ -18,16 +15,15 @@ import {
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjectLoaded,
-  setProjects,
+  setProjects
 } from "./slices/projectSlice";
-import { selectCurrentToken, selectCurrentUserId, selectUserData, setUserData } from "./slices/authSlice";
+import { selectCurrentToken, selectUserData, setUserData } from "./slices/authSlice";
 import {
   setActiveTab,
   setIdentifyFeatures,
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
-  togglePlanningGridDialog,
   toggleProjectDialog,
 } from "./slices/uiSlice";
 import {
@@ -39,14 +35,12 @@ import {
   toggleFeatureD,
   useCreateFeatureFromLinestringMutation,
   useDeleteFeatureQuery,
-  useExportFeatureQuery,
   useGetFeatureQuery,
   useListFeaturePUsQuery,
-  useListFeatureProjectsQuery,
+  useListFeatureProjectsQuery
 } from "./slices/featureSlice";
-import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD } from "./slices/planningUnitSlice";
+import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery, useListPlanningUnitsQuery } from "./slices/planningUnitSlice";
 import {
-  setLoggedIn,
   setUser,
   setUsers,
   useCreateUserMutation,
@@ -54,10 +48,10 @@ import {
   useGetUserQuery,
   useListUsersQuery,
   useLogoutUserMutation,
-  useResendPasswordQuery,
   useUpdateUserMutation,
   useValidateUserMutation
 } from "./slices/userSlice";
+// SERVICES
 import { useDispatch, useSelector } from "react-redux";
 
 import AboutDialog from "./AboutDialog";
@@ -83,12 +77,11 @@ import ImportPlanningGridDialog from "./ImportComponents/ImportPlanningGridDialo
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
 import LoginDialog from "./LoginDialog";
-//mapbox imports
 import { Map } from "mapbox-gl"; // Assuming you're using mapbox-gl
+//mapbox imports
 import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw";
-//project components
 import MenuBar from "./MenuBar/MenuBar";
-import MenuItemWithButton from "./MenuItemWithButton";
+//project components
 import NewFeatureDialog from "./Features/NewFeatureDialog";
 import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog";
 import NewPlanningGridDialog from "./NewPlanningGridDialog";
@@ -96,34 +89,31 @@ import NewProjectDialog from "./Projects/NewProject/NewProjectDialog";
 import NewProjectWizardDialog from "./Projects/NewProject/NewProjectWizardDialog";
 import PlanningGridDialog from "./PlanningGrids/PlanningGridDialog";
 import PlanningGridsDialog from "./PlanningGrids/PlanningGridsDialog";
-//@mui/material components and icons
 import ProfileDialog from "./User/ProfileDialog";
 import ProjectsDialog from "./Projects/ProjectsDialog";
 import ProjectsListDialog from "./Projects/ProjectsListDialog";
-/*global fetch*/
-/*global URLSearchParams*/
-/*global AbortController*/
-import RegisterDialog from "./RegisterDialog";
 import ResendPasswordDialog from "./ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./RightInfoPanel/ResultsPanel";
+//@mui/material components and icons
 import RunCumuluativeImpactDialog from "./Impacts/RunCumuluativeImpactDialog";
 import RunLogDialog from "./RunLogDialog";
 import RunSettingsDialog from "./RunSettingsDialog";
 import ServerDetailsDialog from "./User/ServerDetails/ServerDetailsDialog";
 import ShareableLinkDialog from "./ShareableLinkDialog";
+/*global fetch*/
+/*global URLSearchParams*/
+/*global AbortController*/
 import Snackbar from "@mui/material/Snackbar";
 import TargetDialog from "./TargetDialog";
-/*eslint-enable no-unused-vars*/
-// import { ThemeProvider } from "@mui/material/styles";
 import ToolsMenu from "./ToolsMenu";
 import UpdateWDPADialog from "./UpdateWDPADialog";
 import UserMenu from "./User/UserMenu";
 import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
-import Welcome from "./Welcome";
+/*eslint-enable no-unused-vars*/
+// import { ThemeProvider } from "@mui/material/styles";
 import classyBrew from "classybrew";
-import { dialogTitleClasses } from "@mui/material";
 /*eslint-disable no-unused-vars*/
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
@@ -146,7 +136,7 @@ const App = () => {
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectDialogs = useSelector((state) => state.ui.projectDialogStates);
   const featureDialogs = useSelector((state) => state.ui.featureDialogStates);
-  const planningGrids = useSelector((state) => state.ui.planningGridDialogStates);
+  const puDialogs = useSelector((state) => state.planningUnit.dialogs);
 
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
 
@@ -239,6 +229,15 @@ const App = () => {
 
   const token = useSelector(selectCurrentToken);
   const userData = useSelector(selectUserData);
+
+  const { data: planningUnitsData, isLoading: isPlanningUnitsLoading } = useListPlanningUnitsQuery();
+
+  useEffect(() => {
+    if (planningUnitsData) {
+      dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []));
+    }
+  }, [dispatch, planningUnitsData]);
+
 
   useEffect(() => {
     dispatch(initialiseServers(INITIAL_VARS.MARXAN_SERVERS))
@@ -774,7 +773,6 @@ const App = () => {
         userResp,
         speciesData.data
       );
-      await getPlanningUnitGrids();
       return "Logged in";
     } catch (error) {
       console.error("Login failed:", error);
@@ -1019,12 +1017,6 @@ const App = () => {
     setRunParams(parameters);
   };
 
-  //gets the planning unit grids
-  const getPlanningUnitGrids = async () => {
-    const response = await _get("getPlanningUnitGrids");
-    setPlanningUnitGrids(response.planning_unit_grids);
-  };
-
   const loadProject = async (proj, user, ...options) => {
     try {
       // Reset the results from any previous projects
@@ -1207,8 +1199,8 @@ const App = () => {
   //gets a list of projects for a feature
   const getProjectsForFeature = async (feature) => {
     // Fetch the projects associated with the given feature
-    const { response, error, loading } = await useListFeatureProjectsQuery(feature.id)
-    return response.projects;
+    const { data, error, isLoading } = useListFeatureProjectsQuery(feature.id)
+    return data.projects;
   };
 
   // Helper function to prepare form data
@@ -2925,7 +2917,7 @@ const App = () => {
   const previewPlanningGrid = (newPlanningGridMetadata) => {
     setPlanningGridMetadata(newPlanningGridMetadata);
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "planningGridDialogOpen",
         isOpen: true,
       })
@@ -2956,7 +2948,7 @@ const App = () => {
     );
     await newMarinePlanningGridCreated(message);
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "newMarinePlanningGridDialogOpen",
         isOpen: false,
       })
@@ -2984,7 +2976,7 @@ const App = () => {
       });
       await newPlanningGridCreated(response);
       dispatch(
-        togglePlanningGridDialog({
+        togglePUD({
           dialogName: "importPlanningGridDialogOpen",
           isOpen: false,
         })
@@ -3030,20 +3022,16 @@ const App = () => {
 
   //deletes a planning grid
   const deletePlanningGrid = async (feature_class_name, silent) => {
-    const response = await _get(
-      `deletePlanningUnitGrid?planning_grid_name=${feature_class_name}`
-    );
+    const response = await useDeletePlanningUnitQuery(feature_class_name);
     //update the planning unit grids
     await getPlanningUnitGrids();
     dispatch(setSnackbarMessage(response.info, silent));
   };
 
   //exports a planning grid to a zipped shapefile
-  const exportPlanningGrid = async (feature_class_name) => {
+  const exportPlanningGrid = async (featureName) => {
     try {
-      const response = await _get(
-        `exportPlanningUnitGrid?name=${feature_class_name}`
-      );
+      const response = await useExportPlanningUnitQuery(featureName)
       return `${projState.bpServer.endpoint}exports/${response.filename}`;
     } catch (error) {
       throw new Error("Failed to export planning grid");
@@ -3180,7 +3168,7 @@ const App = () => {
       await getPlanningUnitGrids();
     }
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "planningGridsDialogOpen",
         isOpen: true,
       })
@@ -3769,13 +3757,13 @@ const App = () => {
       .join(",");
 
     formData.append("linestring", "Linestring(" + coords + ")");
-    const { response, error, loading } = await useCreateFeatureFromLinestringMutation(formData)
+    const { data, error, isLoading } = useCreateFeatureFromLinestringMutation(formData)
     messageLogger({
       method: "createNewFeature",
       status: "Finished",
-      info: response.info,
+      info: data.info,
     });
-    const mbResponse = await pollMapbox(response.uploadId);
+    const mbResponse = await pollMapbox(data.uploadId);
     await newFeatureCreated(mbResponse.id);
     closeNewFeatureDialog();
   };
@@ -3833,7 +3821,7 @@ const App = () => {
 
   //deletes a feature
   const _deleteFeature = async (feature) => {
-    const { response, error, loading } = await useDeleteFeatureQuery(feature.feature_class_name)
+    const { data, error, isLoading } = useDeleteFeatureQuery(feature.feature_class_name)
     dispatch(setSnackbarMessage("Feature deleted"));
     removeFeature(feature);
     removeFeatureFromAllFeatures(feature); //remove it from the allFeatures array
@@ -3956,7 +3944,7 @@ const App = () => {
       updateFeature(feature, { feature_puid_layer_loaded: false });
     } else {
       //get the planning units where the feature occurs
-      const { response, error, loading } = await useListFeaturePUsQuery(owner, projState.project, feature.id)
+      const { data, error, isLoading } = useListFeaturePUsQuery(owner, projState.project, feature.id)
 
       addMapLayer({
         id: layerName,
@@ -3978,7 +3966,7 @@ const App = () => {
       //update the paint property for the layer
       const line_color_expression = initialiseFillColorExpression("puid");
 
-      response.data.forEach((puid) =>
+      data.data.forEach((puid) =>
         line_color_expression.push(puid, feature.color)
       );
       // Last value is the default, used where there is no data
@@ -4053,7 +4041,7 @@ const App = () => {
   const openNewPlanningGridDialog = async () => {
     await getCountries();
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "newPlanningGridDialogOpen",
         isOpen: true,
       })

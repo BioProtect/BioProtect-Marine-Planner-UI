@@ -5,7 +5,7 @@ import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
 import MarxanDialog from "../MarxanDialog";
 import TextField from "@mui/material/TextField";
-import { togglePlanningGridDialog } from "../slices/uiSlice";
+import { togglePUD } from "../slices/uiSlice";
 
 const ImportPlanningGridDialog = (props) => {
   const dispatch = useDispatch();
@@ -39,7 +39,7 @@ const ImportPlanningGridDialog = (props) => {
 
   const closeDialog = () =>
     dispatch(
-      togglePlanningGridDialog({
+      togglePUD({
         dialogName: "importPlanningGridDialogOpen",
         isOpen: false,
       })
