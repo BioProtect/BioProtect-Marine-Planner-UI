@@ -1,5 +1,11 @@
+import {
+  addLocalServer,
+  filterAndSortServers,
+  getServerCapabilities,
+} from "../Server/serverFunctions";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
 import { INITIAL_VARS } from "../bpVars";
-import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   bpServers: [],
@@ -19,6 +25,27 @@ const initialState = {
   projectImpacts: [],
   projectFeatures: [],
 };
+
+// Thunk to handle server initialization
+export const initialiseServers = createAsyncThunk(
+  "project/initialiseServers",
+  async (servers, { dispatch, rejectWithValue }) => {
+    try {
+      const updatedServers = addLocalServer(servers);
+      // Fetch capabilities for each server
+      const allCapabilities = await Promise.all(
+        updatedServers.map((server) => getServerCapabilities(server))
+      );
+      const filteredAndSortedServers = filterAndSortServers(allCapabilities);
+      dispatch(setBpServers(filteredAndSortedServers)); // Dispatch the updated servers to the store
+      return "ServerData retrieved";
+    } catch (error) {
+      console.error("Failed to initialise servers:", error);
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 
 const projectSlice = createSlice({
   name: "project",
@@ -100,6 +127,7 @@ export const {
   setBpServer,
   selectServer,
   setAddToProject,
+  setProject,
   setProjectFeatures,
   setProjectImpacts,
   setProjectLoaded,

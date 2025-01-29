@@ -29,12 +29,14 @@ import {
 import {
   setAddingRemovingFeatures,
   setAllFeatures,
+  setCreatedFeatureInfo,
   setCurrentFeature,
   setFeatureMetadata,
+  setFeaturePlanningUnits,
+  setFeatureProjects,
   setSelectedFeatureIds,
   toggleFeatureD,
   useCreateFeatureFromLinestringMutation,
-  useDeleteFeatureQuery,
   useGetFeatureQuery,
   useListFeaturePUsQuery,
   useListFeatureProjectsQuery
@@ -42,6 +44,7 @@ import {
 import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery, useListPlanningUnitsQuery } from "./slices/planningUnitSlice";
 import {
   setUser,
+  setUserId,
   setUsers,
   useCreateUserMutation,
   useDeleteUserMutation,
@@ -132,11 +135,13 @@ const App = () => {
   const projState = useSelector((state) => state.project);
   const userState = useSelector((state) => state.user)
   const puState = useSelector((state) => state.planningUnit)
+  const featureState = useSelector((state) => state.feature)
 
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectDialogs = useSelector((state) => state.ui.projectDialogStates);
   const featureDialogs = useSelector((state) => state.ui.featureDialogStates);
-  const puDialogs = useSelector((state) => state.planningUnit.dialogs);
+  const puDialogs = useSelector((state) => state.planningUnit);
+  console.log("puDialogs ", puDialogs);
 
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
 
@@ -231,12 +236,38 @@ const App = () => {
   const userData = useSelector(selectUserData);
 
   const { data: planningUnitsData, isLoading: isPlanningUnitsLoading } = useListPlanningUnitsQuery();
+  const { data: usersData, isLoading: isUsersLoading } = useListUsersQuery();
+  const { data: userResp, refetch } = useGetUserQuery(userId, { skip: !userId });
+  const { data: featureProjectsData, isLoading: isFeatureProjectsLoading } = useListFeatureProjectsQuery(feature.id);
+  const { data: featurePUData, isLoading: isFeaturePULoading } = useListFeaturePUsQuery(owner, projState.project, feature.id);
+  const [createFeatureFromLine, { isLoading: isCreating }] = useCreateFeatureFromLinestringMutation();
+
 
   useEffect(() => {
+    if (userId) {
+      refetch(); // Manually refetch user data when userId is available
+    }
     if (planningUnitsData) {
       dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []));
     }
-  }, [dispatch, planningUnitsData]);
+    if (usersData) {
+      dispatch(setUsers(usersData.users || []));
+    }
+    if (userResp) {
+      dispatch(setUserData(userResp || {}));
+      dispatch(setDismissedNotifications(userResp.dismissedNotifications || []));
+    }
+    if (featureProjectsData) {
+      dispatch(setFeatureProjects(featureProjectsData.projects) || []);
+    }
+    if (createdFeatureData) {
+      dispatch(setCreatedFeatureInfo(createdFeatureData) || []);
+    }
+    if (featurePUData) {
+      dispatch(setFeaturePlanningUnits(featurePUData) || [])
+    }
+
+  }, [dispatch, refetch, userId, planningUnitsData, usersData, userResp, createdFeatureData, featureProjectsData, featurePUData]);
 
 
   useEffect(() => {
@@ -754,10 +785,7 @@ const App = () => {
   //the user is validated so login
   const postLoginSetup = async ({ userId, accessToken }) => {
     try {
-      const { data: userResp, error, isLoading } = await useGetUserQuery(userId);
-
-      dispatch(setUserData(userResp));
-      setDismissedNotifications(userResp.dismissedNotifications || []);
+      dispatch(setUserId(userId))
       setResultsPanelOpen(true);
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
       const current_basemap = basemaps.find(
@@ -1088,7 +1116,7 @@ const App = () => {
     featurePrePro,
     allFeaturesData
   ) => {
-    const allFeats = uiState.allFeatures.length > 0 ? uiState.allFeatures : allFeaturesData;
+    const allFeats = featureState.allFeatures.length > 0 ? featureState.allFeatures : allFeaturesData;
 
     // Determine features based on project version
     const features = oldVersion
@@ -1413,7 +1441,7 @@ const App = () => {
   const marxanStopped = async () => await getRunLogs();
 
   const resetProtectedAreas = () => {
-    const updatedFeatures = uiState.allFeatures.map((feature) => ({
+    const updatedFeatures = featureState.allFeatures.map((feature) => ({
       ...feature,
       protected_area: -1,
       target_area: -1,
@@ -1572,7 +1600,7 @@ const App = () => {
     );
 
     // Update features with corresponding data from mvData
-    const updatedFeatures = uiState.allFeatures.map((feature) => {
+    const updatedFeatures = featureState.allFeatures.map((feature) => {
       const mvItem = mvDataMap.get(feature.id);
       if (mvItem) {
         return {
@@ -3528,7 +3556,7 @@ const App = () => {
   const updateFeature = (feature, newProps) => {
     console.log("feature, newProps ", feature, newProps);
     console.log("updateFeature........ ");
-    let features = [...uiState.allFeatures];
+    let features = [...featureState.allFeatures];
     const index = features.findIndex((element) => element.id === feature.id);
     if (index !== -1) {
       features[index] = { ...features[index], ...newProps };
@@ -3539,7 +3567,7 @@ const App = () => {
 
   //gets the ids of the selected features
   const getSelectedFeatureIds = () => {
-    const updatedFeatureIds = uiState.allFeatures
+    const updatedFeatureIds = featureState.allFeatures
       .filter((feature) => feature.selected)
       .map((feature) => feature.id);
 
@@ -3548,14 +3576,14 @@ const App = () => {
 
   //when a user clicks a feature in the FeaturesDialog
   const clickFeature = (feature) => {
-    return [...uiState.selectedFeatureIds].includes(feature.id)
+    return [...featureState.selectedFeatureIds].includes(feature.id)
       ? removeFeature(feature)
       : addFeature(feature);
   };
 
   //removes a feature from the selectedFeatureIds array
   const removeFeature = (feature) => {
-    const updatedFeatureIds = uiState.selectedFeatureIds.filter(
+    const updatedFeatureIds = featureState.selectedFeatureIds.filter(
       (id) => id !== feature.id
     );
     dispatch(setSelectedFeatureIds(updatedFeatureIds));
@@ -3587,18 +3615,14 @@ const App = () => {
     this.digitisedFeatures = evt.features;
   };
 
-  //selects all the features
-  const selectAllFeatures = () =>
-    dispatch(setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id)));
-
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
   const updateSelectedFeatures = async () => {
     //delete the gap analysis as the features within the project have changed
     await deleteGapAnalysis();
 
     // Get the updated features
-    let updatedFeatures = uiState.allFeatures.map((feature) => {
-      if (uiState.selectedFeatureIds.includes(feature.id)) {
+    let updatedFeatures = featureState.allFeatures.map((feature) => {
+      if (featureState.selectedFeatureIds.includes(feature.id)) {
         // Feature is selected
         return { ...feature, selected: true };
       } else {
@@ -3658,7 +3682,7 @@ const App = () => {
 
   //updates the target values for all features in the project to the passed value
   const updateTargetValueForFeatures = async (target_value) => {
-    const features = uiState.allFeatures.map((feature) => ({
+    const features = featureState.allFeatures.map((feature) => ({
       ...feature,
       target_value,
     }));
@@ -3757,13 +3781,14 @@ const App = () => {
       .join(",");
 
     formData.append("linestring", "Linestring(" + coords + ")");
-    const { data, error, isLoading } = useCreateFeatureFromLinestringMutation(formData)
+    const createdFeatureData = await createFeatureFromLine(formData).unwrap();
+
     messageLogger({
       method: "createNewFeature",
       status: "Finished",
-      info: data.info,
+      info: createdFeatureData.info,
     });
-    const mbResponse = await pollMapbox(data.uploadId);
+    const mbResponse = await pollMapbox(createdFeatureData.uploadId);
     await newFeatureCreated(mbResponse.id);
     closeNewFeatureDialog();
   };
@@ -3793,43 +3818,10 @@ const App = () => {
     }));
   };
 
-  //attempts to delete a feature - if the feature is in use in a project then it will not be deleted and the list of projects will be shown
-  const deleteFeature = async (feature) => {
-    try {
-      // Fetch projects associated with the feature
-      const projects = await getProjectsForFeature(feature);
-
-      // Check if there are any projects using the feature
-      if (projects.length === 0) {
-        // No projects using the feature, proceed with deletion
-        await _deleteFeature(feature);
-      } else {
-        // Projects using the feature, show dialog to the user
-        showProjectListDialog(
-          projects,
-          "Failed to delete planning feature",
-          "The feature is used in the following projects"
-        );
-      }
-    } catch (error) {
-      // Handle any errors that occur during the process
-      console.error("Error deleting feature:", error);
-      // Optionally: show error feedback to the user
-      dispatch(setSnackbarMessage("Failed to delete feature due to an error."));
-    }
-  };
-
-  //deletes a feature
-  const _deleteFeature = async (feature) => {
-    const { data, error, isLoading } = useDeleteFeatureQuery(feature.feature_class_name)
-    dispatch(setSnackbarMessage("Feature deleted"));
-    removeFeature(feature);
-    removeFeatureFromAllFeatures(feature); //remove it from the allFeatures array
-  };
 
   //removes a feature from the allFeatures array
   const removeFeatureFromAllFeatures = (feature) => {
-    const updatedFeatures = uiState.allFeatures.filter(
+    const updatedFeatures = featureState.allFeatures.filter(
       (item) => item.id !== feature.id
     );
     dispatch(setAllFeatures(updatedFeatures));
@@ -3846,7 +3838,7 @@ const App = () => {
     const newFeatures = response.data;
 
     // Extract existing and new feature IDs
-    const existingFeatureIds = getFeatureIds(uiState.allFeatures);
+    const existingFeatureIds = getFeatureIds(featureState.allFeatures);
     const newFeatureIds = getFeatureIds(newFeatures);
 
     // Determine which features have been removed or added
@@ -4714,8 +4706,6 @@ const App = () => {
             onOk={updateSelectedFeatures}
             loading={loading || uploading}
             metadata={metadata}
-            deleteFeature={deleteFeature}
-            selectAllFeatures={selectAllFeatures}
             userRole={userData.role}
             clickFeature={clickFeature}
             initialiseDigitising={initialiseDigitising}

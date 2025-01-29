@@ -65,8 +65,12 @@ const featureSlice = createSlice({
     currentFeature: {},
     featureMetadata: {},
     identifiedFeatures: [],
+    selectedFeature: {},
     selectedFeatureIds: [],
     featureDatasetFilename: "",
+    featureProjects: [],
+    featurePlanningUnits: [],
+    createdFeatureInfo: {},
     dialogs: {
       newFeatureDialogOpen: false,
       featureDialogOpen: false,
@@ -94,11 +98,23 @@ const featureSlice = createSlice({
     setIdentifiedFeatures(state, action) {
       state.identifiedFeatures = action.payload;
     },
+    setSelectedFeature(state, action) {
+      state.selectedFeature = action.payload;
+    },
     setSelectedFeatureIds(state, action) {
       state.selectedFeatureIds = action.payload;
     },
     setFeatureDatasetFilename(state, action) {
       state.featureDatasetFilename = action.payload;
+    },
+    setFeatureProjects(state, action) {
+      state.featureProjects = action.payload;
+    },
+    setCreatedFeatureInfo(state, action) {
+      state.createdFeatureInfo = action.payload;
+    },
+    setFeaturePlanningUnits(state, action) {
+      state.featurePlanningUnits = action.payload;
     },
     toggleFeatureD(state, action) {
       const { dialogName, isOpen } = action.payload;
@@ -112,9 +128,13 @@ export const {
   setAllFeatures,
   setCurrentFeature,
   setFeatureMetadata,
+  setFeatureProjects,
   setIdentifiedFeatures,
+  setSelectedFeature,
   setSelectedFeatureIds,
   setFeatureDatasetFilename,
+  setCreatedFeatureInfo,
+  setFeaturePlanningUnits,
   toggleFeatureD,
 } = featureSlice.actions;
 export default featureSlice.reducer;

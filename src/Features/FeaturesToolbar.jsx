@@ -5,6 +5,7 @@ import {
   faTimesCircle,
   faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import { setAllFeatures, setSelectedFeature, setSelectedFeatureIds, toggleFeatureD, useDeleteFeatureQuery } from "../slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -13,15 +14,23 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Import from "@mui/icons-material/GetApp";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import { setSelectedFeatureIds } from "../slices/featureSlice";
 
-const FeaturesToolbar = (props) => {
+const FeaturesToolbar = ({
+  metadata,
+  userRole,
+  loading,
+  selectAllFeatures,
+  _newByDigitising }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const featureState = useSelector((state) => state.feature);
+
   const [newAnchorEl, setNewAnchorEl] = useState(null);
   const [importAnchorEl, setImportAnchorEl] = useState(null);
   const newOpen = Boolean(newAnchorEl);
   const importOpen = Boolean(importAnchorEl);
+  const [deleteFeature, { isLoading }] = useDeleteFeatureQuery(feature.feature_class_name);
+
 
 
   const handleNewClick = (event) => setNewAnchorEl(event.currentTarget);
@@ -31,11 +40,96 @@ const FeaturesToolbar = (props) => {
     setImportAnchorEl(null);
   };
 
+  const handleOpenImportFeaturesDialog = () => {
+    dispatch(
+      toggleFeatureD({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureD({
+        dialogName: "importFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureD({
+        dialogName: "featuresDialogOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureD({
+        dialogName: "importFeaturesDialogOpen",
+        isOpen: true,
+      })
+    );
+  };
+
+  const handleOpenImportFromWebDialog = () => {
+    dispatch(
+      toggleFeatureD({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureD({
+        dialogName: "importFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleDialog({
+        dialogName: "importFromWebDialogOpen",
+        isOpen: true,
+      })
+    );
+    dispatch(
+      toggleFeatureD({
+        dialogName: "featuresDialogOpen",
+        isOpen: false,
+      })
+    );
+  };
+
+
+
+  const handleDeleteFeature = async () => {
+    try {
+      let feature = { ...featureState.feature }
+      // check if any projects are using feature
+      const projects = await getProjectsForFeature(feature);
+      if (projects.length === 0) {
+        // Unwrap to handle the response
+        await deleteFeature(feature.feature_class_name).unwrap();
+        const updatedFeatureIds = uiState.selectedFeatureIds.filter((id) => id !== feature.id);
+        const updatedFeatures = uiState.allFeatures.filter((item) => item.id !== feature.id);
+
+        dispatch(setSnackbarMessage("Feature deleted"));
+        dispatch(setSelectedFeatureIds(updatedFeatureIds));
+        dispatch(setAllFeatures(updatedFeatures));
+        dispatch(setSelectedFeature({}));
+      } else {
+        // Projects using the feature, show dialog to the user
+        showProjectListDialog(
+          projects,
+          "Failed to delete planning feature",
+          "The feature is used in the following projects"
+        );
+      }
+    } catch (err) {
+      console.error("Error deleting feature:", err);
+      dispatch(setSnackbarMessage("Failed to delete feature due to an error."));
+    }
+  };
+
   return (
     <div>
       <div
         style={{
-          display: props.metadata.OLDVERSION ? "block" : "none",
+          display: metadata.OLDVERSION ? "block" : "none",
         }}
         className={"tabTitle"}
       >
@@ -43,13 +137,13 @@ const FeaturesToolbar = (props) => {
       </div>
 
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
-        {props.userRole !== "ReadOnly" &&
-          !props.metadata.OLDVERSION &&
+        {userRole !== "ReadOnly" &&
+          !metadata.OLDVERSION &&
           !uiState.addingRemovingFeatures ? (
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="New feature"
-            disabled={props.loading}
+            disabled={loading}
             aria-controls={open ? "basic-menu" : undefined}
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
@@ -63,19 +157,19 @@ const FeaturesToolbar = (props) => {
           <MenuItem
             primaryText="Draw on screen"
             title="Create a new feature by digitising it on the screen"
-            onClick={() => props._newByDigitising()}
+            onClick={() => _newByDigitising()}
           >
             Create a new feature by digitising it on the screen
           </MenuItem>
         </Menu>
 
-        {!props.metadata.OLDVERSION &&
+        {!metadata.OLDVERSION &&
           !uiState.addingRemovingFeatures &&
-          props.userRole !== "ReadOnly" ? (
+          userRole !== "ReadOnly" ? (
           <Button
             startIcon={<Import style={{ height: "20px", width: "20px" }} />}
             title="Create new features from existing data"
-            disabled={props.loading}
+            disabled={loading}
             aria-controls={open ? "basic-menu" : undefined}
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
@@ -88,13 +182,13 @@ const FeaturesToolbar = (props) => {
         <Menu open={importOpen} anchorEl={importAnchorEl} onClose={handleClose}>
           <MenuItem
             primaryText="From a shapefile"
-            onClick={() => props._openImportFeaturesDialog()}
+            onClick={() => handleOpenImportFeaturesDialog()}
           >
             Import one or more features from a shapefile
           </MenuItem>
           <MenuItem
             primaryText="From the web"
-            onClick={() => props._openImportFromWebDialog()}
+            onClick={() => handleOpenImportFromWebDialog()}
           >
             Import one or more features from a web resource
           </MenuItem>
@@ -106,8 +200,8 @@ const FeaturesToolbar = (props) => {
           </MenuItem>
         </Menu>
 
-        {props.userRole === "Admin" &&
-          !props.metadata.OLDVERSION &&
+        {userRole === "Admin" &&
+          !metadata.OLDVERSION &&
           !uiState.addingRemovingFeatures ? (
           <Button
             startIcon={
@@ -115,12 +209,12 @@ const FeaturesToolbar = (props) => {
             }
             title="Delete feature"
             disabled={
-              props.selectedFeature === undefined ||
-              props.loading ||
-              (props.selectedFeature &&
-                props.selectedFeature.created_by === "global admin")
+              featureState.selectedFeature === undefined ||
+              loading ||
+              (featureState.selectedFeature &&
+                featureState.selectedFeature.created_by === "global admin")
             }
-            onClick={() => props._delete()}
+            onClick={() => handleDeleteFeature()}
           >
             Delete
           </Button>
@@ -139,13 +233,13 @@ const FeaturesToolbar = (props) => {
           <Button
             startIcon={<FontAwesomeIcon icon={faCheckCircle} />}
             title="Select all features"
-            onClick={() => props.selectAllFeatures()}
+            onClick={() => selectAllFeatures()}
           >
             Select all
           </Button>
         ) : null}
       </ButtonGroup>
-    </div>
+    </div >
   );
 };
 export default FeaturesToolbar;

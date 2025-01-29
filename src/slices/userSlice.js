@@ -102,11 +102,15 @@ export const {
 const userSlice = createSlice({
   name: "user",
   initialState: {
+    userId: null,
     user: null,
     users: [],
     isUserLoggedIn: false,
   },
   reducers: {
+    setUserId(state, action) {
+      state.userId = action.payload;
+    },
     setUser(state, action) {
       state.user = action.payload;
     },
@@ -119,5 +123,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUser, setUsers, setLoggedIn } = userSlice.actions;
+export const { setUserId, setUser, setUsers, setLoggedIn } = userSlice.actions;
 export default userSlice.reducer;

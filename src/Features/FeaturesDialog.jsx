@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { selectAllFeatures, setSelectedFeatureIds, toggleFeatureD } from "../slices/featureSlice";
+import { setSelectedFeature, setSelectedFeatureIds, toggleFeatureD } from "../slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -19,23 +19,16 @@ const FeaturesDialog = (props) => {
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
   );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
+  const featureDialogs = useSelector((state) => state.feature.dialogs);
   const planningGridDialogStates = useSelector(
     (state) => state.ui.planningGridDialogStates
   );
-  const [selectedFeature, setSelectedFeature] = useState(undefined);
   const [previousRow, setPreviousRow] = useState(undefined);
   const [searchText, setSearchText] = useState("");
   const [filteredRows, setFilteredRows] = useState([]);
   const [newFeatureAnchor, setNewFeatureAnchor] = useState(null);
   const [importFeatureAnchor, setImportFeatureAnchor] = useState(null);
 
-  const _delete = () => {
-    props.deleteFeature(selectedFeature);
-    setSelectedFeature(undefined);
-  };
 
   const showNewFeaturePopover = (event) => {
     setNewFeatureAnchor(event.currentTarget);
@@ -51,60 +44,6 @@ const FeaturesDialog = (props) => {
     setImportFeatureAnchor(event.currentTarget);
     dispatch(
       toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
-    );
-  };
-
-  const _openImportFeaturesDialog = () => {
-    dispatch(
-      toggleFeatureD({
-        dialogName: "newFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "importFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "featuresDialogOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "importFeaturesDialogOpen",
-        isOpen: true,
-      })
-    );
-  };
-
-  const _openImportFromWebDialog = () => {
-    dispatch(
-      toggleFeatureD({
-        dialogName: "newFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "importFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleDialog({
-        dialogName: "importFromWebDialogOpen",
-        isOpen: true,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "featuresDialogOpen",
-        isOpen: false,
-      })
     );
   };
 
@@ -145,7 +84,7 @@ const FeaturesDialog = (props) => {
       }
       setPreviousRow(rowInfo);
     } else {
-      setSelectedFeature(rowInfo.original);
+      dispatch(setSelectedFeature(rowInfo.original));
     }
   };
 
@@ -189,7 +128,7 @@ const FeaturesDialog = (props) => {
       const selectedIds = filteredRows.map((feature) => feature.id);
       dispatch(setSelectedFeatureIds(selectedIds));
     } else {
-      props.selectAllFeatures();
+      dispatch(setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id)));
     }
   };
 
@@ -202,7 +141,7 @@ const FeaturesDialog = (props) => {
   };
 
   const unselectFeature = () => {
-    setSelectedFeature(undefined);
+    dispatch(setSelectedFeature(undefined));
     dispatch(
       toggleFeatureD({
         dialogName: "importFeaturePopoverOpen",
@@ -258,11 +197,7 @@ const FeaturesDialog = (props) => {
           metadata={props.metadata}
           userRole={props.userRole}
           loading={props.loading}
-          selectedFeature={selectedFeature}
           selectAllFeatures={() => selectAllFeatures()}
-          _openImportFeaturesDialog={() => _openImportFeaturesDialog()}
-          _openImportFromWebDialog={() => _openImportFromWebDialog()}
-          _delete={() => _delete()}
           _newByDigitising={_newByDigitising}
         />
       }
@@ -275,7 +210,7 @@ const FeaturesDialog = (props) => {
           dataFiltered={dataFiltered}
           selected={featureState.selectedFeatureIds}
           selectedFeatureIds={featureState.selectedFeatureIds}
-          selectedFeature={selectedFeature}
+          selectedFeature={featureState.selectedFeature}
           clickRow={clickRow}
           preview={() => props.previewFeature(featureMetadata)}
         />

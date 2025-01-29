@@ -54,61 +54,61 @@ const UserSettingsDialog = (props) => {
       {...props}
       maxWidth="md"
       showCancelButton={false}
-      onOk={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}}
-helpLink = { "user.html#user-settings"}
-title = "Settings"
-  >
-  <div key="k14">
-    <FormControl sx={{ m: 1, minWidth: 120 }}>
-      <InputLabel id="protected-areas-label">Base Map</InputLabel>
-      <Select
-        labelId="basemap-style-id"
-        id="basemap-style"
-        value={props.basemap}
-        label="Change Basemap"
-        fullWidth
-        onChange={changeBasemap}
-      >
-        {props.basemaps.map((item) => (
-          <MenuItem
-            key={item.name}
-            value={item.name}
-            style={{ fontSize: "12px" }}
-            title={item.description}
+      onOk={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
+      helpLink={"user.html#user-settings"}
+      title="Settings"
+    >
+      <div key="k14">
+        <FormControl sx={{ m: 1, minWidth: 120 }}>
+          <InputLabel id="protected-areas-label">Base Map</InputLabel>
+          <Select
+            labelId="basemap-style-id"
+            id="basemap-style"
+            value={props.basemap}
+            label="Change Basemap"
+            fullWidth
+            onChange={changeBasemap}
           >
-            {item.alias}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-    <Divider />
-    <FormControl>
-      <FormLabel id="reportUnitType-label">Area Units</FormLabel>
-      <RadioGroup
-        aria-labelledby="reportUnitType-label"
-        value={userData.report_units}
-        name="reportUnitType"
-        onChange={setReportUnit}
-      >
-        <FormControlLabel value="m2" control={<Radio />} label="m2" />
-        <FormControlLabel value="Ha" control={<Radio />} label="Ha" />
-        <FormControlLabel value="Km2" control={<Radio />} label="Km2" />
-      </RadioGroup>
-    </FormControl>
-    <Divider />
+            {props.basemaps.map((item) => (
+              <MenuItem
+                key={item.name}
+                value={item.name}
+                style={{ fontSize: "12px" }}
+                title={item.description}
+              >
+                {item.alias}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Divider />
+        <FormControl>
+          <FormLabel id="reportUnitType-label">Area Units</FormLabel>
+          <RadioGroup
+            aria-labelledby="reportUnitType-label"
+            value={userData.report_units}
+            name="reportUnitType"
+            onChange={setReportUnit}
+          >
+            <FormControlLabel value="m2" control={<Radio />} label="m2" />
+            <FormControlLabel value="Ha" control={<Radio />} label="Ha" />
+            <FormControlLabel value="Km2" control={<Radio />} label="Km2" />
+          </RadioGroup>
+        </FormControl>
+        <Divider />
 
-    <FormGroup>
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={userData.use_feature_colors}
-            onChange={toggleUseFeatureColors}
+        <FormGroup>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={userData.use_feature_colors}
+                onChange={toggleUseFeatureColors}
+              />
+            }
+            label="Use Feature Colours"
           />
-        }
-        label="Use Feature Colours"
-      />
-    </FormGroup>
-  </div>
+        </FormGroup>
+      </div>
     </MarxanDialog >
   );
 };

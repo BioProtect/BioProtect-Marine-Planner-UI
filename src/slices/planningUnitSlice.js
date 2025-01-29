@@ -33,23 +33,24 @@ export const {
 } = planningUnitApiSlice;
 
 
+const initialState = {
+  identifyPlanningUnits: {},
+  planningUnitGrids: [],
+  planningUnits: [],
+  puEditing: false,
+  dialogs: {
+    newMarinePlanningGridDialogOpen: false,
+    newPlanningGridDialogOpen: false,
+    importPlanningGridDialogOpen: false,
+    planningGridDialogOpen: false,
+    planningGridsDialogOpen: false,
+  },
+}
 
 // Thunk to handle server initialization
 const planningUnitSlice = createSlice({
-  name: "planning-unit",
-  initialState: {
-    identifyPlanningUnits: {},
-    planningUnitGrids: [],
-    planningUnits: [],
-    puEditing: false,
-    dialogs: {
-      newMarinePlanningGridDialogOpen: false,
-      newPlanningGridDialogOpen: false,
-      importPlanningGridDialogOpen: false,
-      planningGridDialogOpen: false,
-      planningGridsDialogOpen: false,
-    },
-  },
+  name: "planningUnit",
+  initialState,
   reducers: {
     setIdentifyPlanningUnits(state, action) {
       state.identifyPlanningUnits = action.payload;

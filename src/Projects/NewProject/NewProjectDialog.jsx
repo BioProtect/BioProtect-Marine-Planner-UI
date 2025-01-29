@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { selectedFeatureIds, setSelectedFeatureIds } from "../../slices/featureSlice.js"
 import { setAllFeatures, toggleFeatureD } from "../../slices/featureSlice.js";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -10,6 +9,7 @@ import Metadata from "../../Metadata";
 import PlanningUnitsDialog from "../../PlanningGrids/PlanningUnitsDialog";
 import SelectCostFeatures from "../../SelectCostFeatures";
 import SelectFeatures from "../../LeftInfoPanel/FeaturesTab.jsx";
+import { setSelectedFeatureIds } from "../../slices/featureSlice.js"
 import {
   toggleProjectDialog,
 } from "../../slices/uiSlice";
@@ -30,7 +30,6 @@ const NewProjectDialog = (props) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [pu, setPU] = useState("");
-  const [selectedFeatureIds] = useState([]);
 
   useEffect(() => {
     dispatch(setAllFeatures(JSON.parse(JSON.stringify(uiState.allFeatures || []))));
