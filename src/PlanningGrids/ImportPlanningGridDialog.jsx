@@ -9,9 +9,8 @@ import { togglePUD } from "../slices/uiSlice";
 
 const ImportPlanningGridDialog = (props) => {
   const dispatch = useDispatch();
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
+  const puState = useSelector((state) => state.planningUnit)
+
   const [planningGridName, setPlanningGridName] = useState("");
   const [zipFilename, setZipFilename] = useState("");
   const [description, setDescription] = useState("");
@@ -47,7 +46,7 @@ const ImportPlanningGridDialog = (props) => {
 
   return (
     <MarxanDialog
-      open={planningGridDialogStates.importPlanningGridDialogOpen}
+      open={puState.dialogs.importPlanningGridDialogOpen}
       fullWidth={true}
       maxWidth="md"
       title="Import Planning grid"

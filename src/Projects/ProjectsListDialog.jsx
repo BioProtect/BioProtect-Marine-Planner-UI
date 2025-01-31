@@ -12,6 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import MarxanDialog from "../MarxanDialog";
 import React from "react";
+import { selectUserData } from "../slices/authSlice";
 import { toggleProjectDialog } from "../slices/uiSlice";
 
 const ProjectsListDialog = () => {

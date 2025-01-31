@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useCallback, useState } from "react";
+import { setProjectList, setProjectListDialogHeading, setProjectListDialogTitle, toggleDialog } from "../slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -21,9 +22,7 @@ const PlanningGridDialog = ({
   getProjectList,
 }) => {
   const dispatch = useDispatch();
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
+  const puState = useSelector((state) => state.planningUnit);
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpanded = useCallback(() => {
@@ -45,7 +44,7 @@ const PlanningGridDialog = ({
   return (
     <div>
       <MarxanDialog
-        open={planningGridDialogStates.planningGridDialogOpen}
+        open={puState.dialogs.planningGridDialogOpen}
         onOk={() => closeDialog()}
         onClose={() => closeDialog()}
         showCancelButton={false}

@@ -25,7 +25,7 @@ const FeatureMenu = ({
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
-  const featureStates = useSelector((state) => state.ui.featureDialogStates);
+  const featureState = useSelector((state) => state.feature);
   const userData = useSelector(selectUserData);
 
   const handleInfoMenuItemClick = () => {
@@ -41,7 +41,7 @@ const FeatureMenu = ({
     );
   return (
     <Popover
-      open={featureStates.featureMenuOpen}
+      open={featureState.dialogs.featureMenuOpen}
       anchorEl={anchorEl}
       onClose={closeDialog}
       style={{ width: "307px" }}

@@ -3,12 +3,12 @@ import {
   setSnackbarMessage,
   setSnackbarOpen,
   togglePUD,
-} from "./slices/uiSlice";
+} from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-import BioprotectSelect from "./BPComponents/BioprotectSelect";
-import CONSTANTS from "./constants";
-import MarxanDialog from "./MarxanDialog";
+import BioprotectSelect from "../BPComponents/BioprotectSelect";
+import CONSTANTS from "../constants";
+import MarxanDialog from "../MarxanDialog";
 
 const NewPlanningGridDialog = ({
   loading,
@@ -16,9 +16,7 @@ const NewPlanningGridDialog = ({
   countries,
 }) => {
   const dispatch = useDispatch();
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
+  const puState = useSelector((state) => state.planningUnit)
 
   const [iso3, setIso3] = useState("");
   const [domain, setDomain] = useState("");
@@ -73,7 +71,7 @@ const NewPlanningGridDialog = ({
 
   return (
     <MarxanDialog
-      open={planningGridDialogStates.newPlanningGridDialogOpen}
+      open={puState.dialogs.newPlanningGridDialogOpen}
       fullWidth={true}
       maxWidth="sm"
       loading={loading}

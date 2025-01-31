@@ -21,9 +21,6 @@ const NewProjectDialog = (props) => {
   const projectDialogStates = useSelector(
     (state) => state.ui.projectDialogStates
   );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
 
   const [steps] = useState(["Info", "Planning units", "Features"]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -136,7 +133,6 @@ const NewProjectDialog = (props) => {
           {stepIndex === 1 && (
             <PlanningUnitsDialog
               previewFeature={previewFeature}
-              getPlanningUnitGrids={props.getPlanningUnitGrids}
               changeItem={setPU}
               pu={pu}
               openImportPlanningGridDialog={props.openImportPlanningGridDialog}
@@ -168,7 +164,7 @@ const NewProjectDialog = (props) => {
         </div>
       </MarxanDialog>
       <FeaturesDialog
-        open={featureDialogStates.featuresDialogOpen}
+        open={featureState.dialogs.featuresDialogOpen}
         onOk={updateSelectedFeatures}
         onCancel={() =>
           dispatch(

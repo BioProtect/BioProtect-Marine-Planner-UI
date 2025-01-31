@@ -20,22 +20,17 @@ import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
 import { setAddToProject } from "../slices/projectSlice";
+import { useCreateFeatureFromLinestringMutation } from "../slices/featureSlice";
 
 // Functional component version using React 18 and MUI 5
-const NewFeatureDialog = (props) => {
+const NewFeatureDialog = ({ loading, newFeatureCreated }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
+  const featureState = useSelector((state) => state.feature);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
+  const [createFeatureFromLine, { isLoading: isCreating }] = useCreateFeatureFromLinestringMutation();
+
   // State for name and description
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -44,19 +39,77 @@ const NewFeatureDialog = (props) => {
   const handleNameChange = (event) => setName(event.target.value);
   const handleDescriptionChange = (event) => setDescription(event.target.value);
 
-  // Creating the new feature based on name and description
-  const handleCreateNewFeature = () => {
-    console.log("clicked");
-    props.createNewFeature(name, description);
+  const convertCoordinatesToLineString = (coordinates) => {
+    return coordinates[0]
+      .map((coordinate) => `${coordinate[0]} ${coordinate[1]}`)
+      .join(",");
   };
+
+  const createNewFeature = async () => {
+    try {
+      startLogging();
+      messageLogger({
+        method: "createNewFeature",
+        status: "Started",
+        info: "Creating feature..",
+      });
+
+      if (!featureState.digitisedFeatures || featureState.digitisedFeatures.length === 0) {
+        throw new Error("No digitized features available.");
+      }
+
+      // Convert coordinates into a PostGIS-compatible LINESTRING
+      const coords = convertCoordinatesToLineString(featureState.digitisedFeatures[0].geometry.coordinates);
+      const linestring = `Linestring(${coords})`;
+
+      // Prepare the form data
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("linestring", linestring);
+
+      // Send the request to create the feature
+      const createdFeatureData = await createFeatureFromLine(formData).unwrap();
+
+      // Log success message
+      messageLogger({
+        method: "createNewFeature",
+        status: "Finished",
+        info: createdFeatureData.info,
+      });
+
+      // Poll Mapbox for completion
+      const mbResponse = await pollMapbox(createdFeatureData.uploadId);
+      await newFeatureCreated(mbResponse.id);
+
+      // Close the dialog & clean up the map controls
+      dispatch(toggleFeatureD({ dialogName: "newFeatureDialogOpen", isOpen: false }));
+      map.current.removeControl(mapboxDrawControls);
+    } catch (error) {
+      console.error("Error creating feature:", error);
+      messageLogger({
+        method: "createNewFeature",
+        status: "Error",
+        info: error.message || "Failed to create feature.",
+      });
+    }
+  };
+
 
   const handleAddToProjectChange = (evt) => dispatch(setAddToProject(evt.target.checked));
 
+  const closeDialog = () => {
+    dispatch(
+      toggleFeatureD({ dialogName: "newFeatureDialogOpen", isOpen: false })
+    );
+    map.current.removeControl(mapboxDrawControls);
+  }
+
   return (
     <Dialog
-      open={featureDialogStates.newFeatureDialogOpen}
-      onOkay={props.closeNewFeatureDialog}
-      onClose={props.closeNewFeatureDialog}
+      open={featureState.dialogs.newFeatureDialogOpen}
+      onOkay={() => closeDialog()}
+      onClose={() => closeDialog()}
       aria-labelledby="create-new-feature-dialog-title"
       maxWidth="sm"
       fullWidth
@@ -92,16 +145,13 @@ const NewFeatureDialog = (props) => {
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={props.onCancel} color="error" variant="outlined">
+        <Button onClick={closeDialog} color="error" variant="outlined">
           Cancel
         </Button>
         <Button
-          onClick={handleCreateNewFeature}
+          onClick={createNewFeature}
           color="primary"
           variant="contained"
-        // disabled={
-        //   !(name !== "" && description !== "" && props.loading === false)
-        // }
         >
           Create
         </Button>

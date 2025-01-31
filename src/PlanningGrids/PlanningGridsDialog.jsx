@@ -19,15 +19,6 @@ const PlanningGridsDialog = (props) => {
   const uiState = useSelector((state) => state.ui);
   const puState = useSelector((state) => state.planningUnit)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
   const [searchText, setSearchText] = useState("");
   const [selectedPlanningGrid, setSelectedPlanningGrid] = useState(undefined);
 
@@ -154,7 +145,7 @@ const PlanningGridsDialog = (props) => {
 
   return (
     <MarxanDialog
-      open={planningGridDialogStates.planningGridsDialogOpen}
+      open={puState.dialogs.planningGridsDialogOpen}
       loading={props.loading}
       fullWidth={props.fullWidth}
       maxWidth={props.maxWidth}

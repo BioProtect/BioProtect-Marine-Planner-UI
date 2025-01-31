@@ -22,9 +22,7 @@ const ImportFeaturesDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
+  const featureState = useSelector((state) => state.feature)
   const [steps, setSteps] = useState([
     "shapefile",
     "single_or_multiple",
@@ -98,7 +96,7 @@ const ImportFeaturesDialog = (props) => {
 
   return (
     <Dialog
-      open={featureDialogStates.importFeaturesDialogOpen}
+      open={featureState.dialogs.importFeaturesDialogOpen}
       onClose={closeDialog}
       maxWidth="sm"
       fullWidth

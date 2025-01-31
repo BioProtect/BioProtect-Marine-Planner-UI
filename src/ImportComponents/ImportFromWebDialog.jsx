@@ -20,6 +20,8 @@ const ImportFromWebDialog = ({
   loading: parentLoading,
 }) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const uiDialogs = useSelector((state) => state.ui.dialogStates);
   const projState = useSelector((state) => state.project);
   const [steps] = useState(["type", "endpoint", "layer", "metadata"]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -200,7 +202,7 @@ const ImportFromWebDialog = ({
   };
 
   return (
-    <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={uiDialogs.importFromWebDialogOpen} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Import from Web</DialogTitle>
       <DialogContent>{renderStepContent()}</DialogContent>
       <DialogActions>

@@ -24,6 +24,13 @@ const initialState = {
   projectLoaded: false,
   projectImpacts: [],
   projectFeatures: [],
+  dialogs: {
+    projectsListDialogOpen: false,
+    newProjectDialogOpen: false,
+    projectsDialogOpen: false,
+    newProjectWizardDialogOpen: false,
+  },
+
 };
 
 // Thunk to handle server initialization
@@ -103,6 +110,10 @@ const projectSlice = createSlice({
     setProject(state, action) {
       state.project = action.payload;
     },
+    toggleDialog(state, action) {
+      const { dialogName, isOpen } = action.payload;
+      state.dialogs[dialogName] = isOpen;
+    },
     extraReducers: (builder) => {
       builder
         .addCase(initialiseServers.pending, (state) => {
@@ -135,6 +146,7 @@ export const {
   setProjectListDialogTitle,
   setProjectList,
   setProjects,
+  toggleDialog
 
 } = projectSlice.actions;
 export default projectSlice.reducer;

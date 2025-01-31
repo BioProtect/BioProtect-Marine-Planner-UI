@@ -12,10 +12,9 @@ const NewMarinePlanningGridDialog = ({
   createNewPlanningUnitGrid,
   fileUpload,
 }) => {
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
+
   const dispatch = useDispatch();
+  const puState = useSelector((state) => state.planningUnit)
 
   const [filename, setFilename] = useState("");
   const [planningGridName, setPlanningGridName] = useState("");
@@ -48,7 +47,7 @@ const NewMarinePlanningGridDialog = ({
 
   return (
     <MarxanDialog
-      open={planningGridDialogStates.newMarinePlanningGridDialogOpen}
+      open={puState.dialogs.newMarinePlanningGridDialogOpen}
       onOk={handleOk}
       onClose={closeDialog}
       okDisabled={!areakm2 || loading}

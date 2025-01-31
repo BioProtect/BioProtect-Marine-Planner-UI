@@ -1,7 +1,7 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
+import { React, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import React from "react";
 import { useResendPasswordQuery } from "./slices/userSlice";
 
 const ResendPasswordDialog = ({
@@ -58,7 +58,7 @@ const ResendPasswordDialog = ({
         </Button>
         <Button
           onClick={resendPassword}
-          disabled={!email || loading}
+          disabled={!resendEmail || loading}
           variant="contained"
           color="primary"
         >

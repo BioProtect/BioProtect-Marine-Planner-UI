@@ -65,7 +65,10 @@ const LoginDialog = ({ open, postLoginSetup }) => {
     try {
       const userData = await login({ user, pwd }).unwrap();
       dispatch(setCredentials({ ...userData, user }));
-      postLoginSetup({ ...userData });
+      dispatch(setUserId(userData.userId))
+      dispatch(setUserData(userData.userData))
+      dispatch(setDismissedNotifications(userData.dismissedNotifications || []));
+      postLoginSetup();
       setUser("");
       setPwd("");
     } catch (err) {

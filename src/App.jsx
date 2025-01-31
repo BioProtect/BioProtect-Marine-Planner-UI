@@ -31,6 +31,7 @@ import {
   setAllFeatures,
   setCreatedFeatureInfo,
   setCurrentFeature,
+  setDigitisedFeatures,
   setFeatureMetadata,
   setFeaturePlanningUnits,
   setFeatureProjects,
@@ -39,7 +40,6 @@ import {
   useCreateFeatureFromLinestringMutation,
   useGetFeatureQuery,
   useListFeaturePUsQuery,
-  useListFeatureProjectsQuery
 } from "./slices/featureSlice";
 import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery, useListPlanningUnitsQuery } from "./slices/planningUnitSlice";
 import {
@@ -76,7 +76,7 @@ import IdentifyPopup from "./IdentifyPopup";
 import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
 import ImportFeaturesDialog from "./Features/ImportFeaturesDialog";
 import ImportFromWebDialog from "./ImportComponents/ImportFromWebDialog";
-import ImportPlanningGridDialog from "./ImportComponents/ImportPlanningGridDialog";
+import ImportPlanningGridDialog from "./PlanningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
 import LoginDialog from "./LoginDialog";
@@ -87,7 +87,7 @@ import MenuBar from "./MenuBar/MenuBar";
 //project components
 import NewFeatureDialog from "./Features/NewFeatureDialog";
 import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog";
-import NewPlanningGridDialog from "./NewPlanningGridDialog";
+import NewPlanningGridDialog from "./PlanningGrids/NewPlanningGridDialog";
 import NewProjectDialog from "./Projects/NewProject/NewProjectDialog";
 import NewProjectWizardDialog from "./Projects/NewProject/NewProjectWizardDialog";
 import PlanningGridDialog from "./PlanningGrids/PlanningGridDialog";
@@ -121,6 +121,7 @@ import classyBrew from "classybrew";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
+import useWebSocketHandler from "./WebSocketHandler";
 import { zoomToBounds } from "./Helpers";
 
 //GLOBAL VARIABLES
@@ -131,17 +132,18 @@ mapboxgl.accessToken =
 
 const App = () => {
   const dispatch = useDispatch();
+
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
   const userState = useSelector((state) => state.user)
   const puState = useSelector((state) => state.planningUnit)
   const featureState = useSelector((state) => state.feature)
-
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectDialogs = useSelector((state) => state.ui.projectDialogStates);
   const featureDialogs = useSelector((state) => state.ui.featureDialogStates);
   const puDialogs = useSelector((state) => state.planningUnit);
-  console.log("puDialogs ", puDialogs);
+  const token = useSelector(selectCurrentToken);
+  const userData = useSelector(selectUserData);
 
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
 
@@ -226,48 +228,32 @@ const App = () => {
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
   const [runlogTimer, setRunlogTimer] = useState(0);
 
-  const [logoutUser] = useLogoutUserMutation();
-  const [updateUser] = useUpdateUserMutation();
-
   const mapContainer = useRef(null);
   const map = useRef(null);
 
-  const token = useSelector(selectCurrentToken);
-  const userData = useSelector(selectUserData);
-
+  const [logoutUser] = useLogoutUserMutation();
+  const [updateUser] = useUpdateUserMutation();
   const { data: planningUnitsData, isLoading: isPlanningUnitsLoading } = useListPlanningUnitsQuery();
   const { data: usersData, isLoading: isUsersLoading } = useListUsersQuery();
-  const { data: userResp, refetch } = useGetUserQuery(userId, { skip: !userId });
-  const { data: featureProjectsData, isLoading: isFeatureProjectsLoading } = useListFeatureProjectsQuery(feature.id);
-  const { data: featurePUData, isLoading: isFeaturePULoading } = useListFeaturePUsQuery(owner, projState.project, feature.id);
-  const [createFeatureFromLine, { isLoading: isCreating }] = useCreateFeatureFromLinestringMutation();
 
+  // ✅ Fetch planning unit data **ONLY when required values exist**
+  const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
+    { owner, project: projState.project, featureId: featureState.selectedFeature?.id },
+    { skip: !owner || !projState.project || !featureState.selectedFeature?.id }
+  );
 
   useEffect(() => {
-    if (userId) {
-      refetch(); // Manually refetch user data when userId is available
-    }
     if (planningUnitsData) {
       dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []));
     }
     if (usersData) {
       dispatch(setUsers(usersData.users || []));
     }
-    if (userResp) {
-      dispatch(setUserData(userResp || {}));
-      dispatch(setDismissedNotifications(userResp.dismissedNotifications || []));
-    }
-    if (featureProjectsData) {
-      dispatch(setFeatureProjects(featureProjectsData.projects) || []);
-    }
-    if (createdFeatureData) {
-      dispatch(setCreatedFeatureInfo(createdFeatureData) || []);
-    }
     if (featurePUData) {
       dispatch(setFeaturePlanningUnits(featurePUData) || [])
     }
 
-  }, [dispatch, refetch, userId, planningUnitsData, usersData, userResp, createdFeatureData, featureProjectsData, featurePUData]);
+  }, [dispatch, planningUnitsData, usersData, featurePUData]);
 
 
   useEffect(() => {
@@ -404,6 +390,26 @@ const App = () => {
   }, []);
 
 
+  const newFeatureCreated = useCallback(
+    async (id) => {
+      const [fetchFeature] = useGetFeatureQuery();
+      const { data } = fetchFeature(id);
+      if (!data || !data.data?.length) {
+        return;
+      }
+      const featureData = data.data[0];
+      dispatch(addFeatureAttributes(featureData));
+      dispatch(addNewFeature([featureData]));
+
+      if (addToProject) {
+        dispatch(addFeature(featureData));
+        await updateSelectedFeatures();
+      }
+    },
+    [dispatch]
+  );
+
+
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -482,88 +488,38 @@ const App = () => {
     [projState.bpServer.endpoint, checkForErrors, setSnackBar]
   );
 
-  // Memoized WebSocket function
-  const _ws = useCallback(
-    (params, msgCallback) => {
-      return new Promise((resolve, reject) => {
-        // Create a new WebSocket instance
-        const ws = new WebSocket(
-          projState.bpServer.websocketEndpoint + params
-        );
-
-        // WebSocket event handlers
-        ws.onMessage = (evt) => {
-          const message = JSON.parse(evt.data);
-
-          if (!checkForErrors(message)) {
-            if (message.status === "Finished") {
-              msgCallback(message);
-              setPreprocessing(false);
-              resolve(message);
-            } else {
-              msgCallback(message);
-            }
-          } else {
-            msgCallback(message);
-            setPreprocessing(false);
-            reject(message.error);
-          }
-        };
-
-        ws.onOpen = (evt) => {
-          // Handle WebSocket open event if necessary
-        };
-
-        ws.onError = (evt) => {
-          setPreprocessing(false);
-          reject(evt);
-        };
-
-        ws.onClose = (evt) => {
-          setPreprocessing(false);
-          if (!evt.wasClean) {
-            msgCallback({ status: "SocketClosedUnexpectedly" });
-          } else {
-            reject(evt);
-          }
-        };
-      });
-    },
-    [projState.bpServer.websocketEndpoint, checkForErrors]
-  );
-
-  //called when any websocket message is received - this logic removes duplicate messages
-  const wsMessageCallback = async (message) => {
-    //dont log any clumping projects
-    if (message.user === "_clumping") {
-      return;
-    }//log the message
-    logMessage(message);
-    switch (message.status) {
-      case "Started": //from the open method of all MarxanWebSocketHandler subclasses
-        //set the processing state when the websocket starts
-        setPreprocessing(true);
-        break;
-      case "pid": //from marxan runs and preprocessing - the pid is an identifer and the pid, e.g. m1234 is a marxan run process with a pid of 1234
-        setPid(message.pid);
-        break;
-      case "FeatureCreated":
-        //remove all preprocessing messages
-        removeMessageFromLog("Preprocessing");
-        await newFeatureCreated(message.id);
-        break;
-      case "Finished": //from the close method of all MarxanWebSocketHandler subclasses
-        //reset the pid
-        setPid(0);
-        //remove all preprocessing messages
-        removeMessageFromLog("Preprocessing");
-        break;
-      default:
-        break;
+  const startLogging = (clearLog = false) => {
+    //switches the results pane to the log tab and clears log if needs be
+    setActiveTab("log");
+    if (clearLog) {
+      setLogMessages([]);
     }
   };
 
+  // Main logging method - all log messages use this method
+  const messageLogger = useCallback((message) => {
+    // Add a timestamp to the message
+    const timestampedMessage = { ...message, timestamp: new Date() };
+    // Update the state with the new log message
+    setLogMessages((prevState) => [
+      ...prevState.logMessages,
+      timestampedMessage,
+    ]);
+  }, []);
 
+
+
+  // removes a message from the log by matching on pid and status or just status
+  // update the messages state - filter previous messages state by pid and status
+  const removeMessageFromLog = useCallback((status, pid) => {
+    setLogMessages((prevState) => [
+      prevState.logMessages.filter((message) => {
+        return pid !== undefined
+          ? !(message.pid === pid && message.status === status)
+          : !(message.status === status);
+      }),
+    ]);
+  }, []);
 
 
   //logs the message if necessary - this removes duplicates
@@ -623,47 +579,16 @@ const App = () => {
     }
   }, [logMessages, messageLogger, removeMessageFromLog, setPid]);
 
-  // removes a message from the log by matching on pid and status or just status
-  // update the messages state - filter previous messages state by pid and status
-  const removeMessageFromLog = useCallback((status, pid) => {
-    setLogMessages((prevState) => [
-      prevState.logMessages.filter((message) => {
-        return pid !== undefined
-          ? !(message.pid === pid && message.status === status)
-          : !(message.status === status);
-      }),
-    ]);
-  }, []);
 
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // MANAGING SERVERS
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-
-  const startLogging = (clearLog = false) => {
-    //switches the results pane to the log tab and clears log if needs be
-    setActiveTab("log");
-    if (clearLog) {
-      setLogMessages([]);
-    }
-  };
-
-  // Main logging method - all log messages use this method
-  const messageLogger = useCallback((message) => {
-    // Add a timestamp to the message
-    const timestampedMessage = { ...message, timestamp: new Date() };
-    // Update the state with the new log message
-    setLogMessages((prevState) => [
-      ...prevState.logMessages,
-      timestampedMessage,
-    ]);
-  }, []);
-
+  const handleWebSocket = useWebSocketHandler(
+    projState,
+    checkForErrors,
+    logMessage,
+    setPreprocessing,
+    setPid,
+    newFeatureCreated,
+    removeMessageFromLog
+  );
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -783,22 +708,20 @@ const App = () => {
     await validateUser({ user: "user", password: "password" });
   }
   //the user is validated so login
-  const postLoginSetup = async ({ userId, accessToken }) => {
+  const postLoginSetup = async () => {
     try {
-      dispatch(setUserId(userId))
       setResultsPanelOpen(true);
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
       const current_basemap = basemaps.find(
-        (item) => item.name === userResp.basemap
+        (item) => item.name === userState.basemap
       );
       await loadBasemap(current_basemap);
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
-
       await loadProject(
-        userResp.last_project,
+        userState.last_project,
         userState.user,
-        userResp,
+        userState,
         speciesData.data
       );
       return "Logged in";
@@ -1205,14 +1128,7 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   const getProjectList = async (obj, _type) => {
     try {
-      let projects;
-
-      if (_type === "feature") {
-        projects = await getProjectsForFeature(obj);
-      } else {
-        projects = await getProjectsForPlanningGrid(obj.feature_class_name);
-      }
-
+      let projects = await getProjectsForPlanningGrid(obj.feature_class_name);
       showProjectListDialog(
         projects,
         "Projects list",
@@ -1222,13 +1138,6 @@ const App = () => {
       console.error("Error fetching project list:", error);
       // Optionally: handle the error (e.g., show a user-friendly message)
     }
-  };
-
-  //gets a list of projects for a feature
-  const getProjectsForFeature = async (feature) => {
-    // Fetch the projects associated with the given feature
-    const { data, error, isLoading } = useListFeatureProjectsQuery(feature.id)
-    return data.projects;
   };
 
   // Helper function to prepare form data
@@ -1333,10 +1242,7 @@ const App = () => {
   const exportProject = async (user, proj) => {
     try {
       setActiveTab("log");
-      const message = await _ws(
-        `exportProject?user=${user}project=${proj}`,
-        wsMessageCallback
-      );
+      const message = await handleWebSocket(`exportProject?user=${user}project=${proj}`);
       return projState.bpServer.endpoint + "exports/" + message.filename;
     } catch (error) {
       console.log(error);
@@ -1506,10 +1412,8 @@ const App = () => {
       setActiveTab("log");
 
       // Call the WebSocket
-      const message = await _ws(
-        `preprocessFeature?user=${owner}&project=${projState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}&feature_class_name=${feature.feature_class_name}&alias=${feature.alias}&id=${feature.id}`,
-        wsMessageCallback
-      );
+      const message = await handleWebSocket(
+        `preprocessFeature?user=${owner}&project=${projState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}&feature_class_name=${feature.feature_class_name}&alias=${feature.alias}&id=${feature.id}`);
 
       // Update feature with new data
       updateFeature(feature, {
@@ -1530,10 +1434,7 @@ const App = () => {
   const startMarxanJob = async (user, proj) => {
     try {
       // Make the request to get the Marxan data
-      return await _ws(
-        `runMarxan?user=${user}&project=${proj}`,
-        wsMessageCallback
-      );
+      return await handleWebSocket(`runMarxan?user=${user}&project=${proj}`);
     } catch (error) {
       console.error("Error starting Marxan job:", error);
       throw error; // Re-throw the error to handle it further up the call stack if needed
@@ -1765,7 +1666,6 @@ const App = () => {
 
       // Poll Mapbox and complete the import
       await pollMapbox(uploadId);
-      await getPlanningUnitGrids();
       messageLogger({
         method: "importProject",
         status: "Finished",
@@ -1792,9 +1692,8 @@ const App = () => {
   //imports a project from an mxd file
   const importMXWProject = async (proj, description, filename) => {
     startLogging();
-    await _ws(
+    await handleWebSocket(
       `importProject?user=${userState.user}&project=${proj}&filename=${filename}&description=$description}`,
-      wsMessageCallback
     );
     refreshFeatures();
     loadProject(proj, userState.user);
@@ -2954,9 +2853,8 @@ const App = () => {
   //creates a new planning grid unit
   const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
     startLogging();
-    const message = await _ws(
+    const message = await handleWebSocket(
       `createPlanningUnitGrid?iso3=${iso3}&domain=${domain}&areakm2=${areakm2}&shape=${shape}`,
-      wsMessageCallback
     );
     await newPlanningGridCreated(message);
     setNewPlanningGridDialogOpen(false);
@@ -2970,9 +2868,8 @@ const App = () => {
     shape
   ) => {
     startLogging();
-    const message = await _ws(
+    const message = await handleWebSocket(
       `createMarinePlanningUnitGrid?filename=${filename}&planningGridName=${planningGridName}&areakm2=${areakm2}&shape=${shape}`,
-      wsMessageCallback
     );
     await newMarinePlanningGridCreated(message);
     dispatch(
@@ -3023,7 +2920,6 @@ const App = () => {
   //called when a new planning grid has been created
   const newPlanningGridCreated = async (response) => {
     await pollMapbox(response.uploadId);
-    await getPlanningUnitGrids();
   };
 
   //deletes a planning unit grid
@@ -3052,7 +2948,6 @@ const App = () => {
   const deletePlanningGrid = async (feature_class_name, silent) => {
     const response = await useDeletePlanningUnitQuery(feature_class_name);
     //update the planning unit grids
-    await getPlanningUnitGrids();
     dispatch(setSnackbarMessage(response.info, silent));
   };
 
@@ -3183,18 +3078,7 @@ const App = () => {
     }
   };
 
-  const closeNewFeatureDialog = () => {
-    dispatch(
-      toggleFeatureD({ dialogName: "newFeatureDialogOpen", isOpen: false })
-    );
-    finaliseDigitising();
-  };
-
   const openPlanningGridsDialog = async () => {
-    //refresh planning grids if using a hosted service - other users could have created/deleted items
-    if (projState.bpServer.system !== "Windows") {
-      await getPlanningUnitGrids();
-    }
     dispatch(
       togglePUD({
         dialogName: "planningGridsDialogOpen",
@@ -3483,7 +3367,7 @@ const App = () => {
     startLogging();
 
     const url = `runCumumlativeImpact?filename=${filename}&activity=${selectedActivity}&description=${description}`;
-    const message = await _ws(url, wsMessageCallback);
+    const message = await handleWebSocket(url);
     await pollMapbox(message.uploadId);
     setLoading(false);
     return "Cumulative Impact Layer uploaded";
@@ -3493,9 +3377,8 @@ const App = () => {
     setLoading(true);
     startLogging();
 
-    await _ws(
+    await handleWebSocket(
       `runCumumlativeImpact?selectedIds=${selectedUploadedActivityIds}`,
-      wsMessageCallback
     );
     setLoading(false);
     return "Cumulative Impact Layer uploaded";
@@ -3527,7 +3410,7 @@ const App = () => {
     setLoading(true);
     startLogging();
     const url = `saveRaster?filename=${filename}&activity=${selectedActivity}&description=${description}`;
-    await _ws(url, wsMessageCallback);
+    await handleWebSocket(url);
     setLoading(false);
     return "Raster saved to db";
   };
@@ -3535,8 +3418,7 @@ const App = () => {
   const createCostsFromImpact = async (data) => {
     setLoading(true);
     startLogging();
-    const url = `createCostsFromImpact?user=${owner}&project=${projState.project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`;
-    await _ws(url, wsMessageCallback);
+    await handleWebSocket(`createCostsFromImpact?user=${owner}&project=${projState.project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`);
     setLoading(false);
     addCost(data.alias);
     return "Costs created from Cumulative impact";
@@ -3603,16 +3485,12 @@ const App = () => {
     }
   };
 
-  //finalises the digitising
-  const finaliseDigitising = () =>
-    map.current.removeControl(mapboxDrawControls);
 
   //called when the user has drawn a polygon on screen
   const polygonDrawn = (evt) => {
     //open the new feature dialog for the metadata
-    setNewFeatureDialogOpen(true);
-    //save the feature in a local variable
-    this.digitisedFeatures = evt.features;
+    dispatch(toggleFeatureD({ dialogName: "newFeatureDialogOpen", isOpen: true }));
+    dispatch(setDigitisedFeatures(evt.features));
   };
 
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
@@ -3632,22 +3510,16 @@ const App = () => {
         if (feature.feature_puid_layer_loaded) {
           toggleFeaturePUIDLayer(feature);
         }// Feature is not selected
-        if (metadata.OLDVERSION) {
-          // For imported projects, only update selection status
-          return { ...feature, selected: false };
-        } else {
-          // For non-old version features, set additional properties
-          return {
-            ...feature,
-            selected: false,
-            preprocessed: false,
-            protected_area: -1,
-            pu_area: -1,
-            pu_count: -1,
-            target_area: -1,
-            occurs_in_planning_grid: false,
-          };
-        }
+        return {
+          ...feature,
+          selected: false,
+          preprocessed: false,
+          protected_area: -1,
+          pu_area: -1,
+          pu_count: -1,
+          target_area: -1,
+          occurs_in_planning_grid: false,
+        };
       }
     });
 
@@ -3696,12 +3568,6 @@ const App = () => {
     }
   };
 
-  //unselects a single Conservation feature
-  const unselectItem = async (feature) => {
-    removeFeature(feature);
-    await updateSelectedFeatures();
-  };
-
   //previews the feature
   const previewFeature = (featureMetadata) => {
     dispatch(setFeatureMetadata(featureMetadata));
@@ -3736,7 +3602,7 @@ const App = () => {
         ? `${baseUrl}&name=${name}&description=${description}`
         : `${baseUrl}&splitfield=${splitfield}`;
 
-    const message = await _ws(url, wsMessageCallback);
+    const message = await handleWebSocket(url);
     //get the uploadIds, get a promise array to see when all of the uploads are done
     const promiseArray = message.uploadIds.map((uploadId) =>
       pollMapbox(uploadId)
@@ -3757,55 +3623,11 @@ const App = () => {
     startLogging();
     const url = `createFeaturesFromWFS?name=${name}&description=${description}&endpoint=${endpoint}&srs=${srs}&featuretype=${featureType}`;
 
-    const message = await _ws(url, wsMessageCallback);
+    const message = await handleWebSocket(url);
     const uploadId = message.uploadId;
     return await pollMapbox(uploadId);
   };
 
-  //create the new feature from the feature that has been digitised on the map
-  const createNewFeature = async (name, description) => {
-    startLogging();
-    messageLogger({
-      method: "createNewFeature",
-      status: "Started",
-      info: "Creating feature..",
-    });
-    //post the geometry to the server with the metadata
-    let formData = new FormData();
-    formData.append("name", name);
-    formData.append("description", description);
-
-    //convert the coordinates into a linestring to create the polygon in postgis
-    let coords = this.digitisedFeatures[0].geometry.coordinates[0]
-      .map((coordinate) => coordinate[0] + " " + coordinate[1])
-      .join(",");
-
-    formData.append("linestring", "Linestring(" + coords + ")");
-    const createdFeatureData = await createFeatureFromLine(formData).unwrap();
-
-    messageLogger({
-      method: "createNewFeature",
-      status: "Finished",
-      info: createdFeatureData.info,
-    });
-    const mbResponse = await pollMapbox(createdFeatureData.uploadId);
-    await newFeatureCreated(mbResponse.id);
-    closeNewFeatureDialog();
-  };
-
-  //gets the new feature information and updates the state
-  const newFeatureCreated = async (id) => {
-    const { response, error, isLoading } = await useGetFeatureQuery(id);
-    const feature = response.data[0];
-    addFeatureAttributes(feature);
-    addNewFeature([feature]);
-
-    // If 'addToProject' is set, add the feature to the project
-    if (addToProject) {
-      addFeature(feature);
-      await updateSelectedFeatures();
-    }
-  };
 
   //adds a new feature to the allFeatures array
   const addNewFeature = (newFeatures) => {
@@ -3931,7 +3753,7 @@ const App = () => {
   const toggleFeaturePUIDLayer = async (feature) => {
     let layerName = `marxan_puid_${feature.id}`;
 
-    if (current.getLayer(layerName)) {
+    if (map.current.getLayer(layerName)) {
       removeMapLayer(layerName);
       updateFeature(feature, { feature_puid_layer_loaded: false });
     } else {
@@ -3975,11 +3797,12 @@ const App = () => {
   };
 
   //removes the current feature from the project
-  const removeFromProject = (feature) => {
+  const removeFromProject = async (feature) => {
     dispatch(
       toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
     );
-    unselectItem(feature);
+    removeFeature(feature);
+    await updateSelectedFeatures();
   };
 
   //zooms to a features extent
@@ -4206,9 +4029,8 @@ const App = () => {
         startLogging();
 
         // Call the websocket
-        const message = await _ws(
-          `preprocessProtectedAreas?user=${owner}&project=${projState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}`,
-          wsMessageCallback
+        const message = await handleWebSocket(
+          `preprocessProtectedAreas?user=${owner}&project=${projState.project}&planning_grid_name=${metadata.PLANNING_UNIT_NAME}`
         );
         setProtectedAreaIntersections(message.intersections);
         return message.intersections;
@@ -4231,9 +4053,8 @@ const App = () => {
   const updateWDPA = async () => {
     startLogging();
     //call the webservice
-    const message = await _ws(
-      `updateWDPA?downloadUrl=${registry.WDPA.downloadUrl}&wdpaVersion=${registry.WDPA.latest_version}`,
-      wsMessageCallback
+    const message = await handleWebSocket(
+      `updateWDPA?downloadUrl=${registry.WDPA.downloadUrl}&wdpaVersion=${registry.WDPA.latest_version}`
     );
     // Websocket has finished - set the new version of the wdpa
 
@@ -4285,10 +4106,8 @@ const App = () => {
       startLogging();
 
       // Call the websocket and wait for the response
-      const message = await _ws(
-        `preprocessPlanningUnits?user=${owner}&project=${projState.project}`,
-        wsMessageCallback
-      );
+      const message = await handleWebSocket(
+        `preprocessPlanningUnits?user=${owner}&project=${projState.project}`);
 
       // Update the state with the new file name
       setFiles((prevState) => ({ ...prevState, BOUNDNAME: "bounds.dat" }));
@@ -4411,10 +4230,8 @@ const App = () => {
 
   const runGapAnalysis = async () => {
     setActiveTab("log");
-    const message = await _ws(
-      `runGapAnalysis?user=${owner}&project=${projState.project}`,
-      wsMessageCallback
-    );
+    const message = await handleWebSocket(
+      `runGapAnalysis?user=${owner}&project=${projState.project}`);
     setGapAnalysis(message.data);
     return message;
   };
@@ -4506,7 +4323,7 @@ const App = () => {
   //restores the database back to its original state and runs a git reset on the file system
   const resetServer = async () => {
     setActiveTab("log");
-    await _ws("resetDatabase", wsMessageCallback);
+    await handleWebSocket("resetDatabase");
     dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: false }));
     return;
   };
@@ -4676,7 +4493,6 @@ const App = () => {
           <NewProjectDialog
             registry={registry}
             loading={loading}
-            getPlanningUnitGrids={getPlanningUnitGrids}
             openFeaturesDialog={openFeaturesDialog}
             selectedCosts={selectedCosts}
             createNewProject={createNewProject}
@@ -4715,12 +4531,10 @@ const App = () => {
           <FeatureDialog
             loading={loading}
             getTilesetMetadata={getMetadata}
-            getProjectList={getProjectList}
           />
           <NewFeatureDialog
-            closeNewFeatureDialog={closeNewFeatureDialog}
             loading={loading || uploading}
-            createNewFeature={createNewFeature}
+            newFeatureCreated={newFeatureCreated}
           />
           <ImportFeaturesDialog
             importFeatures={importFeatures}
@@ -4745,7 +4559,6 @@ const App = () => {
           />
           <PlanningGridsDialog
             loading={loading}
-            getPlanningUnitGrids={getPlanningUnitGrids}
             unauthorisedMethods={unauthorisedMethods}
             openNewPlanningGridDialog={openNewPlanningGridDialog}
             exportPlanningGrid={exportPlanningGrid}

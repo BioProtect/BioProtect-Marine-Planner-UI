@@ -60,6 +60,7 @@ export const {
 const featureSlice = createSlice({
   name: "feature",
   initialState: {
+    digitisedFeatures: [],
     addingRemovingFeatures: false,
     allFeatures: [], //all of the interest features in the metadata_interest_features table
     currentFeature: {},
@@ -116,6 +117,10 @@ const featureSlice = createSlice({
     setFeaturePlanningUnits(state, action) {
       state.featurePlanningUnits = action.payload;
     },
+    setDigitisedFeatures(state, action) {
+      state.digitisedFeatures = action.payload;
+    },
+
     toggleFeatureD(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
@@ -136,5 +141,6 @@ export const {
   setCreatedFeatureInfo,
   setFeaturePlanningUnits,
   toggleFeatureD,
+  setDigitisedFeatures,
 } = featureSlice.actions;
 export default featureSlice.reducer;
