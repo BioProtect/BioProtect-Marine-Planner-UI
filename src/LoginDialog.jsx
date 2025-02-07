@@ -26,6 +26,8 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { selectServer } from "./slices/projectSlice";
 import { setCredentials } from "./slices/authSlice";
+import { setProject } from "./slices/projectSlice";
+import { setUserId } from "./slices/userSlice";
 import { useLoginMutation } from "./slices/authApiSlice";
 
 const LoginDialog = ({ open, postLoginSetup }) => {
@@ -63,11 +65,12 @@ const LoginDialog = ({ open, postLoginSetup }) => {
     e.preventDefault();
 
     try {
-      const userData = await login({ user, pwd }).unwrap();
-      dispatch(setCredentials({ ...userData, user }));
-      dispatch(setUserId(userData.userId))
-      dispatch(setUserData(userData.userData))
-      dispatch(setDismissedNotifications(userData.dismissedNotifications || []));
+      const response = await login({ user, pwd }).unwrap();
+      dispatch(setCredentials({ ...response, user }));
+      dispatch(setUserId(response.userId))
+      dispatch(setUserData(response.userData))
+      dispatch(setProject(userData.project))
+      // dispatch(setDismissedNotifications(response.dismissedNotifications || []));
       postLoginSetup();
       setUser("");
       setPwd("");

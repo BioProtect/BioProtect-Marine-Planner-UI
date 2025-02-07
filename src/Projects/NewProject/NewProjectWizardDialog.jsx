@@ -6,13 +6,11 @@ import MarxanDialog from "../../MarxanDialog";
 import Step0 from "./Step0";
 import Step1 from "./Step1";
 import ToolbarButton from "../../ToolbarButton";
-import { toggleProjectDialog } from "../../slices/uiSlice";
+import { toggleProjDialog } from "../../slices/projectSlice";
 
 const NewProjectWizardDialog = (props) => {
   const dispatch = useDispatch();
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
+  const projState = useSelector((state) => state.project);
 
   const [domainEnabled, setDomainEnabled] = useState(true);
   const [stepIndex, setStepIndex] = useState(0);
@@ -95,7 +93,7 @@ const NewProjectWizardDialog = (props) => {
 
   const closeDialog = () =>
     dispatch(
-      toggleProjectDialog({
+      toggleProjDialog({
         dialogName: "newProjectWizardDialogOpen",
         isOpen: false,
       })
@@ -136,7 +134,7 @@ const NewProjectWizardDialog = (props) => {
 
   return (
     <MarxanDialog
-      open={projectDialogStates.newProjectWizardDialogOpen}
+      open={projState.dialogs.newProjectWizardDialogOpen}
       title={"New national project"}
       contentWidth={600}
       showCancelButton={true}

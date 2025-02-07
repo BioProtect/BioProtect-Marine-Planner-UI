@@ -8,12 +8,6 @@ const initialState = {
   activeTab: "project",
   activeResultsTab: "legend",
 
-  projectDialogStates: {
-    projectsListDialogOpen: false,
-    newProjectDialogOpen: false,
-    projectsDialogOpen: false,
-    newProjectWizardDialogOpen: false,
-  },
   dialogStates: {
     aboutDialogOpen: false,
     activitiesDialogOpen: false,
@@ -76,10 +70,6 @@ const uiSlice = createSlice({
     },
     setFeatureDatasetFilename(state, action) {
       state.featureDatasetFilename = action.payload;
-    },
-    toggleProjectDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.projectDialogStates[dialogName] = isOpen;
     },
     toggleDialog(state, action) {
       const { dialogName, isOpen } = action.payload;

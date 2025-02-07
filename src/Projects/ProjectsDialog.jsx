@@ -1,21 +1,18 @@
 import React, { useCallback, useState } from "react";
-import { setActiveTab, toggleDialog, toggleProjectDialog } from "../slices/uiSlice";
+import { setActiveTab, toggleDialog } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
+import { toggleProjDialog } from "../slices/projectSlice";
 
 const ProjectsDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projState = useSelector((state) => state.project);
-
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
 
   const _delete = useCallback(() => {
     props.deleteProject(projState.project.user, projState.project.name);
@@ -28,16 +25,16 @@ const ProjectsDialog = (props) => {
   const loadAndClose = useCallback(() => {
     props.loadProject(projState.project.name, projState.project.user);
     dispatch(
-      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
   }, [projState.project]);
 
   const _new = useCallback(() => {
     dispatch(
-      toggleProjectDialog({ dialogName: "newProjectDialogOpen", isOpen: true })
+      toggleProjDialog({ dialogName: "newProjectDialogOpen", isOpen: true })
     );
     dispatch(
-      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
   }, []);
 
@@ -50,21 +47,21 @@ const ProjectsDialog = (props) => {
       window.location = url;
     });
     dispatch(
-      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
   }, [props]);
 
   const openImportProjectDialog = useCallback(() => {
     props.setImportProjectDialogOpen(true);
     dispatch(
-      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
   }, [props.setImportProjectDialogOpen]);
 
   const openImportMXWDialog = useCallback(() => {
     props.setImportMXWDialogOpen(true);
     dispatch(
-      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
   }, [props.setImportMXWDialogOpen]);
 
@@ -104,13 +101,13 @@ const ProjectsDialog = (props) => {
   if (projState.projects) {
     return (
       <MarxanDialog
-        open={projectDialogStates.projectsDialogOpen}
+        open={projState.dialogs.projectsDialogOpen}
         loading={props.loading}
         okLabel={props.userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
         onOk={load}
         onCancel={() =>
           dispatch(
-            toggleProjectDialog({
+            toggleProjDialog({
               dialogName: "projectsDialogOpen",
               isOpen: false,
             })

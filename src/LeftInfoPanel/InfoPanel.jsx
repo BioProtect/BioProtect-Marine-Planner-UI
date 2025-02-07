@@ -40,7 +40,7 @@ const InfoPanel = (props) => {
 
   useEffect(() => {
     if (editingProjectName && projectNameRef.current) {
-      projectNameRef.current.value = projState.project;
+      projectNameRef.current.value = projState.project.name;
       projectNameRef.current.focus();
     }
 
@@ -211,10 +211,10 @@ const InfoPanel = (props) => {
             {userData.role === "ReadOnly" ? (
               <span
                 className={"projectNameEditBox"}
-                title={projState.project + " (Read-only)"}
+                title={projState.project.name + " (Read-only)"}
               >
                 <FontAwesomeIcon style={iconStyle} icon={faLock} />
-                {projState.project}
+                {projState.project.name}
               </span>
             ) : (
               <span
@@ -222,7 +222,7 @@ const InfoPanel = (props) => {
                 className={"projectNameEditBox"}
                 title="Click to rename the project"
               >
-                {projState.project}
+                {projState.project.name || "Untitled project"}
               </span>
             )}
             {userData.role === "ReadOnly" ? null : (

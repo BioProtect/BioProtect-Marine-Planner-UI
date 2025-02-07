@@ -10,17 +10,13 @@ import PlanningUnitsDialog from "../../PlanningGrids/PlanningUnitsDialog";
 import SelectCostFeatures from "../../SelectCostFeatures";
 import SelectFeatures from "../../LeftInfoPanel/FeaturesTab.jsx";
 import { setSelectedFeatureIds } from "../../slices/featureSlice.js"
-import {
-  toggleProjectDialog,
-} from "../../slices/uiSlice";
+import { toggleProjDialog } from "../../slices/projectSlice.js";
 
 const NewProjectDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature)
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
+  const proState = useSelector((state) => state.project);
 
   const [steps] = useState(["Info", "Planning units", "Features"]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -79,7 +75,7 @@ const NewProjectDialog = (props) => {
   const closeDialog = () => {
     setStepIndex(0);
     dispatch(
-      toggleProjectDialog({ dialogName: "newProjectDialogOpen", isOpen: false })
+      toggleProjDialog({ dialogName: "newProjectDialogOpen", isOpen: false })
     );
   };
 
@@ -109,7 +105,7 @@ const NewProjectDialog = (props) => {
   return (
     <>
       <MarxanDialog
-        open={projectDialogStates.newProjectDialogOpen}
+        open={proState.dialogs.newProjectDialogOpen}
         loading={props.loading}
         title="New project"
         fullWidth={true}

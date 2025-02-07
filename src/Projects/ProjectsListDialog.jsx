@@ -13,15 +13,12 @@ import { useDispatch, useSelector } from "react-redux";
 import MarxanDialog from "../MarxanDialog";
 import React from "react";
 import { selectUserData } from "../slices/authSlice";
-import { toggleProjectDialog } from "../slices/uiSlice";
+import { toggleProjDialog } from "../slices/projectSlice";
 
 const ProjectsListDialog = () => {
   const dispatch = useDispatch();
   const userData = useSelector(selectUserData);
   const projState = useSelector((state) => state.project);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
   // Determine the columns based on the user role
   const tableColumns = [
     ...(userData.userRole === "Admin"
@@ -51,7 +48,7 @@ const ProjectsListDialog = () => {
 
   const closeDialog = () =>
     dispatch(
-      toggleProjectDialog({
+      toggleProjDialog({
         dialogName: "projectsListDialogOpen",
         isOpen: false,
       })
@@ -59,7 +56,7 @@ const ProjectsListDialog = () => {
 
   return (
     <MarxanDialog
-      open={projectDialogStates.projectsListDialogOpen}
+      open={projState.dialogs.projectsListDialogOpen}
       showCancelButton={false}
       autoDetectWindowHeight={false}
       title={projState.projectListDialogTitle}

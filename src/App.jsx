@@ -5,6 +5,7 @@ import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
 import {
+  getUserProject,
   initialiseServers,
   selectServer,
   setBpServer,
@@ -15,7 +16,8 @@ import {
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjectLoaded,
-  setProjects
+  setProjects,
+  toggleProjDialog
 } from "./slices/projectSlice";
 import { selectCurrentToken, selectUserData, setUserData } from "./slices/authSlice";
 import {
@@ -24,7 +26,6 @@ import {
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
-  toggleProjectDialog,
 } from "./slices/uiSlice";
 import {
   setAddingRemovingFeatures,
@@ -139,7 +140,6 @@ const App = () => {
   const puState = useSelector((state) => state.planningUnit)
   const featureState = useSelector((state) => state.feature)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectDialogs = useSelector((state) => state.ui.projectDialogStates);
   const featureDialogs = useSelector((state) => state.ui.featureDialogStates);
   const puDialogs = useSelector((state) => state.planningUnit);
   const token = useSelector(selectCurrentToken);
@@ -231,9 +231,10 @@ const App = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
 
+  const userId = useSelector((state) => state.auth.userId);
   const [logoutUser] = useLogoutUserMutation();
   const [updateUser] = useUpdateUserMutation();
-  const { data: planningUnitsData, isLoading: isPlanningUnitsLoading } = useListPlanningUnitsQuery();
+  const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitsQuery();
   const { data: usersData, isLoading: isUsersLoading } = useListUsersQuery();
 
   // ✅ Fetch planning unit data **ONLY when required values exist**
@@ -243,6 +244,9 @@ const App = () => {
   );
 
   useEffect(() => {
+    if (userId) {
+      dispatch(getUserProject());
+    }
     if (planningUnitsData) {
       dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []));
     }
@@ -252,8 +256,7 @@ const App = () => {
     if (featurePUData) {
       dispatch(setFeaturePlanningUnits(featurePUData) || [])
     }
-
-  }, [dispatch, planningUnitsData, usersData, featurePUData]);
+  }, [dispatch, userId, planningUnitsData, usersData, featurePUData]);
 
 
   useEffect(() => {
@@ -719,7 +722,7 @@ const App = () => {
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
       await loadProject(
-        userState.last_project,
+        projState.project,
         userState.user,
         userState,
         speciesData.data
@@ -1191,7 +1194,7 @@ const App = () => {
     const response = await _post("projects?action=create", formData);
 
     dispatch(setSnackbarMessage(response.info));
-    dispatch(toggleDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
+    dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
 
     await loadProject(response.name, response.user);
   };
@@ -3839,14 +3842,14 @@ const App = () => {
   const openProjectsDialog = async () => {
     await getProjects();
     dispatch(
-      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: true })
+      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: true })
     );
   };
 
   const openNewProjectWizardDialog = async () => {
     await getCountries();
     dispatch(
-      toggleProjectDialog({
+      toggleProjDialog({
         dialogName: "newPlanningGridDialogOpen",
         isOpen: true,
       })
@@ -3887,7 +3890,7 @@ const App = () => {
     dispatch(setProjectListDialogHeading(heading));
     dispatch(setProjectListDialogTitle(title));
     dispatch(
-      toggleProjectDialog({
+      toggleProjDialog({
         dialogName: "projectsListDialogOpen",
         isOpen: true,
       })
@@ -4335,7 +4338,7 @@ const App = () => {
 
   const closeProjectsDialog = () =>
     dispatch(
-      toggleProjectDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
 
   return (

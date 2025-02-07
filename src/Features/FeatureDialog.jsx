@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useState } from "react";
-import { setProjectList, setProjectListDialogHeading, setProjectListDialogTitle, toggleDialog } from "../slices/projectSlice";
+import { setProjectList, setProjectListDialogHeading, setProjectListDialogTitle, toggleProjDialog } from "../slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BPTableRow from "../BPComponents/BPTableRow";
@@ -39,7 +39,7 @@ const FeatureDialog = ({ loading, getTilesetMetadata }) => {
     dispatch(setProjectListDialogHeading("Projects list"));
     dispatch(setProjectListDialogTitle("The feature is used in the following projects:"));
     dispatch(
-      toggleDialog({
+      toggleProjDialog({
         dialogName: "projectsListDialogOpen",
         isOpen: true,
       })
