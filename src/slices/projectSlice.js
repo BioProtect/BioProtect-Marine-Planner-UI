@@ -44,8 +44,8 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Project'],
     }),
     getProject: builder.query({
-      query: (user, projectId) => ({
-        url: `projects?action=get&user=${user}&projectId=${projectId}`,
+      query: (projectId) => ({
+        url: `projects?action=get&projectId=${projectId}`,
         method: 'GET',
       }),
       providesTags: ['Project'],
@@ -158,20 +158,19 @@ export const initialiseServers = createAsyncThunk(
 
 // Thunk to fetch the user's project only if not already in state
 export const getUserProject = createAsyncThunk(
-  "project/getUserProject",
+  "projects/getUserProject",
   async (_, { getState, dispatch, rejectWithValue }) => {
     try {
       // Get user ID from state
-      const userId = getState().auth.userId;
-      console.log("userId ", userId);
       const project = getState().auth.project;
+      const projectId = project.id;
       if (!project) {
         return rejectWithValue("No project associated with user");
       }
       // Fetch from API
       // const response = await fetch(`/projects?action=get&user=${user}&projectId=${project.id}`);
       const response = await dispatch(
-        projectApiSlice.endpoints.getProject.initiate({ user: userId, projectId: project.id })
+        projectApiSlice.endpoints.getProject.initiate(projectId)
       ).unwrap(); // Unwraps the promise
       console.log("response ", response);
       return response; // Assuming response has { project: { id, name, ... } }

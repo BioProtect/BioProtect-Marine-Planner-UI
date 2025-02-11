@@ -42,7 +42,7 @@ import {
   useGetFeatureQuery,
   useListFeaturePUsQuery,
 } from "./slices/featureSlice";
-import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery, useListPlanningUnitsQuery } from "./slices/planningUnitSlice";
+import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery } from "./slices/planningUnitSlice";
 import {
   setUser,
   setUserId,
@@ -50,10 +50,8 @@ import {
   useCreateUserMutation,
   useDeleteUserMutation,
   useGetUserQuery,
-  useListUsersQuery,
   useLogoutUserMutation,
   useUpdateUserMutation,
-  useValidateUserMutation
 } from "./slices/userSlice";
 // SERVICES
 import { useDispatch, useSelector } from "react-redux";
@@ -234,8 +232,6 @@ const App = () => {
   const userId = useSelector((state) => state.auth.userId);
   const [logoutUser] = useLogoutUserMutation();
   const [updateUser] = useUpdateUserMutation();
-  const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitsQuery();
-  const { data: usersData, isLoading: isUsersLoading } = useListUsersQuery();
 
   // ✅ Fetch planning unit data **ONLY when required values exist**
   const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
@@ -247,16 +243,10 @@ const App = () => {
     if (userId) {
       dispatch(getUserProject());
     }
-    if (planningUnitsData) {
-      dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []));
-    }
-    if (usersData) {
-      dispatch(setUsers(usersData.users || []));
-    }
     if (featurePUData) {
       dispatch(setFeaturePlanningUnits(featurePUData) || [])
     }
-  }, [dispatch, userId, planningUnitsData, usersData, featurePUData]);
+  }, [dispatch, userId, featurePUData]);
 
 
   useEffect(() => {
@@ -692,24 +682,11 @@ const App = () => {
     }
   };
 
-  const getUsers = async () => {
-    try {
-      const { data: response, error, isLoading } = useListUsersQuery();
-      dispatch(setUsers(response.users));
-    } catch (error) {
-      dispatch(setUsers([]));
-    }
-  };
-
   const handleCreateUser = async (user, password, name, email) =>
     await createNewUser(user, password, name, email);
 
   const handleDeleteUser = async (user) => await deleteUser(user);
 
-  const checkPassword = async (user, password) => {
-    const [validateUser] = useValidateUserMutation();
-    await validateUser({ user: "user", password: "password" });
-  }
   //the user is validated so login
   const postLoginSetup = async () => {
     try {
@@ -3867,7 +3844,6 @@ const App = () => {
   };
 
   const openUsersDialog = async () => {
-    await getUsers();
     dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: true }));
   };
 
@@ -4469,10 +4445,7 @@ const App = () => {
             metadata={metadata}
             costsLoading={costsLoading}
           />
-          <FeatureInfoDialog
-            loading={loading}
-            updateFeature={updateFeature}
-          />
+
           {identifyVisible ? (
             <IdentifyPopup
               visible={identifyVisible}
@@ -4521,20 +4494,26 @@ const App = () => {
             loading={loading || uploading}
             fileUpload={uploadFileToFolder}
           />
-          <FeaturesDialog
-            onOk={updateSelectedFeatures}
-            loading={loading || uploading}
-            metadata={metadata}
-            userRole={userData.role}
-            clickFeature={clickFeature}
-            initialiseDigitising={initialiseDigitising}
-            previewFeature={previewFeature}
-            refreshFeatures={refreshFeatures}
-          />
-          <FeatureDialog
+          <FeatureInfoDialog
             loading={loading}
-            getTilesetMetadata={getMetadata}
+            updateFeature={updateFeature}
           />
+          {featureState.dialogs.featuresDialogOpen ? (
+            <FeaturesDialog
+              onOk={updateSelectedFeatures}
+              loading={loading || uploading}
+              metadata={metadata}
+              userRole={userData.role}
+              clickFeature={clickFeature}
+              initialiseDigitising={initialiseDigitising}
+              previewFeature={previewFeature}
+              refreshFeatures={refreshFeatures}
+            />) : null}
+          {featureState.dialogs.featureDialogOpen ? (
+            <FeatureDialog
+              loading={loading}
+              getTilesetMetadata={getMetadata}
+            />) : null}
           <NewFeatureDialog
             loading={loading || uploading}
             newFeatureCreated={newFeatureCreated}

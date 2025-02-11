@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanTable from "../MarxanTable";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { useListUsersQuery } from "../slices/userSlice";
 
 const USER_ROLES = ["User", "ReadOnly", "Admin"];
 
@@ -14,10 +15,17 @@ const UsersDialog = ({
   changeRole,
   deleteUser,
 }) => {
+  const dispatch = useDispatch();
   const [searchText, setSearchText] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const userState = useSelector((state) => state.user);
+  const { data: usersData, isLoading: isUsersLoading } = useListUsersQuery();
 
+  useEffect(() => {
+    if (usersData) {
+      dispatch(setUsers(usersData.users || []));
+    }
+  }, [dispatch, usersData]);
 
   useEffect(() => {
     if (!open) {

@@ -35,13 +35,6 @@ export const userApiSlice = apiSlice.injectEndpoints({
         method: "GET",
       }),
     }),
-    validateUser: builder.mutation({
-      query: (credentials) => ({
-        url: `users?action=validate`,
-        method: "GET",
-        params: credentials,
-      }),
-    }),
     logoutUser: builder.mutation({
       query: () => ({
         url: "users?action=logout",
@@ -91,7 +84,6 @@ export const {
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
-  useValidateUserMutation,
   useLogoutUserMutation,
   useResendPasswordQuery,
 } = userApiSlice;

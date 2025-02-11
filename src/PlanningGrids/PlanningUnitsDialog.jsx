@@ -13,6 +13,15 @@ const PlanningUnitsDialog = (props) => {
   const mapContainer = useRef(null);
   const puState = useSelector((state) => state.planningUnit)
 
+  const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitsQuery();
+
+  useEffect(() => {
+    if (planningUnitsData) {
+      dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []));
+    }
+  }, [dispatch, planningUnitsData]);
+
+
   // Initialize the Mapbox map once the component is mounted
   useEffect(() => {
     const mapInstance = new mapboxgl.Map({
