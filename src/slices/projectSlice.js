@@ -111,6 +111,7 @@ export const {
 
 
 const initialState = {
+  addToProject: true,
   bpServers: [],
   bpServer: {},
   newWDPAVersion: false,
@@ -118,7 +119,6 @@ const initialState = {
   registry: INITIAL_VARS,
   status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
-  addToProject: true,
   project: {},
   projects: [],
   projectList: [],
@@ -127,6 +127,10 @@ const initialState = {
   projectLoaded: false,
   projectImpacts: [],
   projectFeatures: [],
+  projectFiles: {},
+  projectMetadata: {},
+  projectPlanningUnits: {},
+  projectCosts: {},
   dialogs: {
     projectsListDialogOpen: false,
     newProjectDialogOpen: false,
@@ -169,10 +173,18 @@ export const getUserProject = createAsyncThunk(
       }
       // Fetch from API
       // const response = await fetch(`/projects?action=get&user=${user}&projectId=${project.id}`);
-      const response = await dispatch(
+      const data = await dispatch(
         projectApiSlice.endpoints.getProject.initiate(projectId)
       ).unwrap(); // Unwraps the promise
-      console.log("response ", response);
+      const response = JSON.parse(data);
+      dispatch(setProject(response.project.project));
+      dispatch(setProjectFiles(response.files));
+      dispatch(setRunParameters(response.runParameters));
+      dispatch(setRenderer(response.renderer));  // Add missing renderer update
+      dispatch(setProjectFeatures(response.features));
+      dispatch(setProjectMetadata(response.metadata)); // Add metadata update
+      dispatch(setProjectPlanningUnits(response.planning_units)); //  Add planning units update
+      dispatch(setProjectCosts(response.costs));
       return response; // Assuming response has { project: { id, name, ... } }
     } catch (error) {
       console.error("Failed to fetch project:", error);
@@ -212,11 +224,17 @@ const projectSlice = createSlice({
     setAddToProject(state, action) {
       state.addToProject = action.payload;
     },
+    setFiles(state, action) {
+      state.files = action.payload;
+    },
     setProject(state, action) {
       state.project = action.payload;
     },
     setProjectFeatures(state, action) {
       state.projectFeatures = action.payload;
+    },
+    setProjectFiles(state, action) {
+      state.projectFiles = action.payload;
     },
     setProjectImpacts(state, action) {
       state.projectImpacts = action.payload;
@@ -239,37 +257,52 @@ const projectSlice = createSlice({
     setProject(state, action) {
       state.project = action.payload;
     },
+    setRenderer: (state, action) => {
+      state.renderer = action.payload;
+    },
+    setProjectMetadata: (state, action) => {
+      state.projectMetadata = action.payload;
+    },
+    setProjectPlanningUnits: (state, action) => {
+      state.projectPlanningUnits = action.payload;
+    },
+    setProjectCosts: (state, action) => {
+      state.projectCosts = action.payload;
+    },
+    setRunParameters(state, action) {
+      state.runParameters = action.payload;
+    },
     toggleProjDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
     },
-    extraReducers: (builder) => {
-      builder
-        .addCase(initialiseServers.pending, (state) => {
-          state.status = "loading";
-          state.error = null;
-        })
-        .addCase(initialiseServers.fulfilled, (state, action) => {
-          state.status = "succeeded";
-          state.error = null;
-        })
-        .addCase(initialiseServers.rejected, (state, action) => {
-          state.status = "failed";
-          state.error = action.payload || "Failed to initialise servers";
-        })
-        .addCase(getUserProject.pending, (state) => {
-          state.status = "loading";
-        })
-        .addCase(getUserProject.fulfilled, (state, action) => {
-          state.status = "succeeded";
-          state.project = action.payload;
-        })
-        .addCase(getUserProject.rejected, (state, action) => {
-          state.status = "failed";
-          state.error = action.payload || "Failed to load project";
-        });
-    },
-  }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(initialiseServers.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(initialiseServers.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.error = null;
+      })
+      .addCase(initialiseServers.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload || "Failed to initialise servers";
+      })
+      .addCase(getUserProject.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(getUserProject.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.project = action.payload;
+      })
+      .addCase(getUserProject.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload || "Failed to load project";
+      });
+  },
 })
 
 
@@ -280,13 +313,18 @@ export const {
   setAddToProject,
   setProject,
   setProjectFeatures,
+  setProjectFiles,
   setProjectImpacts,
   setProjectLoaded,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjectList,
   setProjects,
+  setRunParameters,
+  setRenderer,
+  setProjectMetadata,
+  setProjectPlanningUnits,
+  setProjectCosts,
   toggleProjDialog
-
 } = projectSlice.actions;
 export default projectSlice.reducer;

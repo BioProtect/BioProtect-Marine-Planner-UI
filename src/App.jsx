@@ -241,6 +241,7 @@ const App = () => {
 
   useEffect(() => {
     if (userId) {
+      console.log("🔥 Dispatching getUserProject...");
       dispatch(getUserProject());
     }
     if (featurePUData) {
@@ -689,12 +690,22 @@ const App = () => {
 
   //the user is validated so login
   const postLoginSetup = async () => {
+    console.log("postLoginSetup ");
+    console.log("userState.basemap ", userState.basemap);
+    console.log("projState.project ", projState.project);
+    console.log("current_basemap ", current_basemap);
+
     try {
-      setResultsPanelOpen(true);
-      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
+      console.log("userState.basemap ", userState.basemap);
+      console.log("projState.project ", projState.project);
+      console.log("current_basemap ", current_basemap);
+
+
       const current_basemap = basemaps.find(
         (item) => item.name === userState.basemap
       );
+
+
       await loadBasemap(current_basemap);
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
@@ -704,6 +715,11 @@ const App = () => {
         userState,
         speciesData.data
       );
+
+
+      setResultsPanelOpen(true);
+
+      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
       return "Logged in";
     } catch (error) {
       console.error("Login failed:", error);
@@ -4385,38 +4401,40 @@ const App = () => {
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
             wdpaAttribution={wdpaAttribution}
           />
-          <InfoPanel
-            owner={owner}
-            metadata={metadata}
-            runMarxan={runMarxan}
-            stopProcess={stopProcess}
-            pid={pid}
-            renameProject={renameProject}
-            renameDescription={renameDescription}
-            setPUTabInactive={setPUTabInactive}
-            setPUTabActive={setPUTabActive}
-            startPuEditSession={startPuEditSession}
-            stopPuEditSession={stopPuEditSession}
-            clearManualEdits={clearManualEdits}
-            openFeatureMenu={openFeatureMenu}
-            preprocessing={preprocessing}
-            openFeaturesDialog={openFeaturesDialog}
-            changeIucnCategory={changeIucnCategory}
-            updateFeature={updateFeature}
-            toggleProjectPrivacy={toggleProjectPrivacy}
-            getShareableLink={() => setShareableLinkDialogOpen(true)}
-            toggleFeatureLayer={toggleFeatureLayer}
-            toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
-            useFeatureColors={selectUserData.USEFEATURECOLORS}
-            smallLinearGauge={smallLinearGauge}
-            openCostsDialog={openCostsDialog}
-            costname={metadata?.COSTS}
-            costnames={costnames}
-            changeCostname={changeCostname}
-            loadCostsLayer={loadCostsLayer}
-            loading={loading}
-          // protectedAreaIntersections={protectedAreaIntersections}
-          />
+          {projState.status === "loading" ? (<Loading />) : (
+            <InfoPanel
+              owner={owner}
+              metadata={metadata}
+              runMarxan={runMarxan}
+              stopProcess={stopProcess}
+              pid={pid}
+              renameProject={renameProject}
+              renameDescription={renameDescription}
+              setPUTabInactive={setPUTabInactive}
+              setPUTabActive={setPUTabActive}
+              startPuEditSession={startPuEditSession}
+              stopPuEditSession={stopPuEditSession}
+              clearManualEdits={clearManualEdits}
+              openFeatureMenu={openFeatureMenu}
+              preprocessing={preprocessing}
+              openFeaturesDialog={openFeaturesDialog}
+              changeIucnCategory={changeIucnCategory}
+              updateFeature={updateFeature}
+              toggleProjectPrivacy={toggleProjectPrivacy}
+              getShareableLink={() => setShareableLinkDialogOpen(true)}
+              toggleFeatureLayer={toggleFeatureLayer}
+              toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
+              useFeatureColors={selectUserData.USEFEATURECOLORS}
+              smallLinearGauge={smallLinearGauge}
+              openCostsDialog={openCostsDialog}
+              costname={metadata?.COSTS}
+              costnames={costnames}
+              changeCostname={changeCostname}
+              loadCostsLayer={loadCostsLayer}
+              loading={loading}
+            // protectedAreaIntersections={protectedAreaIntersections}
+            />)}
+
           <ResultsPanel
             open={resultsPanelOpen}
             preprocessing={preprocessing}

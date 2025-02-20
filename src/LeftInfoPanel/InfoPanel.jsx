@@ -22,6 +22,7 @@ const InfoPanel = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
+  console.log("projState in infoPanel ", projState);
   const puState = useSelector((state) => state.planningUnit)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const userData = useSelector(selectUserData);

@@ -62,15 +62,26 @@ const LoginDialog = ({ open, postLoginSetup }) => {
   const handleMouseDownPassword = (event) => event.preventDefault();
 
   const handleSubmit = async (e) => {
+    console.log("e ", e);
+
     e.preventDefault();
+
+    console.log("handleSubmit ");
 
     try {
       const response = await login({ user, pwd }).unwrap();
+      console.log("🔥 response ", response);
       dispatch(setCredentials({ ...response, user }));
+      console.log("🔥 setCredentials ");
       dispatch(setUserId(response.userId))
+      console.log("🔥 setUserId ");
       dispatch(setUserData(response.userData))
+      console.log("🔥 setUserData ");
       dispatch(setProject(userData.project))
+      console.log("🔥 setProject ");
+
       // dispatch(setDismissedNotifications(response.dismissedNotifications || []));
+      console.log("🔥 should be calling postLoginsetup now...");
       postLoginSetup();
       setUser("");
       setPwd("");
