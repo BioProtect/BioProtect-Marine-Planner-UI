@@ -12,12 +12,12 @@ import { useDispatch, useSelector } from "react-redux";
 
 import MarxanDialog from "../MarxanDialog";
 import React from "react";
-import { selectUserData } from "../slices/authSlice";
+import { selectCurrentUser } from "../slices/authSlice";
 import { toggleProjDialog } from "../slices/projectSlice";
 
 const ProjectsListDialog = () => {
   const dispatch = useDispatch();
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
   const projState = useSelector((state) => state.project);
   // Determine the columns based on the user role
   const tableColumns = [

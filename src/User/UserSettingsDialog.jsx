@@ -13,12 +13,15 @@ import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
-import { selectUserData } from "../slices/authSlice";
+import { selectCurrentUser } from "../slices/authSlice";
+import { setBasemap } from "../slices/uiSlice";
 
 const UserSettingsDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [options, setOptions] = useState({});
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
 
   const setOption = (key, value) => {
     setSaveEnabled(true);
@@ -30,10 +33,10 @@ const UserSettingsDialog = (props) => {
   };
 
   const changeBasemap = (event) => {
-    const basemap = props.basemaps.find(
+    const basemap = uiState.basemaps.find(
       (item) => item.name === event.target.value
     );
-    props.changeBasemap(basemap);
+    dispatch(setBasemap(basemap));
     setOption("BASEMAP", basemap.name);
   };
 
@@ -64,12 +67,12 @@ const UserSettingsDialog = (props) => {
           <Select
             labelId="basemap-style-id"
             id="basemap-style"
-            value={props.basemap}
+            value={uiState.basemap}
             label="Change Basemap"
             fullWidth
             onChange={changeBasemap}
           >
-            {props.basemaps.map((item) => (
+            {uiState.basemaps.map((item) => (
               <MenuItem
                 key={item.name}
                 value={item.name}

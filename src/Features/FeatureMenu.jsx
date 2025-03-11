@@ -11,7 +11,7 @@ import RemoveFromMap from "@mui/icons-material/VisibilityOff";
 import RemoveFromProject from "@mui/icons-material/Remove";
 import ZoomIn from "@mui/icons-material/ZoomIn";
 import { generateTableCols } from "../Helpers";
-import { selectUserData } from "../slices/authSlice";
+import { selectCurrentUser } from "../slices/authSlice";
 import { toggleFeatureD } from "../slices/featureSlice";
 
 const FeatureMenu = ({
@@ -26,7 +26,7 @@ const FeatureMenu = ({
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
 
   const handleInfoMenuItemClick = () => {
     dispatch(

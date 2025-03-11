@@ -6,7 +6,7 @@ import Divider from "@mui/material/Divider";
 import React from "react";
 import Typography from "@mui/material/Typography";
 import { getArea } from "./Helpers";
-import { selectUserData } from "./slices/authSlice";
+import { selectCurrentUser } from "./slices/authSlice";
 
 const MetChart = ({
   title,
@@ -22,7 +22,7 @@ const MetChart = ({
   const countryAreaValue = getArea(country_area, userData.report_units, false);
   const protectedAreaValue = getArea(current_protected_area, userData.report_units, false);
   const totalAreaValue = getArea(total_area, userData.report_units, false);
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
   const titleText = `
     Total area: ${totalAreaValue}
     Country area: ${countryAreaValue}

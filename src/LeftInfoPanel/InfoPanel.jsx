@@ -14,7 +14,7 @@ import Settings from "@mui/icons-material/Settings";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import { selectUserData } from "../slices/authSlice";
+import { selectCurrentUser } from "../slices/authSlice";
 
 const activeTabArr = ["project", "features", "planning_units"];
 
@@ -22,10 +22,9 @@ const InfoPanel = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
-  console.log("projState in infoPanel ", projState);
   const puState = useSelector((state) => state.planningUnit)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
 
   const [editingProjectName, setEditingProjectName] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);

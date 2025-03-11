@@ -16,7 +16,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
 import { getArea } from "../Helpers";
-import { selectUserData } from "../slices/authSlice";
+import { selectCurrentUser } from "../slices/authSlice";
 import { toggleFeatureD } from "../slices/featureSlice";
 import { useListFeatureProjectsQuery } from "../slices/featureSlice";
 
@@ -25,7 +25,8 @@ const FeatureDialog = ({ loading, getTilesetMetadata }) => {
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
   const featureDialogs = useSelector((state) => state.feature.dialogs);
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
+
   const { data: featureProjectsData, isLoading: isFeatureProjectsLoading } = useListFeatureProjectsQuery(featureState.featureMetadata.id);
   const projects = featureProjectsData?.projects || [];
 

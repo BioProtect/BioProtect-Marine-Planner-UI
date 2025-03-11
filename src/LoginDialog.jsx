@@ -1,7 +1,7 @@
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
-import { selectCurrentToken, setUserData } from "./slices/authSlice";
-import { setSnackbarMessage, setSnackbarOpen } from "./slices/uiSlice";
+import { selectCurrentToken, selectCurrentUser } from "./slices/authSlice";
+import { setBasemap, setSnackbarMessage, setSnackbarOpen } from "./slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -27,7 +27,6 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { selectServer } from "./slices/projectSlice";
 import { setCredentials } from "./slices/authSlice";
 import { setProject } from "./slices/projectSlice";
-import { setUserId } from "./slices/userSlice";
 import { useLoginMutation } from "./slices/authApiSlice";
 
 const LoginDialog = ({ open, postLoginSetup }) => {
@@ -62,31 +61,24 @@ const LoginDialog = ({ open, postLoginSetup }) => {
   const handleMouseDownPassword = (event) => event.preventDefault();
 
   const handleSubmit = async (e) => {
-    console.log("e ", e);
-
     e.preventDefault();
-
-    console.log("handleSubmit ");
 
     try {
       const response = await login({ user, pwd }).unwrap();
       console.log("🔥 response ", response);
-      dispatch(setCredentials({ ...response, user }));
+      dispatch(setCredentials({
+        userId: response.userId,
+        project: response.project,
+        accessToken: response.accessToken,
+        userData: response.userData
+      }));
       console.log("🔥 setCredentials ");
-      dispatch(setUserId(response.userId))
-      console.log("🔥 setUserId ");
-      dispatch(setUserData(response.userData))
-      console.log("🔥 setUserData ");
-      dispatch(setProject(userData.project))
-      console.log("🔥 setProject ");
-
       // dispatch(setDismissedNotifications(response.dismissedNotifications || []));
-      console.log("🔥 should be calling postLoginsetup now...");
       postLoginSetup();
       setUser("");
       setPwd("");
     } catch (err) {
-      let errMsg = null;
+      let errMsg = "Login Failed";
       if (!err?.originalStatus) {
         // isLoading: true until timeout occurs
         errMsg = "No Server Response";
@@ -94,8 +86,6 @@ const LoginDialog = ({ open, postLoginSetup }) => {
         errMsg = "Missing Username or Password";
       } else if (err.originalStatus === 401) {
         errMsg = "Unauthorized";
-      } else {
-        errMsg = "Login Failed";
       }
       dispatch(setSnackbarMessage(errMsg));
       dispatch(setSnackbarOpen(true));

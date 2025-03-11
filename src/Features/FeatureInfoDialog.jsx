@@ -17,7 +17,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
-import { selectUserData } from "../slices/authSlice";
+import { selectCurrentUser } from "../slices/authSlice";
 import { toggleFeatureD } from "../slices/featureSlice";
 
 const FeatureInfoDialog = ({ loading, updateFeature }) => {
@@ -25,7 +25,7 @@ const FeatureInfoDialog = ({ loading, updateFeature }) => {
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const featureStates = useSelector((state) => state.ui.featureDialogStates);
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
 
   const closeDialog = () =>
     dispatch(

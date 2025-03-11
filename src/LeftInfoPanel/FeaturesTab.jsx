@@ -1,4 +1,4 @@
-import { selectUserData, setUserData } from "../slices/authSlice";
+import { selectCurrentUser, setCredentials } from "../slices/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -12,7 +12,7 @@ import { toggleDialog } from "../slices/uiSlice";
 const FeaturesTab = (props) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
   const openFeaturesDialog = (evt) => {
     props.openFeaturesDialog(true);
   };

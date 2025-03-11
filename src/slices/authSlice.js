@@ -3,36 +3,37 @@ import { createSlice } from "@reduxjs/toolkit";
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    user: null,
     userId: null,
     userData: {},
     token: null,
-    project: null
+    project: null,
+    isUserLoggedIn: false,
   },
   reducers: {
     setCredentials: (state, action) => {
-      const { user, userId, project, accessToken } = action.payload;
-      state.user = user;
+      const { userId, project, accessToken, userData } = action.payload;
       state.userId = userId;
       state.project = project;
       state.token = accessToken;
+      state.userData = userData;
+      state.isUserLoggedIn = true;
     },
-    setUserData: (state, action) => {
-      state.userData = action.payload;
-    },
-    logOut: (state, action) => {
-      state.user = null;
+    logOut: (state) => {
       state.userId = null;
+      state.userData = {};
       state.token = null;
+      state.project = null;
+      state.isUserLoggedIn = false;
     },
   },
 });
 
-export const { setCredentials, setUserData, logOut } = authSlice.actions;
+export const { setCredentials, logOut } = authSlice.actions;
 
 export default authSlice.reducer;
 
-export const selectCurrentUser = (state) => state.auth.user;
+export const selectCurrentUser = (state) => state.auth.userData;
 export const selectCurrentUserId = (state) => state.auth.userId;
 export const selectCurrentToken = (state) => state.auth.token;
-export const selectUserData = (state) => state.auth.userData;
+export const selectUserProject = (state) => state.auth.project;
+export const selectIsUserLoggedIn = (state) => state.auth.isUserLoggedIn;

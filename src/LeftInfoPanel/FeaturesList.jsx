@@ -14,7 +14,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import React from "react";
 import TargetIcon from "../TargetIcon";
 import { grey } from "@mui/material/colors";
-import { selectUserData } from "../slices/authSlice";
+import { selectCurrentUser } from "../slices/authSlice";
 import { useSelector } from "react-redux";
 
 const FeaturesList = ({
@@ -26,7 +26,7 @@ const FeaturesList = ({
   useFeatureColors,
   smallLinearGauge,
 }) => {
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
   const projState = useSelector((state) => state.project);
   const iconClick = (feature, evt) => {
     openFeatureMenu(evt, feature);

@@ -1,10 +1,10 @@
 import React from "react";
 import { getArea } from "./Helpers";
-import { selectUserData } from "./slices/authSlice";
+import { selectCurrentUser } from "./slices/authSlice";
 import { useSelector } from "react-redux";
 
 const CustomTooltip = ({ active, payload }) => {
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
 
   if (!active || !payload || !payload.length) {
     return null;

@@ -2,11 +2,11 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } 
 import React, { useState } from "react";
 
 import PropTypes from "prop-types";
-import { selectUserData } from "../slices/authSlice";
+import { selectCurrentUser } from "../slices/authSlice";
 import { useSelector } from "react-redux";
 
 const ProfileDialog = ({ open, onOk, updateUser }) => {
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
 
   const [state, setState] = useState({
     name: userData?.name || "",

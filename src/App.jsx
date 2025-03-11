@@ -19,9 +19,17 @@ import {
   setProjects,
   toggleProjDialog
 } from "./slices/projectSlice";
-import { selectCurrentToken, selectUserData, setUserData } from "./slices/authSlice";
+import {
+  selectCurrentToken,
+  selectCurrentUser,
+  selectCurrentUserId,
+  selectIsUserLoggedIn,
+  selectUserProject,
+  setCredentials,
+} from "./slices/authSlice";
 import {
   setActiveTab,
+  setBasemap,
   setIdentifyFeatures,
   setSnackbarMessage,
   setSnackbarOpen,
@@ -44,8 +52,6 @@ import {
 } from "./slices/featureSlice";
 import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery } from "./slices/planningUnitSlice";
 import {
-  setUser,
-  setUserId,
   setUsers,
   useCreateUserMutation,
   useDeleteUserMutation,
@@ -141,7 +147,6 @@ const App = () => {
   const featureDialogs = useSelector((state) => state.ui.featureDialogStates);
   const puDialogs = useSelector((state) => state.planningUnit);
   const token = useSelector(selectCurrentToken);
-  const userData = useSelector(selectUserData);
 
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
 
@@ -163,8 +168,6 @@ const App = () => {
   const [allImpacts, setAllImpacts] = useState([]);
   const [atlasLayers, setAtlasLayers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [basemap, setBasemap] = useState("North Star");
-  const [basemaps, setBasemaps] = useState([]);
   const [clumpingRunning, setClumpingRunning] = useState(false);
   const [costnames, setCostnames] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
@@ -229,14 +232,18 @@ const App = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
 
-  const userId = useSelector((state) => state.auth.userId);
+  const userId = useSelector(selectCurrentUserId);
+  const userData = useSelector(selectCurrentUser);
+  const project = useSelector(selectUserProject);
+  const isLoggedIn = useSelector(selectIsUserLoggedIn);
+
   const [logoutUser] = useLogoutUserMutation();
   const [updateUser] = useUpdateUserMutation();
 
   // ✅ Fetch planning unit data **ONLY when required values exist**
   const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
-    { owner, project: projState.project, featureId: featureState.selectedFeature?.id },
-    { skip: !owner || !projState.project || !featureState.selectedFeature?.id }
+    { owner, project: project, featureId: featureState.selectedFeature?.id },
+    { skip: !owner || !project || !featureState.selectedFeature?.id }
   );
 
   useEffect(() => {
@@ -282,8 +289,6 @@ const App = () => {
       try {
         initialiseServers(INITIAL_VARS.MARXAN_SERVERS);
         setBrew(new classyBrew());
-
-        setBasemaps(INITIAL_VARS.MAPBOX_BASEMAPS);
         setRegistry(INITIAL_VARS);
         setInitialLoading(false);
 
@@ -383,7 +388,6 @@ const App = () => {
     setWdpaVectorTileLayer(`wdpa_${version}_polygons`);
   }, []);
 
-
   const newFeatureCreated = useCallback(
     async (id) => {
       const [fetchFeature] = useGetFeatureQuery();
@@ -404,15 +408,15 @@ const App = () => {
   );
 
 
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
+  // ---------------------------------------- //
+  // ---------------------------------------- //
+  // ---------------------------------------- //
+  // ---------------------------------------- //
   // REQUEST HELPERS
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
+  // ---------------------------------------- //
+  // ---------------------------------------- //
+  // ---------------------------------------- //
+  // ---------------------------------------- //
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   const _get = useCallback(
     (params, timeout = CONSTANTS.TIMEOUT) => {
@@ -494,13 +498,11 @@ const App = () => {
   const messageLogger = useCallback((message) => {
     // Add a timestamp to the message
     const timestampedMessage = { ...message, timestamp: new Date() };
-    // Update the state with the new log message
     setLogMessages((prevState) => [
       ...prevState.logMessages,
       timestampedMessage,
     ]);
   }, []);
-
 
 
   // removes a message from the log by matching on pid and status or just status
@@ -583,15 +585,15 @@ const App = () => {
     newFeatureCreated,
     removeMessageFromLog
   );
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
+  // ------------------------------------------------------------------- //
+  // ------------------------------------------------------------------- //
+  // ------------------------------------------------------------------- //
+  // ------------------------------------------------------------------- //
   // MANAGING USERS
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
+  // ------------------------------------------------------------------- //
+  // ------------------------------------------------------------------- //
+  // ------------------------------------------------------------------- //
+  // ------------------------------------------------------------------- //
 
   const removeKeys = (obj, keys) => {
     // Create a shallow copy of the object to avoid mutating the original
@@ -690,32 +692,19 @@ const App = () => {
 
   //the user is validated so login
   const postLoginSetup = async () => {
-    console.log("postLoginSetup ");
-    console.log("userState.basemap ", userState.basemap);
-    console.log("projState.project ", projState.project);
-    console.log("current_basemap ", current_basemap);
-
     try {
-      console.log("userState.basemap ", userState.basemap);
-      console.log("projState.project ", projState.project);
-      console.log("current_basemap ", current_basemap);
-
-
-      const current_basemap = basemaps.find(
-        (item) => item.name === userState.basemap
+      const currentBasemap = uiState.basemaps.find(
+        (item) => item.name === uiState.basemap
       );
-
-
-      await loadBasemap(current_basemap);
+      await loadBasemap(currentBasemap);
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
       await loadProject(
-        projState.project,
-        userState.user,
-        userState,
+        project,
+        userId,
+        userData,
         speciesData.data
       );
-
 
       setResultsPanelOpen(true);
 
@@ -965,13 +954,14 @@ const App = () => {
   };
 
   const loadProject = async (proj, user, ...options) => {
+    console.log("projState, userState ", projState, userState);
     try {
       // Reset the results from any previous projects
       const userResp = options[0];
       const allFeaturesData = options[1];
 
       resetResults();
-      const projectResp = await _get(`projects?action=get&user=${user}&project=${proj}`);
+      const projectResp = await _get(`projects?action=get&user=${userId}&project=${project}`);
       setRunParams(projectResp.runParameters);
       setProtectedAreaIntersections(projectResp.protectedAreaIntersections);
       setRenderer(projectResp.renderer);
@@ -2059,6 +2049,7 @@ const App = () => {
 
   //instantiates the mapboxgl map
   const createMap = (url) => {
+    console.log("url ", url);
     // Initialize map only once
     if (map.current) {
       console.log("Map already initialized.");
@@ -2252,8 +2243,9 @@ const App = () => {
   //sets the basemap either on project load, or if the user changes it
   const loadBasemap = async (basemap) => {
     try {
-      setBasemap(basemap.name);
+      dispatch(setBasemap(basemap.name));
       const style = await getValidStyle(basemap);
+      console.log("basemap style ", style);
       await createMap(style);
       addWDPASource();
       addWDPALayer();
@@ -4376,11 +4368,7 @@ const App = () => {
             open={dialogStates.userSettingsDialogOpen}
             onCancel={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
             loading={loading}
-            selectUserData={selectUserData}
             saveOptions={saveOptions}
-            changeBasemap={setBasemap}
-            basemaps={basemaps}
-            basemap={basemap}
           />
           <UsersDialog
             open={dialogStates.usersDialogOpen}
@@ -4394,7 +4382,6 @@ const App = () => {
             onOk={() => setProfileDialogOpen(false)}
             onCancel={() => setProfileDialogOpen(false)}
             loading={loading}
-            selectUserData={selectUserData}
             updateUser={handleUpdateUser}
           />
           <AboutDialog
@@ -4424,7 +4411,7 @@ const App = () => {
               getShareableLink={() => setShareableLinkDialogOpen(true)}
               toggleFeatureLayer={toggleFeatureLayer}
               toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
-              useFeatureColors={selectUserData.USEFEATURECOLORS}
+              useFeatureColors={userData.USEFEATURECOLORS}
               smallLinearGauge={smallLinearGauge}
               openCostsDialog={openCostsDialog}
               costname={metadata?.COSTS}
@@ -4471,6 +4458,7 @@ const App = () => {
               identifyProtectedAreas={identifyProtectedAreas}
               hideIdentifyPopup={hideIdentifyPopup}
               metadata={metadata}
+              reportUnits={userData.reportUnits}
             />) : null}
           <ProjectsDialog
             onCancel={() => closeProjectsDialog()}

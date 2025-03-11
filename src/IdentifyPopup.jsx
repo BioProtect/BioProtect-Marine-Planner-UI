@@ -5,7 +5,6 @@ import CONSTANTS from "./constants";
 import Swatch from "./Swatch";
 import SyncIcon from "@mui/icons-material/Sync";
 import { getArea } from "./Helpers";
-import { selectUserData } from "./slices/authSlice";
 import { useSelector } from "react-redux";
 
 const TITLE_LINK = "Click to open in the Protected Planet website";
@@ -23,12 +22,13 @@ const IdentifyPopup = ({
   metadata,
   identifyProtectedAreas,
   hideIdentifyPopup,
+  reportUnits,
 }) => {
   const uiState = useSelector((state) => state.ui);
   const puState = useSelector((state) => state.planningUnit)
   const [selectedTab, setSelectedTab] = useState("pu");
   const [timer, setTimer] = useState(null);
-  const userData = useSelector(selectUserData);
+
   const clearTimer = useCallback(() => {
     if (timer) {
       clearTimeout(timer);
@@ -37,25 +37,25 @@ const IdentifyPopup = ({
   }, [timer]);
 
   const startTimer = useCallback(() => {
-    clearTimer();
-    const timeout = setTimeout(() => {
+    clearTimer(); // Ensure previous timer is cleared before setting a new one
+    setTimer(setTimeout(() => {
       hideIdentifyPopup();
       setSelectedTab("pu");
-    }, 4000);
-    setTimer(timeout);
+    }, 4000));
   }, [clearTimer, hideIdentifyPopup]);
 
   useEffect(() => {
     if (visible) {
       startTimer();
     }
-    return clearTimer;
-  }, [visible, startTimer, clearTimer]);
+    return () => clearTimer(); // Cleanup on unmount
+  }, [visible]);
 
   useEffect(() => {
-    clearTimer();
-    startTimer();
-  }, [xy, clearTimer, startTimer]);
+    if (visible) {
+      startTimer();
+    }
+  }, [xy]);
 
   const getItemStatus = () => {
     if (!puState.identifyPlanningUnits?.puData) {
@@ -73,7 +73,7 @@ const IdentifyPopup = ({
 
   const renderArea = (amount, source) =>
     source !== "Imported shapefile (points)" ? (
-      <div title={getArea(amount, userData.report_units)}>{getArea(amount, userData.report_units, true)}</div>
+      <div title={getArea(amount, reportUnits)}>{getArea(amount, reportUnits, true)}</div>
     ) : (
       <div title={amount}>{amount}</div>
     );

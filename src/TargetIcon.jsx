@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import { blue } from "@mui/material/colors";
-import { selectUserData } from "./slices/authSlice";
+import { selectCurrentUser } from "./slices/authSlice";
 import { useSelector } from "react-redux";
 
 const TargetIcon = ({
@@ -14,7 +14,7 @@ const TargetIcon = ({
   const [editing, setEditing] = useState(false);
   const [localTargetValue, setLocalTargetValue] = useState(target_value);
   const inputRef = useRef(null);
-  const userData = useSelector(selectUserData);
+  const userData = useSelector(selectCurrentUser);
 
   useEffect(() => {
     if (editing) {
