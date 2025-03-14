@@ -1,5 +1,6 @@
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
+import { getUserProject, selectServer } from "./slices/projectSlice";
 import { selectCurrentToken, selectCurrentUser } from "./slices/authSlice";
 import { setBasemap, setSnackbarMessage, setSnackbarOpen } from "./slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,9 +25,7 @@ import React from "react";
 import Select from "@mui/material/Select";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { selectServer } from "./slices/projectSlice";
 import { setCredentials } from "./slices/authSlice";
-import { setProject } from "./slices/projectSlice";
 import { useLoginMutation } from "./slices/authApiSlice";
 
 const LoginDialog = ({ open, postLoginSetup }) => {
@@ -65,22 +64,18 @@ const LoginDialog = ({ open, postLoginSetup }) => {
 
     try {
       const response = await login({ user, pwd }).unwrap();
-      console.log("🔥 response ", response);
       dispatch(setCredentials({
         userId: response.userId,
         project: response.project,
         accessToken: response.accessToken,
         userData: response.userData
       }));
-      console.log("🔥 setCredentials ");
-      // dispatch(setDismissedNotifications(response.dismissedNotifications || []));
-      postLoginSetup();
+      dispatch(getUserProject());
       setUser("");
       setPwd("");
     } catch (err) {
       let errMsg = "Login Failed";
       if (!err?.originalStatus) {
-        // isLoading: true until timeout occurs
         errMsg = "No Server Response";
       } else if (err.originalStatus === 400) {
         errMsg = "Missing Username or Password";

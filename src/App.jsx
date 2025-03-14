@@ -9,7 +9,7 @@ import {
   initialiseServers,
   selectServer,
   setBpServer,
-  setProject,
+  setProjectData,
   setProjectFeatures,
   setProjectImpacts,
   setProjectList,
@@ -126,6 +126,7 @@ import classyBrew from "classybrew";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
+import parse from "wellknown";
 import useWebSocketHandler from "./WebSocketHandler";
 import { zoomToBounds } from "./Helpers";
 
@@ -138,6 +139,7 @@ mapboxgl.accessToken =
 const App = () => {
   const dispatch = useDispatch();
 
+  const authState = useSelector((state) => state.auth);
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
   const userState = useSelector((state) => state.user)
@@ -247,14 +249,13 @@ const App = () => {
   );
 
   useEffect(() => {
-    if (userId) {
-      console.log("🔥 Dispatching getUserProject...");
-      dispatch(getUserProject());
-    }
     if (featurePUData) {
       dispatch(setFeaturePlanningUnits(featurePUData) || [])
     }
-  }, [dispatch, userId, featurePUData]);
+    if (projState.projectLoaded) {
+      postLoginSetup();
+    }
+  }, [dispatch, featurePUData, projState.projectLoaded]);
 
 
   useEffect(() => {
@@ -699,16 +700,28 @@ const App = () => {
       await loadBasemap(currentBasemap);
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
-      await loadProject(
-        project,
-        userId,
-        userData,
+      setPUTabInactive();
+      setResultsPanelOpen(true);
+      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
+
+
+      // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
+      if (projState.projectData.metadata.PLANNING_UNIT_NAME) {
+        const planningGrid = `${CONSTANTS.MAPBOX_USER}.${projState.projectData.metadata.PLANNING_UNIT_NAME}`
+        console.log("planningGrid ", planningGrid);
+        await changePlanningGrid(planningGrid);
+        await getResults(userData.name, projState.projectData.name);
+      }
+      // Set a local variable - Dont need to track state with these variables as they are not bound to anything
+      // Initialize interest features and preload costs data
+      initialiseInterestFeatures(
+        projState.projectData.metadata.OLDVERSION,
+        projState.projectData.features,
+        projState.projectData.feature_preprocessing,
         speciesData.data
       );
 
-      setResultsPanelOpen(true);
 
-      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
       return "Logged in";
     } catch (error) {
       console.error("Login failed:", error);
@@ -726,7 +739,7 @@ const App = () => {
     setRenderer({});
     dispatch(setUser(""));
     dispatch(setProjectFeatures([]));
-    dispatch(setProject(""));
+    // dispatch(setProject("")); // NEED TO SORT THIS OUT
     dispatch(setPlanningUnits([]));
     setOwner("");
     setNotifications([]);
@@ -954,21 +967,9 @@ const App = () => {
   };
 
   const loadProject = async (proj, user, ...options) => {
-    console.log("projState, userState ", projState, userState);
     try {
-      // Reset the results from any previous projects
-      const userResp = options[0];
-      const allFeaturesData = options[1];
-
       resetResults();
-      const projectResp = await _get(`projects?action=get&user=${userId}&project=${project}`);
-      setRunParams(projectResp.runParameters);
-      setProtectedAreaIntersections(projectResp.protectedAreaIntersections);
       setRenderer(projectResp.renderer);
-      dispatch(setProject(projectResp.project));
-      dispatch(setPlanningUnits(projectResp.planningUnits));
-      setMetadata(projectResp.metadata);
-      setFiles({ ...projectResp.files });
       setCostnames(projectResp.costnames);
       setOwner(user);
       dispatch(setProjectLoaded(true));
@@ -982,8 +983,6 @@ const App = () => {
         await getResults(user, projectResp.project);
       }
       // Set a local variable - Dont need to track state with these variables as they are not bound to anything
-      setFeaturePreprocessing(projectResp.feature_preprocessing);
-      setPreviousIucnCategory(projectResp.metadata.IUCN_CATEGORY);
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
         projectResp.metadata.OLDVERSION,
@@ -998,19 +997,16 @@ const App = () => {
       return "Project loaded";
     } catch (error) {
       console.log("error", error);
-
       if (error.toString().includes("Logged on as read-only guest user")) {
         // setLoggedIn(true);
         return "No project loaded - logged on as read-only guest user";
       }
-
       if (error.toString().includes("does not exist")) {
         // Handle case where project does not exist
         dispatch(setSnackbarMessage("Loading first available project"));
         await loadProject("", user);
         return;
       }
-
       throw error; // Re-throw the error to handle it outside if needed
     }
   };
@@ -1092,15 +1088,14 @@ const App = () => {
 
   //resets various variables and state in between users
   const resetResults = () => {
-    resetRun(); //reset the run
-    setCostData(undefined); //reset the cost data
-    hideFeatureLayer(); //reset any feature layers that are shown
-  };
-
-  //resets state in between runs
-  const resetRun = () => {
     setRunMarxanResponse({});
-    setSolutions([]);
+    setSolutions([]);//reset the run
+    setCostData(undefined); //reset the cost data
+    projState.projectFeatures.forEach((feature) => {
+      if (feature.feature_layer_loaded) {
+        toggleFeatureLayer(feature);
+      }
+    });; //reset any feature layers that are shown
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -1148,7 +1143,6 @@ const App = () => {
     const formData = new FormData();
     formData.append("user", user);
     formData.append("project", proj);
-    console.log("formData ", formData);
     // return await _post("createImportProject", formData); - old
     // new is this format 
     // POST /projects?action=create_import
@@ -1249,7 +1243,7 @@ const App = () => {
         `projects?action=rename&user=${owner}&project=${projState.project}&newName=${newName}`
       );
 
-      dispatch(setProject(newName));
+      // dispatch(setProject(newName)); // FIX THIS - UPDATE NAME OF PROJECT ONLY. 
       dispatch(setSnackbarMessage(response.info));
       return "Project renamed";
     }
@@ -1287,7 +1281,8 @@ const App = () => {
   const runMarxan = async (event) => {
     startLogging(); // start the logging
     resetProtectedAreas(); // reset all of the protected and target areas for all features
-    resetRun(); // reset the run results
+    setRunMarxanResponse({});
+    setSolutions([]); // reset the run results
 
     try {
       //update the spec.dat file with any that have been added or removed or changed target or spf
@@ -1430,7 +1425,7 @@ const App = () => {
   //gets the results for a project
   const getResults = async (user, proj) => {
     try {
-      const response = await _get(`getResults?user=${user}&project=${proj}`);
+      const response = await _get(`getResults?user=${userData.username}&project=${projState.projectData.project.name}`);
       runCompleted(response);
       return "Results retrieved";
     } catch (error) {
@@ -2332,18 +2327,14 @@ const App = () => {
     try {
       // Get the tileset metadata
       const tileset = await getMetadata(tilesetid);
-
       // Remove the existing layers (e.g., results layer, planning unit layer)
       removePlanningGridLayers();
-
       // Add the new planning grid layers using the obtained tileset
       addPlanningGridLayers(tileset);
-
       // Zoom to the layers' extent if bounds are available
       if (tileset.bounds) {
         zoomToBounds(map, tileset.bounds);
       }
-
       // Update the state with the new tileset information
       setTileset(tileset);
       return tileset;
@@ -2361,6 +2352,7 @@ const App = () => {
       );
 
       const data = await response.json();
+      console.log("Metadata for planningGrid ", data);
 
       if (data.message && data.message.includes("does not exist")) {
         throw new Error(
@@ -3680,14 +3672,6 @@ const App = () => {
     );
   };
 
-  //hides the feature layer
-  const hideFeatureLayer = () => {
-    projState.projectFeatures.forEach((feature) => {
-      if (feature.feature_layer_loaded) {
-        toggleFeatureLayer(feature);
-      }
-    });
-  };
 
   //toggles the feature layer on the map
   const toggleFeatureLayer = (feature) => {
@@ -4268,9 +4252,19 @@ const App = () => {
       if (costData && !forceReload) {
         return costData;
       }
-
+      // ****************************************************************************
+      // ****************************************************************************
+      // ****************************************************************************
+      // ****************************************************************************
+      // ****************************************************************************
+      // ****************************************************************************
+      // ****************************************************************************
+      // ****************************************************************************
+      // ****************************************************************************
+      // ****************************************************************************
       // Fetch the cost data if not already loaded or force reload is requested
-      const response = await _get(url);
+      // const response = await _get(url);  // TRIGGERING MASSIVE RELOAD ALL THE TIME 
+      // SORT THIS OUT LATER
       // Save the cost data to a local variable
       setCostData(response);
       return response;
@@ -4340,7 +4334,6 @@ const App = () => {
             <LoginDialog
               open={!token}
               loading={loading}
-              postLoginSetup={postLoginSetup}
             />
           )}
           <ResendPasswordDialog
@@ -4388,7 +4381,7 @@ const App = () => {
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
             wdpaAttribution={wdpaAttribution}
           />
-          {projState.status === "loading" ? (<Loading />) : (
+          {projState.projectLoaded ? (
             <InfoPanel
               owner={owner}
               metadata={metadata}
@@ -4420,7 +4413,7 @@ const App = () => {
               loadCostsLayer={loadCostsLayer}
               loading={loading}
             // protectedAreaIntersections={protectedAreaIntersections}
-            />)}
+            />) : null}
 
           <ResultsPanel
             open={resultsPanelOpen}

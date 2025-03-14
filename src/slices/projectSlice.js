@@ -7,6 +7,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { INITIAL_VARS } from "../bpVars";
 import { apiSlice } from "./apiSlice";
+import { setActiveTab } from "./uiSlice";
 
 export const projectApiSlice = apiSlice.injectEndpoints({
   tagTypes: ['Project'],
@@ -119,7 +120,7 @@ const initialState = {
   registry: INITIAL_VARS,
   status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
-  project: {},
+  projectData: {},
   projects: [],
   projectList: [],
   projectListDialogHeading: "",
@@ -127,8 +128,6 @@ const initialState = {
   projectLoaded: false,
   projectImpacts: [],
   projectFeatures: [],
-  projectFiles: {},
-  projectMetadata: {},
   projectPlanningUnits: {},
   projectCosts: {},
   dialogs: {
@@ -163,28 +162,31 @@ export const initialiseServers = createAsyncThunk(
 // Thunk to fetch the user's project only if not already in state
 export const getUserProject = createAsyncThunk(
   "projects/getUserProject",
-  async (_, { getState, dispatch, rejectWithValue }) => {
+  async (projectId, { getState, dispatch, rejectWithValue }) => {
     try {
-      // Get user ID from state
-      const project = getState().auth.project;
-      const projectId = project.id;
-      if (!project) {
-        return rejectWithValue("No project associated with user");
+      if (!projectId) {
+        const project = getState().auth.project;
+        projectId = project?.id;
       }
-      // Fetch from API
-      // const response = await fetch(`/projects?action=get&user=${user}&projectId=${project.id}`);
+
+      if (!projectId) {
+        return rejectWithValue("No project with that ID found");
+      }
+
       const data = await dispatch(
         projectApiSlice.endpoints.getProject.initiate(projectId)
-      ).unwrap(); // Unwraps the promise
+      ).unwrap();
+
       const response = JSON.parse(data);
-      dispatch(setProject(response.project.project));
-      dispatch(setProjectFiles(response.files));
-      dispatch(setRunParameters(response.runParameters));
+      console.log("🔥 Project Data:", response);
+
+      dispatch(setProjectData(response));
       dispatch(setRenderer(response.renderer));  // Add missing renderer update
-      dispatch(setProjectFeatures(response.features));
-      dispatch(setProjectMetadata(response.metadata)); // Add metadata update
-      dispatch(setProjectPlanningUnits(response.planning_units)); //  Add planning units update
-      dispatch(setProjectCosts(response.costs));
+      dispatch(setProjectCosts(response.costnames));
+
+      // Activate the project tab
+      dispatch(setActiveTab("project"));
+      dispatch(setProjectLoaded(true));
       return response; // Assuming response has { project: { id, name, ... } }
     } catch (error) {
       console.error("Failed to fetch project:", error);
@@ -227,14 +229,11 @@ const projectSlice = createSlice({
     setFiles(state, action) {
       state.files = action.payload;
     },
-    setProject(state, action) {
-      state.project = action.payload;
+    setProjectData(state, action) {
+      state.projectData = action.payload;
     },
     setProjectFeatures(state, action) {
       state.projectFeatures = action.payload;
-    },
-    setProjectFiles(state, action) {
-      state.projectFiles = action.payload;
     },
     setProjectImpacts(state, action) {
       state.projectImpacts = action.payload;
@@ -260,17 +259,11 @@ const projectSlice = createSlice({
     setRenderer: (state, action) => {
       state.renderer = action.payload;
     },
-    setProjectMetadata: (state, action) => {
-      state.projectMetadata = action.payload;
-    },
     setProjectPlanningUnits: (state, action) => {
       state.projectPlanningUnits = action.payload;
     },
     setProjectCosts: (state, action) => {
       state.projectCosts = action.payload;
-    },
-    setRunParameters(state, action) {
-      state.runParameters = action.payload;
     },
     toggleProjDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
@@ -296,7 +289,7 @@ const projectSlice = createSlice({
       })
       .addCase(getUserProject.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.project = action.payload;
+        state.projectData = action.payload;
       })
       .addCase(getUserProject.rejected, (state, action) => {
         state.status = "failed";
@@ -311,18 +304,15 @@ export const {
   setBpServer,
   selectServer,
   setAddToProject,
-  setProject,
+  setProjectData,
   setProjectFeatures,
-  setProjectFiles,
   setProjectImpacts,
   setProjectLoaded,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjectList,
   setProjects,
-  setRunParameters,
   setRenderer,
-  setProjectMetadata,
   setProjectPlanningUnits,
   setProjectCosts,
   toggleProjDialog

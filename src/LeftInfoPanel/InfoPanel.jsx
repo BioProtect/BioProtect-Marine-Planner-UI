@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { faLock, faShareAlt } from "@fortawesome/free-solid-svg-icons";
+import { selectCurrentUser, selectUserProject } from "../slices/authSlice";
 import { setActiveTab, toggleDialog } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -7,6 +8,7 @@ import Button from "@mui/material/Button";
 import CONSTANTS from "../constants";
 import FeaturesTab from "./FeaturesTab";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Loading from "../Loading";
 import Paper from "@mui/material/Paper";
 import PlanningUnitsTab from "./PlanningUnitsTab";
 import ProjectTabContent from "./ProjectTab";
@@ -14,7 +16,6 @@ import Settings from "@mui/icons-material/Settings";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import { selectCurrentUser } from "../slices/authSlice";
 
 const activeTabArr = ["project", "features", "planning_units"];
 
@@ -24,6 +25,8 @@ const InfoPanel = (props) => {
   const projState = useSelector((state) => state.project);
   const puState = useSelector((state) => state.planningUnit)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const project = useSelector(selectUserProject);
+
   const userData = useSelector(selectCurrentUser);
 
   const [editingProjectName, setEditingProjectName] = useState(false);
@@ -40,7 +43,7 @@ const InfoPanel = (props) => {
 
   useEffect(() => {
     if (editingProjectName && projectNameRef.current) {
-      projectNameRef.current.value = projState.project.name;
+      projectNameRef.current.value = projState.projectData.name;
       projectNameRef.current.focus();
     }
 
@@ -51,7 +54,7 @@ const InfoPanel = (props) => {
   }, [
     editingProjectName,
     editingDescription,
-    projState.project,
+    projState.projectData,
     props.metadata.DESCRIPTION,
   ]);
 
@@ -80,13 +83,13 @@ const InfoPanel = (props) => {
   };
 
   const startEditingProjectName = () => {
-    if (projState.project) {
+    if (projState.projectData) {
       setEditingProjectName(true);
     }
   };
 
   const startEditingDescription = () => {
-    if (projState.project && userData.role !== "ReadOnly") {
+    if (projState.projectData && userData.role !== "ReadOnly") {
       setEditingDescription(true);
     }
   };
@@ -203,34 +206,31 @@ const InfoPanel = (props) => {
   const combinedDisplayStyles = { ...panelStyle, ...displayStyle };
   const titleDisplayStyle = { display: editingProjectName ? "block" : "none" };
   const combinedDisplayStyle = { ...titleStyle, ...titleDisplayStyle };
-  return (
+  return projState.projectData ? (
     <React.Fragment>
-      <div className={"infoPanel"} style={combinedDisplayStyles}>
+      <div className="infoPanel" style={combinedDisplayStyles}>
         <Paper elevation={2} className="InfoPanelPaper" mb={4}>
           <Paper elevation={2} className="titleBar">
             {userData.role === "ReadOnly" ? (
-              <span
-                className={"projectNameEditBox"}
-                title={projState.project.name + " (Read-only)"}
-              >
+              <span className="projectNameEditBox" title={`${projState.projectData.project.name} (Read-only)`}>
                 <FontAwesomeIcon style={iconStyle} icon={faLock} />
-                {projState.project.name}
+                {projState.projectData.project.name}
               </span>
             ) : (
               <span
                 onClick={startEditingProjectName}
-                className={"projectNameEditBox"}
+                className="projectNameEditBox"
                 title="Click to rename the project"
               >
-                {projState.project.name || "Untitled project"}
+                {projState.projectData.project.name || "Untitled project"}
               </span>
             )}
-            {userData.role === "ReadOnly" ? null : (
+            {userData.role !== "ReadOnly" && (
               <input
                 id="projectName"
                 ref={projectNameRef}
                 style={combinedDisplayStyle}
-                className={"projectNameEditBox"}
+                className="projectNameEditBox"
                 onKeyDown={handleKeyPress}
                 onBlur={handleBlur}
               />
@@ -238,18 +238,11 @@ const InfoPanel = (props) => {
           </Paper>
 
           <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
-            <Tab
-              label="Project"
-              value={0}
-              disabled={!!puState.puEditing}
-            />
-            <Tab
-              label="Features"
-              value={1}
-              disabled={!!puState.puEditing}
-            />
+            <Tab label="Project" value={0} disabled={!!puState.puEditing} />
+            <Tab label="Features" value={1} disabled={!!puState.puEditing} />
             <Tab label="Planning units" value={2} />
           </Tabs>
+
           {currentTabIndex === 0 && (
             <ProjectTabContent
               toggleProjectPrivacy={toggleProjectPrivacy}
@@ -259,112 +252,67 @@ const InfoPanel = (props) => {
             />
           )}
           {currentTabIndex === 1 && (
-            <FeaturesTab
-              openFeatureMenu={props.openFeatureMenu}
-              openFeaturesDialog={props.openFeaturesDialog}
-              metadata={props.metadata}
-              updateFeature={props.updateFeature}
-              leftmargin={"10px"}
-              maxheight={"409px"}
-              simple={false}
-              showTargetButton={true}
-              toggleFeatureLayer={props.toggleFeatureLayer}
-              toggleFeaturePUIDLayer={props.toggleFeaturePUIDLayer}
-              selectedFeatures={props.selectedFeatures}
-              trigger={props.trigger}
-              stopProcess={props.stopProcess}
-              processId={props.processId}
-            />
+            <FeaturesTab {...props} leftmargin="10px" maxheight="409px" simple={false} showTargetButton />
           )}
           {currentTabIndex === 2 && (
-            <PlanningUnitsTab
-              metadata={props.metadata}
-              userRole={userData.role}
-              startStopPuEditSession={startStopPuEditSession}
-              clearManualEdits={props.clearManualEdits}
-              preprocessing={props.preprocessing}
-              changeIucnCategory={changeIucnCategory}
-              costname={props.costname}
-              costnames={costnames}
-              changeCostname={changeCostname}
-            />
+            <PlanningUnitsTab {...props} userRole={userData.role} startStopPuEditSession={startStopPuEditSession} />
           )}
+
           <Paper>
-            <Stack
-              direction="row"
-              spacing={1}
-              justifyContent="center"
-              alignItems="center"
-              pb={2}
-              pt={2}
-            >
-              {projState.bpServer.type === "remote" ? (
+            <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" pb={2} pt={2}>
+              {projState.bpServer.type === "remote" && (
                 <Button
                   variant="contained"
                   startIcon={<FontAwesomeIcon icon={faShareAlt} />}
-                  title={"Get a shareable link to this project"}
+                  title="Get a shareable link to this project"
                   onClick={props.getShareableLink}
                   key="shareableLinkButton"
                 >
                   Share
                 </Button>
-              ) : null}
+              )}
 
               <Button
                 variant="contained"
-                startIcon={
-                  <Settings style={{ height: "20px", width: "20px" }} />
-                }
+                startIcon={<Settings style={{ height: "20px", width: "20px" }} />}
                 title="Run Settings"
-                onClick={() =>
-                  dispatch(
-                    toggleDialog({
-                      dialogName: "settingsDialogOpen",
-                      isOpen: true,
-                    })
-                  )
-                }
+                onClick={() => dispatch(toggleDialog({ dialogName: "settingsDialogOpen", isOpen: true }))}
                 key="openSettingsButton"
               >
                 Settings
               </Button>
 
-              {userData.role !== "ReadOnly" ? (
+              {userData.role !== "ReadOnly" && (
                 <>
                   <Button
                     variant="contained"
-                    label="Stop"
                     title="Click to stop the current run"
-                    onClick={() => stopProcess()}
+                    onClick={props.stopProcess}
                     disabled={props.pid === 0}
-                    secondary="true"
                     key="stopRunButton"
                   >
                     Stop
                   </Button>
                   <Button
                     variant="contained"
-                    label="Run"
                     title="Click to run this project"
                     onClick={props.runMarxan}
-                    disabled={
-                      props.preprocessing ||
-                      projState.projectFeatures.length === 0 ||
-                      puState.puEditing
-                    }
-                    secondary="true"
+                    disabled={props.preprocessing || projState.projectFeatures.length === 0 || puState.puEditing}
                     key="runButton"
                   >
                     Run
                   </Button>
                 </>
-              ) : null}
+              )}
             </Stack>
           </Paper>
         </Paper>
       </div>
     </React.Fragment>
+  ) : (
+    <Loading />
   );
+
 };
 
 export default InfoPanel;
