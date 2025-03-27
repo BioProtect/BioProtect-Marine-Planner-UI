@@ -1,16 +1,26 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  faCircle,
-  faPlayCircle,
-  faPlusCircle,
-  faTrashAlt,
-} from "@fortawesome/free-solid-svg-icons";
+import { useDispatch, useSelector } from "react-redux";
 
+import BioprotectTable from "../BPComponents/BioprotectTable";
 import CumulativeImpactsToolbar from "./CumulativeImpactsToolbar";
+import Loading from "../Loading";
 import MarxanDialog from "../MarxanDialog";
-import MarxanTable from "../MarxanTable";
+import { toggleDialog } from "../slices/uiSlice";
 
 const CumulativeImpactDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogStates = useSelector(
+    (state) => state.ui.featureDialogStates
+  );
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
+
   const [searchText, setSearchText] = useState("");
   const [selectedImpact, setSelectedImpact] = useState(undefined);
   const [filteredRows, setFilteredRows] = useState([]);
@@ -22,21 +32,25 @@ const CumulativeImpactDialog = (props) => {
   }, [selectedImpact, props]);
 
   const openHumanActivitiesDialog = useCallback(() => {
-    props.onCancel();
+    closeDialog();
     props.openHumanActivitiesDialog();
   }, [props]);
 
   const _openImportImpactsDialog = useCallback(() => {
-    props.updateState({
-      cumulativeImpactDialogOpen: false,
-      importImpactPopoverOpen: false,
-    });
-    props.openImportImpactsDialog("import");
-  }, [props]);
+    dispatch(
+      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: false })
+    );
+    dispatch(
+      toggleDialog({ dialogName: "importImpactPopoverOpen", isOpen: false })
+    );
+    dispatch(
+      toggleDialog({ dialogName: "openImportImpactsDialog", isOpen: true })
+    );
+  }, []);
 
   const _newByDigitising = useCallback(() => {
-    onOk();
     props.initialiseDigitising();
+    props.onOk();
   }, [props]);
 
   const clickImpact = useCallback(
@@ -92,50 +106,12 @@ const CumulativeImpactDialog = (props) => {
     return selectedIds;
   };
 
-  const closeDialog = () => {
-    setSelectedActivity(undefined);
-    props.onOk();
-  };
-
-  const onOk = useCallback(() => {
-    props.onOk();
-  }, [props]);
-
   const preview = useCallback(
     (impact_metadata) => {
       props.previewImpact(impact_metadata);
     },
     [props]
   );
-
-  const renderTitle = (row) => {
-    return <TableRow title={row.original.description} />;
-  };
-
-  const renderActivity = (row) => {
-    return <TableRow title={row.original.activity} />;
-  };
-
-  const renderSource = (row) => {
-    return <TableRow title={row.original.source} />;
-  };
-
-  const renderCategory = (row) => {
-    return <TableRow title={row.original.category} />;
-  };
-
-  const renderCreatedBy = (row) => {
-    return <TableRow title={row.original.created_by} />;
-  };
-
-  const renderDate = (row) => {
-    return (
-      <TableRow
-        title={row.original.creation_date}
-        htmlContent={row.original.creation_date.substr(0, 8)}
-      />
-    );
-  };
 
   const dataFiltered = (filteredRows) => {
     setFilteredRows(filteredRows);
@@ -144,42 +120,52 @@ const CumulativeImpactDialog = (props) => {
   const columns = [
     {
       id: "name",
-      accessor: "alias",
-      width: 193,
+      numeric: false,
+      disablePadding: true,
+      label: "name",
     },
     {
       id: "description",
-      accessor: "description",
-      width: 246,
-      Cell: renderTitle,
+      numeric: false,
+      disablePadding: true,
+      label: "description",
     },
     {
       id: "source",
-      accessor: "source",
-      width: 120,
-      Cell: renderSource,
+      numeric: false,
+      disablePadding: true,
+      label: "source",
     },
     {
       id: "created by",
-      accessor: "created_by",
-      width: 70,
-      Cell: renderCreatedBy,
+      numeric: false,
+      disablePadding: true,
+      label: "created by",
     },
     {
       id: "creation Date",
-      accessor: "created_date",
-      width: 70,
-      Cell: renderDate,
+      numeric: false,
+      disablePadding: true,
+      label: "creation date",
     },
   ];
 
+  const closeDialog = () => {
+    setSelectedActivity(undefined);
+
+    dispatch(
+      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: false })
+    );
+  };
+
   return (
     <MarxanDialog
-      {...props}
+      open={dialogStates.cumulativeImpactDialogOpen}
+      onOk={() => closeDialog()}
+      onCancel={() => closeDialog()}
+      loading={props.loading}
       autoDetectWindowHeight={false}
-      bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title="Impacts"
-      onOk={onOk}
       showSearchBox={true}
       searchText={searchText}
       searchTextChanged={setSearchText}
@@ -187,40 +173,31 @@ const CumulativeImpactDialog = (props) => {
     >
       <React.Fragment key="k10">
         <div id="projectsTable">
-          <MarxanTable
-            data={props.allImpacts}
-            searchColumns={["alias", "description", "source", "created_by"]}
-            searchText={searchText}
-            dataFiltered={dataFiltered}
-            selectedImpactIds={props.selectedImpactIds}
-            clickImpact={clickImpact}
-            preview={preview}
-            columns={columns}
-            getTrProps={(state, rowInfo) => ({
-              style: {
-                background:
-                  state.selectedImpactIds.includes(rowInfo.original.id) ||
-                  (state.selectedImpact &&
-                    state.selectedImpact.id === rowInfo.original.id)
-                    ? "aliceblue"
-                    : "",
-              },
-              onClick: (e) => {
-                clickImpact(e, rowInfo);
-              },
-            })}
-            getTdProps={(state, rowInfo, column) => ({
-              onClick: (e) => {
-                if (column.Header === "") preview(rowInfo.original);
-              },
-            })}
-          />
+          {props.allImpacts ? (
+            <BioprotectTable
+              data={props.allImpacts}
+              tableColumns={columns}
+              ableToSelectAll={false}
+              searchColumns={["alias", "description", "source", "created_by"]}
+              searchText={searchText}
+              dataFiltered={dataFiltered}
+              selectedImpactIds={props.selectedImpactIds}
+              clickImpact={clickImpact}
+              preview={preview}
+            />
+          ) : (
+            <Loading />
+          )}
         </div>
         <CumulativeImpactsToolbar
-          {...props}
+          loading={props.loading}
+          metadataOV={props.metadata.OLDVERSION}
+          userRole={props.userRole}
+          openImportedActivitesDialog={props.openImportedActivitesDialog}
           openHumanActivitiesDialog={openHumanActivitiesDialog}
           deleteImpact={deleteImpact}
           selectedImpact={selectedImpact}
+          selectedProject={props.selectedProject}
         />
       </React.Fragment>
     </MarxanDialog>

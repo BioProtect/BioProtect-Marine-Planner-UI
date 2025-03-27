@@ -1,47 +1,72 @@
-import MarxanDialog from "./MarxanDialog";
-import MarxanTextField from "./MarxanTextField";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
+import { React, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-class ResendPasswordDialog extends React.Component {
-  handleKeyPress(e) {
-    if (e.nativeEvent.key === "Enter") this.props.resendPassword();
-  }
-  render() {
-    return (
-      <React.Fragment>
-        <MarxanDialog
-          {...this.props}
-          contentWidth={358}
-          showCancelButton={true}
-          okDisabled={!this.props.email || this.props.loading}
-          cancelDisabled={this.props.resending}
-          title="Resend password"
-          onClose={this.props.onCancel}
+import { useResendPasswordQuery } from "./slices/userSlice";
+
+const ResendPasswordDialog = ({
+  open,
+  loading,
+  resending,
+}) => {
+  const [resendEmail, setResendEmail] = useState("");
+  const dispatch = useDispatch();
+  const userState = useSelector((state) => state.user)
+
+
+  const resendPassword = async () => {
+    try {
+      const { data: response, error } = useResendPasswordQuery(userState.user);
+      dispatch(setSnackbarMessage(response.info));
+      dispatch(
+        toggleDialog({ dialogName: "resendPasswordDialogOpen", isOpen: false })
+      );
+    } catch (error) {
+      console.error("Failed to resend password:", error);
+    }
+  };
+
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      resendPassword();
+    }
+  };
+
+  const closeDialog = () => dispatch(toggleDialog({
+    dialogName: "resendPasswordDialogOpen", isOpen: false
+  }))
+
+  return (
+    <Dialog open={open} onClose={closeDialog} maxWidth="sm" fullWidth>
+      <DialogTitle>Resend Password</DialogTitle>
+      <DialogContent>
+        <TextField
+          label="Email Address"
+          variant="outlined"
+          fullWidth
+          value={resendEmail}
+          onChange={(e) => setResendEmail(e.target.value)}
+          onKeyDown={handleKeyPress}
+          disabled={loading}
+          autoFocus
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={closeDialog} disabled={resending} color="secondary">
+          Cancel
+        </Button>
+        <Button
+          onClick={resendPassword}
+          disabled={!resendEmail || loading}
+          variant="contained"
+          color="primary"
         >
-          {[
-            <div key="resendDiv">
-              <MarxanTextField
-                floatingLabelText="email address"
-                onChange={(event, value) => this.props.changeEmail(value)}
-                value={this.props.email}
-                className="loginUserField"
-                disabled={this.props.loading}
-                onKeyDown={this.handleKeyPress.bind(this)}
-              />
-            </div>,
-          ]}
-        </MarxanDialog>
-      </React.Fragment>
-    );
-  }
-}
+          Resend
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 export default ResendPasswordDialog;

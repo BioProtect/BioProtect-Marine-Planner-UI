@@ -1,306 +1,227 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-/*global fetch*/
-/*global DOMParser*/
-import * as React from "react";
+import React, { useCallback, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-import Checkbox from "@mui/material/Checkbox";
-import MarxanDialog from "../MarxanDialog";
-import MarxanTextField from "../MarxanTextField";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import ToolbarButton from "../ToolbarButton";
+import Button from "@mui/material/Button";
+import Checkbox from '@mui/material/Checkbox';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import TextField from '@mui/material/TextField';
+import { setAddToProject } from "../slices/projectSlice";
 
-let INITIAL_STATE = {
-  steps: ["type", "endpoint", "layer", "metadata"],
-  stepIndex: 0,
-  name: "",
-  description: "",
-  sourceType: "",
-  endpoint: "",
-  srs: "",
-  featureTypes: [],
-  featureType: "",
-  validendpoint: true,
-  loading: false,
-};
-let SOURCE_TYPES = ["Web Feature Service"];
+const SOURCE_TYPES = ["Web Feature Service"];
 
-class ImportFromWebDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = INITIAL_STATE;
-  }
-  handleNext() {
-    const { stepIndex } = this.state;
-    switch (stepIndex) {
-      case this.state.steps.length - 1:
-        this.importFeatures();
-        break;
-      default:
-        this.setState({ stepIndex: stepIndex + 1 });
+const ImportFromWebDialog = ({
+  setImportFromWebDialogOpen,
+  importFeatures,
+  loading: parentLoading,
+}) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const uiDialogs = useSelector((state) => state.ui.dialogStates);
+  const projState = useSelector((state) => state.project);
+  const [steps] = useState(["type", "endpoint", "layer", "metadata"]);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [sourceType, setSourceType] = useState("");
+  const [endpoint, setEndpoint] = useState("");
+  const [srs, setSrs] = useState("");
+  const [featureTypes, setFeatureTypes] = useState([]);
+  const [featureType, setFeatureType] = useState("");
+  const [validEndpoint, setValidEndpoint] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const handleNext = useCallback(() => {
+    if (stepIndex === steps.length - 1) {
+      importFeaturesHandler();
+    } else {
+      setStepIndex((prevStepIndex) => prevStepIndex + 1);
     }
-  }
-  handlePrev() {
-    const { stepIndex } = this.state;
-    this.setState({ stepIndex: stepIndex - 1 });
-  }
-  changeSourceType(event, index) {
-    this.setState({ sourceType: SOURCE_TYPES[index] });
-  }
-  //loads an WFS getcapabilities endpoint
-  getCapabilities(endpoint) {
+  }, [stepIndex, steps.length]);
+
+  const handlePrev = useCallback(() => {
+    setStepIndex((prevStepIndex) => prevStepIndex - 1);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setStepIndex(0);
+    setName("");
+    setDescription("");
+    setSourceType("");
+    setEndpoint("");
+    setSrs("");
+    setFeatureTypes([]);
+    setFeatureType("");
+    setValidEndpoint(true);
+    setLoading(false);
+    setImportFromWebDialogOpen(false);
+  }, [setImportFromWebDialogOpen]);
+
+  const getCapabilities = useCallback((endpoint) => {
     return new Promise((resolve, reject) => {
-      //must start with http
-      if (endpoint.substr(0, 4) !== "http") {
+      if (!endpoint.startsWith("http")) {
         reject("Invalid endpoint");
         return;
       }
-      //fetch the data
       fetch(endpoint)
-        .then((response) => {
-          response.text().then((xml) => {
-            //return the xml
-            resolve(xml);
-          });
-        })
-        .catch((error) => {
-          //reject any errors in the call
-          reject(error);
-        });
+        .then((response) => response.text())
+        .then((xml) => resolve(xml))
+        .catch((error) => reject(error));
     });
-  }
-  //when the user changes the wfs endpoint
-  changeEndpoint(event, newValue) {
-    this.setState({ endpoint: newValue, loading: true, validendpoint: true });
-    //load the GetCapabilities XML
-    this.getCapabilities(newValue)
+  }, []);
+
+  const changeEndpoint = useCallback((event) => {
+    const newValue = event.target.value;
+    setEndpoint(newValue);
+    setLoading(true);
+    setValidEndpoint(true);
+
+    getCapabilities(newValue)
       .then((response) => {
-        this.setState({ loading: false, validendpoint: true });
-        //parse the reponse as an xml document
-        let parser = new DOMParser();
-        let xmlDoc = parser.parseFromString(response, "text/xml");
-        //get the required info from the getcapabilities data
-        this.getWFSInfo(xmlDoc);
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(response, "text/xml");
+
+        const featureTypesElements = xmlDoc.getElementsByTagName("wfs:FeatureType");
+        const parsedFeatureTypes = Array.from(featureTypesElements).map(
+          (item) => item.getElementsByTagName("wfs:Name")[0].textContent
+        );
+
+        const parsedSrs =
+          "EPSG:" + xmlDoc.getElementsByTagName("wfs:DefaultCRS")[0]?.textContent?.substr(-4);
+
+        setFeatureTypes(parsedFeatureTypes);
+        setSrs(parsedSrs);
+        setLoading(false);
+        setValidEndpoint(true);
       })
-      .catch((err) => {
-        this.setState({ loading: false, validendpoint: false });
-        console.log(err);
+      .catch(() => {
+        setLoading(false);
+        setValidEndpoint(false);
       });
-  }
-  //retrieves information from the WFS getcapabilities data
-  getWFSInfo(xmlDoc) {
-    //get the feature types
-    let featureTypesElements = xmlDoc.getElementsByTagName("wfs:FeatureType");
-    //initialise the feature names array
-    let featureTypes = [];
-    //get the feature types (i.e. names)
-    for (let item of featureTypesElements) {
-      featureTypes.push(item.getElementsByTagName("wfs:Name")[0].textContent);
-    }
-    //get the spatial reference system - in WFS it is encoded as 'urn:ogc:def:crs:EPSG::3857'
-    let srs =
-      "EPSG:" +
-      xmlDoc.getElementsByTagName("wfs:DefaultCRS")[0].textContent.substr(-4);
-    this.setState({ featureTypes: featureTypes, srs: srs });
-  }
-  changeFeatureType(event, newValue) {
-    this.setState({ featureType: this.state.featureTypes[newValue] });
-  }
-  changeName(event, newValue) {
-    this.setState({ name: newValue });
-  }
-  changeDescription(event, newValue) {
-    this.setState({ description: newValue });
-  }
-  importFeatures() {
-    //remove the &request=getCapabilities from the endpoint
-    let getFeatureEndpoint = this.state.endpoint.substr(
-      0,
-      this.state.endpoint.indexOf("request") - 1
-    );
-    this.props
-      .importFeatures(
-        this.state.name,
-        this.state.description,
-        getFeatureEndpoint,
-        this.state.srs,
-        this.state.featureType
-      )
-      .then((response) => {
-        this.closeDialog();
-      })
-      .catch((error) => {
-        this.closeDialog();
-      });
-  }
-  closeDialog() {
-    this.setState({ ...INITIAL_STATE });
-    this.props.onCancel({ importFromWebDialogOpen: false });
-  }
-  render() {
-    let _disabled = false;
-    const { stepIndex } = this.state;
-    const contentStyle = { margin: "0 16px" };
-    //get the disabled state for the next/finish button
+  },
+    [getCapabilities]
+  );
+
+  const importFeaturesHandler = useCallback(() => {
+    const getFeatureEndpoint = endpoint.split("request")[0].slice(0, -1);
+
+    importFeatures(name, description, getFeatureEndpoint, srs, featureType)
+      .then(handleClose)
+      .catch(handleClose);
+  }, [endpoint, name, description, srs, featureType, importFeatures, handleClose]);
+
+  const renderStepContent = () => {
     switch (stepIndex) {
       case 0:
-        _disabled = this.state.sourceType === "";
-        break;
+        return (
+          <Select
+            value={sourceType}
+            onChange={(e) => setSourceType(e.target.value)}
+            displayEmpty
+            fullWidth
+          >
+            {SOURCE_TYPES.map((item) => (
+              <MenuItem key={item} value={item}>
+                {item}
+              </MenuItem>
+            ))}
+          </Select>
+        );
       case 1:
-        _disabled =
-          !this.state.validendpoint ||
-          this.state.endpoint === "" ||
-          this.state.loading;
-        break;
+        return (
+          <TextField
+            fullWidth
+            label="Enter the WFS endpoint"
+            value={endpoint}
+            error={!validEndpoint}
+            helperText={validEndpoint ? "" : "Invalid WFS endpoint"}
+            onChange={changeEndpoint}
+          />
+        );
       case 2:
-        _disabled = this.state.featureType === "";
-        break;
+        return (
+          <Select
+            value={featureType}
+            onChange={(e) => setFeatureType(e.target.value)}
+            displayEmpty
+            fullWidth
+          >
+            {featureTypes.map((item) => (
+              <MenuItem key={item} value={item}>
+                {item}
+              </MenuItem>
+            ))}
+          </Select>
+        );
       case 3:
-        _disabled = this.state.name === "" || this.state.description === "";
-        break;
-      default:
-      // code
-    }
-    const actions = [
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "500px",
-          margin: "auto",
-          textAlign: "center",
-        }}
-      >
-        <div style={contentStyle}>
-          <div style={{ marginTop: 12 }}>
-            <ToolbarButton
-              label="Back"
-              disabled={stepIndex === 0 || this.props.loading}
-              onClick={this.handlePrev.bind(this)}
+        return (
+          <>
+            <TextField
+              fullWidth
+              label="Enter a name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
-            <ToolbarButton
-              label={
-                stepIndex === this.state.steps.length - 1 ? "Finish" : "Next"
-              }
-              onClick={this.handleNext.bind(this)}
-              disabled={_disabled || this.props.loading}
-              primary={true}
-            />
-          </div>
-        </div>
-      </div>,
-    ];
-    let children = (
-      <div key="k28">
-        {stepIndex === 0 ? (
-          <div>
-            <Select
-              menuItemStyle={{ fontSize: "12px" }}
-              labelStyle={{ fontSize: "12px" }}
-              onChange={this.changeSourceType.bind(this)}
-              value={this.state.sourceType}
-              floatingLabelText="Select source type"
-              floatingLabelFixed={true}
-            >
-              {SOURCE_TYPES.map((item) => {
-                return (
-                  <MenuItem
-                    style={{ fontSize: "12px" }}
-                    value={item}
-                    primaryText={item}
-                    key={item}
-                  />
-                );
-              })}
-            </Select>
-          </div>
-        ) : null}
-        {stepIndex === 1 ? (
-          <div>
-            <MarxanTextField
-              style={{ width: "330px" }}
-              value={this.state.endpoint}
-              errorText={this.state.validendpoint ? "" : "Invalid WFS endpoint"}
-              onChange={this.changeEndpoint.bind(this)}
-              floatingLabelText="Enter the WFS endpoint"
-            />
-          </div>
-        ) : null}
-        {stepIndex === 2 ? (
-          <div>
-            <Select
-              menuItemStyle={{ fontSize: "12px" }}
-              autoWidth={true}
-              labelStyle={{ fontSize: "12px" }}
-              onChange={this.changeFeatureType.bind(this)}
-              value={this.state.featureType}
-              floatingLabelText="Select feature type"
-              floatingLabelFixed={true}
-            >
-              {this.state.featureTypes.map((item) => {
-                return (
-                  <MenuItem
-                    style={{ fontSize: "12px" }}
-                    value={item}
-                    primaryText={item}
-                    key={item}
-                  />
-                );
-              })}
-            </Select>
-          </div>
-        ) : null}
-        {stepIndex === 3 ? (
-          <div>
-            <MarxanTextField
-              value={this.state.name}
-              onChange={this.changeName.bind(this)}
-              floatingLabelText="Enter a name"
-            />
-            <MarxanTextField
-              value={this.state.description}
-              onChange={this.changeDescription.bind(this)}
-              multiLine={true}
+            <TextField
+              fullWidth
+              label="Enter a description"
+              multiline
               rows={2}
-              floatingLabelText="Enter a description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
             <Checkbox
+              checked={projState.addToProject}
+              onChange={(e) => dispatch(setAddToProject(e.target.checked))}
               label="Add to project"
-              style={{
-                fontSize: "12px",
-                width: "200px",
-                display: "inline-block",
-                marginTop: "10px",
-              }}
-              onCheck={this.props.setAddToProject}
-              checked={this.props.addToProject}
             />
-          </div>
-        ) : null}
-      </div>
-    );
-    return (
-      <MarxanDialog
-        {...this.props}
-        onOk={this.closeDialog.bind(this)}
-        okLabel={"Cancel"}
-        loading={this.props.loading || this.state.loading}
-        contentWidth={390}
-        title={"Import from web"}
-        actions={actions}
-        onClose={this.closeDialog.bind(this)}
-        helpLink={"user.html#importing-from-the-web"}
-      >
-        {children}
-      </MarxanDialog>
-    );
-  }
-}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const isNextDisabled = () => {
+    switch (stepIndex) {
+      case 0:
+        return sourceType === "";
+      case 1:
+        return !validEndpoint || endpoint === "" || loading;
+      case 2:
+        return featureType === "";
+      case 3:
+        return name === "" || description === "";
+      default:
+        return false;
+    }
+  };
+
+  return (
+    <Dialog open={uiDialogs.importFromWebDialogOpen} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Import from Web</DialogTitle>
+      <DialogContent>{renderStepContent()}</DialogContent>
+      <DialogActions>
+        <Button onClick={handlePrev} disabled={stepIndex === 0 || parentLoading}>
+          Back
+        </Button>
+        <Button
+          onClick={handleNext}
+          disabled={isNextDisabled() || parentLoading}
+          color="primary"
+        >
+          {stepIndex === steps.length - 1 ? "Finish" : "Next"}
+        </Button>
+        <Button onClick={handleClose} color="secondary">
+          Cancel
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 export default ImportFromWebDialog;

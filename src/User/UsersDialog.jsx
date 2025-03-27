@@ -1,214 +1,166 @@
-import Checkbox from "@mui/material/Checkbox";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import MarxanDialog from "../MarxanDialog";
-import MarxanTable from "../MarxanTable";
-import MenuItem from "@mui/material/MenuItem";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
-// import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
-import Select from "@mui/material/Select";
-import ToolbarButton from "../ToolbarButton";
-import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, Typography, toggleButtonClasses } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-let USER_ROLES = ["User", "ReadOnly", "Admin"];
-class UsersDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { searchText: "", selectedUser: undefined };
-  }
-  changeRole(user, oldRole, evt, key, newRole) {
-    this.props.changeRole(user, newRole);
-  }
-  _delete() {
-    this.props.deleteUser(this.state.selectedUser.user);
-    this.setState({ selectedUser: false });
-  }
-  changeUser(event, user) {
-    this.setState({ selectedUser: user });
-  }
-  sortDate(a, b, desc) {
-    return new Date(
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import MarxanTable from "../MarxanTable";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { toggleDialog } from "../slices/uiSlice";
+import { useListUsersQuery } from "../slices/userSlice";
+
+const USER_ROLES = ["User", "ReadOnly", "Admin"];
+
+const UsersDialog = ({
+  open,
+  loading,
+  changeRole,
+  deleteUser,
+}) => {
+  const dispatch = useDispatch();
+  const [searchText, setSearchText] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const userState = useSelector((state) => state.user);
+  const { data: usersData, isLoading: isUsersLoading } = useListUsersQuery();
+
+  useEffect(() => {
+    if (usersData) {
+      dispatch(setUsers(usersData.users || []));
+    }
+  }, [dispatch, usersData]);
+
+  useEffect(() => {
+    if (!open) {
+      setSearchText("");
+      setSelectedUser(null);
+    }
+  }, [open]);
+
+  const handleRoleChange = (user, newRole) => {
+    changeRole(user, newRole);
+  };
+
+  const handleDelete = () => {
+    if (selectedUser) {
+      deleteUser(selectedUser.user);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleRowClick = (row) => {
+    setSelectedUser(row.original);
+  };
+
+  const sortDate = (a, b) => {
+    const dateA = new Date(
       a.slice(6, 8),
       a.slice(3, 5) - 1,
       a.slice(0, 2),
       a.slice(9, 11),
       a.slice(12, 14),
       a.slice(15, 17)
-    ) >
-      new Date(
-        b.slice(6, 8),
-        b.slice(3, 5) - 1,
-        b.slice(0, 2),
-        b.slice(9, 11),
-        b.slice(12, 14),
-        b.slice(15, 17)
-      )
-      ? 1
-      : -1;
-  }
-  closeDialog() {
-    this.setState({ selectedUser: undefined });
-    this.props.onOk();
-  }
-  searchTextChanged(value) {
-    this.setState({ searchText: value });
-  }
-  render() {
-    if (this.props.users) {
-      return (
-        <MarxanDialog
-          {...this.props}
-          onOk={this.closeDialog.bind(this)}
-          onClose={this.closeDialog.bind(this)}
-          showCancelButton={false}
-          helpLink={"user.html#the-users-window-admin-users-only"}
-          autoDetectWindowHeight={false}
-          bodyStyle={{ padding: "0px 24px 0px 24px" }}
-          title="Users"
-          showSearchBox={true}
-          searchTextChanged={this.searchTextChanged.bind(this)}
-        >
-          {
-            <React.Fragment key="k2">
-              <div id="usersTable">
-                {this.props.users && this.props.users.length > 0 ? (
-                  <MarxanTable
-                    data={this.props.users}
-                    selectedUser={this.state.selectedUser}
-                    searchColumns={["user", "NAME", "EMAIL", "ROLE"]}
-                    searchText={this.state.searchText}
-                    changeUser={this.changeUser.bind(this)}
-                    columns={[
-                      {
-                        Header: "User",
-                        accessor: "user",
-                        width: 90,
-                        headerStyle: { textAlign: "left" },
-                      },
-                      {
-                        Header: "Name",
-                        accessor: "NAME",
-                        width: 173,
-                        headerStyle: { textAlign: "left" },
-                      },
-                      {
-                        Header: "email",
-                        accessor: "EMAIL",
-                        width: 135,
-                        headerStyle: { textAlign: "left" },
-                      },
-                      {
-                        Header: "Role",
-                        accessor: "ROLE",
-                        width: 180,
-                        headerStyle: { textAlign: "left" },
-                        Cell: (row) =>
-                          row.original.user === "guest" ? (
-                            <div>ReadOnly</div>
-                          ) : (
-                            <Select
-                              style={{
-                                width: 130,
-                                height: 15,
-                                lineHeight: 15,
-                                position: "relative",
-                                fontSize: "12px",
-                              }}
-                              menuStyle={{ position: "absolute", top: -22 }}
-                              underlineStyle={{ position: "relative", top: 20 }}
-                              iconStyle={{ lineHeight: "24px", height: "24px" }}
-                              value={row.original.ROLE}
-                              onChange={this.changeRole.bind(
-                                this,
-                                row.original.user,
-                                row.value
-                              )}
-                            >
-                              {USER_ROLES.map((item) => {
-                                return (
-                                  <MenuItem
-                                    style={{ fontSize: "12px" }}
-                                    value={item}
-                                    primaryText={item}
-                                    key={item}
-                                  />
-                                );
-                              })}
-                            </Select>
-                          ),
-                      },
-                      {
-                        Header: "Date",
-                        accessor: "CREATEDATE",
-                        width: 115,
-                        headerStyle: { textAlign: "left" },
-                        sortMethod: this.sortDate.bind(this),
-                      },
-                    ]}
-                    getTrProps={(state, rowInfo, column) => {
-                      return {
-                        style: {
-                          background:
-                            rowInfo.original.user ===
-                            (state.selectedUser && state.selectedUser.user)
-                              ? "aliceblue"
-                              : "",
-                        },
-                        onClick: (e) => {
-                          if (USER_ROLES.indexOf(e.target.textContent) === -1)
-                            state.changeUser(e, rowInfo.original);
-                        },
-                      };
-                    }}
-                  />
-                ) : null}
-              </div>
-              <div id="projectsToolbar">
-                <ToolbarButton
-                  icon={
-                    <FontAwesomeIcon
-                      icon={faTrashAlt}
-                      color="rgb(255, 64, 129)"
-                    />
-                  }
-                  title="Delete user"
-                  disabled={
-                    !this.state.selectedUser ||
-                    this.props.loading ||
-                    this.props.user === this.state.selectedUser.user ||
-                    this.state.selectedUser.user === "guest"
-                  }
-                  onClick={this._delete.bind(this)}
-                  label={"Delete"}
-                />
-                <Checkbox
-                  label="Enable guest user"
-                  style={{
-                    fontSize: "12px",
-                    paddingLeft: "10px",
-                    width: "200px",
-                    display: "inline-block",
-                    verticalAlign: "bottom",
-                  }}
-                  onClick={this.props.toggleEnableGuestUser}
-                  checked={this.props.guestUserEnabled}
-                />
-              </div>
-            </React.Fragment>
+    );
+    const dateB = new Date(
+      b.slice(6, 8),
+      b.slice(3, 5) - 1,
+      b.slice(0, 2),
+      b.slice(9, 11),
+      b.slice(12, 14),
+      b.slice(15, 17)
+    );
+    return dateA - dateB;
+  };
+
+  const closeDialog = () => dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: false }))
+
+  return (
+    <Dialog open={open} onClose={closeDialog} maxWidth="lg" fullWidth>
+      <DialogTitle>Users</DialogTitle>
+      <DialogContent>
+        <Box mb={2}>
+          <Typography variant="body1">Search:</Typography>
+          <input
+            type="text"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Search users"
+            style={{ width: "100%", padding: "8px", marginBottom: "8px" }}
+          />
+        </Box>
+        {userState.users && userState.users.length > 0 && (
+          <MarxanTable
+            data={userState.users}
+            selectedUser={selectedUser}
+            searchColumns={["user", "NAME", "EMAIL", "ROLE"]}
+            searchText={searchText}
+            columns={[
+              { Header: "User", accessor: "user", width: 90 },
+              { Header: "Name", accessor: "NAME", width: 173 },
+              { Header: "Email", accessor: "EMAIL", width: 135 },
+              {
+                Header: "Role",
+                accessor: "ROLE",
+                width: 180,
+                Cell: ({ row }) => (
+                  row.original.user === "guest" ? (
+                    <Typography>ReadOnly</Typography>
+                  ) : (
+                    <Select
+                      value={row.original.ROLE}
+                      onChange={(e) =>
+                        handleRoleChange(row.original.user, e.target.value)
+                      }
+                      sx={{ width: 130, fontSize: "12px" }}
+                    >
+                      {USER_ROLES.map((role) => (
+                        <MenuItem key={role} value={role}>
+                          {role}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )
+                ),
+              },
+              {
+                Header: "Date",
+                accessor: "CREATEDATE",
+                width: 115,
+                sortMethod: sortDate,
+              },
+            ]}
+            onRowClick={handleRowClick}
+            getTrProps={(row) => ({
+              style: {
+                backgroundColor:
+                  row.original.user ===
+                    (selectedUser && selectedUser.user)
+                    ? "aliceblue"
+                    : "",
+              },
+            })}
+          />
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<FontAwesomeIcon icon={faTrashAlt} />}
+          disabled={
+            !selectedUser ||
+            loading ||
+            userState.user === selectedUser.user ||
+            selectedUser.user === "guest"
           }
-        </MarxanDialog>
-      );
-    } else {
-      return null;
-    }
-  }
-}
+          onClick={handleDelete}
+        >
+          Delete User
+        </Button>
+        <Button onClick={() => closeDialog()} variant="contained" color="primary">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 export default UsersDialog;

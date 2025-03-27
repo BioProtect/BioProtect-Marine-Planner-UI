@@ -4,17 +4,47 @@ import {
   faSignOut,
   faUserLock,
 } from "@fortawesome/free-solid-svg-icons";
+import { useDispatch, useSelector } from "react-redux";
 
 import Menu from "@mui/material/Menu";
 import MenuBarListItem from "../MenuBarListItem";
 import React from "react";
+import { toggleDialog } from "../slices/uiSlice";
 
 const UserMenu = (props) => {
+  const dispatch = useDispatch();
+  const projectState = useSelector((state) => state.project);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const userState = useSelector((state) => state.user);
+
+
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
+
+  const handleChangePassword = () => {
+    dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
+    dispatch(
+      toggleDialog({ dialogName: "changePasswordDialogOpen", isOpen: true })
+    );
+  };
+
+  const openUserSettingsDialog = () => {
+    dispatch(
+      toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: true })
+    );
+    dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
+  };
+
+  const openProfileDialog = () => {
+    dispatch(toggleDialog({ dialogName: "profileDialogOpen", isOpen: true }));
+    dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
+  };
+
   return (
     <Menu
-      open={props.open}
+      open={dialogStates.userMenuOpen}
       anchorEl={props.menuAnchor}
-      onClose={props.hideUserMenu}
+      onClose={closeDialog}
       PaperProps={{
         elevation: 0,
         sx: {
@@ -43,20 +73,20 @@ const UserMenu = (props) => {
       }}
     >
       <MenuBarListItem
-        handleClick={props.openUserSettingsDialog}
+        handleClick={openUserSettingsDialog}
         title="Settings"
         icon={faCog}
         text="Settings"
       />
       <MenuBarListItem
-        handleClick={props.openProfileDialog}
+        handleClick={openProfileDialog}
         title="Profile"
         icon={faEdit}
         text="Profile"
       />
 
       <MenuBarListItem
-        handleClick={props.openChangePasswordDialog}
+        handleClick={handleChangePassword}
         title="Change password"
         icon={faUserLock}
         text="Change password"

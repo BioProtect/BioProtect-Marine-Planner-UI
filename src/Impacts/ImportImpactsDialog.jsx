@@ -1,12 +1,4 @@
-/*
- * Copyright (c) 2021 Carlos Tighe.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import * as React from "react";
+import React, { useState } from "react";
 
 import FileUpload from "../FileUpload";
 import MarxanDialog from "../MarxanDialog";
@@ -16,279 +8,201 @@ import Sync from "@mui/icons-material/Sync";
 import TableRow from "../TableRow";
 import ToolbarButton from "../ToolbarButton";
 
-let INITIAL_STATE = {
+const INITIAL_STATE = {
   steps: ["Select Activity", "raster", "metadata"],
-  stepIndex: 0,
-  filename: "",
-  description: "",
-  searchText: "",
-  selectedActivity: "",
-  message: "",
+  title: [
+    "Import Activity",
+    "Upload File & Create Pressures",
+    "Run Cumulative Impact",
+  ],
 };
 
-const title = [
-  "Import Activity",
-  "Upload File & Create Pressures",
-  "Run Cumulative Impact",
-];
+const ImportImpactsDialog = (props) => {
+  const [stepIndex, setStepIndex] = useState(0);
+  const [filename, setFilename] = useState("");
+  const [description, setDescription] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [selectedActivity, setSelectedActivity] = useState("");
+  const [message, setMessage] = useState("");
 
-class ImportImpactsDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = INITIAL_STATE;
-  }
+  const { steps, title } = INITIAL_STATE;
 
-  handleNext() {
-    const { stepIndex } = this.state;
-    switch (stepIndex) {
-      case this.state.steps.length - 1:
-        this.importImpacts();
-        break;
-      default:
-        this.setState({ stepIndex: stepIndex + 1 });
+  const handleNext = () => {
+    if (stepIndex === steps.length - 1) {
+      importImpacts();
+    } else {
+      setStepIndex(stepIndex + 1);
     }
-  }
+  };
 
-  handlePrev() {
-    const { stepIndex } = this.state;
-    this.setState({ stepIndex: stepIndex - 1 });
-  }
+  const handlePrev = () => setStepIndex(stepIndex - 1);
 
-  setSelectedActivity(activity) {
-    console.log("activity ", activity);
-    this.setState({ selectedActivity: activity });
-  }
-
-  setFilename(newValue) {
-    this.setState({ filename: newValue });
-  }
-
-  changeFileName(event, newValue) {
-    this.setState({ filename: newValue });
-  }
-
-  changeDescription(event, newValue) {
-    this.setState({ description: newValue });
-  }
-
-  searchTextChanged(value) {
-    this.setState({ searchText: value });
-  }
-
-  setMessage(newValue) {
-    this.setState({ message: newValue });
-  }
-
-  importImpacts() {
-    this.props
-      .importImpacts(
-        this.state.filename,
-        this.state.selectedActivity,
-        this.state.description
-      )
+  const importImpacts = () => {
+    props
+      .importImpacts(filename, selectedActivity, description)
       .then((response) => {
-        console.log("response from impact ", response);
-        this.setMessage(response);
-        this.closeDialog();
+        setMessage(response);
+        closeDialog();
       });
-  }
+  };
 
-  renderActivity(row) {
-    return <TableRow title={row.original.activity} />;
-  }
-  renderCategory(row) {
-    return <TableRow title={row.original.category} />;
-  }
+  const closeDialog = () => {
+    // Reset state
+    setStepIndex(0);
+    setFilename("");
+    setDescription("");
+    setSearchText("");
+    setSelectedActivity("");
+    setMessage("");
+    props.onCancel();
+  };
 
-  closeDialog() {
-    //delete the zip file and shapefile
-    this.setState({
-      steps: ["Select Activity", "raster", "metadata"],
-      stepIndex: 0,
-      filename: "",
-      description: "",
-      searchText: "",
-      selectedActivity: "",
-      message: "",
-    });
-    this.props.onCancel();
-  }
+  const renderActivity = (row) => <TableRow title={row.original.activity} />;
+  const renderCategory = (row) => <TableRow title={row.original.category} />;
 
-  render() {
-    let _disabled = false;
-    const { stepIndex } = this.state;
-    const contentStyle = { margin: "0 16px" };
-    let tableColumns = [
-      {
-        Header: "Category",
-        accessor: "category",
-        width: 269,
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderCategory.bind(this),
-      },
-      {
-        Header: "Activity",
-        accessor: "activity",
-        width: 290,
-        headerStyle: { textAlign: "left" },
-        Cell: this.renderActivity.bind(this),
-      },
-    ];
+  const tableColumns = [
+    {
+      id: "category",
+      accessor: "category",
+      width: 269,
+      headerStyle: { textAlign: "left" },
+      Cell: renderCategory,
+    },
+    {
+      id: "activity",
+      accessor: "activity",
+      width: 290,
+      headerStyle: { textAlign: "left" },
+      Cell: renderActivity,
+    },
+  ];
 
-    //get the disabled state for the next/finish button
-    switch (stepIndex) {
-      case 0:
-        _disabled = this.state.selectedActivity === "";
-        break;
-      case 1:
-        _disabled = this.state.filename === "";
-        break;
-      default:
-    }
-    const actions = [
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "500px",
-          margin: "auto",
-          textAlign: "center",
-        }}
-      >
-        <div style={contentStyle}>
-          <div style={{ marginTop: 12 }}>
+  // Determine if Next/Finish button should be disabled
+  const isNextDisabled =
+    (stepIndex === 0 && !selectedActivity) ||
+    (stepIndex === 1 && !filename) ||
+    (stepIndex === 2 && (!filename || !description));
+
+  return (
+    <MarxanDialog
+      {...props}
+      onOk={closeDialog}
+      okLabel={"Cancel"}
+      title={title[stepIndex]}
+      showSearchBox={true}
+      searchTextChanged={setSearchText}
+      actions={
+        <div
+          key="actions"
+          style={{
+            width: "100%",
+            maxWidth: "500px",
+            margin: "auto",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{ margin: "0 16px", marginTop: 12 }}
+            key={`action-buttons-${stepIndex}`}
+          >
             <ToolbarButton
+              key={`back-button-${stepIndex}`}
               label="Back"
-              disabled={stepIndex === 0 || this.props.loading}
-              onClick={this.handlePrev.bind(this)}
+              disabled={stepIndex === 0 || props.loading}
+              onClick={handlePrev}
             />
             <ToolbarButton
+              key={`next-button-${stepIndex}`}
               label={
-                stepIndex === this.state.steps.length - 1
+                stepIndex === steps.length - 1
                   ? "Start Cumulative Impact"
                   : "Next"
               }
-              onClick={this.handleNext.bind(this)}
-              disabled={
-                _disabled ||
-                this.props.loading ||
-                (stepIndex === 2 &&
-                  (this.state.filename === "" || this.state.description === ""))
-              }
+              onClick={handleNext}
+              disabled={isNextDisabled || props.loading}
               primary={true}
             />
           </div>
         </div>
-      </div>,
-    ];
-    let children = (
-      <div key="k12">
-        {stepIndex === 0 ? (
-          <div id="activityTable">
-            <h4>Select an activity then upload your raster file...</h4>
-            <MarxanTable
-              data={this.props.activities}
-              columns={tableColumns}
-              searchColumns={["category", "activity"]}
-              searchText={this.state.searchText}
-              selectedActivity={this.state.selectedActivity}
-              getTrProps={(state, rowInfo) => {
-                return {
-                  style: {
-                    background:
-                      rowInfo.original.activity === this.state.selectedActivity
-                        ? "rgb(0, 188, 212)"
-                        : "",
-                    color:
-                      rowInfo.original.activity === this.state.selectedActivity
-                        ? "white"
-                        : "",
-                  },
-
-                  onClick: (e) => {
-                    console.log("e ", e);
-                    this.setSelectedActivity(rowInfo.original.activity);
-                  },
-                };
+      }
+      onClose={closeDialog}
+      helpLink={"user.html#importing-from-a-shapefile"}
+    >
+      {stepIndex === 0 && (
+        <div id="activityTable" key="activity-table">
+          <h4>Select an activity then upload your raster file...</h4>
+          <MarxanTable
+            data={props.activities}
+            columns={tableColumns}
+            searchColumns={["category", "activity"]}
+            searchText={searchText}
+            selectedActivity={selectedActivity}
+            getTrProps={(state, rowInfo) => ({
+              style: {
+                background:
+                  rowInfo.original.activity === selectedActivity
+                    ? "rgb(0, 188, 212)"
+                    : "",
+                color:
+                  rowInfo.original.activity === selectedActivity ? "white" : "",
+              },
+              onClick: () => setSelectedActivity(rowInfo.original.activity),
+            })}
+            getTdProps={(state, rowInfo) => ({
+              onClick: () => setSelectedActivity(rowInfo.original.activity),
+            })}
+          />
+        </div>
+      )}
+      {stepIndex === 1 && (
+        <FileUpload
+          key={`file-upload-${stepIndex}`}
+          {...props}
+          selectedActivity={selectedActivity}
+          fileMatch={".tif"}
+          mandatory={true}
+          filename={filename}
+          setFilename={setFilename}
+          destFolder={"imports"}
+          label="Raster"
+          style={{ paddingTop: "10px" }}
+        />
+      )}
+      {stepIndex === 2 && (
+        <>
+          <div key={`running-impact-message-${stepIndex}`}>
+            {props.runningImpactMessage}
+            <Sync
+              className="spin"
+              style={{
+                display:
+                  props.loading || props.showSpinner ? "inline-block" : "none",
+                color: "rgb(255, 64, 129)",
+                top: "15px",
+                right: "41px",
+                height: "22px",
+                width: "22px",
               }}
-              getTdProps={(state, rowInfo, column) => {
-                return {
-                  onClick: (e) => {
-                    console.log("e in TD ", e);
-                    this.setSelectedActivity(rowInfo.original.activity);
-                  },
-                };
-              }}
             />
           </div>
-        ) : null}
-        {stepIndex === 1 ? (
-          <div>
-            <FileUpload
-              {...this.props}
-              selectedActivity={this.state.selectedActivity}
-              fileMatch={".tif"}
-              mandatory={true}
-              filename={this.state.filename}
-              setFilename={this.setFilename.bind(this)}
-              destFolder={"imports"}
-              label="Raster"
-              style={{ paddingTop: "10px" }}
-            />
-          </div>
-        ) : null}
-        {stepIndex === 2 ? (
-          <div>
-            <div>
-              {this.props.runningImpactMessage}
-              <Sync
-                className="spin"
-                style={{
-                  display:
-                    this.props.loading || this.props.showSpinner
-                      ? "inline-block"
-                      : "none",
-                  color: "rgb(255, 64, 129)",
-                  top: "15px",
-                  right: "41px",
-                  height: "22px",
-                  width: "22px",
-                }}
-                key={"spinner"}
-              />
-            </div>
-            <MarxanTextField
-              value={this.state.filename}
-              onChange={this.changeFileName.bind(this)}
-              floatingLabelText="Enter a name"
-            />
-            <MarxanTextField
-              value={this.state.description}
-              onChange={this.changeDescription.bind(this)}
-              multiLine={true}
-              rows={2}
-              floatingLabelText="Enter a description"
-            />
-          </div>
-        ) : null}
-      </div>
-    );
-    return (
-      <MarxanDialog
-        {...this.props}
-        onOk={this.closeDialog.bind(this)}
-        okLabel={"Cancel"}
-        bodyStyle={{ padding: "0px 24px 0px 24px" }}
-        title={title[this.state.stepIndex]}
-        showSearchBox={true}
-        searchTextChanged={this.searchTextChanged.bind(this)}
-        actions={actions}
-        onClose={this.closeDialog.bind(this)}
-        helpLink={"user.html#importing-from-a-shapefile"}
-      >
-        {children}
-      </MarxanDialog>
-    );
-  }
-}
+          <MarxanTextField
+            key={`filename-textfield-${stepIndex}`}
+            value={filename}
+            onChange={(e) => setFilename(e.target.value)}
+            floatingLabelText="Enter a name"
+          />
+          <MarxanTextField
+            key={`description-textfield-${stepIndex}`}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            multiLine={true}
+            rows={2}
+            floatingLabelText="Enter a description"
+          />
+        </>
+      )}
+    </MarxanDialog>
+  );
+};
 
 export default ImportImpactsDialog;

@@ -44,11 +44,13 @@ const MapLegend = (props) => {
         numClasses <= colorSchemeLength
           ? Array.from({ length: numClasses }, (_, i) => i)
           : Array.from({ length: colorSchemeLength }, (_, i) => i);
+
       let classesToShow = numClassesArray.length;
       items = numClassesArray.map((item) => {
         let range = props.brew.breaks[item + 1] - props.brew.breaks[item] > 1;
         let suffix =
           props.brew.breaks[item + 1] === 1 ? " solution" : " solutions";
+
         let legendLabel = range
           ? `${props.brew.breaks[item] + 1} - ${
               props.brew.breaks[item + 1]
@@ -107,7 +109,7 @@ const MapLegend = (props) => {
                 layer={layer}
                 items={items}
                 shape={planningGridShape}
-                setSymbology={props.openClassificationDialog}
+                // setSymbology={props.setClassificationDialogOpen(true)}
               />
             );
           case CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST:

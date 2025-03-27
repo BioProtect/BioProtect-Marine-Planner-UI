@@ -14,77 +14,81 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import React from "react";
 import TargetIcon from "../TargetIcon";
 import { grey } from "@mui/material/colors";
+import { selectCurrentUser } from "../slices/authSlice";
+import { useSelector } from "react-redux";
 
-const FeaturesList = (props) => {
-  console.log("props ", props);
+const FeaturesList = ({
+  openFeatureMenu,
+  simple,
+  updateFeature,
+  toggleFeatureLayer,
+  toggleFeaturePUIDLayer,
+  useFeatureColors,
+  smallLinearGauge,
+}) => {
+  const userData = useSelector(selectCurrentUser);
+  const projState = useSelector((state) => state.project);
   const iconClick = (feature, evt) => {
-    props.openFeatureMenu(evt, feature);
+    openFeatureMenu(evt, feature);
   };
 
   const updateTargetValue = (targetIcon, newValue) => {
-    props.updateFeature(targetIcon.props.interestFeature, {
+    console.log("targetIcon, newValue ", targetIcon, newValue);
+
+    updateFeature(targetIcon.props.interestFeature, {
       target_value: newValue,
     });
   };
 
   const itemClick = (feature, evt) => {
     if (evt.altKey) {
-      // Toggle the layers puid visibility
+      // Toggle the layers puid visibility and add remove it from map
       feature.feature_puid_layer_loaded = !feature.feature_puid_layer_loaded;
-      // Add/remove it from the map
-      props.toggleFeaturePUIDLayer(feature);
+      toggleFeaturePUIDLayer(feature);
     } else {
-      // Toggle the layers visibility
+      // Toggle the layers visibility and add remove it from map
       feature.feature_layer_loaded = !feature.feature_layer_loaded;
-      // Add/remove it from the map
-      props.toggleFeatureLayer(feature);
+      toggleFeatureLayer(feature);
     }
   };
 
   return (
-    <List
-    // sx={{
-    //   padding: "0px !important",
-    //   maxHeight: props.maxheight,
-    //   overflow: "auto",
-    // }}
-    >
-      {props.features.map((item) => {
-        console.log("item ", item);
+    <List>
+      {projState.projectFeatures.map((item) => {
         // Get the total area of the feature in the planning unit
-        let pu_area = item.pu_area;
+        let { pu_area } = item;
 
         // Get the protected percent
         let protected_percent =
           item.protected_area === -1
             ? -1
             : pu_area >= 0
-            ? item.protected_area > 0
-              ? (item.protected_area / pu_area) * 100
-              : 0
-            : 0;
+              ? item.protected_area > 0
+                ? (item.protected_area / pu_area) * 100
+                : 0
+              : 0;
 
         let targetStatus =
           pu_area === 0
             ? "Does not occur in planning area"
             : protected_percent === -1
-            ? "Unknown"
-            : item.protected_area >= item.target_area
-            ? "Target achieved"
-            : "Target missed";
+              ? "Unknown"
+              : item.protected_area >= item.target_area
+                ? "Target achieved"
+                : "Target missed";
 
         return (
           <ListItem
             key={item.id}
-            onClick={props.simple ? null : (evt) => itemClick(item, evt)}
+            onClick={simple ? null : (evt) => itemClick(item, evt)}
             sx={{
               borderRadius: "3px",
               fontSize: "13px",
               color: "rgba(0,0,0,0.8)",
-              padding: props.simple ? "5px 5px 5px 5px" : "6px 5px 2px 40px",
+              padding: simple ? "5px 5px 5px 5px" : "6px 5px 2px 40px",
             }}
           >
-            {!props.simple && (
+            {!simple && (
               <TargetIcon
                 sx={{ left: 8 }}
                 target_value={item.target_value}
@@ -92,25 +96,24 @@ const FeaturesList = (props) => {
                 interestFeature={item}
                 targetStatus={targetStatus}
                 visible={item.pu_area !== 0}
-                userRole={props.userRole}
               />
             )}
             {item.alias}
-            {!props.simple && (
+            {!simple && (
               <LinearGauge
                 scaledWidth={220}
                 target_value={item.target_value}
                 protected_percent={protected_percent}
                 visible={item.pu_area !== 0}
                 color={item.color}
-                useFeatureColors={props.useFeatureColors}
+                useFeatureColors={useFeatureColors}
                 sx={{
-                  height: props.smallLinearGauge ? "3px" : "unset",
+                  height: smallLinearGauge ? "3px" : "unset",
                 }}
-                smallLinearGauge={props.smallLinearGauge}
+                smallLinearGauge={smallLinearGauge}
               />
             )}
-            {!props.simple && (
+            {!simple && (
               <IconButton
                 onClick={(evt) => iconClick(item, evt)}
                 sx={{

@@ -93,7 +93,7 @@ class RegisterDialog extends React.Component {
         cancelDisabled={this.props.loading}
         helpLink={"user.html#new-user-registration"}
         title="Register"
-        onClose={() => this.props.updateState({ registerDialogOpen: false })}
+        onClose={() => this.props.setRegisterDialogOpen(false)}
       >
         {c}
       </MarxanDialog>

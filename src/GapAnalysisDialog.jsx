@@ -1,13 +1,3 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import * as React from "react";
-
 import {
   Bar,
   CartesianGrid,
@@ -19,212 +9,208 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  Box,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  Typography,
+} from "@mui/material";
+import React, { useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import CustomTooltip from "./CustomTooltip";
 import MarxanDialog from "./MarxanDialog";
 import MetChart from "./MetChart";
-import Switch from "@mui/material/Switch";
+import { toggleDialog } from "./slices/uiSlice";
 
-class GapAnalysisDialog extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = { showChart: false };
-  }
-  getRepresentationScore(features) {
-    let sum = 0,
-      amount_under_protection_property,
-      total_amount_property;
-    //get the names of the properties that we will use to calculate the representation scores
+const GapAnalysisDialog = ({
+  loading,
+  setGapAnalysis,
+  gapAnalysis,
+  preprocessing,
+  metadata,
+}) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projState = useSelector((state) => state.project);
+
+  const [showChart, setShowChart] = useState(false);
+
+  const getRepresentationScore = (features) => {
+    let sum = 0;
+    let amountUnderProtectionProperty, totalAmountProperty;
+
     if (features.length) {
       if (features[0].hasOwnProperty("current_protected_area")) {
-        amount_under_protection_property = "current_protected_area";
-        total_amount_property = "country_area"; //should this be total_area or country_area?
+        amountUnderProtectionProperty = "current_protected_area";
+        totalAmountProperty = "country_area";
       } else {
-        amount_under_protection_property = "protected_area";
-        total_amount_property = "pu_area";
+        amountUnderProtectionProperty = "protected_area";
+        totalAmountProperty = "pu_area";
       }
     }
-    //iterate through the features and get the value for each feature
+
     features.forEach((item) => {
-      let val =
-        item[amount_under_protection_property] /
-        item[total_amount_property] /
+      const val =
+        item[amountUnderProtectionProperty] /
+        item[totalAmountProperty] /
         (item.target_value / 100);
-      if (!isNaN(val)) sum = sum + (val > 1 ? 1 : val);
-    });
-    //get the mean value
-    let mean = sum / features.length;
-    return Number(mean * 100).toFixed(1);
-  }
-  toggleView(event, isInputChecked) {
-    this.setState({ showChart: isInputChecked });
-  }
-  renderTooltip(a, b, c) {
-    return "wibble";
-  }
-  render() {
-    //join the data from the gap analysis onto the feature data
-    let _data = this.props.gapAnalysis.map((item) => {
-      //get the matching projectFeatures item
-      var stats = this.props.projectFeatures.filter((item2) => {
-        return item2.feature_class_name === item._feature_class_name;
-      })[0];
-      if (stats) {
-        return Object.assign(item, {
-          target_value: stats.target_value,
-          color: stats.color,
-        });
-      } else {
-        return item;
+
+      if (!isNaN(val)) {
+        sum += val > 1 ? 1 : val;
       }
     });
-    //sort the data by current protection
-    _data.sort((a, b) => {
-      let returnval =
-        a.current_protected_percent < b.current_protected_percent ? -1 : 1;
-      return returnval;
+
+    return Number((sum / features.length) * 100).toFixed(1);
+  };
+
+  const preparedData = useMemo(() => {
+    let data = gapAnalysis.map((item) => {
+      const stats = projState.projectFeatures.find(
+        (feature) => feature.feature_class_name === item._feature_class_name
+      );
+
+      return stats
+        ? { ...item, target_value: stats.target_value, color: stats.color }
+        : item;
     });
-    //get the data only for those features which occur in the country
-    _data = _data.filter((item) => item.country_area > 0);
-    //create the charts and get the count of features that have met the target
-    let targetsMetCount = 0;
-    let charts = _data.map((item, index) => {
-      if (item.country_area > 0) {
-        if (item.current_protected_percent >= item.target_value)
-          targetsMetCount = targetsMetCount + 1;
-        return (
-          <MetChart
-            {...item}
-            title={item._alias}
-            color={item.color}
-            key={item._feature_class_name}
-            reportUnits={this.props.reportUnits}
-            showCountryArea={false}
-            dataKey={item._feature_class_name}
-          />
-        );
-      } else {
-        return null;
-      }
-    });
-    //get the representation score
-    let score = this.props.gapAnalysis.length
-      ? this.getRepresentationScore(_data)
-      : "Calcuating..";
-    return (
-      <MarxanDialog
-        showSpinner={this.props.preprocessing}
-        autoDetectWindowHeight={false}
-        {...this.props}
-        contentWidth={680}
-        title="Gap Analysis"
-        helpLink={"user.html#gap-analysis-window"}
-        onClose={this.props.closeGapAnalysisDialog}
-        showCancelButton={false}
-      >
-        {
-          <React.Fragment key={"gapAnalysiskey"}>
-            <div className="analysisReport">
-              <div>
-                Gap Analysis for {this.props.metadata.pu_country} using the{" "}
-                {this.props.marxanServer.wdpa_version} version of the WDPA
-              </div>
-              <div
-                className={"analysisReportInner"}
-                style={{
-                  display: this.props.gapAnalysis.length ? "block" : " none",
-                }}
-              >
-                <div
-                  className={"analysisChartsDiv"}
-                  style={{ display: this.state.showChart ? "none" : "block" }}
-                >
-                  {charts}
-                </div>
-                <ComposedChart
-                  width={550}
-                  height={350}
-                  data={_data}
-                  margin={{ bottom: 20, top: 20 }}
-                  style={{
-                    display: this.state.showChart ? "block" : "none",
-                    margin: "auto",
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="1" stroke="#f4f4f4" />
-                  <XAxis
-                    dataKey="_alias"
-                    height={100}
-                    angle={-90}
-                    textAnchor="end"
-                    dx={-5}
-                  ></XAxis>
-                  <YAxis tick={{ fontSize: 11 }}>
-                    <Label
-                      value="Percent Protected"
-                      angle={-90}
-                      position="insideBottomLeft"
-                      style={{ fontSize: "11px", color: "#222222" }}
-                      offset={30}
-                    />
-                  </YAxis>
-                  <Tooltip
-                    content={
-                      <CustomTooltip reportUnits={this.props.reportUnits} />
-                    }
-                  />
-                  <Bar dataKey="current_protected_percent" fill="#8884d8">
-                    {_data.map((entry, index) => {
-                      return <Cell fill={entry.color} key={entry.color} />;
-                    })}
-                  </Bar>
-                  <ReferenceLine
-                    y={_data.length ? _data[0].target_value : 0}
-                    stroke="#7C7C7C"
-                    strokeDasharray="3 3"
-                    style={{ display: _data.length ? "inline" : "none" }}
-                  />
-                </ComposedChart>
-                <div className={"gapAnalysisBtmPanel"}>
-                  <div className={"gapAnalysisStatsPanel"}>
-                    <table>
-                      <tbody>
-                        <tr>
-                          <td>Features meeting targets:</td>
-                          <td className={"score"}>
-                            {targetsMetCount}/{charts.length}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>Representation score:</td>
-                          <td className={"score"}>{score}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <Switch
-                    label="Show as a chart"
-                    onToggle={this.toggleView.bind(this)}
-                    style={{
-                      width: "unset",
-                      float: "right",
-                      paddingTop: "2px",
-                    }}
-                    labelStyle={{
-                      fontSize: "14px",
-                      width: "100px",
-                      color: "rgba(0, 0, 0, 0.6)",
-                    }}
-                    toggled={this.state.showChart}
-                  />
-                </div>
-              </div>
-            </div>
-          </React.Fragment>
-        }
-      </MarxanDialog>
+
+    data.sort((a, b) =>
+      a.current_protected_percent < b.current_protected_percent ? -1 : 1
     );
-  }
-}
+
+    return data.filter((item) => item.country_area > 0);
+  }, [gapAnalysis, projState.projectFeatures]);
+
+  const targetsMetCount = preparedData.filter(
+    (item) => item.current_protected_percent >= item.target_value
+  ).length;
+
+  const charts = preparedData.map((item) => (
+    <MetChart
+      {...item}
+      title={item._alias}
+      color={item.color}
+      key={item._feature_class_name}
+      showCountryArea={false}
+      dataKey={item._feature_class_name}
+    />
+  ));
+
+  const representationScore = useMemo(
+    () =>
+      gapAnalysis.length
+        ? getRepresentationScore(preparedData)
+        : "Calculating...",
+    [gapAnalysis, preparedData]
+  );
+
+  const closeDialog = () => {
+    setGapAnalysis([]);
+    dispatch(
+      toggleDialog({ dialogName: "gapAnalysisDialogOpen", isOpen: false })
+    );
+  };
+
+  return (
+    <MarxanDialog
+      loading={loading}
+      open={dialogStates.gapAnalysisDialogOpen}
+      onOk={() => closeDialog()}
+      onCancel={() => closeDialog()}
+      onClose={() => closeDialog()}
+      showSpinner={preprocessing}
+      autoDetectWindowHeight={false}
+      contentWidth={680}
+      title="Gap Analysis"
+      showCancelButton={false}
+    >
+      <Box className="analysisReport">
+        <Typography variant="body1">
+          Gap Analysis for {metadata.pu_country} using the{" "}
+          {projState.bpServer.wdpa_version} version of the WDPA.
+        </Typography>
+        <Box
+          className="analysisReportInner"
+          sx={{
+            display: gapAnalysis.length ? "block" : "none",
+          }}
+        >
+          <Box
+            className="analysisChartsDiv"
+            sx={{ display: showChart ? "none" : "block" }}
+          >
+            {charts}
+          </Box>
+          {showChart && (
+            <ComposedChart
+              width={550}
+              height={350}
+              data={preparedData}
+              margin={{ bottom: 20, top: 20 }}
+              style={{ margin: "auto" }}
+            >
+              <CartesianGrid strokeDasharray="1" stroke="#f4f4f4" />
+              <XAxis
+                dataKey="_alias"
+                height={100}
+                angle={-90}
+                textAnchor="end"
+                dx={-5}
+              />
+              <YAxis tick={{ fontSize: 11 }}>
+                <Label
+                  value="Percent Protected"
+                  angle={-90}
+                  position="insideBottomLeft"
+                  style={{ fontSize: "11px", color: "#222222" }}
+                  offset={30}
+                />
+              </YAxis>
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="current_protected_percent" fill="#8884d8">
+                {preparedData.map((entry) => (
+                  <Cell fill={entry.color} key={entry.color} />
+                ))}
+              </Bar>
+              <ReferenceLine
+                y={preparedData[0]?.target_value || 0}
+                stroke="#7C7C7C"
+                strokeDasharray="3 3"
+                style={{ display: preparedData.length ? "inline" : "none" }}
+              />
+            </ComposedChart>
+          )}
+          <Box className="gapAnalysisBtmPanel" sx={{ marginTop: 2 }}>
+            <Box className="gapAnalysisStatsPanel">
+              <Table size="small">
+                <TableBody>
+                  <TableRow>
+                    <TableCell>Features meeting targets:</TableCell>
+                    <TableCell align="right">
+                      {targetsMetCount}/{charts.length}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Representation score:</TableCell>
+                    <TableCell align="right">{representationScore}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </Box>
+            <Switch
+              checked={showChart}
+              onChange={(e) => setShowChart(e.target.checked)}
+              sx={{ float: "right", marginTop: 1 }}
+            />
+          </Box>
+        </Box>
+      </Box>
+    </MarxanDialog>
+  );
+};
 
 export default GapAnalysisDialog;

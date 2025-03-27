@@ -1,17 +1,44 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  setActiveResultsTab,
+  setActiveTab,
+  setSnackbarMessage,
+  setSnackbarOpen,
+  toggleDialog,
+  toggleProjectDialog,
+} from "../slices/uiSlice";
+import { setPlanningUnitGrids, togglePUD, useListPlanningUnitsQuery } from "../slices/planningUnitSlice";
+import { useDispatch, useSelector } from "react-redux";
 
+import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import PlanningGridsToolbar from "./PlanningGridsToolbar";
-import ProjectsDialogTable from "../ProjectsDialogTable";
 
 const PlanningGridsDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const puState = useSelector((state) => state.planningUnit)
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
   const [searchText, setSearchText] = useState("");
   const [selectedPlanningGrid, setSelectedPlanningGrid] = useState(undefined);
+  const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitsQuery();
+
+  useEffect(() => {
+    if (planningUnitsData) {
+      dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []));
+    }
+  }, [dispatch, planningUnitsData]);
+
 
   const closeDialog = useCallback(() => {
     setSelectedPlanningGrid(undefined);
-    props.updateState({ planningGridsDialogOpen: false });
-  }, [props]);
+    dispatch(
+      togglePUD({
+        dialogName: "planningGridsDialogOpen",
+        isOpen: false,
+      })
+    );
+  }, []);
 
   const handleDelete = useCallback(() => {
     props.deletePlanningGrid(selectedPlanningGrid.feature_class_name);
@@ -24,12 +51,22 @@ const PlanningGridsDialog = (props) => {
   }, [props, closeDialog]);
 
   const handleNewMarine = useCallback(() => {
-    props.updateState({ NewMarinePlanningGridDialogOpen: true });
+    dispatch(
+      togglePUD({
+        dialogName: "newMarinePlanningGridDialogOpen",
+        isOpen: true,
+      })
+    );
     closeDialog();
-  }, [props, closeDialog]);
+  }, [closeDialog]);
 
   const openImportDialog = useCallback(() => {
-    props.updateState({ importPlanningGridDialogOpen: true });
+    dispatch(
+      togglePUD({
+        dialogName: "importPlanningGridDialogOpen",
+        isOpen: true,
+      })
+    );
     closeDialog();
   }, [props, closeDialog]);
 
@@ -48,7 +85,6 @@ const PlanningGridsDialog = (props) => {
 
   const preview = useCallback(
     (planning_grid_metadata) => {
-      console.log("planning_grid_metadata ", planning_grid_metadata);
       props.previewPlanningGrid(planning_grid_metadata);
     },
     [props]
@@ -74,175 +110,61 @@ const PlanningGridsDialog = (props) => {
     return dateA > dateB ? 1 : -1;
   }, []);
 
-  const renderRow = useCallback((alias, name) => {
-    const title = name ? `${alias} (${name})` : alias;
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={title}
-      >
-        {alias}
-      </div>
-    );
-  }, []);
-
-  const renderName = useCallback(
-    (row) => renderRow(row.original.alias, row.original.feature_class_name),
-    [renderRow]
-  );
-
-  const renderTitle = useCallback(
-    (row) => renderRow(row.original.description, null),
-    [renderRow]
-  );
-
-  const renderDate = useCallback((row) => {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={row.original.creation_date}
-      >
-        {row.original.creation_date.substr(0, 8)}
-      </div>
-    );
-  }, []);
-
-  const renderCreatedBy = useCallback(
-    (row) => renderRow(row.original.created_by, null),
-    [renderRow]
-  );
-
-  const renderCountry = useCallback(
-    (row) => renderRow(row.original.country, null),
-    [renderRow]
-  );
-
-  const renderArea = useCallback((row) => {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-      >
-        {isNaN(row.original._area) ? "" : row.original._area}
-      </div>
-    );
-  }, []);
-
-  const renderPreview = useCallback((row) => {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title="Click to preview"
-      >
-        ..
-      </div>
-    );
-  }, []);
-
   const searchTextChanged = useCallback((value) => {
     setSearchText(value);
   }, []);
 
+  const clickRow = (event, rowInfo) => {
+    changePlanningGrid(event, rowInfo.planningGrid);
+  };
+
   const columns = [
     {
-      id: "name",
-      accessor: "alias",
-      width: 274,
+      id: "alias",
+      label: "alias",
+      numeric: false,
+      disablePadding: true,
+    },
+    {
+      id: "domain",
+      label: "domain",
+      numeric: false,
+      disablePadding: true,
     },
     {
       id: "description",
-      accessor: "description",
-      width: 269,
+      label: "description",
+      numeric: false,
+      disablePadding: true,
     },
     {
-      id: "created",
-      accessor: "creation_date",
-      width: 70,
-      sortMethod: sortDate,
+      id: "created_by",
+      label: "created_by",
+      numeric: false,
+      disablePadding: true,
     },
     {
-      id: "created by",
-      accessor: "created_by",
-      width: 70,
-    },
-    {
-      id: "",
-      width: 8,
+      id: "creation_date",
+      label: "creation_date",
+      numeric: false,
+      disablePadding: true,
     },
   ];
 
   return (
     <MarxanDialog
-      {...props}
+      open={puState.dialogs.planningGridsDialogOpen}
+      loading={props.loading}
+      fullWidth={props.fullWidth}
+      maxWidth={props.maxWidth}
       onOk={closeDialog}
       showCancelButton={false}
       helpLink={"user.html#the-planning-grids-window"}
-      autoDetectWindowHeight={false}
-      bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title="Planning grids"
       showSearchBox={true}
       searchTextChanged={searchTextChanged}
-    >
-      <React.Fragment key="k2">
-        <div id="projectsTable">
-          <ProjectsDialogTable
-            data={props.planningGrids}
-            columns={columns}
-            searchColumns={[
-              "country",
-              "domain",
-              "alias",
-              "description",
-              "created_by",
-            ]}
-            searchText={searchText}
-            selectedPlanningGrid={selectedPlanningGrid}
-            changePlanningGrid={changePlanningGrid}
-            getTrProps={(state, rowInfo) => {
-              return {
-                style: {
-                  background:
-                    rowInfo.original.alias ===
-                    (state.selectedPlanningGrid &&
-                      state.selectedPlanningGrid.alias)
-                      ? "aliceblue"
-                      : "",
-                },
-                onClick: (e) => {
-                  state.changePlanningGrid(e, rowInfo.original);
-                },
-              };
-            }}
-            getTdProps={(state, rowInfo, column) => {
-              return {
-                onClick: (e) => {
-                  if (column.Header === "") preview(rowInfo.original);
-                },
-              };
-            }}
-          />
-        </div>
+      actions={
         <PlanningGridsToolbar
-          {...props}
           userRole={props.userRole}
           unauthorisedMethods={props.unauthorisedMethods}
           handleNew={() => handleNew()}
@@ -251,10 +173,27 @@ const PlanningGridsDialog = (props) => {
           loading={props.loading}
           exportPlanningGrid={() => exportPlanningGrid()}
           handleDelete={() => handleDelete()}
-          updateState={() => props.updateState()}
           selectedPlanningGrid={selectedPlanningGrid}
         />
-      </React.Fragment>
+      }
+    >
+      <div id="react-planning-grids-table">
+        <BioprotectTable
+          title="Planning Grids"
+          data={puState.planningUnitGrids}
+          tableColumns={columns}
+          searchColumns={[
+            "country",
+            "domain",
+            "alias",
+            "description",
+            "created_by",
+          ]}
+          selected={[selectedPlanningGrid] || []}
+          updateSelection={changePlanningGrid}
+          clickRow={clickRow}
+        />
+      </div>
     </MarxanDialog>
   );
 };

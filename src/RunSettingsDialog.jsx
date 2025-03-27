@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "./MarxanDialog";
@@ -8,28 +9,38 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import { toggleDialog } from "./slices/uiSlice";
 
-const RunSettingsDialog = (props) => {
+const RunSettingsDialog = ({
+  loading,
+  updateRunParams,
+  runParams,
+  showClumpingDialog,
+  userRole,
+}) => {
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
   const [data, setData] = useState([]);
   const [updateEnabled, setUpdateEnabled] = useState(false);
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "settingsDialogOpen", isOpen: false }));
 
   useEffect(() => {
-    if (props.runParams !== data) {
-      setData(props.runParams);
+    if (runParams !== data) {
+      setData(runParams);
     }
-  }, [props.runParams, data]);
+  }, [runParams, data]);
 
   const openParametersDialog = useCallback(() => {
-    props.openParametersDialog();
-  }, [props]);
+    openParametersDialog();
+  }, []);
 
-  const updateRunParams = useCallback(() => {
+  const handleUpdateRunParams = useCallback(() => {
     setUpdateEnabled(false);
-    if (props.userRole !== "ReadOnly") {
-      props.updateRunParams(data);
+    if (userRole !== "ReadOnly") {
+      updateRunParams(data);
     }
-    props.onOk();
-  }, [props, data]);
+    closeDialog();
+  }, [data, closeDialog]);
 
   const enableUpdate = useCallback(() => {
     setUpdateEnabled(true);
@@ -46,7 +57,7 @@ const RunSettingsDialog = (props) => {
 
   const renderEditable = useCallback(
     (cellInfo) => {
-      return props.userRole === "ReadOnly" ? (
+      return userRole === "ReadOnly" ? (
         <div>{data[cellInfo.index]["value"]}</div>
       ) : (
         <div style={{ display: "flex", alignItems: "center" }}>
@@ -66,7 +77,7 @@ const RunSettingsDialog = (props) => {
           {data[cellInfo.index]["key"] === "BLM" && (
             <FontAwesomeIcon
               icon={faExternalLinkAlt}
-              onClick={props.showClumpingDialog}
+              onClick={showClumpingDialog}
               title="Click to open the BLM comparison dialog"
               style={{
                 cursor: "pointer",
@@ -77,16 +88,17 @@ const RunSettingsDialog = (props) => {
         </div>
       );
     },
-    [props.userRole, data, enableUpdate, handleBlur, props.showClumpingDialog]
+    [userRole, data, enableUpdate, handleBlur, showClumpingDialog]
   );
 
   return (
     <MarxanDialog
-      {...props}
+      loading={loading}
+      open={dialogStates.settingsDialogOpen}
+      onOk={handleUpdateRunParams}
+      onCancel={() => closeDialog()}
       fullWidth={false}
       maxWidth="md"
-      onOk={updateRunParams}
-      helpLink={"user.html#run-settings"}
       title="Run settings"
     >
       <Table aria-label="run settings table">

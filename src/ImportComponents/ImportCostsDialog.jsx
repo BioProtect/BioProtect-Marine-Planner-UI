@@ -1,81 +1,70 @@
-import FileUpload from "../FileUpload";
-import MarxanDialog from "../MarxanDialog";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import React from "react";
-let INITIAL_STATE = { costs_filename: "", costname: "" };
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-class ImportCostsDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = INITIAL_STATE;
-  }
-  resetState() {
-    this.setState({ ...INITIAL_STATE });
-  }
-  onOk() {
-    //add the cost to the application state
-    this.props.addCost(this.state.costname);
-    //reset the import cost state
-    this.resetState();
-    //close the dialog
-    this.props.updateState({ importCostsDialogOpen: false });
-  }
-  setCostsFilename(filename) {
-    console.log("filename ", filename);
-    console.log(
-      "filename.substring(0, filename.length - 5) ",
-      filename.substring(0, filename.length - 5)
+import FileUpload from "../Uploads/FileUpload";
+import MarxanDialog from "../MarxanDialog";
+import { toggleDialog } from "../slices/uiSlice";
+
+const ImportCostsDialog = ({
+  addCost,
+  deleteCostFileThenClose,
+  fileUpload,
+}) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+
+  const [costsFilename, setCostsFilename] = useState("");
+  const [costName, setCostName] = useState("");
+
+  const resetState = () => {
+    setCostsFilename("");
+    setCostName("");
+  };
+
+  const onOk = () => {
+    // Add the cost to the application state
+    addCost(costName);
+    resetState();
+    dispatch(
+      toggleDialog({ dialogName: "importCostsDialogOpen", isOpen: false })
     );
-    this.setState({
-      costs_filename: filename,
-      costname: filename.substring(0, filename.length - 5),
-    });
-  }
-  deleteCostFileThenClose() {
-    this.props.deleteCostFileThenClose(this.state.costname).then((_) => {
-      //reset the import cost state
-      this.resetState();
-      //close the dialog
-      this.props.updateState({ importCostsDialogOpen: false });
-    });
-  }
-  render() {
-    return (
-      <MarxanDialog
-        {...this.props}
-        contentWidth={390}
-        offsetY={80}
-        okDisabled={this.props.loading}
-        title="Import Cost surface"
-        showCancelButton={true}
-        onOk={this.onOk.bind(this)}
-        onCancel={this.deleteCostFileThenClose.bind(this)}
-        onClose={this.deleteCostFileThenClose.bind(this)}
-        helpLink={"user.html#importing-a-cost-surface"}
-      >
-        {
-          <React.Fragment key="k8">
-            <FileUpload
-              {...this.props}
-              fileMatch={".cost"}
-              mandatory={true}
-              filename={this.state.costs_filename}
-              setFilename={this.setCostsFilename.bind(this)}
-              label="Costs surface filename"
-              style={{ paddingTop: "15px" }}
-            />
-          </React.Fragment>
-        }
-      </MarxanDialog>
+  };
+
+  const handleFileUpdate = (filename) => {
+    setCostsFilename(filename);
+    setCostName(filename.substring(0, filename.length - 5));
+  };
+
+  const handleClose = async () => {
+    await deleteCostFileThenClose(costName);
+    resetState();
+    dispatch(
+      toggleDialog({ dialogName: "importCostsDialogOpen", isOpen: false })
     );
-  }
-}
+  };
+
+  return (
+    <MarxanDialog
+      open={dialogStates.importCostsDialogOpen}
+      contentWidth={390}
+      offsetY={80}
+      title="Import Cost Surface"
+      showCancelButton={true}
+      onOk={onOk}
+      onCancel={() => handleClose()}
+      onClose={() => handleClose()}
+    >
+      <FileUpload
+        fileUpload={fileUpload}
+        fileMatch={".cost"}
+        mandatory={true}
+        filename={costsFilename}
+        setFilename={handleFileUpdate}
+        label="Costs surface filename"
+        style={{ paddingTop: "15px" }}
+      />
+    </MarxanDialog>
+  );
+};
 
 export default ImportCostsDialog;

@@ -1,30 +1,18 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
-import * as React from "react";
-
 import Checkbox from "@mui/material/Checkbox";
+import React from "react";
 
-class CheckBoxField extends React.PureComponent {
-  //pass all of the Conservation features properties in the click event of the checkbox so we can store an array of checked Conservation features
-  handleCheck = (event, isInputChecked) => {
-    this.props.onChange(event, isInputChecked, this.props.interestFeature);
-  };
+const CheckBoxField = ({ checked, onChange, interestFeature }) => {
+  // Pass all Conservation features props in click event of checkbox so we can store array of checked Conservation features
+  const handleCheck = (event) =>
+    onChange(event, event.target.checked, interestFeature);
 
-  render() {
-    return (
-      <Checkbox
-        onCheck={this.handleCheck.bind(this)}
-        checked={this.props.checked}
-        style={{ position: "absolute", left: "10px" }}
-      />
-    );
-  }
-}
+  return (
+    <Checkbox
+      onChange={handleCheck}
+      checked={checked}
+      sx={{ position: "absolute", left: "10px" }} // Using sx for MUI styling
+    />
+  );
+};
 
 export default CheckBoxField;

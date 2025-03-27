@@ -1,94 +1,103 @@
+import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+
 import MarxanDialog from "../MarxanDialog";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
 import React from "react";
-import { Table } from "@mui/material";
-class ProjectsListDialog extends React.Component {
-  renderName(row) {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#dadada",
-          borderRadius: "2px",
-        }}
-        title={row.original.name}
-      >
-        {row.original.name}
-      </div>
+import { selectCurrentUser } from "../slices/authSlice";
+import { toggleProjDialog } from "../slices/projectSlice";
+
+const ProjectsListDialog = () => {
+  const dispatch = useDispatch();
+  const userData = useSelector(selectCurrentUser);
+  const projState = useSelector((state) => state.project);
+  // Determine the columns based on the user role
+  const tableColumns = [
+    ...(userData.userRole === "Admin"
+      ? [{ Header: "User", accessor: "user", width: 90 }]
+      : []),
+    { Header: "Name", accessor: "name", width: 200 },
+  ];
+
+  // Render the content of a table cell for "Name"
+  const renderName = (row) => (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        backgroundColor: "#dadada",
+        borderRadius: "2px",
+      }}
+      title={row.name}
+    >
+      {row.name}
+    </div>
+  );
+
+  if (!projState.projectList) {
+    return null;
+  }
+
+  const closeDialog = () =>
+    dispatch(
+      toggleProjDialog({
+        dialogName: "projectsListDialogOpen",
+        isOpen: false,
+      })
     );
-  }
-  render() {
-    let tableColumns = [];
-    if (["Admin"].includes(this.props.userRole)) {
-      tableColumns = [
-        {
-          Header: "User",
-          accessor: "user",
-          width: 90,
-          headerStyle: { textAlign: "left" },
-        },
-        {
-          Header: "Name",
-          accessor: "name",
-          width: 200,
-          headerStyle: { textAlign: "left" },
-          Cell: this.renderName.bind(this),
-        },
-      ];
-    } else {
-      tableColumns = [
-        {
-          Header: "Name",
-          accessor: "name",
-          width: 200,
-          headerStyle: { textAlign: "left" },
-          Cell: this.renderName.bind(this),
-        },
-      ];
-    }
-    if (this.props.projects) {
-      return (
-        <MarxanDialog
-          {...this.props}
-          // titleBarIcon={faBookOpen}
-          showCancelButton={false}
-          autoDetectWindowHeight={false}
-          bodyStyle={{ padding: "0px 24px 0px 24px" }}
-          title={this.props.title}
-          contentWidth={500}
-          helpLink={"user.html#projects-list"}
-        >
-          {
-            <React.Fragment key="k24">
-              <div style={{ marginBottom: "5px" }}>{this.props.heading}</div>
-              <div id="failedProjectsTable">
-                <Table
-                  pageSize={this.props.projects.length}
-                  className={"projectsReactTable"}
-                  showPagination={false}
-                  minRows={0}
-                  noDataText=""
-                  data={this.props.projects}
-                  thisRef={this}
-                  columns={tableColumns}
-                />
-              </div>
-            </React.Fragment>
-          }
-        </MarxanDialog>
-      );
-    } else {
-      return null;
-    }
-  }
-}
+
+  return (
+    <MarxanDialog
+      open={projState.dialogs.projectsListDialogOpen}
+      showCancelButton={false}
+      autoDetectWindowHeight={false}
+      title={projState.projectListDialogTitle}
+      contentWidth={500}
+      helpLink={"user.html#projects-list"}
+      onOk={() => closeDialog()}
+    >
+      <div style={{ marginBottom: "5px" }}>{projState.projectListDialogHeading}</div>
+      <div id="failedProjectsTable">
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                {tableColumns.map((col) => (
+                  <TableCell
+                    key={col.accessor}
+                    style={{ textAlign: col.headerStyle?.textAlign || "left" }}
+                  >
+                    {col.Header}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {projState.projectList.map((row, index) => (
+                <TableRow key={index}>
+                  {tableColumns.map((col) => (
+                    <TableCell key={col.accessor}>
+                      {col.accessor === "name"
+                        ? renderName(row)
+                        : row[col.accessor]}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </div>
+    </MarxanDialog>
+  );
+};
 
 export default ProjectsListDialog;

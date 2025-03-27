@@ -1,51 +1,50 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { setSelectedFeature, setSelectedFeatureIds, toggleFeatureD } from "../slices/featureSlice";
+import { useDispatch, useSelector } from "react-redux";
 
+import BioprotectTable from "../BPComponents/BioprotectTable";
 import FeaturesToolbar from "./FeaturesToolbar";
 import MarxanDialog from "../MarxanDialog";
-import MarxanTable from "../MarxanTable";
-import ProjectsTable from "../ProjectsDialogTable";
-import TableRow from "../TableRow";
-import { faAnchor } from "@fortawesome/free-solid-svg-icons";
+import { generateTableCols } from "../Helpers";
+import {
+  toggleDialog,
+} from "../slices/uiSlice";
 
 const FeaturesDialog = (props) => {
-  const [selectedFeature, setSelectedFeature] = useState(undefined);
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
+  const featureState = useSelector((state) => state.feature);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const projectState = useSelector((state) => state.project);
+  const projectDialogStates = useSelector(
+    (state) => state.ui.projectDialogStates
+  );
+  const featureDialogs = useSelector((state) => state.feature.dialogs);
+  const planningGridDialogStates = useSelector(
+    (state) => state.ui.planningGridDialogStates
+  );
   const [previousRow, setPreviousRow] = useState(undefined);
   const [searchText, setSearchText] = useState("");
   const [filteredRows, setFilteredRows] = useState([]);
   const [newFeatureAnchor, setNewFeatureAnchor] = useState(null);
   const [importFeatureAnchor, setImportFeatureAnchor] = useState(null);
 
-  const _delete = () => {
-    props.deleteFeature(selectedFeature);
-    setSelectedFeature(undefined);
-  };
 
   const showNewFeaturePopover = (event) => {
     setNewFeatureAnchor(event.currentTarget);
-    props.updateState({ newFeaturePopoverOpen: true });
+    dispatch(
+      toggleFeatureD({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: true,
+      })
+    );
   };
 
   const showImportFeaturePopover = (event) => {
     setImportFeatureAnchor(event.currentTarget);
-    props.updateState({ importFeaturePopoverOpen: true });
-  };
-
-  const _openImportFeaturesDialog = () => {
-    props.updateState({
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-      importFeaturesDialogOpen: true,
-    });
-  };
-
-  const _openImportFromWebDialog = () => {
-    props.updateState({
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-      importFromWebDialogOpen: true,
-    });
+    dispatch(
+      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
+    );
   };
 
   const _newByDigitising = () => {
@@ -54,16 +53,29 @@ const FeaturesDialog = (props) => {
   };
 
   const openImportGBIFDialog = () => {
-    props.updateState({
-      importGBIFDialogOpen: true,
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-    });
+    props.setImportGBIFDialogOpen(true);
+    dispatch(
+      toggleFeatureD({
+        dialogName: "importFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureD({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureD({
+        dialogName: "featuresDialogOpen",
+        isOpen: false,
+      })
+    );
   };
 
-  const clickFeature = (event, rowInfo) => {
-    if (props.addingRemovingFeatures) {
+  const clickRow = (event, rowInfo) => {
+    if (uiState.addingRemovingFeatures) {
       if (event.shiftKey) {
         const selectedIds = getFeaturesBetweenRows(previousRow, rowInfo);
         props.update(selectedIds);
@@ -72,7 +84,7 @@ const FeaturesDialog = (props) => {
       }
       setPreviousRow(rowInfo);
     } else {
-      setSelectedFeature(rowInfo.original);
+      dispatch(setSelectedFeature(rowInfo.original));
     }
   };
 
@@ -94,17 +106,17 @@ const FeaturesDialog = (props) => {
     const idx2 =
       previousRow.index < thisRow.index ? thisRow.index + 1 : previousRow.index;
 
-    if (filteredRows.length < props.allFeatures.length) {
+    if (filteredRows.length < uiState.allFeatures.length) {
       return toggleSelectionState(
-        props.selectedFeatureIds,
+        featureState.selectedFeatureIds,
         filteredRows,
         idx1,
         idx2
       );
     } else {
       return toggleSelectionState(
-        props.selectedFeatureIds,
-        props.allFeatures,
+        featureState.selectedFeatureIds,
+        uiState.allFeatures,
         idx1,
         idx2
       );
@@ -112,16 +124,16 @@ const FeaturesDialog = (props) => {
   };
 
   const selectAllFeatures = () => {
-    if (filteredRows.length < props.allFeatures.length) {
+    if (filteredRows.length < uiState.allFeatures.length) {
       const selectedIds = filteredRows.map((feature) => feature.id);
-      props.updateState({ selectedFeatureIds: selectedIds });
+      dispatch(setSelectedFeatureIds(selectedIds));
     } else {
-      props.selectAllFeatures();
+      dispatch(setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id)));
     }
   };
 
   const onOk = () => {
-    if (props.addingRemovingFeatures) {
+    if (uiState.addingRemovingFeatures) {
       props.onOk();
     } else {
       unselectFeature();
@@ -129,37 +141,25 @@ const FeaturesDialog = (props) => {
   };
 
   const unselectFeature = () => {
-    setSelectedFeature(undefined);
-    props.updateState({
-      featuresDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      importFeaturePopoverOpen: false,
-    });
-  };
-
-  const sortDate = useCallback((a, b) => {
-    return new Date(
-      a.slice(6, 8),
-      a.slice(3, 5) - 1,
-      a.slice(0, 2),
-      a.slice(9, 11),
-      a.slice(12, 14),
-      a.slice(15, 17)
-    ) >
-      new Date(
-        b.slice(6, 8),
-        b.slice(3, 5) - 1,
-        b.slice(0, 2),
-        b.slice(9, 11),
-        b.slice(12, 14),
-        b.slice(15, 17)
-      )
-      ? 1
-      : -1;
-  }, []);
-
-  const preview = (feature_metadata) => {
-    props.previewFeature(feature_metadata);
+    dispatch(setSelectedFeature(undefined));
+    dispatch(
+      toggleFeatureD({
+        dialogName: "importFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureD({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: false,
+      })
+    );
+    dispatch(
+      toggleFeatureD({
+        dialogName: "featuresDialogOpen",
+        isOpen: false,
+      })
+    );
   };
 
   const searchTextChanged = (value) => {
@@ -170,139 +170,51 @@ const FeaturesDialog = (props) => {
     setFilteredRows(filteredRows);
   };
 
-  if (!props.allFeatures) return null;
+  if (!uiState.allFeatures) {
+    return null;
+  }
 
-  const columns = [
-    {
-      id: "name",
-      accessor: "alias",
-      width: 193,
-    },
-    {
-      id: "description",
-      accessor: "description",
-      width: 246,
-    },
-    {
-      id: "source",
-      accessor: "source",
-      width: 120,
-    },
-    {
-      id: "created",
-      accessor: "creation_date",
-      width: 70,
-      sortMethod: sortDate,
-    },
-    {
-      id: "created by",
-      accessor: "created_by",
-      width: 70,
-    },
-    {
-      id: "",
-      width: 8,
-    },
-  ];
+  const columns = generateTableCols([
+    { id: "alias", label: "alias" },
+    { id: "description", label: "description" },
+    { id: "source", label: "source" },
+    { id: "creation_date", label: "Date" },
+    { id: "created_by", label: "By" },
+  ]);
 
   return (
     <MarxanDialog
-      {...props}
+      open={featureDialogStates.featuresDialogOpen}
+      loading={props.loading}
       autoDetectWindowHeight={false}
-      bodyStyle={{ padding: "0px 24px 0px 24px" }}
       title="Features"
       onOk={onOk}
-      showCancelButton={props.addingRemovingFeatures}
-      helpLink={
-        props.addingRemovingFeatures
-          ? "user.html#adding-and-removing-features"
-          : "user.html#the-features-window"
-      }
+      showCancelButton={uiState.addingRemovingFeatures}
       showSearchBox={true}
       searchTextChanged={searchTextChanged}
-    >
-      <React.Fragment key="k10">
-        <div id="projectsTable">
-          <ProjectsTable
-            data={props.allFeatures}
-            columns={columns}
-            searchColumns={["alias", "description", "source", "created_by"]}
-            searchText={searchText}
-            dataFiltered={dataFiltered}
-            addingRemovingFeatures={props.addingRemovingFeatures}
-            selectedFeatureIds={props.selectedFeatureIds}
-            selectedFeature={selectedFeature}
-            clickFeature={clickFeature}
-            preview={preview}
-            getTrProps={(state, rowInfo) => ({
-              style: {
-                background:
-                  (props.addingRemovingFeatures &&
-                    props.selectedFeatureIds.includes(rowInfo.original.id)) ||
-                  (!props.addingRemovingFeatures &&
-                    selectedFeature &&
-                    selectedFeature.id === rowInfo.original.id)
-                    ? "aliceblue"
-                    : "",
-              },
-              onClick: (e) => {
-                clickFeature(e, rowInfo);
-              },
-            })}
-            getTdProps={(state, rowInfo, column) => ({
-              onClick: (e) => {
-                if (column.Header === "") preview(rowInfo.original);
-              },
-            })}
-          />
-          <MarxanTable
-            data={props.allFeatures}
-            searchColumns={["alias", "description", "source", "created_by"]}
-            searchText={searchText}
-            dataFiltered={dataFiltered}
-            addingRemovingFeatures={props.addingRemovingFeatures}
-            selectedFeatureIds={props.selectedFeatureIds}
-            selectedFeature={selectedFeature}
-            clickFeature={clickFeature}
-            preview={preview}
-            columns={columns}
-            getTrProps={(state, rowInfo) => ({
-              style: {
-                background:
-                  (props.addingRemovingFeatures &&
-                    props.selectedFeatureIds.includes(rowInfo.original.id)) ||
-                  (!props.addingRemovingFeatures &&
-                    selectedFeature &&
-                    selectedFeature.id === rowInfo.original.id)
-                    ? "aliceblue"
-                    : "",
-              },
-              onClick: (e) => {
-                clickFeature(e, rowInfo);
-              },
-            })}
-            getTdProps={(state, rowInfo, column) => ({
-              onClick: (e) => {
-                if (column.Header === "") preview(rowInfo.original);
-              },
-            })}
-          />
-        </div>
+      actions={
         <FeaturesToolbar
-          {...props}
-          showNewFeaturePopover={() => showNewFeaturePopover()}
-          anchorEl={newFeatureAnchor}
-          _newByDigitising={() => _newByDigitising()}
-          showImportFeaturePopover={() => showImportFeaturePopover()}
-          importFeatureAnchor={importFeatureAnchor}
-          _openImportFeaturesDialog={() => _openImportFeaturesDialog()}
-          _openImportFromWebDialog={() => _openImportFromWebDialog()}
-          openImportGBIFDialog={() => openImportGBIFDialog()}
-          selectedFeature={selectedFeature}
-          _delete={() => _delete()}
+          metadata={props.metadata}
+          userRole={props.userRole}
+          loading={props.loading}
           selectAllFeatures={() => selectAllFeatures()}
+          _newByDigitising={_newByDigitising}
         />
-      </React.Fragment>
+      }
+    >
+      <div id="react-features-dialog-table">
+        <BioprotectTable
+          data={uiState.allFeatures}
+          tableColumns={columns}
+          searchColumns={["alias", "description", "source", "created_by"]}
+          dataFiltered={dataFiltered}
+          selected={featureState.selectedFeatureIds}
+          selectedFeatureIds={featureState.selectedFeatureIds}
+          selectedFeature={featureState.selectedFeature}
+          clickRow={clickRow}
+          preview={() => props.previewFeature(featureMetadata)}
+        />
+      </div>
     </MarxanDialog>
   );
 };

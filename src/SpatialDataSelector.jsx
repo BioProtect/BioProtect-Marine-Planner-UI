@@ -34,7 +34,6 @@ class SpatialDataSelector extends React.Component {
           maxHeight={200}
           style={{ width: "345px" }}
           menuItemStyle={{ fontSize: "13px" }}
-          labelStyle={{ fontSize: "13px" }}
           value={this.props.value}
           onChange={this.changeTileset.bind(this)}
         >

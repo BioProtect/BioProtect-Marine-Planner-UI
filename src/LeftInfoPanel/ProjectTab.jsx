@@ -7,10 +7,20 @@ import Checkbox from "@mui/material/Checkbox";
 import { FormControlLabel } from "@mui/material";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Typography from "@mui/material/Typography";
+import { selectCurrentUser } from "../slices/authSlice";
+import { useSelector } from "react-redux";
 
-const ProjectTabContent = (props) => {
-  const toggleProjectPrivacy = (event) => {
-    props.toggleProjectPrivacy(event.target.checked);
+const ProjectTabContent = ({
+  toggleProjectPrivacy,
+  metadata,
+  owner,
+  updateDetails
+}) => {
+  const userData = useSelector(selectCurrentUser);
+  const [editing, setEditing] = useState(false);
+  const handleChange = (e) => {
+    setEditing(false);
+    updateDetails(e);
   };
 
   return (
@@ -20,49 +30,45 @@ const ProjectTabContent = (props) => {
           <Typography variant="h5" component="div">
             Description
           </Typography>
-          {props.userRole !== "ReadOnly" && (
-            <TextareaAutosize
-              minRows={5}
-              id="descriptionEdit"
-              ref={props.descriptionEditRef}
-              style={{ display: props.editingDescription ? "block" : "none" }}
-              className="descriptionEditBox"
-              onKeyDown={props.handleKeyPress}
-              onBlur={props.handleBlur}
-            />
-          )}
           <Typography variant="body2" color="text.secondary">
-            <div
-              className="description"
-              onClick={props.startEditingDescription}
-              title={props.userRole === "ReadOnly" ? "" : "Click to edit"}
-            >
-              {props.metadata.DESCRIPTION}
-            </div>
+            {editing ? (
+              <span onClick={setEditing(true)}>
+                {metadata.DESCRIPTION}
+              </span>
+            ) : (
+              <input
+                id="descriptionEdit"
+                value={metadata.DESCRIPTION || ""}
+                className="descriptionEditBox"
+                onChange={(e) => handleChange(e)}
+              ></input>
+            )}
           </Typography>
           <Typography variant="h5" component="div">
             Created
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            <div className="createDate">{props.metadata.CREATEDATE}</div>
-            {props.user !== props.owner && (
-              <div>
-                <div className="tabTitle tabTitleTopMargin">Created by</div>
-                <div className="createDate">{props.owner}</div>
-              </div>
+            <span className="createDate">{metadata.CREATEDATE}</span>
+            {userData.username !== owner && (
+              <span>
+                <span className="tabTitle tabTitleTopMargin">Created by</span>
+                <span className="createDate">{owner}</span>
+              </span>
             )}
-            {props.metadata.OLDVERSION && (
-              <div className="tabTitle tabTitleTopMargin">Imported project</div>
+            {metadata.OLDVERSION && (
+              <span className="tabTitle tabTitleTopMargin">
+                Imported project
+              </span>
             )}
           </Typography>
         </CardContent>
         <CardActions>
-          {props.userRole !== "ReadOnly" && (
+          {userData.role !== "ReadOnly" && (
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={props.metadata.PRIVATE}
-                  onChange={props.toggleProjectPrivacy}
+                  checked={Boolean(metadata.PRIVATE)}
+                  onChange={toggleProjectPrivacy}
                   size="small"
                 />
               }

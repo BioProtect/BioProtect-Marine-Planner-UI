@@ -13,43 +13,38 @@ import React from "react";
 
 const PlanningGridsToolbar = (props) => {
   return (
-    <div
-      style={{
-        display: props.userRole === "ReadOnly" ? "none" : "block",
-      }}
-    >
-      <ButtonGroup aria-label="Basic button group" fullWidth="true">
+    <ButtonGroup aria-label="Basic button group">
+      {props.unauthorisedMethods.includes("createPlanningUnitGrid") ? null : (
         <Button
-          show={!props.unauthorisedMethods.includes("createPlanningUnitGrid")}
           startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
           title="New planning grid"
           onClick={props.handleNew}
         >
           New
         </Button>
-
+      )}
+      {props.unauthorisedMethods.includes(
+        "createMarinePlanningUnitGrid"
+      ) ? null : (
         <Button
-          show={
-            !props.unauthorisedMethods.includes("createMarinePlanningUnitGrid")
-          }
           startIcon={<FontAwesomeIcon icon={faFileCode} />}
           title="Import from simple Shapefile"
           onClick={props.handleNewMarine}
         >
           Import Shapefile
         </Button>
-
+      )}
+      {props.unauthorisedMethods.includes("importPlanningUnitGrid") ? null : (
         <Button
-          show={!props.unauthorisedMethods.includes("importPlanningUnitGrid")}
           startIcon={<ImportIcon style={{ height: "20px", width: "20px" }} />}
           title="Import an existing planning grid from the local machine"
           onClick={props.openImportDialog}
         >
           Import Planning Grid
         </Button>
-
+      )}
+      {props.unauthorisedMethods.includes("exportPlanningUnitGrid") ? null : (
         <Button
-          show={!props.unauthorisedMethods.includes("exportPlanningUnitGrid")}
           startIcon={<ExportIcon style={{ height: "20px", width: "20px" }} />}
           title="Export planning grid"
           onClick={props.exportPlanningGrid}
@@ -57,8 +52,9 @@ const PlanningGridsToolbar = (props) => {
         >
           Export
         </Button>
+      )}
+      {props.unauthorisedMethods.includes("deletePlanningUnitGrid") ? null : (
         <Button
-          show={!props.unauthorisedMethods.includes("deletePlanningUnitGrid")}
           startIcon={
             <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
           }
@@ -73,8 +69,8 @@ const PlanningGridsToolbar = (props) => {
         >
           Delete
         </Button>
-      </ButtonGroup>
-    </div>
+      )}
+    </ButtonGroup>
   );
 };
 

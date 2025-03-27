@@ -1,0 +1,759 @@
+{
+    "user": "cartig",
+    "project": {
+        "id": 1,
+        "user_id": 2,
+        "name": "Atlas case study example",
+        "description": null,
+        "date_created": "2025-01-09T16:48:32.819788"
+    },
+    "metadata": {
+        "DESCRIPTION": "Example project using atlas case study area test",
+        "CREATEDATE": "16/02/21 15:35:46",
+        "PLANNING_UNIT_NAME": "pu_irl_marine_hexagon_10",
+        "pu_alias": "pu_irl_marine_hexagon_10",
+        "pu_description": "No description",
+        "pu_domain": "Unknown domain",
+        "pu_area": "Unknown area",
+        "pu_creation_date": "Unknown date",
+        "pu_created_by": "Unknown",
+        "pu_country": "Unknown",
+        "IUCN_CATEGORY": "undefined",
+        "OLDVERSION": false,
+        "PRIVATE": false,
+        "COSTS": "Equal area"
+    },
+    "files": {
+        "PUNAME": "pu.dat",
+        "SPECNAME": "spec.dat",
+        "PUVSPRNAME": "puvspr.dat",
+        "BOUNDNAME": ""
+    },
+    "runParameters": [
+        {
+            "key": "BLM",
+            "value": "0"
+        },
+        {
+            "key": "PROP",
+            "value": "0.5"
+        },
+        {
+            "key": "RANDSEED",
+            "value": "-1"
+        },
+        {
+            "key": "NUMREPS",
+            "value": "10"
+        },
+        {
+            "key": "NUMITNS",
+            "value": "1000000"
+        },
+        {
+            "key": "STARTTEMP",
+            "value": "-1"
+        },
+        {
+            "key": "NUMTEMP",
+            "value": "10000"
+        },
+        {
+            "key": "COSTTHRESH",
+            "value": "0.00000000000000E+0000"
+        },
+        {
+            "key": "THRESHPEN1",
+            "value": "1.40000000000000E+0001"
+        },
+        {
+            "key": "THRESHPEN2",
+            "value": "1.00000000000000E+0000"
+        },
+        {
+            "key": "SAVERUN",
+            "value": "2"
+        },
+        {
+            "key": "SAVEBEST",
+            "value": "2"
+        },
+        {
+            "key": "SAVESUMMARY",
+            "value": "2"
+        },
+        {
+            "key": "SAVESCEN",
+            "value": "2"
+        },
+        {
+            "key": "SAVETARGMET",
+            "value": "2"
+        },
+        {
+            "key": "SAVESUMSOLN",
+            "value": "2"
+        },
+        {
+            "key": "SAVEPENALTY",
+            "value": "2"
+        },
+        {
+            "key": "SAVELOG",
+            "value": "2"
+        },
+        {
+            "key": "RUNMODE",
+            "value": "1"
+        },
+        {
+            "key": "MISSLEVEL",
+            "value": "1"
+        },
+        {
+            "key": "ITIMPTYPE",
+            "value": "0"
+        },
+        {
+            "key": "HEURTYPE",
+            "value": "-1"
+        },
+        {
+            "key": "CLUMPTYPE",
+            "value": "0"
+        },
+        {
+            "key": "VERBOSITY",
+            "value": "3"
+        },
+        {
+            "key": "SAVESOLUTIONSMATRIX",
+            "value": "3"
+        }
+    ],
+    "renderer": {
+        "CLASSIFICATION": "jenks",
+        "NUMCLASSES": "9",
+        "COLORCODE": "YlGn",
+        "TOPCLASSES": "9"
+    },
+    "features": [
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131090,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131124,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131157,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131190,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131226,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131259,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131293,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131327,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131361,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131394,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131429,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131462,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131496,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131530,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131563,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131597,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131630,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131664,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131698,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131732,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131765,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131802,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131868,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131905,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131939,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 131973,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 132006,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 132039,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 132072,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 132106,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 132140,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 132173,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 132208,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        },
+        {
+            "target_value": 17,
+            "spf": 40,
+            "id": 139141,
+            "feature_class_name": null,
+            "alias": null,
+            "description": null,
+            "area": null,
+            "extent": null,
+            "creation_date": null,
+            "tilesetid": null,
+            "created_by": null
+        }
+    ],
+    "feature_preprocessing": [
+        [
+            131157,
+            0.0,
+            0
+        ],
+        [
+            131190,
+            0.0,
+            0
+        ],
+        [
+            131226,
+            0.0,
+            0
+        ],
+        [
+            131361,
+            0.0,
+            0
+        ],
+        [
+            131259,
+            0.0,
+            0
+        ],
+        [
+            131394,
+            0.0,
+            0
+        ],
+        [
+            131429,
+            0.0,
+            0
+        ],
+        [
+            131293,
+            0.0,
+            0
+        ],
+        [
+            131462,
+            0.0,
+            0
+        ],
+        [
+            131327,
+            0.0,
+            0
+        ],
+        [
+            131496,
+            0.0,
+            0
+        ],
+        [
+            131530,
+            0.0,
+            0
+        ],
+        [
+            131563,
+            0.0,
+            0
+        ],
+        [
+            131597,
+            0.0,
+            0
+        ],
+        [
+            131630,
+            0.0,
+            0
+        ],
+        [
+            131664,
+            0.0,
+            0
+        ],
+        [
+            131698,
+            0.0,
+            0
+        ],
+        [
+            131732,
+            0.0,
+            0
+        ],
+        [
+            131765,
+            0.0,
+            0
+        ],
+        [
+            131802,
+            0.0,
+            0
+        ],
+        [
+            131868,
+            0.0,
+            0
+        ],
+        [
+            131905,
+            0.0,
+            0
+        ],
+        [
+            131939,
+            0.0,
+            0
+        ],
+        [
+            131973,
+            0.0,
+            0
+        ],
+        [
+            132006,
+            0.0,
+            0
+        ],
+        [
+            132039,
+            0.0,
+            0
+        ],
+        [
+            132072,
+            0.0,
+            0
+        ],
+        [
+            132106,
+            0.0,
+            0
+        ],
+        [
+            132173,
+            0.0,
+            0
+        ],
+        [
+            132208,
+            0.0,
+            0
+        ],
+        [
+            132140,
+            0.0,
+            0
+        ],
+        [
+            131090,
+            0.0,
+            0
+        ],
+        [
+            131124,
+            0.0,
+            0
+        ]
+    ],
+    "planning_units": [],
+    "protected_area_intersections": [],
+    "costnames": [
+        "Equal area",
+        "atlas12",
+        "demersal_trawling",
+        "exploratory_drilling"
+    ]
+}

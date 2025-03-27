@@ -96,7 +96,13 @@ const LayerLegend = (props) => {
 
   return (
     <React.Fragment>
-      <Stack direction="row" spacing={1} p={2}>
+      <Stack
+        direction="row"
+        spacing={1}
+        p={2}
+        justifyContent="left"
+        alignItems="center"
+      >
         <Typography variant="h5" component="div">
           {props.layer.metadata.name}
         </Typography>

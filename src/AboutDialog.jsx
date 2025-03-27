@@ -1,3 +1,5 @@
+import { useDispatch, useSelector } from "react-redux";
+
 import MarxanDialog from "./MarxanDialog";
 import React from "react";
 import Typography from "@mui/material/Typography";
@@ -5,16 +7,21 @@ import biopama_small from "./images/biopama_small.png";
 import iucn from "./images/iucn.png";
 import jrc_logo_color_small from "./images/jrc_logo_color_small.png";
 import mapbox_small from "./images/mapbox_small.png";
+import { toggleDialog } from "./slices/uiSlice";
 import wcmc from "./images/wcmc.png";
 
-const AboutDialog = (props) => {
+const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
+  const dispatch = useDispatch();
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "aboutDialogOpen", isOpen: false }));
   return (
     <MarxanDialog
-      {...props}
+      open={dialogStates.aboutDialogOpen}
+      onOk={() => closeDialog()}
       contentWidth={500}
       offsetY={80}
       title="About"
-      helpLink={"user.html#about-window"}
     >
       <Typography variant="h6" gutterBottom>
         Software development
@@ -27,11 +34,10 @@ const AboutDialog = (props) => {
           modernized, now powered by React 18 and MUI 5.
         </p>
         <p>
-          Marxan Web ({props.marxanClientReleaseVersion}) initially developed by{" "}
+          Marxan Web ({marxanClientReleaseVersion}) initially developed by
           <a href="mailto:andrew.cottam@ec.europa.eu" className="email">
-            {" "}
             Andrew Cottam
-          </a>{" "}
+          </a>
           to whom much gratitude is owed.
         </p>
         <p>
@@ -40,21 +46,21 @@ const AboutDialog = (props) => {
         </p>
       </Typography>
       <Typography variant="h6" gutterBottom>
-        Data providers{" "}
+        Data providers
       </Typography>
       <Typography variant="body1" gutterBottom>
-        <div
+        <p
           className="aboutText"
           style={{ marginTop: "10px" }}
-          dangerouslySetInnerHTML={{ __html: props.wdpaAttribution }}
-        ></div>
-        <div className="aboutTitle">Funding and in-kind contributions</div>
-        <div className="aboutText" style={{ marginTop: "10px" }}>
+          dangerouslySetInnerHTML={{ __html: wdpaAttribution }}
+        ></p>
+        <p className="aboutTitle">Funding and in-kind contributions</p>
+        <p className="aboutText" style={{ marginTop: "10px" }}>
           Marxan Web funded by the BIOPAMA project of the European Commission.
           With in-kind contributions from Mapbox.
-        </div>
-        <div className="aboutText" style={{ marginTop: "10px" }}>
-          Marxan funded by a range of donors - see{" "}
+        </p>
+        <p className="aboutText" style={{ marginTop: "10px" }}>
+          Marxan funded by a range of donors - see
           <a
             href="http://marxan.org/credits.html"
             target="_blank"
@@ -63,8 +69,8 @@ const AboutDialog = (props) => {
             here
           </a>
           .
-        </div>
-        <div className="logos">
+        </p>
+        <p className="logos">
           <a href="https://www.iucn.org/">
             <img
               src={iucn}
@@ -105,7 +111,7 @@ const AboutDialog = (props) => {
               className="aboutLogo"
             />
           </a>
-        </div>
+        </p>
       </Typography>
     </MarxanDialog>
   );

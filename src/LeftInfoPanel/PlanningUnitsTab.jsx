@@ -12,8 +12,10 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useSelector } from "react-redux";
 
 const PlanningUnitsTab = (props) => {
+  const puState = useSelector((state) => state.planningUnit)
   return (
     <div>
       <Card sx={{ minWidth: 275 }}>
@@ -23,7 +25,7 @@ const PlanningUnitsTab = (props) => {
               Planning Grid
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
-              <div className="description">{props.metadata.pu_alias}</div>
+              <p className="description">{props.metadata.pu_alias}</p>
             </Typography>
 
             <Typography variant="h5" component="div">
@@ -32,20 +34,20 @@ const PlanningUnitsTab = (props) => {
             <Stack direction="row" spacing={4}>
               <Typography variant="subtitle1" color="text.secondary">
                 <FontAwesomeIcon
-                  icon={props.puEditing ? faSave : faLock}
+                  icon={puState.puEditing ? faSave : faLock}
                   onClick={props.startStopPuEditSession}
-                  title={props.puEditing ? "Save" : "Manually edit"}
+                  title={puState.puEditing ? "Save" : "Manually edit"}
                 />
               </Typography>
               <Typography variant="subtitle1" color="text.secondary">
-                {props.puEditing
+                {puState.puEditing
                   ? "Click on the map to change the status"
                   : "Manually edit"}
               </Typography>
               <Typography variant="subtitle1" color="text.secondary">
-                <div
+                <span
                   style={{
-                    display: props.puEditing ? "inline-block" : "none",
+                    display: puState.puEditing ? "inline-block" : "none",
                   }}
                   className="puManualEditClear"
                 >
@@ -58,7 +60,7 @@ const PlanningUnitsTab = (props) => {
                       color: "rgba(255, 64, 129, 0.7)",
                     }}
                   />
-                </div>
+                </span>
               </Typography>
             </Stack>
 

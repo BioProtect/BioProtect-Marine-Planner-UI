@@ -43,7 +43,6 @@ class ToolsMenu extends React.Component {
           onClose={this.props.hideToolsMenu}
         >
           <Menu
-            desktop={true}
             onMouseLeave={this.props.hideToolsMenu}
             menuItemStyle={{
               backgroundColor: "rgb(0, 188, 212)",
