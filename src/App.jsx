@@ -308,7 +308,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (planningCostsTrigger && projState.projectLoaded && owner !== "" && userState.user !== "") {
+    if (planningCostsTrigger && projState.projectLoaded && owner !== "" && userId !== "") {
       (async () => {
         await getPlanningUnitsCostData();
         setPlanningCostsTrigger(false);
@@ -902,13 +902,13 @@ const App = () => {
   //dismisses a notification on the server
   const dismissNotification = async (notification) => {
     await _get(
-      `dismissNotification?user=${userState.user}&notificationid=${notification.id}`
+      `dismissNotification?user=${userId}&notificationid=${notification.id}`
     );
   };
 
   //clears all of the dismissed notifications on the server
   const resetNotifications = async () => {
-    await _get(`resetNotifications?user=${userState.user}`);
+    await _get(`resetNotifications?user=${userId}`);
     setDismissedNotifications([]);
     setNotifications([]);
     parseNotifications();
@@ -927,7 +927,7 @@ const App = () => {
 
   //updates the project from the old version to the new version
   const upgradeProject = async (proj) =>
-    await _get(`upgradeProject?user=${userState.user}&project=${proj}`);
+    await _get(`upgradeProject?user=${userId}&project=${proj}`);
 
   //updates the proj parameters back to the server (i.e. the input.dat file)
   const updateProjectParams = async (proj, parameters) => {
@@ -1258,11 +1258,15 @@ const App = () => {
 
   const getProjects = async () => {
     // const response = await _get(`getProjects?user=${user}`); - old 
-    const response = await _get(`projects?action=list&user=${userState.user}`);
+    console.log("`projects?action=list&user=${userId}` ", `projects?action=list&user=${userId}`);
+    console.log("userId ", userId);
+    const response = await _get(`projects?action=list&user=${userId}`);
+    console.log("response ", response);
+
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
       (proj) =>
-        !(proj.private && proj.user !== userState.user && userData.role !== "Admin")
+        !(proj.private && proj.user !== userId && userData.role !== "Admin")
     );
     dispatch(setProjects(projects));
   };
@@ -1604,7 +1608,7 @@ const App = () => {
         info: "Planning grid imported",
       });
     } catch (error) {
-      deleteProject(userState.user, proj, true);
+      deleteProject(userId, proj, true);
       throw error;
     }
 
@@ -1654,7 +1658,7 @@ const App = () => {
       });
 
       // Load the proj
-      await loadProject(proj, userState.user);
+      await loadProject(proj, userId);
       return "Import complete";
     } catch (error) {
       messageLogger({
@@ -1674,10 +1678,10 @@ const App = () => {
   const importMXWProject = async (proj, description, filename) => {
     startLogging();
     await handleWebSocket(
-      `importProject?user=${userState.user}&project=${proj}&filename=${filename}&description=$description}`,
+      `importProject?user=${userId}&project=${proj}&filename=${filename}&description=$description}`,
     );
     refreshFeatures();
-    loadProject(proj, userState.user);
+    loadProject(proj, userId);
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -4653,7 +4657,7 @@ const App = () => {
             metadata={metadata}
           />
           <ShareableLinkDialog
-            shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${userState.user}&project=${projState.project}`}
+            shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${userId}&project=${projState.project}`}
           />
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog

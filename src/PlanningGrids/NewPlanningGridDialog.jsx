@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import {
   setSnackbarMessage,
   setSnackbarOpen,
-  togglePUD,
+  toggleDialog,
 } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectSelect from "../BPComponents/BioprotectSelect";
 import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
+import { togglePUD } from "../slices/planningUnitSlice";
 
 const NewPlanningGridDialog = ({
   loading,

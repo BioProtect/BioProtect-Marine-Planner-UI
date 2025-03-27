@@ -5,10 +5,9 @@ import {
   setSnackbarMessage,
   setSnackbarOpen,
   toggleDialog,
-  togglePUD,
   toggleProjectDialog,
 } from "../slices/uiSlice";
-import { setPlanningUnitGrids, useListPlanningUnitsQuery } from "../slices/planningUnitSlice";
+import { setPlanningUnitGrids, togglePUD, useListPlanningUnitsQuery } from "../slices/planningUnitSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
