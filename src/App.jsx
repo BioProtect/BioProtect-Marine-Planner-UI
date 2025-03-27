@@ -91,7 +91,7 @@ import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
 import NewFeatureDialog from "./Features/NewFeatureDialog";
-import NewMarinePlanningGridDialog from "./Impacts/NewMarinePlanningGridDialog";
+import NewMarinePlanningGridDialog from "./PlanningGrids/NewMarinePlanningGridDialog";
 import NewPlanningGridDialog from "./PlanningGrids/NewPlanningGridDialog";
 import NewProjectDialog from "./Projects/NewProject/NewProjectDialog";
 import NewProjectWizardDialog from "./Projects/NewProject/NewProjectWizardDialog";
@@ -1138,22 +1138,6 @@ const App = () => {
     return formData;
   };
 
-  //REST call to create a new import project from the wizard
-  const createImportProject = async (proj) => {
-    const formData = new FormData();
-    formData.append("user", user);
-    formData.append("project", proj);
-    // return await _post("createImportProject", formData); - old
-    // new is this format 
-    // POST /projects?action=create_import
-    // Body:
-    // {
-    //     "user": "username",
-    //     "project": "project_name"
-    // }
-    return await _post("projects?action=create_import", formData);
-  };
-
   const createNewProject = async (proj) => {
     const formData = prepareFormDataNewProject(proj, user);
     console.log("formData ", formData);
@@ -1567,122 +1551,8 @@ const App = () => {
     }
   };
 
-  const importProject = async (
-    proj,
-    description,
-    zipFilename,
-    files,
-    planning_grid_name
-  ) => {
-    let feature_class_name = "";
-    let uploadId;
-
-    startLogging();
-    messageLogger({
-      method: "importProject",
-      status: "Importing",
-      info: "Starting import..",
-    });
-
-    // Create a new project
-    await createImportProject(proj);
-    messageLogger({
-      method: "importProject",
-      status: "Importing",
-      info: `Project '${proj}' created`,
-    });
-
-    try {
-      // Import the planning unit file
-      const puResponse = await importZippedShapefileAsPu(
-        zipFilename,
-        planning_grid_name,
-        `Imported with the project '${proj}'`
-      );
-      feature_class_name = puResponse.feature_class_name;
-      uploadId = puResponse.uploadId;
-
-      messageLogger({
-        method: "importProject",
-        status: "Importing",
-        info: "Planning grid imported",
-      });
-    } catch (error) {
-      deleteProject(userId, proj, true);
-      throw error;
-    }
-
-    try {
-      // Upload all the files
-      await uploadFiles(files, proj);
-      messageLogger({
-        method: "importProject",
-        status: "Importing",
-        info: "All files uploaded",
-      });
-
-      // Upgrade the project to the new version of Marxan
-      await upgradeProject(proj);
-      messageLogger({
-        method: "importProject",
-        status: "Importing",
-        info: "Project updated to new version",
-      });
-
-      // Update project parameters
-      const formattedDate = new Date()
-        .toLocaleString("en-GB", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-        .replace(",", "");
-
-      await updateProjectParams(proj, {
-        DESCRIPTION: `${description} (imported from an existing Marxan proj)`,
-        CREATEDATE: formattedDate,
-        OLDVERSION: "True",
-        PLANNING_UNIT_NAME: feature_class_name,
-        OUTPUTDIR: "output",
-      });
-
-      // Poll Mapbox and complete the import
-      await pollMapbox(uploadId);
-      messageLogger({
-        method: "importProject",
-        status: "Finished",
-        info: "Import complete",
-      });
-
-      // Load the proj
-      await loadProject(proj, userId);
-      return "Import complete";
-    } catch (error) {
-      messageLogger({
-        method: "importProject",
-        status: "Failed",
-        info: "Import failed",
-      });
-      // Handle specific errors here if needed, like rolling back project creation, deleting files, etc.
-      throw error;
-    }
-  };
-
   //pads a number with zeros to a specific size, e.g. pad(9,5) => 00009
   const pad = (num, size) => num.toString().padStart(size, "0");
-
-  //imports a project from an mxd file
-  const importMXWProject = async (proj, description, filename) => {
-    startLogging();
-    await handleWebSocket(
-      `importProject?user=${userId}&project=${proj}&filename=${filename}&description=$description}`,
-    );
-    refreshFeatures();
-    loadProject(proj, userId);
-  };
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -4318,10 +4188,6 @@ const App = () => {
     return await _get("cleanup?");
   };
 
-  const closeProjectsDialog = () =>
-    dispatch(
-      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
-    );
 
   return (
     <div>
@@ -4458,7 +4324,6 @@ const App = () => {
               reportUnits={userData.reportUnits}
             />) : null}
           <ProjectsDialog
-            onCancel={() => closeProjectsDialog()}
             loading={loading}
             oldVersion={metadata?.OLDVERSION}
             deleteProject={deleteProject}

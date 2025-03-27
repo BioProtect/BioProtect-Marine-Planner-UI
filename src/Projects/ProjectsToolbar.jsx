@@ -41,34 +41,6 @@ const ProjectsToolbar = (props) => {
           New
         </Button>
 
-        {props.userRole === "ReadOnly" ? null : (
-          <Button
-            title="Import a project from Marxan Web or Marxan DOS"
-            disabled={props.loading}
-            id="basic-button"
-            aria-controls={open ? "basic-menu" : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? "true" : undefined}
-            onClick={handleClick}
-          >
-            Import
-          </Button>
-        )}
-
-        <Menu open={open} anchorEl={anchorEl} onClose={handleClose}>
-          <MenuItem
-            style={style("importProject")}
-            onClick={props.openImportMXWDialog}
-          >
-            Import a project from a Marxan Web *.mxw file
-          </MenuItem>
-          <MenuItem
-            style={style("createImportProject")}
-            onClick={props.openImportProjectDialog}
-          >
-            Import a project from Marxan DOS
-          </MenuItem>
-        </Menu>
         {props.unauthorisedMethods.includes("exportProject") ? null : (
           <Button
             startIcon={<Export style={{ height: "20px", width: "20px" }} />}

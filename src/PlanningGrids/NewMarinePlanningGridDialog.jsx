@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import CONSTANTS from "../constants";
 import FileUpload from "../Uploads/FileUpload";
 import MarxanDialog from "../MarxanDialog";
-import { togglePUD } from "../slices/uiSlice";
+import { togglePUD } from "../slices/planningUnitSlice";
 
 const NewMarinePlanningGridDialog = ({
   loading,
@@ -35,13 +35,16 @@ const NewMarinePlanningGridDialog = ({
     }
   };
 
-  const closeDialog = () =>
+  const closeDialog = () => {
+    console.log("closeDialog");
     dispatch(
       togglePUD({
         dialogName: "newMarinePlanningGridDialogOpen",
         isOpen: false,
       })
+
     );
+  }
 
   const dropDownStyle = { width: "240px" };
 
@@ -49,7 +52,8 @@ const NewMarinePlanningGridDialog = ({
     <MarxanDialog
       open={puState.dialogs.newMarinePlanningGridDialogOpen}
       onOk={handleOk}
-      onClose={closeDialog}
+      onClose={() => closeDialog()}
+      onCancel={() => closeDialog()}
       okDisabled={!areakm2 || loading}
       cancelLabel="Cancel"
       showCancelButton

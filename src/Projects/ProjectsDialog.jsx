@@ -8,69 +8,48 @@ import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
 import { toggleProjDialog } from "../slices/projectSlice";
 
-const ProjectsDialog = (props) => {
+const ProjectsDialog = ({
+  loading, oldVersion, deleteProject, loadProject, cloneProject, exportProject, userRole, unauthorisedMethods
+}) => {
   const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projState = useSelector((state) => state.project);
 
-  const _delete = useCallback(() => {
-    props.deleteProject(projState.project.user, projState.project.name);
+  const handleDeleteProject = useCallback(() => {
+    deleteProject(projState.project.user, projState.project.name);
   }, [projState.project]);
 
-  const load = useCallback(() => {
-    loadAndClose();
-  }, []);
-
   const loadAndClose = useCallback(() => {
-    props.loadProject(projState.project.name, projState.project.user);
+    loadProject(projState.project.name, projState.project.user);
     dispatch(
       toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
   }, [projState.project]);
 
-  const _new = useCallback(() => {
+  const newProject = useCallback(() => {
     dispatch(
       toggleProjDialog({ dialogName: "newProjectDialogOpen", isOpen: true })
     );
-    dispatch(
-      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
-    );
   }, []);
 
-  const cloneProject = useCallback(() => {
-    props.cloneProject(projState.project.user, projState.project.name);
-  }, [props]);
+  const handleCloneProject = useCallback(() => {
+    cloneProject(projState.project.user, projState.project.name);
+  }, [cloneProject]);
 
-  const exportProject = useCallback(() => {
-    props.exportProject(projState.project.user, projState.project.name).then((url) => {
+  const handleExportProject = useCallback(() => {
+    exportProject(projState.project.user, projState.project.name).then((url) => {
       window.location = url;
     });
     dispatch(
       toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
-  }, [props]);
-
-  const openImportProjectDialog = useCallback(() => {
-    props.setImportProjectDialogOpen(true);
-    dispatch(
-      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
-    );
-  }, [props.setImportProjectDialogOpen]);
-
-  const openImportMXWDialog = useCallback(() => {
-    props.setImportMXWDialogOpen(true);
-    dispatch(
-      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
-    );
-  }, [props.setImportMXWDialogOpen]);
+  }, [projState.project]);
 
   // const changeProject = useCallback((event, project) => {
   //   setSelectedProject(project);
   // }, []);
 
-  const handleProjectChange = (e) => {
-    console.log("e ", e);
+  const handleProjectChange = (event, row) => {
+    console.log("handle project change = event, row ", event, row);
   };
 
   const sortDate = useCallback((a, b, desc) => {
@@ -89,30 +68,27 @@ const ProjectsDialog = (props) => {
   const baseColumns = [
     { id: "name", label: "name" },
     { id: "description", label: "description" },
-    { id: "created", label: "createdate" },
+    { id: "createdate", label: "created date" },
   ];
 
-  const tableColumns = ["Admin", "ReadOnly"].includes(props.userRole)
-    ? [...baseColumns, { id: "user", label: "user" }]
+  const tableColumns = ["Admin", "ReadOnly"].includes(userRole)
+    ? [...baseColumns, { id: "user_id", label: "user_id" }]
     : baseColumns;
 
   const columns = generateTableCols(tableColumns);
+
+  const closeDialog = () => {
+    dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
+  }
 
   if (projState.projects) {
     return (
       <MarxanDialog
         open={projState.dialogs.projectsDialogOpen}
-        loading={props.loading}
-        okLabel={props.userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
-        onOk={load}
-        onCancel={() =>
-          dispatch(
-            toggleProjDialog({
-              dialogName: "projectsDialogOpen",
-              isOpen: false,
-            })
-          )
-        }
+        loading={loading}
+        okLabel={userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
+        onOk={loadAndClose}
+        onCancel={() => closeDialog()}
         okDisabled={!projState.project}
         showCancelButton={true}
         helpLink={"user.html#the-projects-window"}
@@ -120,16 +96,13 @@ const ProjectsDialog = (props) => {
         title="Projects"
         actions={
           <ProjectsToolbar
-            userRole={props.userRole}
-            unauthorisedMethods={props.unauthorisedMethods}
-            handleNew={() => _new()}
-            loading={props.loading}
-            importProjectPopoverOpen={props.importProjectPopoverOpen}
-            openImportMXWDialog={openImportMXWDialog}
-            openImportProjectDialog={openImportProjectDialog}
-            exportProject={exportProject}
-            cloneProject={cloneProject}
-            handleDelete={() => _delete()}
+            userRole={userRole}
+            unauthorisedMethods={unauthorisedMethods}
+            handleNew={() => newProject()}
+            loading={loading}
+            exportProject={handleExportProject}
+            cloneProject={handleCloneProject}
+            handleDelete={() => handleDeleteProject()}
           />
         }
       >
@@ -138,11 +111,12 @@ const ProjectsDialog = (props) => {
             title="Projects"
             data={projState.projects}
             tableColumns={columns}
-            selected={[projState.project]}
+            selected={[projState.projectData.project]}
             ableToSelectAll={false}
             showSearchBox={true}
             searchColumns={["user", "name", "description"]}
-            updateSelection={handleProjectChange}
+            clickRow={handleProjectChange}
+            isProject={true}
           />
         </div>
       </MarxanDialog>

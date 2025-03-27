@@ -34,14 +34,6 @@ import TableRow from "@mui/material/TableRow";
 // Description: If true, the table will support selecting all rows at once. Default is false.
 
 const BioprotectTable = (props) => {
-  // Props
-  // 1. data (Array, Required)
-  // 2. tableColumns (Array, Required)
-  // 3. title (String, Required)
-  // 4. showSearchBox (Boolean, Optional)
-  // 5. searchColumns (Array of Strings, Required if Search is enabled)
-  // 6. initialSelection (an array of indices, Optional)
-  // 7. ableToSelectAll (Boolean, Optional)
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("category");
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,6 +70,9 @@ const BioprotectTable = (props) => {
   // should really be item in Object because were checking an obj. poor naming by me.
   const isSelected = (objToCheck) => {
     if (props.selected.length > 0) {
+      if (props.isProject) {
+        return objToCheck.id === props.selected[0].id;
+      }
       return objInArray(objToCheck, props.selected);
     }
   };
