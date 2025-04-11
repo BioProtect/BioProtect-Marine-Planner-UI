@@ -21,7 +21,7 @@ class SpatialDataSelector extends React.Component {
         <MenuItem
           value={tileset.id}
           key={tileset.name}
-          primaryText={tileset.name}
+          title={tileset.name}
           tileset={tileset}
         />
       );

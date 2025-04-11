@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
-import { togglePUD } from "../slices/uiSlice";
+import { togglePUD } from "../slices/planningUnitSlice";
 
 const PlanningGridDialog = ({
   planningGridMetadata,

@@ -87,7 +87,12 @@ const ImportFeaturesDialog = (props) => {
         isOpen: true,
       })
     );
-    props.setImportFeaturesDialogOpen(false);
+    dispatch(
+      toggleFeatureD({
+        dialogName: "importFeaturesDialogOpen",
+        isOpen: false,
+      })
+    );
   };
 
   const _disabled =
@@ -98,6 +103,7 @@ const ImportFeaturesDialog = (props) => {
     <Dialog
       open={featureState.dialogs.importFeaturesDialogOpen}
       onClose={closeDialog}
+      onCancel={() => closeDialog()}
       maxWidth="sm"
       fullWidth
     >

@@ -67,6 +67,20 @@ const mapboxBasemaps = [
     id: "",
     provider: "local",
   },
+  {
+    name: "Bioprotect",
+    alias: "Custom basemap",
+    description: "Custom basemap",
+    id: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
+    provider: "local",
+  },
+  {
+    name: "OSM",
+    alias: "Open Street Map",
+    description: "Open Street Map",
+    id: "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    provider: "local",
+  },
 ];
 
 const initialState = {
@@ -74,7 +88,7 @@ const initialState = {
   snackbarMessage: "",
   activeTab: "project",
   activeResultsTab: "legend",
-  basemap: "Light",
+  basemap: "Streets",
   basemaps: mapboxBasemaps,
 
   dialogStates: {
@@ -164,7 +178,6 @@ export const {
   setSelectedFeatureIds,
   setFeatureDatasetFilename,
   toggleProjectDialog,
-  togglePUD,
   toggleDialog,
 } = uiSlice.actions;
 export default uiSlice.reducer;

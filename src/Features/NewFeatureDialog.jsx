@@ -1,13 +1,4 @@
 import React, { useState } from "react";
-import {
-  setActiveResultsTab,
-  setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
-  toggleDialog,
-  togglePUD,
-  toggleProjectDialog,
-} from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -28,7 +19,6 @@ const NewFeatureDialog = ({ loading, newFeatureCreated }) => {
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
   const featureState = useSelector((state) => state.feature);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
   const [createFeatureFromLine, { isLoading: isCreating }] = useCreateFeatureFromLinestringMutation();
 
   // State for name and description

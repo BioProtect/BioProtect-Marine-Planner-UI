@@ -31,9 +31,9 @@ class ColorSelector extends React.Component {
       numClasses <= colorSchemeLength
         ? Array.apply(null, { length: numClasses }).map(Number.call, Number)
         : Array.apply(null, { length: colorSchemeLength }).map(
-            Number.call,
-            Number
-          );
+          Number.call,
+          Number
+        );
     let classesToShow = numClassesArray.length;
     let divWidth = 112 / classesToShow;
     let colorDivs = numClassesArray.map((item) => {
@@ -75,9 +75,8 @@ class ColorSelector extends React.Component {
       return (
         <MenuItem
           value={colorCode}
-          primaryText={primaryText}
+          title={primaryText}
           key={colorCode}
-          title={colorCode}
         >
           {_c}
         </MenuItem>

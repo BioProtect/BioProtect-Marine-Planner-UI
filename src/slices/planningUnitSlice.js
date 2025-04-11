@@ -44,7 +44,7 @@ const initialState = {
     importPlanningGridDialogOpen: false,
     planningGridDialogOpen: false,
     planningGridsDialogOpen: false,
-  },
+  }
 }
 
 // Thunk to handle server initialization

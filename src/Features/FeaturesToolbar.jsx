@@ -5,7 +5,7 @@ import {
   faTimesCircle,
   faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
-import { setAllFeatures, setSelectedFeature, setSelectedFeatureIds, toggleFeatureD, useDeleteFeatureQuery } from "../slices/featureSlice";
+import { setAllFeatures, setSelectedFeature, setSelectedFeatureIds, toggleFeatureD, useDeleteFeatureMutation } from "../slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -29,7 +29,7 @@ const FeaturesToolbar = ({
   const [importAnchorEl, setImportAnchorEl] = useState(null);
   const newOpen = Boolean(newAnchorEl);
   const importOpen = Boolean(importAnchorEl);
-  const [deleteFeature, { isLoading }] = useDeleteFeatureQuery(feature.feature_class_name);
+  const [deleteFeature, { isLoading }] = useDeleteFeatureMutation();
 
 
 
@@ -81,7 +81,7 @@ const FeaturesToolbar = ({
       })
     );
     dispatch(
-      toggleDialog({
+      toggleFeatureD({
         dialogName: "importFromWebDialogOpen",
         isOpen: true,
       })
@@ -155,11 +155,10 @@ const FeaturesToolbar = ({
 
         <Menu open={newOpen} anchorEl={newAnchorEl} onClose={handleClose}>
           <MenuItem
-            primaryText="Draw on screen"
             title="Create a new feature by digitising it on the screen"
             onClick={() => _newByDigitising()}
           >
-            Create a new feature by digitising it on the screen
+            Draw on screen
           </MenuItem>
         </Menu>
 
@@ -181,19 +180,19 @@ const FeaturesToolbar = ({
 
         <Menu open={importOpen} anchorEl={importAnchorEl} onClose={handleClose}>
           <MenuItem
-            primaryText="From a shapefile"
+            title="From a shapefile"
             onClick={() => handleOpenImportFeaturesDialog()}
           >
             Import one or more features from a shapefile
           </MenuItem>
           <MenuItem
-            primaryText="From the web"
+            title="From the web"
             onClick={() => handleOpenImportFromWebDialog()}
           >
             Import one or more features from a web resource
           </MenuItem>
           <MenuItem
-            primaryText="From the IUCN Red List of Threatened Species"
+            title="From the IUCN Red List of Threatened Species"
             disabled={true}
           >
             From the IUCN Red List of Threatened Species

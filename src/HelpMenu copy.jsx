@@ -39,7 +39,7 @@ class HelpMenu extends React.Component {
             width={"102px"}
           >
             <MenuItem
-              primaryText="Documentation"
+              title="Documentation"
               onClick={this.openDocumentation.bind(this)}
               leftIcon={
                 <FontAwesomeIcon
@@ -50,7 +50,7 @@ class HelpMenu extends React.Component {
               }
             />
             <MenuItem
-              primaryText="About"
+              title="About"
               onClick={this.props.openAboutDialog}
               leftIcon={
                 <FontAwesomeIcon

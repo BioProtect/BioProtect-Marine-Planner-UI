@@ -25,12 +25,6 @@ const ProjectsDialog = ({
     );
   }, [projState.project]);
 
-  const newProject = useCallback(() => {
-    dispatch(
-      toggleProjDialog({ dialogName: "newProjectDialogOpen", isOpen: true })
-    );
-  }, []);
-
   const handleCloneProject = useCallback(() => {
     cloneProject(projState.project.user, projState.project.name);
   }, [cloneProject]);
@@ -91,14 +85,12 @@ const ProjectsDialog = ({
         onCancel={() => closeDialog()}
         okDisabled={!projState.project}
         showCancelButton={true}
-        helpLink={"user.html#the-projects-window"}
         autoDetectWindowHeight={false}
         title="Projects"
         actions={
           <ProjectsToolbar
             userRole={userRole}
             unauthorisedMethods={unauthorisedMethods}
-            handleNew={() => newProject()}
             loading={loading}
             exportProject={handleExportProject}
             cloneProject={handleCloneProject}

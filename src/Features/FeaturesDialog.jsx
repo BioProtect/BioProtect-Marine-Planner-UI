@@ -14,15 +14,6 @@ const FeaturesDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectState = useSelector((state) => state.project);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
-  const featureDialogs = useSelector((state) => state.feature.dialogs);
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
   const [previousRow, setPreviousRow] = useState(undefined);
   const [searchText, setSearchText] = useState("");
   const [filteredRows, setFilteredRows] = useState([]);
@@ -30,49 +21,49 @@ const FeaturesDialog = (props) => {
   const [importFeatureAnchor, setImportFeatureAnchor] = useState(null);
 
 
-  const showNewFeaturePopover = (event) => {
-    setNewFeatureAnchor(event.currentTarget);
-    dispatch(
-      toggleFeatureD({
-        dialogName: "newFeaturePopoverOpen",
-        isOpen: true,
-      })
-    );
-  };
+  // const showNewFeaturePopover = (event) => {
+  //   setNewFeatureAnchor(event.currentTarget);
+  //   dispatch(
+  //     toggleFeatureD({
+  //       dialogName: "newFeaturePopoverOpen",
+  //       isOpen: true,
+  //     })
+  //   );
+  // };
 
-  const showImportFeaturePopover = (event) => {
-    setImportFeatureAnchor(event.currentTarget);
-    dispatch(
-      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
-    );
-  };
+  // const showImportFeaturePopover = (event) => {
+  //   setImportFeatureAnchor(event.currentTarget);
+  //   dispatch(
+  //     toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
+  //   );
+  // };
 
   const _newByDigitising = () => {
     onOk();
     props.initialiseDigitising();
   };
 
-  const openImportGBIFDialog = () => {
-    props.setImportGBIFDialogOpen(true);
-    dispatch(
-      toggleFeatureD({
-        dialogName: "importFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "newFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "featuresDialogOpen",
-        isOpen: false,
-      })
-    );
-  };
+  // const openImportGBIFDialog = () => {
+  //   props.setImportGBIFDialogOpen(true);
+  //   dispatch(
+  //     toggleFeatureD({
+  //       dialogName: "importFeaturePopoverOpen",
+  //       isOpen: false,
+  //     })
+  //   );
+  //   dispatch(
+  //     toggleFeatureD({
+  //       dialogName: "newFeaturePopoverOpen",
+  //       isOpen: false,
+  //     })
+  //   );
+  //   dispatch(
+  //     toggleFeatureD({
+  //       dialogName: "featuresDialogOpen",
+  //       isOpen: false,
+  //     })
+  //   );
+  // };
 
   const clickRow = (event, rowInfo) => {
     if (uiState.addingRemovingFeatures) {
@@ -170,9 +161,6 @@ const FeaturesDialog = (props) => {
     setFilteredRows(filteredRows);
   };
 
-  if (!uiState.allFeatures) {
-    return null;
-  }
 
   const columns = generateTableCols([
     { id: "alias", label: "alias" },
@@ -184,14 +172,14 @@ const FeaturesDialog = (props) => {
 
   return (
     <MarxanDialog
-      open={featureDialogStates.featuresDialogOpen}
+      open={featureState.dialogs.featuresDialogOpen}
       loading={props.loading}
-      autoDetectWindowHeight={false}
-      title="Features"
       onOk={onOk}
       showCancelButton={uiState.addingRemovingFeatures}
-      showSearchBox={true}
-      searchTextChanged={searchTextChanged}
+      autoDetectWindowHeight={false}
+      title="Features"
+      // showSearchBox={true}
+      // searchTextChanged={searchTextChanged}
       actions={
         <FeaturesToolbar
           metadata={props.metadata}
@@ -204,7 +192,8 @@ const FeaturesDialog = (props) => {
     >
       <div id="react-features-dialog-table">
         <BioprotectTable
-          data={uiState.allFeatures}
+          title="Features"
+          data={featureState.allFeatures}
           tableColumns={columns}
           searchColumns={["alias", "description", "source", "created_by"]}
           dataFiltered={dataFiltered}

@@ -1,13 +1,4 @@
 import React, { useEffect, useState } from "react";
-import {
-  setActiveResultsTab,
-  setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
-  toggleDialog,
-  togglePUD,
-  toggleProjectDialog,
-} from "./slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "./constants";
@@ -15,7 +6,6 @@ import MapContainer from "./MapContainer";
 import MarxanDialog from "./MarxanDialog";
 import MarxanTextField from "./MarxanTextField";
 import ToolbarButton from "./ToolbarButton";
-import { toggleFeatureD } from "./slices/featureSlice";
 
 const CLUMP_COUNT = 5;
 

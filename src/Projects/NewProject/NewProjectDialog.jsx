@@ -10,13 +10,22 @@ import PlanningUnitsDialog from "../../PlanningGrids/PlanningUnitsDialog";
 import SelectCostFeatures from "../../SelectCostFeatures";
 import SelectFeatures from "../../LeftInfoPanel/FeaturesTab.jsx";
 import { setSelectedFeatureIds } from "../../slices/featureSlice.js"
+import { togglePUD } from "../../slices/planningUnitSlice.js";
 import { toggleProjDialog } from "../../slices/projectSlice.js";
 
-const NewProjectDialog = (props) => {
+const NewProjectDialog = ({
+  registry,
+  loading,
+  openFeaturesDialog,
+  selectedCosts,
+  createNewProject,
+  previewFeature,
+}) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature)
-  const proState = useSelector((state) => state.project);
+  const projState = useSelector((state) => state.project);
+  const planningState = useSelector((state) => state.planningUnit);
 
   const [steps] = useState(["Info", "Planning units", "Features"]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -62,8 +71,8 @@ const NewProjectDialog = (props) => {
     dispatch(setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id)));
   const clearAllFeatures = () => dispatch(setSelectedFeatureIds([]));
 
-  const createNewProject = () => {
-    props.createNewProject({
+  const handleCreateNewProject = () => {
+    createNewProject({
       name,
       description,
       planning_grid_name: pu,
@@ -90,7 +99,7 @@ const NewProjectDialog = (props) => {
       </Button>
       <Button
         variant="outlined"
-        onClick={stepIndex === steps.length - 1 ? createNewProject : handleNext}
+        onClick={stepIndex === steps.length - 1 ? handleCreateNewProject : handleNext}
         disabled={
           (stepIndex === 0 && (name === "" || description === "")) ||
           (stepIndex === 1 && pu === "") ||
@@ -105,8 +114,8 @@ const NewProjectDialog = (props) => {
   return (
     <>
       <MarxanDialog
-        open={proState.dialogs.newProjectDialogOpen}
-        loading={props.loading}
+        open={projState.dialogs.newProjectDialogOpen}
+        loading={loading}
         title="New project"
         fullWidth={true}
         actions={actions}
@@ -131,14 +140,14 @@ const NewProjectDialog = (props) => {
               previewFeature={previewFeature}
               changeItem={setPU}
               pu={pu}
-              openImportPlanningGridDialog={props.openImportPlanningGridDialog}
+              openImportPlanningGridDialog={planningState.dialogs.importPlanningGridDialogOpen}
             />
           )}
           {stepIndex === 2 && (
             <div style={{ height: "390px" }}>
               <div className="tabTitle">Select the features</div>
               <SelectFeatures
-                features={uiState.allFeatures.filter((item) => item.selected)}
+                features={featureState.allFeatures.filter((item) => item.selected)}
                 openFeaturesDialog={() =>
                   dispatch(
                     toggleFeatureD({
@@ -155,7 +164,7 @@ const NewProjectDialog = (props) => {
             </div>
           )}
           {stepIndex === 3 && (
-            <SelectCostFeatures selectedCosts={props.selectedCosts} />
+            <SelectCostFeatures selectedCosts={selectedCosts} />
           )}
         </div>
       </MarxanDialog>
@@ -176,7 +185,7 @@ const NewProjectDialog = (props) => {
         clickFeature={clickFeature}
         metadata={{ OLDVERSION: false }}
         userRole="User"
-        previewFeature={props.previewFeature}
+        previewFeature={previewFeature}
       />
     </>
   );

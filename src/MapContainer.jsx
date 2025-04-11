@@ -17,7 +17,7 @@ class MapContainer extends React.Component {
   componentDidMount() {
     this.map = new mapboxgl.Map({
       container: this.mapContainer,
-      style: "mapbox://styles/mapbox/light-v9",
+      style: "mapbox://styles/mapbox/streets-v12",
       center: this.props.mapCentre,
       zoom: this.props.mapZoom,
       attributionControl: false,

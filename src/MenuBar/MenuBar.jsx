@@ -24,24 +24,29 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { selectCurrentUser } from "../slices/authSlice";
 import { toggleDialog } from "../slices/uiSlice";
+import { toggleFeatureD } from "../slices/featureSlice";
 
-const MenuBar = (props) => {
+const MenuBar = ({
+  open,
+  userRole,
+  openProjectsDialog,
+  openActivitiesDialog,
+  openFeaturesDialog,
+  openPlanningGridsDialog,
+  openCumulativeImpactDialog,
+  openAtlasLayersDialog,
+  setMenuAnchor
+}) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projectState = useSelector((state) => state.project);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const userData = useSelector(selectCurrentUser);
   //opens the features dialog without the ability to add/remove features (i.e. different from the dialog that is opened from a project)
-  const openFeaturesDialog = useCallback(
-    (evt) => {
-      props.openFeaturesDialog(false);
-    },
-    [props]
-  );
 
   const hanldeMenuOpen = (e, val) => {
     e.preventDefault();
-    props.setMenuAnchor(e.currentTarget);
+    setMenuAnchor(e.currentTarget);
     dispatch(toggleDialog({ dialogName: val, isOpen: true }));
   };
 
@@ -67,7 +72,7 @@ const MenuBar = (props) => {
     <Box
       sx={{
         flexGrow: 1,
-        display: props.open ? "block" : "none",
+        display: open ? "block" : "none",
       }}
     >
       <AppBar position="static">
@@ -78,7 +83,7 @@ const MenuBar = (props) => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             <AppBarIcon
               icon={faBookOpen}
-              onClick={() => props.openProjectsDialog()}
+              onClick={() => openProjectsDialog()}
               title="Projects"
             />
             <AppBarIcon
@@ -88,17 +93,17 @@ const MenuBar = (props) => {
             />
             <AppBarIcon
               icon={faThLarge}
-              onClick={() => props.openPlanningGridsDialog()}
+              onClick={() => openPlanningGridsDialog()}
               title="Planning grids"
             />
             <AppBarIcon
               icon={faGlobeEurope}
-              onClick={() => props.openAtlasLayersDialog()}
+              onClick={() => openAtlasLayersDialog()}
               title="Atlas Layers"
             />
             <AppBarIcon
               icon={faLayerGroup}
-              onClick={() => props.openCumulativeImpactDialog()}
+              onClick={() => openCumulativeImpactDialog()}
               title="Impact"
             />
             <span style={{ width: "16px" }} />

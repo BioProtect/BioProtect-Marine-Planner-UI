@@ -73,12 +73,12 @@ class SelectMapboxLayer extends React.Component {
     this.mapboxlayername = mapboxlayername;
     axios.request(
       "https://api.mapbox.com/v4/" +
-        this.props.mapboxUser +
-        "." +
-        mapboxlayername +
-        ".json?access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg" +
-        // this.props.registry.MBAT_PUBLIC +
-        "&secure",
+      this.props.mapboxUser +
+      "." +
+      mapboxlayername +
+      ".json?access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg" +
+      // this.props.registry.MBAT_PUBLIC +
+      "&secure",
       this.parseUrlExists.bind(this)
     );
   }
@@ -139,7 +139,7 @@ class SelectMapboxLayer extends React.Component {
             return (
               <MenuItem
                 value={item.feature_class_name}
-                primaryText={item.alias}
+                title={item.alias}
                 key={item.feature_class_name}
                 style={{ fontSize: "12px" }}
                 menuItemStyle={{ fontSize: "12px" }}

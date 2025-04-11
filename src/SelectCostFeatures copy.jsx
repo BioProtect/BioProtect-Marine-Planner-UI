@@ -23,7 +23,7 @@ class SelectCostFeatures extends React.Component {
   changeFeature(event, feature) {
     this.setState({ selectedFeature: feature });
   }
-  clickListItem(event) {}
+  clickListItem(event) { }
   render() {
     const iconButtonElement = (
       <IconButton touch={true} tooltipPosition="bottom-left">
@@ -48,7 +48,7 @@ class SelectCostFeatures extends React.Component {
               return (
                 <ListItem
                   disableFocusRipple={true}
-                  primaryText={item.alias}
+                  title={item.alias}
                   secondaryText={item.description.toString()}
                   key={item.id}
                   value={item.alias}

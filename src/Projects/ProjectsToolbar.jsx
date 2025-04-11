@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
@@ -10,10 +10,14 @@ import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { toggleProjDialog } from "../slices/projectSlice";
+import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 
 const ProjectsToolbar = (props) => {
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const dispatch = useDispatch();
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -21,6 +25,13 @@ const ProjectsToolbar = (props) => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const newProject = useCallback(() => {
+    dispatch(
+      toggleProjDialog({ dialogName: "newProjectDialogOpen", isOpen: true })
+    );
+  }, []);
+
 
   const style = (method) => {
     display: props.unauthorisedMethods.includes(method) ? "none" : "inline-block";
@@ -36,7 +47,7 @@ const ProjectsToolbar = (props) => {
         <Button
           startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
           title="New project"
-          onClick={props.handleNew}
+          onClick={() => newProject()}
         >
           New
         </Button>

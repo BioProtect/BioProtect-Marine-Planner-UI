@@ -69,12 +69,13 @@ const BioprotectTable = (props) => {
 
   // should really be item in Object because were checking an obj. poor naming by me.
   const isSelected = (objToCheck) => {
-    if (props.selected.length > 0) {
-      if (props.isProject) {
-        return objToCheck.id === props.selected[0].id;
-      }
-      return objInArray(objToCheck, props.selected);
+    if (!props.selected || props.selected.length === 0) return false;
+
+    if (props.isProject) {
+      return objToCheck.id === props.selected[0]?.id;
     }
+
+    return objInArray(objToCheck, props.selected);
   };
 
   const visibleRows = useMemo(

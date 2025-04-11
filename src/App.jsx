@@ -146,8 +146,6 @@ const App = () => {
   const puState = useSelector((state) => state.planningUnit)
   const featureState = useSelector((state) => state.feature)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const featureDialogs = useSelector((state) => state.ui.featureDialogStates);
-  const puDialogs = useSelector((state) => state.planningUnit);
   const token = useSelector(selectCurrentToken);
 
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
@@ -194,10 +192,7 @@ const App = () => {
   const [notifications, setNotifications] = useState([]);
   const [owner, setOwner] = useState("");
 
-
-
   const [preprocessing, setPreprocessing] = useState(false);
-
   const [protectedAreaIntersections, setProtectedAreaIntersections] = useState(
     []
   );
@@ -398,7 +393,7 @@ const App = () => {
       }
       const featureData = data.data[0];
       dispatch(addFeatureAttributes(featureData));
-      dispatch(addNewFeature([featureData]));
+      addNewFeature([featureData]);
 
       if (addToProject) {
         dispatch(addFeature(featureData));
@@ -1924,11 +1919,16 @@ const App = () => {
       console.log("Map already initialized.");
       return;
     }
+    // Check if the container is ready
+    if (!mapContainer.current) {
+      console.warn("Map container not ready yet.");
+      return;
+    }
 
     // Create a new Mapbox map instance
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: url || "mapbox://styles/mapbox/streets-v12", // default style if no URL provided
+      style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8" || url, // default style if no URL provided
       center: [-13, 55], // your map's initial coordinates
       zoom: 4, // your map's initial zoom level
     });
@@ -2393,8 +2393,18 @@ const App = () => {
   };
 
   const toggleLayerVisibility = (id, visibility) => {
-    if (map.current.getLayer(id))
+    console.log("id, visibility ", id, visibility);
+    console.log("map.current ", map.current);
+
+    if (!map.current) {
+      console.warn("Map is not ready yet.");
+      return;
+    }
+
+    if (map.current.getLayer(id)) {
       map.current.setLayoutProperty(id, "visibility", visibility);
+    }
+
   };
 
   const showLayer = (id) => toggleLayerVisibility(id, "visible");
@@ -2915,21 +2925,20 @@ const App = () => {
     setWelcomeDialogOpen(true);
   };
 
-  const openFeaturesDialog = async (showClearSelectAll) => {
+  // const openFeaturesDialog = async (showClearSelectAll) => {
+  const openFeaturesDialog = async () => {
     // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
-    if (projState.bpServer.system !== "Windows" && !metadata.OLDVERSION) {
-      await refreshFeatures();
-    }
-    dispatch(setAddingRemovingFeatures(showClearSelectAll));
+    console.log("featuresDialogOpen", featureState.dialogs);
+    // dispatch(setAddingRemovingFeatures(showClearSelectAll));
     dispatch(
       toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: true,
       })
     );
-    if (showClearSelectAll) {
-      getSelectedFeatureIds();
-    }
+    // if (showClearSelectAll){
+    // getSelectedFeatureIds();
+    // }
   };
 
   const openPlanningGridsDialog = async () => {
@@ -3485,13 +3494,12 @@ const App = () => {
 
   //adds a new feature to the allFeatures array
   const addNewFeature = (newFeatures) => {
-    dispatch(setAllFeatures((prevFeatures) => {
-      const featuresCopy = [...prevFeatures, ...newFeatures];
-      featuresCopy.sort((a, b) =>
-        a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
-      );
-      return featuresCopy;
-    }));
+    const featuresCopy = [...featureState.allFeatures, ...newFeatures];
+    featuresCopy.sort((a, b) =>
+      a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
+    );
+    dispatch(setAllFeatures(featuresCopy));
+    return featuresCopy;
   };
 
 
@@ -4366,17 +4374,17 @@ const App = () => {
             loading={loading}
             updateFeature={updateFeature}
           />
-          {featureState.dialogs.featuresDialogOpen ? (
-            <FeaturesDialog
-              onOk={updateSelectedFeatures}
-              loading={loading || uploading}
-              metadata={metadata}
-              userRole={userData.role}
-              clickFeature={clickFeature}
-              initialiseDigitising={initialiseDigitising}
-              previewFeature={previewFeature}
-              refreshFeatures={refreshFeatures}
-            />) : null}
+          <FeaturesDialog
+            onOk={updateSelectedFeatures}
+            loading={loading || uploading}
+            metadata={metadata}
+            userRole={userData.role}
+            openFeaturesDialog={openFeaturesDialog}
+            clickFeature={clickFeature}
+            initialiseDigitising={initialiseDigitising}
+            previewFeature={previewFeature}
+            refreshFeatures={refreshFeatures}
+          />
           {featureState.dialogs.featureDialogOpen ? (
             <FeatureDialog
               loading={loading}
@@ -4395,15 +4403,6 @@ const App = () => {
             deleteShapefile={deleteShapefile}
           />
           <ImportFromWebDialog
-            open={dialogStates.importFromWebDialogOpen}
-            setImportFromWebDialogOpen={() =>
-              dispatch(
-                toggleDialog({
-                  dialogName: "importFromWebDialogOpen",
-                  isOpen: false,
-                })
-              )
-            }
             loading={loading || preprocessing || uploading}
             importFeatures={importFeaturesFromWeb}
           />
@@ -4565,9 +4564,9 @@ const App = () => {
           <MenuBar
             open={token}
             userRole={userData.role}
+            openFeaturesDialog={openFeaturesDialog}
             openProjectsDialog={openProjectsDialog}
             openActivitiesDialog={openActivitiesDialog}
-            openFeaturesDialog={openFeaturesDialog}
             openPlanningGridsDialog={openPlanningGridsDialog}
             openCumulativeImpactDialog={openCumulativeImpactDialog}
             openAtlasLayersDialog={openAtlasLayersDialog}

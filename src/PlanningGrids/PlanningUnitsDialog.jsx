@@ -1,4 +1,6 @@
+import { Box, Paper, Stack } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
+import { setPlanningUnitGrids, useListPlanningUnitsQuery } from "../slices/planningUnitSlice"
 import { useDispatch, useSelector } from "react-redux";
 
 import SelectMapboxLayer from "../SelectMapboxLayer";
@@ -6,6 +8,7 @@ import mapboxgl from "mapbox-gl";
 
 const PlanningUnitsDialog = (props) => {
   const [map, setMap] = useState(null);
+  const dispatch = useDispatch();
   const [planningUnitGridsReceived, setPlanningUnitGridsReceived] =
     useState(false);
 
@@ -13,7 +16,8 @@ const PlanningUnitsDialog = (props) => {
   const mapContainer = useRef(null);
   const puState = useSelector((state) => state.planningUnit)
 
-  const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitsQuery();
+  const { data: planningUnitsData } = useListPlanningUnitsQuery();
+  console.log("planningUnitsData ", planningUnitsData);
 
   useEffect(() => {
     if (planningUnitsData) {
@@ -40,25 +44,32 @@ const PlanningUnitsDialog = (props) => {
   }, []);
 
   return (
-    <div className="newPUDialogPane">
-      <div>
-        <div
-          ref={mapContainer}
-          className="absolute top right left bottom"
-          style={{
-            width: "352px",
-            height: "300px",
-            marginTop: "50px",
-            marginLeft: "24px",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: "380px",
-            verticalAlign: "middle",
+    <Box className="newPUDialogPane" sx={{ p: 2 }}>
+      <Stack spacing={3}>
+        {/* Map container */}
+        <Paper
+          elevation={3}
+          sx={{
+            width: "100%",
+            height: 400,
+            mt: 2,
+            ml: 3,
+            overflow: "hidden",
+            borderRadius: 2,
+            position: "relative",
           }}
         >
+          <Box
+            ref={mapContainer}
+            sx={{
+              width: "100%",
+              height: "100%",
+            }}
+          />
+        </Paper>
+
+        {/* Layer selector */}
+        <Box sx={{ mt: 2 }}>
           <SelectMapboxLayer
             selectedValue={props.pu}
             map={map}
@@ -66,11 +77,11 @@ const PlanningUnitsDialog = (props) => {
             items={puState.planningUnitGrids}
             changeItem={props.changeItem}
             disabled={!planningUnitGridsReceived}
-            width={"352px"}
+            width={"500px"}
           />
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Stack>
+    </Box>
   );
 };
 
