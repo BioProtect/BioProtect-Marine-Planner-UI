@@ -139,7 +139,7 @@ const FeaturesToolbar = ({
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
         {userRole !== "ReadOnly" &&
           !metadata.OLDVERSION &&
-          !uiState.addingRemovingFeatures ? (
+          !featureState.addingRemovingFeatures ? (
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="New feature"
@@ -163,7 +163,7 @@ const FeaturesToolbar = ({
         </Menu>
 
         {!metadata.OLDVERSION &&
-          !uiState.addingRemovingFeatures &&
+          !featureState.addingRemovingFeatures &&
           userRole !== "ReadOnly" ? (
           <Button
             startIcon={<Import style={{ height: "20px", width: "20px" }} />}
@@ -201,7 +201,7 @@ const FeaturesToolbar = ({
 
         {userRole === "Admin" &&
           !metadata.OLDVERSION &&
-          !uiState.addingRemovingFeatures ? (
+          !featureState.addingRemovingFeatures ? (
           <Button
             startIcon={
               <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
@@ -219,7 +219,7 @@ const FeaturesToolbar = ({
           </Button>
         ) : null}
 
-        {uiState.addingRemovingFeatures ? (
+        {featureState.addingRemovingFeatures ? (
           <Button
             startIcon={<FontAwesomeIcon icon={faTimesCircle} />}
             title="Clear all features"
@@ -228,7 +228,7 @@ const FeaturesToolbar = ({
             Clear all
           </Button>
         ) : null}
-        {uiState.addingRemovingFeatures ? (
+        {featureState.addingRemovingFeatures ? (
           <Button
             startIcon={<FontAwesomeIcon icon={faCheckCircle} />}
             title="Select all features"

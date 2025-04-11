@@ -10,10 +10,20 @@ import {
   toggleDialog,
 } from "../slices/uiSlice";
 
-const FeaturesDialog = (props) => {
+const FeaturesDialog = ({
+  onOk,
+  loading,
+  metadata,
+  userRole,
+  openFeaturesDialog,
+  initialiseDigitising,
+  previewFeature,
+  refreshFeatures,
+}) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
+  console.log("featureState ", featureState);
   const [previousRow, setPreviousRow] = useState(undefined);
   const [searchText, setSearchText] = useState("");
   const [filteredRows, setFilteredRows] = useState([]);
@@ -40,11 +50,11 @@ const FeaturesDialog = (props) => {
 
   const _newByDigitising = () => {
     onOk();
-    props.initialiseDigitising();
+    initialiseDigitising();
   };
 
   // const openImportGBIFDialog = () => {
-  //   props.setImportGBIFDialogOpen(true);
+  //   setImportGBIFDialogOpen(true);
   //   dispatch(
   //     toggleFeatureD({
   //       dialogName: "importFeaturePopoverOpen",
@@ -65,13 +75,34 @@ const FeaturesDialog = (props) => {
   //   );
   // };
 
+  const removeFeature = (feature) => {
+    const updatedFeatureIds = featureState.selectedFeatureIds.filter(
+      (id) => id !== feature.id
+    );
+    dispatch(setSelectedFeatureIds(updatedFeatureIds));
+  };
+
+  //adds a feature to the selectedFeatureIds array
+  const addFeature = (feature) =>
+    dispatch(setSelectedFeatureIds((prevState) =>
+      prevState.includes(feature.id) ? prevState : [...prevState, feature.id]
+    ));
+
+  const addOrRemoveFeature = (feature) => {
+    return [...featureState.selectedFeatureIds].includes(feature.id)
+      ? removeFeature(feature)
+      : addFeature(feature);
+  };
+
   const clickRow = (event, rowInfo) => {
-    if (uiState.addingRemovingFeatures) {
+    console.log("event, rowInfo ", event, rowInfo);
+    if (featureState.addingRemovingFeatures) {
+      // Allow users to select multiple features using the shift key
       if (event.shiftKey) {
         const selectedIds = getFeaturesBetweenRows(previousRow, rowInfo);
-        props.update(selectedIds);
+        update(selectedIds);
       } else {
-        props.clickFeature(rowInfo.original, event.shiftKey, previousRow);
+        addOrRemoveFeature(rowInfo.original, event.shiftKey, previousRow);
       }
       setPreviousRow(rowInfo);
     } else {
@@ -91,6 +122,7 @@ const FeaturesDialog = (props) => {
     return selectedIds;
   };
 
+  // Function to allow users to select multiple features using the shift key
   const getFeaturesBetweenRows = (previousRow, thisRow) => {
     const idx1 =
       previousRow.index < thisRow.index ? previousRow.index + 1 : thisRow.index;
@@ -123,9 +155,9 @@ const FeaturesDialog = (props) => {
     }
   };
 
-  const onOk = () => {
-    if (uiState.addingRemovingFeatures) {
-      props.onOk();
+  const handleClickOk = () => {
+    if (featureState.addingRemovingFeatures) {
+      onOk();
     } else {
       unselectFeature();
     }
@@ -173,18 +205,18 @@ const FeaturesDialog = (props) => {
   return (
     <MarxanDialog
       open={featureState.dialogs.featuresDialogOpen}
-      loading={props.loading}
-      onOk={onOk}
-      showCancelButton={uiState.addingRemovingFeatures}
+      loading={loading}
+      onOk={handleClickOk}
+      showCancelButton={featureState.addingRemovingFeatures}
       autoDetectWindowHeight={false}
       title="Features"
       // showSearchBox={true}
       // searchTextChanged={searchTextChanged}
       actions={
         <FeaturesToolbar
-          metadata={props.metadata}
-          userRole={props.userRole}
-          loading={props.loading}
+          metadata={metadata}
+          userRole={userRole}
+          loading={loading}
           selectAllFeatures={() => selectAllFeatures()}
           _newByDigitising={_newByDigitising}
         />
@@ -201,7 +233,7 @@ const FeaturesDialog = (props) => {
           selectedFeatureIds={featureState.selectedFeatureIds}
           selectedFeature={featureState.selectedFeature}
           clickRow={clickRow}
-          preview={() => props.previewFeature(featureMetadata)}
+          preview={() => previewFeature(featureMetadata)}
         />
       </div>
     </MarxanDialog>

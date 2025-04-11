@@ -2463,6 +2463,11 @@ const App = () => {
 
   //gets a particular set of layers based on the layer types (layerTypes is an array of layer types)
   const getLayers = (layerTypes) => {
+    if (!mapContainer.current) {
+      console.warn("Map container not ready yet.");
+      return;
+    }
+
     const allLayers = map.current.getStyle().layers;
 
     return allLayers.filter(
@@ -3320,11 +3325,6 @@ const App = () => {
   };
 
   //when a user clicks a feature in the FeaturesDialog
-  const clickFeature = (feature) => {
-    return [...featureState.selectedFeatureIds].includes(feature.id)
-      ? removeFeature(feature)
-      : addFeature(feature);
-  };
 
   //removes a feature from the selectedFeatureIds array
   const removeFeature = (feature) => {
@@ -4380,7 +4380,6 @@ const App = () => {
             metadata={metadata}
             userRole={userData.role}
             openFeaturesDialog={openFeaturesDialog}
-            clickFeature={clickFeature}
             initialiseDigitising={initialiseDigitising}
             previewFeature={previewFeature}
             refreshFeatures={refreshFeatures}
