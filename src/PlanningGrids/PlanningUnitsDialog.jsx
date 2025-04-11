@@ -6,8 +6,14 @@ import { useDispatch, useSelector } from "react-redux";
 import SelectMapboxLayer from "../SelectMapboxLayer";
 import mapboxgl from "mapbox-gl";
 
-const PlanningUnitsDialog = (props) => {
-  const [map, setMap] = useState(null);
+const PlanningUnitsDialog = ({
+  previewFeature,
+  changeItem,
+  pu,
+  openImportPlanningGridDialog,
+  puMap,
+  setPuMap,
+}) => {
   const dispatch = useDispatch();
   const [planningUnitGridsReceived, setPlanningUnitGridsReceived] =
     useState(false);
@@ -17,7 +23,6 @@ const PlanningUnitsDialog = (props) => {
   const puState = useSelector((state) => state.planningUnit)
 
   const { data: planningUnitsData } = useListPlanningUnitsQuery();
-  console.log("planningUnitsData ", planningUnitsData);
 
   useEffect(() => {
     if (planningUnitsData) {
@@ -36,7 +41,7 @@ const PlanningUnitsDialog = (props) => {
     });
 
     // Save the map instance to state
-    setMap(mapInstance);
+    setPuMap(mapInstance);
 
     return () => {
       if (mapInstance) mapInstance.remove(); // Clean up on unmount
@@ -71,11 +76,11 @@ const PlanningUnitsDialog = (props) => {
         {/* Layer selector */}
         <Box sx={{ mt: 2 }}>
           <SelectMapboxLayer
-            selectedValue={props.pu}
-            map={map}
+            selectedValue={pu}
+            map={puMap}
             mapboxUser={"craicerjack"}
             items={puState.planningUnitGrids}
-            changeItem={props.changeItem}
+            changeItem={changeItem}
             disabled={!planningUnitGridsReceived}
             width={"500px"}
           />

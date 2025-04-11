@@ -32,6 +32,8 @@ const NewProjectDialog = ({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [pu, setPU] = useState("");
+  const [puMap, setPuMap] = useState(null);
+
 
   useEffect(() => {
     dispatch(setAllFeatures(JSON.parse(JSON.stringify(uiState.allFeatures || []))));
@@ -141,6 +143,8 @@ const NewProjectDialog = ({
               changeItem={setPU}
               pu={pu}
               openImportPlanningGridDialog={planningState.dialogs.importPlanningGridDialogOpen}
+              puMap={puMap}
+              setPuMap={setPuMap}
             />
           )}
           {stepIndex === 2 && (
