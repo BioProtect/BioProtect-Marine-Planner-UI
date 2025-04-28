@@ -87,7 +87,7 @@ import Loading from "./Loading";
 import LoginDialog from "./LoginDialog";
 import { Map } from "mapbox-gl"; // Assuming you're using mapbox-gl
 //mapbox imports
-import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
 import NewFeatureDialog from "./Features/NewFeatureDialog";
