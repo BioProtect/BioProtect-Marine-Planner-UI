@@ -183,6 +183,7 @@ export const getUserProject = createAsyncThunk(
       dispatch(setProjectData(response));
       dispatch(setRenderer(response.renderer));  // Add missing renderer update
       dispatch(setProjectCosts(response.costnames));
+      dispatch(setProjectFeatures(response.features));
 
       // Activate the project tab
       dispatch(setActiveTab("project"));

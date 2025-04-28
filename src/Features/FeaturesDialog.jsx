@@ -23,7 +23,8 @@ const FeaturesDialog = ({
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
-  console.log("featureState ", featureState);
+  const projState = useSelector((state) => state.project);
+
   const [previousRow, setPreviousRow] = useState(undefined);
   const [searchText, setSearchText] = useState("");
   const [filteredRows, setFilteredRows] = useState([]);

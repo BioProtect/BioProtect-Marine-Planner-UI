@@ -15,6 +15,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
 import { selectCurrentUser } from "../slices/authSlice";
 import { setBasemap } from "../slices/uiSlice";
+import { toggleDialog } from "../slices/uiSlice";
 
 const UserSettingsDialog = (props) => {
   const dispatch = useDispatch();
@@ -23,21 +24,22 @@ const UserSettingsDialog = (props) => {
   const [options, setOptions] = useState({});
   const userData = useSelector(selectCurrentUser);
 
+
   const setOption = (key, value) => {
     setSaveEnabled(true);
     setOptions((prevOptions) => {
       const newOptions = { ...prevOptions, [key]: value };
+      console.log("newOptions ", newOptions);
       props.saveOptions(newOptions);
       return newOptions;
     });
   };
 
   const changeBasemap = (event) => {
-    const basemap = uiState.basemaps.find(
-      (item) => item.name === event.target.value
-    );
+    const basemap = uiState.basemaps.find((item) => item.name === event.target.value);
     dispatch(setBasemap(basemap));
     setOption("BASEMAP", basemap.name);
+    props.loadBasemap(basemap);
   };
 
   const toggleUseFeatureColors = (event) => {

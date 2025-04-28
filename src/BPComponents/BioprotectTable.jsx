@@ -69,6 +69,10 @@ const BioprotectTable = (props) => {
 
   // should really be item in Object because were checking an obj. poor naming by me.
   const isSelected = (objToCheck) => {
+    console.log("objToCheck ", objToCheck);
+    console.log("props.selected ", props.selected);
+
+
     if (!props.selected || props.selected.length === 0) return false;
 
     if (props.isProject) {

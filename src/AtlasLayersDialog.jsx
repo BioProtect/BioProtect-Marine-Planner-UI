@@ -1,22 +1,50 @@
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "./BPComponents/BioprotectTable";
 import MarxanDialog from "./MarxanDialog";
-import React from "react";
 import { generateTableCols } from "./Helpers";
 import { toggleDialog } from "./slices/uiSlice";
 
 const AtlasLayersDialog = ({
-  onCancel,
+  map,
   loading,
   atlasLayers,
-  selectedLayers,
-  updateSelectedLayers,
 }) => {
+  const [selectedLayers, setSelectedLayers] = useState([]);
+
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const tableColumns = generateTableCols([{ id: "title", label: "title" }]);
-  const updateSelection = (event, rowInfo) => updateSelectedLayers(rowInfo);
+
+  const clearSelectedLayers = () => {
+    const layers = [...selectedLayers];
+    layers.forEach((layer) => updateSelectedLayers(layer));
+    dispatch(
+      toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: false })
+    );
+  };
+
+  const updateSelectedLayers = (event, rowInfo) => {
+    // Determine the new visibility
+    const currentVisibility = map.current.getLayoutProperty(
+      rowInfo.layer,
+      "visibility"
+    );
+    const newVisibility = currentVisibility === "visible" ? "none" : "visible";
+    // Update the layer's visibility
+    map.current.setLayoutProperty(rowInfo.layer, "visibility", newVisibility);
+
+    // Update the selectedLayers state
+
+    setSelectedLayers((prevState) => {
+      const isLayerSelected = prevState.includes(rowInfo);
+
+      return isLayerSelected
+        ? prevState.filter((item) => item !== rowInfo)
+        : [...prevState, rowInfo];
+    });
+  };
 
   const closeDialog = () =>
     dispatch(
@@ -28,7 +56,7 @@ const AtlasLayersDialog = ({
       <MarxanDialog
         open={dialogStates.atlasLayersDialogOpen}
         onOk={() => closeDialog()}
-        onCancel={() => onCancel()}
+        onCancel={() => clearSelectedLayers()}
         loading={loading}
         title="Atlas Layers Selection"
         showCancelButton={true}
@@ -42,8 +70,8 @@ const AtlasLayersDialog = ({
           ableToSelectAll={true}
           showSearchBox={true}
           searchColumns={["title"]}
-          updateSelection={updateSelection}
-          clickRow={updateSelection}
+          updateSelection={(event, rowInfo) => updateSelectedLayers(event, rowInfo)}
+          clickRow={(event, rowInfo) => updateSelectedLayers(event, rowInfo)}
         />
       </MarxanDialog>
     );

@@ -40,92 +40,91 @@ const FeatureMenu = ({
       toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
     );
   return (
-    <Popover
+    <Menu
       open={featureState.dialogs.featureMenuOpen}
       anchorEl={anchorEl}
-      onClose={closeDialog}
-      style={{ width: "307px" }}
+      onClose={() => closeDialog()}
+      onMouseLeave={closeDialog}
     >
-      <Menu style={{ width: "207px" }} onMouseLeave={closeDialog} open={false}>
-        <MenuItemWithButton
-          leftIcon={<Properties style={{ margin: "1px" }} />}
-          onClick={handleInfoMenuItemClick}
-        >
-          Properties
-        </MenuItemWithButton>
-        <MenuItemWithButton
-          leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
-          style={{
-            display:
-              uiState.currentFeature?.old_version || userData.role === "ReadOnly"
-                ? "none"
-                : "block",
-          }}
-          onClick={() => removeFromProject(uiState.currentFeature)}
-        >
-          Remove from project
-        </MenuItemWithButton>
-        <MenuItemWithButton
-          leftIcon={
-            uiState.currentFeature?.feature_layer_loaded ? (
-              <RemoveFromMap style={{ margin: "1px" }} />
-            ) : (
-              <AddToMap style={{ margin: "1px" }} />
-            )
-          }
-          style={{
-            display: uiState.currentFeature?.tilesetid ? "block" : "none",
-          }}
-          onClick={() => toggleFeatureLayer(uiState.currentFeature)}
-        >
-          {uiState.currentFeature?.feature_layer_loaded
-            ? "Remove from map"
-            : "Add to map"}
-        </MenuItemWithButton>
-        <MenuItemWithButton
-          leftIcon={
-            uiState.currentFeature?.feature_puid_layer_loaded ? (
-              <RemoveFromMap style={{ margin: "1px" }} />
-            ) : (
-              <AddToMap style={{ margin: "1px" }} />
-            )
-          }
-          onClick={() => toggleFeaturePUIDLayer(uiState.currentFeature)}
-          disabled={
-            !(
-              uiState.currentFeature?.preprocessed &&
-              uiState.currentFeature.occurs_in_planning_grid
-            )
-          }
-        >
-          {uiState.currentFeature?.feature_puid_layer_loaded
-            ? "Remove planning unit outlines"
-            : "Outline planning units where the feature occurs"}
-        </MenuItemWithButton>
-        <MenuItemWithButton
-          leftIcon={<ZoomIn style={{ margin: "1px" }} />}
-          style={{
-            display: uiState.currentFeature?.extent ? "block" : "none",
-          }}
-          onClick={() => zoomToFeature(uiState.currentFeature)}
-        >
-          Zoom to feature extent
-        </MenuItemWithButton>
-        <MenuItemWithButton
-          leftIcon={<Preprocess style={{ margin: "1px" }} />}
-          style={{
-            display:
-              uiState.currentFeature?.old_version || userData.role === "ReadOnly"
-                ? "none"
-                : "block",
-          }}
-          onClick={() => preprocessSingleFeature(uiState.currentFeature)}
-          disabled={uiState.currentFeature?.preprocessed || preprocessing}
-        >
-          Pre-process
-        </MenuItemWithButton>
-      </Menu>
-    </Popover>
+      <MenuItemWithButton
+        leftIcon={<Properties style={{ margin: "1px" }} />}
+        onClick={() => handleInfoMenuItemClick()}
+      >
+        Properties
+      </MenuItemWithButton>
+      <MenuItemWithButton
+        leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
+        style={{
+          display:
+            uiState.currentFeature?.old_version || userData.role === "ReadOnly"
+              ? "none"
+              : "block",
+        }}
+        onClick={() => removeFromProject(uiState.currentFeature)}
+      >
+        Remove from project
+      </MenuItemWithButton>
+      <MenuItemWithButton
+        leftIcon={
+          uiState.currentFeature?.feature_layer_loaded ? (
+            <RemoveFromMap style={{ margin: "1px" }} />
+          ) : (
+            <AddToMap style={{ margin: "1px" }} />
+          )
+        }
+        style={{
+          display: uiState.currentFeature?.tilesetid ? "block" : "none",
+        }}
+        onClick={() => toggleFeatureLayer(uiState.currentFeature)}
+      >
+        {uiState.currentFeature?.feature_layer_loaded
+          ? "Remove from map"
+          : "Add to map"}
+      </MenuItemWithButton>
+      <MenuItemWithButton
+        leftIcon={
+          uiState.currentFeature?.feature_puid_layer_loaded ? (
+            <RemoveFromMap style={{ margin: "1px" }} />
+          ) : (
+            <AddToMap style={{ margin: "1px" }} />
+          )
+        }
+        onClick={() => toggleFeaturePUIDLayer(uiState.currentFeature)}
+        disabled={
+          !(
+            uiState.currentFeature?.preprocessed &&
+            uiState.currentFeature.occurs_in_planning_grid
+          )
+        }
+      >
+        {uiState.currentFeature?.feature_puid_layer_loaded
+          ? "Remove planning unit outlines"
+          : "Outline planning units where the feature occurs"}
+      </MenuItemWithButton>
+      <MenuItemWithButton
+        leftIcon={<ZoomIn style={{ margin: "1px" }} />}
+        style={{
+          display: uiState.currentFeature?.extent ? "block" : "none",
+        }}
+        onClick={() => zoomToFeature(uiState.currentFeature)}
+      >
+        Zoom to feature extent
+      </MenuItemWithButton>
+      <MenuItemWithButton
+        leftIcon={<Preprocess style={{ margin: "1px" }} />}
+        style={{
+          display:
+            uiState.currentFeature?.old_version || userData.role === "ReadOnly"
+              ? "none"
+              : "block",
+        }}
+        onClick={() => preprocessSingleFeature(uiState.currentFeature)}
+        disabled={uiState.currentFeature?.preprocessed || preprocessing}
+      >
+        Pre-process
+      </MenuItemWithButton>
+    </Menu>
+    // </Popover>
   );
 };
 

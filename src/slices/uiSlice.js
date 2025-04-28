@@ -68,11 +68,11 @@ const mapboxBasemaps = [
     provider: "local",
   },
   {
-    name: "Bioprotect",
-    alias: "Custom basemap",
-    description: "Custom basemap",
-    id: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
-    provider: "local",
+    name: "BioProtect",
+    alias: "BioProtect",
+    description: "BioProtect basemap",
+    id: "craicerjack/cm4co2ve7000l01pfchhs2vv8",
+    provider: "mapbox",
   },
   {
     name: "OSM",
@@ -88,7 +88,7 @@ const initialState = {
   snackbarMessage: "",
   activeTab: "project",
   activeResultsTab: "legend",
-  basemap: "Streets",
+  basemap: "BioProtect",
   basemaps: mapboxBasemaps,
 
   dialogStates: {

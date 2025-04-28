@@ -9,10 +9,6 @@ import {
   Typography,
 } from "@mui/material";
 import { getArea, isNumber, isValidTargetValue } from "../Helpers";
-import {
-  setActiveTab,
-  toggleDialog,
-} from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "../constants";
@@ -23,8 +19,7 @@ import { toggleFeatureD } from "../slices/featureSlice";
 const FeatureInfoDialog = ({ loading, updateFeature }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const featureStates = useSelector((state) => state.ui.featureDialogStates);
+  const featureState = useSelector((state) => state.feature);
   const userData = useSelector(selectCurrentUser);
 
   const closeDialog = () =>
@@ -43,12 +38,12 @@ const FeatureInfoDialog = ({ loading, updateFeature }) => {
         (key === "spf" && isNumber(value))
       ) {
         const updatedProps = { [key]: value };
-        updateFeature(uiState.feature, updatedProps);
+        updateFeature(featureState.currentFeature, updatedProps);
       } else {
         alert("Invalid value");
       }
     },
-    [uiState.feature, updateFeature]
+    [featureState.currentFeature, updateFeature]
   );
 
   const onKeyDown = useCallback(
@@ -67,7 +62,7 @@ const FeatureInfoDialog = ({ loading, updateFeature }) => {
 
   const getAreaHTML = (rowKey, value) => {
     const color =
-      uiState.feature.protected_area < uiState.feature.target_area &&
+      featureState.currentFeature.protected_area < featureState.currentFeature.target_area &&
         rowKey === "Area protected"
         ? "red"
         : "rgba(0, 0, 0, 0.6)";
@@ -169,14 +164,14 @@ const FeatureInfoDialog = ({ loading, updateFeature }) => {
     }
   };
 
-  if (!uiState.feature) {
+  if (!featureState.currentFeature) {
     return null;
   }
 
-  const isOldVersion = uiState.feature.old_version;
+  const isOldVersion = featureState.currentFeature.old_version;
   // Select the appropriate feature properties based on the source
   const featureProperties =
-    uiState.feature.source === "Imported shapefile"
+    featureState.currentFeature.source === "Imported shapefile"
       ? CONSTANTS.FEATURE_PROPERTIES_POLYGONS
       : CONSTANTS.FEATURE_PROPERTIES_POINTS;
 
@@ -188,27 +183,27 @@ const FeatureInfoDialog = ({ loading, updateFeature }) => {
   // Map the filtered items to the desired structure
   const data = filteredProperties.map((item) => ({
     key: item.key,
-    value: uiState.feature[item.name],
+    value: featureState.currentFeature[item.name],
     hint: item.hint,
   }));
 
 
   return (
     <MarxanDialog
-      open={featureStates.featureInfoDialogOpen}
+      open={featureState.dialogs.featureInfoDialogOpen}
       loading={loading}
-      onOk={closeDialog}
-      onCancel={closeDialog}
+      onOk={() => closeDialog()}
+      onCancel={() => closeDialog()}
       title="Properties"
-      contentWidth={380}
-      offsetX={135}
-      offsetY={250}
+    // contentWidth={380}
+    // offsetX={135}
+    // offsetY={250}
     >
       <TableContainer>
         <Table
           key="k9"
           size="small"
-          className={uiState.feature.old_version ? "infoTableOldVersion" : "infoTable"}
+          className={featureState.currentFeature.old_version ? "infoTableOldVersion" : "infoTable"}
         >
           <TableHead>
             <TableRow>

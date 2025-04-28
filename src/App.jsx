@@ -205,7 +205,6 @@ const App = () => {
     useState("Import Activity");
   const [selectedCosts, setSelectedCosts] = useState([]);
   const [selectedImpactIds, setSelectedImpactIds] = useState([]);
-  const [selectedLayers, setSelectedLayers] = useState([]);
   const [shareableLink, setShareableLink] = useState(false);
   const [smallLinearGauge, setSmallLinearGauge] = useState(true);
   const [tileset, setTileset] = useState(null);
@@ -634,9 +633,12 @@ const App = () => {
         "updated",
         "validEmail",
       ]);
+      if (!!!user) {
+        user = userData
+      }
       const formData = new FormData();
-      formData.append("id", user.id)
-      formData.append("user", user);
+      formData.append("id", userId)
+      formData.append("user", userData.name);
       appendToFormData(formData, filteredParameters);
 
       await updateUser(formData);
@@ -1015,19 +1017,28 @@ const App = () => {
     projFeatures,
     featurePrePro,
     allFeaturesData
+
   ) => {
+    // initialiseInterestFeatures(
+    //   projState.projectData.metadata.OLDVERSION,
+    //   projState.projectData.features,
+    //   projState.projectData.feature_preprocessing,
+    //   speciesData.data
+    // );
+
+    // What this function used to do:
+    //  - get all features (we already have all features though)
+    //  - get the id's of the project features (why? we already have all theproject features)
+    //  - Go through all of the features - check if they are in the project 
+    //  - add required attributes to the feature
+    //  - add extra info to project features 
+
     const allFeats = featureState.allFeatures.length > 0 ? featureState.allFeatures : allFeaturesData;
-
-    // Determine features based on project version
-    const features = oldVersion
-      ? projFeatures.map((feature) => ({ ...feature }))
-      : [...allFeats];
-
     // Extract feature IDs
     const projectFeatureIds = projFeatures.map((item) => item.id);
 
     // Process features
-    const processedFeatures = features.map((feature) => {
+    const processedFeatures = allFeats.map((feature) => {
       // Check if the feature is part of the current project
       const projectFeature = projectFeatureIds.includes(feature.id)
         ? projFeatures[projectFeatureIds.indexOf(feature.id)]
@@ -1038,18 +1049,18 @@ const App = () => {
       addFeatureAttributes(feature, oldVersion);
 
       // Populate data if feature is part of the project
-      if (projectFeature) {
-        Object.assign(feature, {
-          selected: true,
-          preprocessed: !!preprocess,
-          pu_area: preprocess ? preprocess[1] : -1,
-          pu_count: preprocess ? preprocess[2] : -1,
-          spf: projectFeature.spf,
-          target_value: projectFeature.target_value,
-          occurs_in_planning_grid: preprocess && preprocess[2] > 0,
-        });
+      if (!projectFeature) return feature;
+
+      return {
+        ...feature,
+        selected: true,
+        preprocessed: !!preprocess,
+        pu_area: preprocess ? preprocess[1] : -1,
+        pu_count: preprocess ? preprocess[2] : -1,
+        spf: projectFeature.spf,
+        target_value: projectFeature.target_value,
+        occurs_in_planning_grid: preprocess && preprocess[2] > 0,
       }
-      return feature;
     });
 
     // Get the selected feature ids
@@ -1913,10 +1924,17 @@ const App = () => {
 
   //instantiates the mapboxgl map
   const createMap = (url) => {
-    console.log("url ", url);
-    // Initialize map only once
+    console.log("create map url ", url);
     if (map.current) {
-      console.log("Map already initialized.");
+      if (map.current.isStyleLoaded()) {
+        map.current.setStyle(url);
+      } else {
+        map.current.once("styledata", () => {
+          console.log("url ", url);
+
+          map.current.setStyle(url);
+        });
+      }
       return;
     }
     // Check if the container is ready
@@ -1928,10 +1946,11 @@ const App = () => {
     // Create a new Mapbox map instance
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8" || url, // default style if no URL provided
+      style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8", // default style if no URL provided
       center: [-13, 55], // your map's initial coordinates
       zoom: 4, // your map's initial zoom level
     });
+
 
     // Event handlers
     map.current.on("load", mapLoaded); // Triggered when the map loads
@@ -2393,9 +2412,6 @@ const App = () => {
   };
 
   const toggleLayerVisibility = (id, visibility) => {
-    console.log("id, visibility ", id, visibility);
-    console.log("map.current ", map.current);
-
     if (!map.current) {
       console.warn("Map is not ready yet.");
       return;
@@ -3088,35 +3104,6 @@ const App = () => {
     setUploadedActivities(response.data);
   };
 
-  const clearSelactedLayers = () => {
-    const layers = [...selectedLayers];
-    layers.forEach((layer) => updateSelectedLayers(layer));
-    dispatch(
-      toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: false })
-    );
-  };
-
-  const updateSelectedLayers = (layer) => {
-    // Determine the new visibility
-    const currentVisibility = map.current.getLayoutProperty(
-      layer.layer,
-      "visibility"
-    );
-    const newVisibility = currentVisibility === "visible" ? "none" : "visible";
-    // Update the layer's visibility
-    map.current.setLayoutProperty(layer.layer, "visibility", newVisibility);
-
-    // Update the selectedLayers state
-
-    setSelectedLayers((prevState) => {
-      const isLayerSelected = prevState.includes(layer);
-
-      return isLayerSelected
-        ? prevState.filter((item) => item !== layer)
-        : [...prevState, layer];
-    });
-  };
-
   //when a user clicks a impact in the ImpactsDialog
   const clickImpact = (impact, event, previousRow) => {
     selectedImpactIds.includes(impact.id)
@@ -3544,14 +3531,6 @@ const App = () => {
       addFeatureAttributes(feature)
     );
     addNewFeature(updatedFeatures);
-  };
-
-  const openFeatureMenu = (evt, feature) => {
-    dispatch(setCurrentFeature(feature));
-    setMenuAnchor(evt.currentTarget);
-    dispatch(
-      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: true })
-    );
   };
 
 
@@ -4235,12 +4214,15 @@ const App = () => {
           {dialogStates.helpMenuOpen ? (
             <HelpMenu menuAnchor={menuAnchor} />
           ) : null}
-          <UserSettingsDialog
-            open={dialogStates.userSettingsDialogOpen}
-            onCancel={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
-            loading={loading}
-            saveOptions={saveOptions}
-          />
+          {dialogStates.userSettingsDialogOpen ? (
+            <UserSettingsDialog
+              open={dialogStates.userSettingsDialogOpen}
+              onCancel={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
+              loading={loading}
+              saveOptions={saveOptions}
+              loadBasemap={loadBasemap}
+            />
+          ) : null}
           <UsersDialog
             open={dialogStates.usersDialogOpen}
             loading={loading}
@@ -4273,7 +4255,6 @@ const App = () => {
               startPuEditSession={startPuEditSession}
               stopPuEditSession={stopPuEditSession}
               clearManualEdits={clearManualEdits}
-              openFeatureMenu={openFeatureMenu}
               preprocessing={preprocessing}
               openFeaturesDialog={openFeaturesDialog}
               changeIucnCategory={changeIucnCategory}
@@ -4290,6 +4271,7 @@ const App = () => {
               changeCostname={changeCostname}
               loadCostsLayer={loadCostsLayer}
               loading={loading}
+              setMenuAnchor={setMenuAnchor}
             // protectedAreaIntersections={protectedAreaIntersections}
             />) : null}
 
@@ -4371,6 +4353,7 @@ const App = () => {
             fileUpload={uploadFileToFolder}
           />
           <FeatureInfoDialog
+            open={true}
             loading={loading}
             updateFeature={updateFeature}
           />
@@ -4524,11 +4507,9 @@ const App = () => {
           />
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog
-              onCancel={clearSelactedLayers}
+              map={map}
               loading={loading}
               atlasLayers={atlasLayers}
-              selectedLayers={selectedLayers}
-              updateSelectedLayers={updateSelectedLayers}
             />
           ) : null}
 
