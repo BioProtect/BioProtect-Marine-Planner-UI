@@ -1017,7 +1017,6 @@ const App = () => {
     projFeatures,
     featurePrePro,
     allFeaturesData
-
   ) => {
     // initialiseInterestFeatures(
     //   projState.projectData.metadata.OLDVERSION,
@@ -1034,37 +1033,40 @@ const App = () => {
     //  - add extra info to project features 
 
     const allFeats = featureState.allFeatures.length > 0 ? featureState.allFeatures : allFeaturesData;
-    // Extract feature IDs
-    const projectFeatureIds = projFeatures.map((item) => item.id);
+
 
     // Process features
     const processedFeatures = allFeats.map((feature) => {
-      // Check if the feature is part of the current project
-      const projectFeature = projectFeatureIds.includes(feature.id)
-        ? projFeatures[projectFeatureIds.indexOf(feature.id)]
-        : null;
+      // Add required attributes
+      const base = addFeatureAttributes(feature, oldVersion);
+
+      const idx = projFeatures.findIndex(f => f.id === feature.id);
+      if (idx === -1) {
+        // not in the project, so just return the defaults
+        return base;
+      }
+
+      const projF = projFeatures[idx];
       const preprocess = getArrayItem(featurePrePro, feature.id);
 
-      // Add required attributes
-      addFeatureAttributes(feature, oldVersion);
-
-      // Populate data if feature is part of the project
-      if (!projectFeature) return feature;
 
       return {
-        ...feature,
+        ...base,
         selected: true,
         preprocessed: !!preprocess,
         pu_area: preprocess ? preprocess[1] : -1,
         pu_count: preprocess ? preprocess[2] : -1,
-        spf: projectFeature.spf,
-        target_value: projectFeature.target_value,
+        spf: projF.spf,
+        target_value: projF.target_value,
         occurs_in_planning_grid: preprocess && preprocess[2] > 0,
       }
     });
 
     // Get the selected feature ids
     getSelectedFeatureIds();
+    console.log("processedFeatures ", processedFeatures);
+    console.log("processedFeatures.filter((item) => item.selected) ", processedFeatures.filter((item) => item.selected));
+
 
     // Update state
     dispatch(setAllFeatures(processedFeatures));
@@ -1947,7 +1949,7 @@ const App = () => {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8", // default style if no URL provided
-      center: [-13, 55], // your map's initial coordinates
+      center: [-18, 55], // your map's initial coordinates
       zoom: 4, // your map's initial zoom level
     });
 
@@ -2429,6 +2431,8 @@ const App = () => {
 
   //centralised code to add a layer to the maps current style
   const addMapLayer = (mapLayer, beforeLayer) => {
+    console.log("mapLayer, beforeLayer ", mapLayer, beforeLayer);
+
     // If a beforeLayer is not passed get the first symbol layer (i.e. label layer)
     if (!beforeLayer) {
       const symbolLayers = map.current
@@ -2482,13 +2486,14 @@ const App = () => {
     if (!mapContainer.current) {
       console.warn("Map container not ready yet.");
       return;
+    } else {
+      const allLayers = map.current.getStyle().layers;
+      return allLayers.filter(
+        ({ metadata }) => metadata?.type && layerTypes.includes(metadata.type)
+      );
     }
 
-    const allLayers = map.current.getStyle().layers;
 
-    return allLayers.filter(
-      ({ metadata }) => metadata?.type && layerTypes.includes(metadata.type)
-    );
   };
 
   //shows/hides layers of a particular type (layerTypes is an array of layer types)
@@ -3536,6 +3541,9 @@ const App = () => {
 
   //toggles the feature layer on the map
   const toggleFeatureLayer = (feature) => {
+    console.log("feature ", feature);
+    console.log("feature.tilesetid.split()[1] ", feature.tilesetid.split(".")[1]);
+
     if (feature.tilesetid === "") {
       dispatch(
         setSnackbarMessage(
@@ -3544,11 +3552,13 @@ const App = () => {
       );
       return;
     }
-    const layerId = `marxan_feature_layer_${feature.tilesetid.split(".")[1]}`;
+    let layerName = feature.tilesetid.split(".")[1];
+    let layerId = "marxan_feature_layer_" + layerName;
+    const layerUrl = `http://localhost:3000/${layerId}`
 
-    if (map.current.getLayer(layerId)) {
-      removeMapLayer(layerId);
-      map.current.removeSource(layerId);
+    if (map.current.getLayer(layerName)) {
+      removeMapLayer(layerName);
+      map.current.removeSource(layerName);
       updateFeature(feature, { feature_layer_loaded: false });
     } else {
       // If a planning units layer for a feature is visible then we need to add the feature layer before it - first get the feature puid layer
@@ -3558,24 +3568,23 @@ const App = () => {
       let beforeLayer = layers.length > 0 ? layers[0].id : "";
       const paintProperty = getPaintProperty(feature);
       const typeProperty = getTypeProperty(feature);
-      addMapLayer(
-        {
-          id: layerId,
-          metadata: {
-            name: feature.alias,
-            type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-          },
-          type: typeProperty,
-          source: {
-            type: "vector",
-            url: "mapbox://" + feature.tilesetid,
-          },
-          layout: {
-            visibility: "visible",
-          },
-          "source-layer": layerName,
-          paint: paintProperty,
+      addMapLayer({
+        id: layerUrl,
+        metadata: {
+          name: feature.alias,
+          type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
         },
+        type: typeProperty,
+        source: {
+          type: "vector",
+          url: layerUrl
+        },
+        layout: {
+          visibility: "visible",
+        },
+        "source-layer": layerName,
+        paint: paintProperty,
+      },
         beforeLayer
       ); //add it before the layer that shows the planning unit outlines for the feature
       updateFeature(feature, { feature_layer_loaded: true });

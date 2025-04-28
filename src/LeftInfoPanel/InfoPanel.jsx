@@ -252,7 +252,12 @@ const InfoPanel = (props) => {
             />
           )}
           {currentTabIndex === 1 && (
-            <FeaturesTab {...props} leftmargin="10px" maxheight="409px" simple={false} showTargetButton />
+            <FeaturesTab
+              {...props}
+              leftmargin="10px"
+              maxheight="409px"
+              simple={false}
+              showTargetButton />
           )}
           {currentTabIndex === 2 && (
             <PlanningUnitsTab {...props} userRole={userData.role} startStopPuEditSession={startStopPuEditSession} />

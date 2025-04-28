@@ -16,6 +16,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TargetIcon from "../TargetIcon";
 import { grey } from "@mui/material/colors";
 import { selectCurrentUser } from "../slices/authSlice";
+import { setProjectFeatures } from "../slices/projectSlice";
 
 const FeaturesList = ({
   simple,
@@ -40,15 +41,30 @@ const FeaturesList = ({
     );
   };
 
-  const handleItemClick = (feature, evt) => {
+  const handleItemClick = (evt, feature) => {
     if (simple) return;
-    if (evt.altKey) {
-      feature.feature_puid_layer_loaded = !feature.feature_puid_layer_loaded;
-      toggleFeaturePUIDLayer(feature);
-    } else {
-      feature.feature_layer_loaded = !feature.feature_layer_loaded;
-      toggleFeatureLayer(feature);
-    }
+
+    const key = evt.altKey
+      ? "feature_puid_layer_loaded"
+      : "feature_layer_loaded";
+
+    // clone + flip whichever flag
+    const updated = {
+      ...feature,
+      [key]: !feature[key]
+    };
+
+    // update the map
+    evt.altKey
+      ? toggleFeaturePUIDLayer(updated)
+      : toggleFeatureLayer(updated);
+
+    // and sync your Redux slice
+    dispatch(setProjectFeatures(
+      projState.projectFeatures.map(f =>
+        f.id === updated.id ? updated : f
+      )
+    ));
   };
 
   const handleTargetChange = (targetIcon, newValue) => {
@@ -103,6 +119,7 @@ const FeaturesList = ({
                 primary={item.alias}
                 primaryTypographyProps={{ variant: "body2" }}
                 sx={{ ml: simple ? 0 : 1 }}
+                secondaryTypographyProps={{ component: 'div' }}
                 secondary={
                   !simple && (
                     <LinearGauge

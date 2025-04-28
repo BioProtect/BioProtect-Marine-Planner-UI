@@ -23,7 +23,7 @@ const MapContainer2 = ({
       container: mapContainerRef.current,
       style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
       center: [0, 0],
-      zoom: 2,
+      zoom: 4,
       attributionControl: false,
     });
 
