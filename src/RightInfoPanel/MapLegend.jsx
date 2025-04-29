@@ -52,9 +52,8 @@ const MapLegend = (props) => {
           props.brew.breaks[item + 1] === 1 ? " solution" : " solutions";
 
         let legendLabel = range
-          ? `${props.brew.breaks[item] + 1} - ${
-              props.brew.breaks[item + 1]
-            }${suffix}`
+          ? `${props.brew.breaks[item] + 1} - ${props.brew.breaks[item + 1]
+          }${suffix}`
           : `${props.brew.breaks[item + 1]}${suffix}`;
         return {
           layer: layer,
@@ -109,7 +108,7 @@ const MapLegend = (props) => {
                 layer={layer}
                 items={items}
                 shape={planningGridShape}
-                // setSymbology={props.setClassificationDialogOpen(true)}
+              // setSymbology={props.setClassificationDialogOpen(true)}
               />
             );
           case CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST:
@@ -238,7 +237,7 @@ const MapLegend = (props) => {
   const getFeaturePUIDLegendItems = () => {
     let featurePUIDLayers = props.visibleLayers.filter(
       (layer) =>
-        layer.metadata.type === CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER
+        layer.metadata.type === CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER
     );
     let items = featurePUIDLayers.map((layer) => ({
       fillColor: "none",

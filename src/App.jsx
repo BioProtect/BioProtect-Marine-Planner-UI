@@ -2526,7 +2526,7 @@ const App = () => {
     showHideLayerTypes(
       [
         CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+        CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
       ],
       false
     );
@@ -2541,7 +2541,7 @@ const App = () => {
     showHideLayerTypes(
       [
         CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+        CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
       ],
       true
     );
@@ -3134,11 +3134,9 @@ const App = () => {
   //toggles the impact layer on the map
   const toggleImpactLayer = (impact) => {
     if (impact.tilesetid === "") {
-      dispatch(
-        setSnackbarMessage(
-          `This impact does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='blank'>here</a>`
-        )
-      );
+      setSnackBar(
+        `This impact does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='blank'>here</a>`
+      )
       return;
     }
     // this.closeImpactMenu();
@@ -3152,7 +3150,7 @@ const App = () => {
     } else {
       //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
       const layers = getLayers([
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+        CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
       ]);
       //get the before layer
       const beforeLayer = layers.length > 0 ? layers[0].id : "";
@@ -3467,6 +3465,24 @@ const App = () => {
     return "All features uploaded";
   };
 
+  const zoomToLayer = (tileJSON) => {
+    fetch(`${tileJSON}`)
+      .then(res => res.json())
+      .then(tj => {
+        console.log("tj ", tj);
+        if (tj.bounds) {
+          map.current.fitBounds(
+            [
+              [tj.bounds[0], tj.bounds[1]],
+              [tj.bounds[2], tj.bounds[3]]
+            ],
+            { padding: 20 }
+          );
+        }
+      });
+  }
+
+
   //imports features from a web resource
   const importFeaturesFromWeb = async (
     name,
@@ -3541,53 +3557,54 @@ const App = () => {
 
   //toggles the feature layer on the map
   const toggleFeatureLayer = (feature) => {
-    console.log("feature ", feature);
-    console.log("feature.tilesetid.split()[1] ", feature.tilesetid.split(".")[1]);
-
     if (feature.tilesetid === "") {
       dispatch(
-        setSnackbarMessage(
-          `This feature does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE} #the-tileset-from-source-source-was-not-found' target='blank'>here</a>`
+        setSnackBar(
+          `This feature does not seem to have a tileset.`
         )
       );
       return;
     }
-    let layerName = feature.tilesetid.split(".")[1];
-    let layerId = "marxan_feature_layer_" + layerName;
-    const layerUrl = `http://localhost:3000/${layerId}`
+    const tableName = feature.tilesetid.split(".")[1];
+    const sourceId = `martin_src_${tableName}`;
+    const layerId = `martin_layer_${tableName}`;
+    const tileJSON = `http://0.0.0.0:3000/${tableName}`
 
-    if (map.current.getLayer(layerName)) {
-      removeMapLayer(layerName);
-      map.current.removeSource(layerName);
+    if (map.current.getLayer(layerId)) {
+      removeMapLayer(layerId);
+      map.current.removeSource(sourceId);
       updateFeature(feature, { feature_layer_loaded: false });
     } else {
-      // If a planning units layer for a feature is visible then we need to add the feature layer before it - first get the feature puid layer
-      const layers = getLayers([
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
-      ]);
-      let beforeLayer = layers.length > 0 ? layers[0].id : "";
-      const paintProperty = getPaintProperty(feature);
-      const typeProperty = getTypeProperty(feature);
-      addMapLayer({
-        id: layerUrl,
+      // 1) make sure the vector‐tile source is added
+      if (!map.current.getSource(sourceId)) {
+        map.current.addSource(sourceId, {
+          type: "vector",
+          url: tileJSON
+        });
+      }
+
+      const beforeLayer = (() => {
+        const puLayers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER]);
+        return puLayers.length ? puLayers[0].id : undefined;
+      })();
+
+      const mapLayer = {
+        id: layerId,
+        type: getTypeProperty(feature),
+        source: sourceId,
+        "source-layer": tableName,
+        layout: { visibility: "visible" },
+        paint: getPaintProperty(feature),
         metadata: {
           name: feature.alias,
-          type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        },
-        type: typeProperty,
-        source: {
-          type: "vector",
-          url: layerUrl
-        },
-        layout: {
-          visibility: "visible",
-        },
-        "source-layer": layerName,
-        paint: paintProperty,
-      },
-        beforeLayer
-      ); //add it before the layer that shows the planning unit outlines for the feature
+          type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER
+        }
+      };
+
+      addMapLayer(mapLayer, beforeLayer);
       updateFeature(feature, { feature_layer_loaded: true });
+      // Helper function tozom to layer to see if its working 
+      zoomToLayer(tileJSON)
     }
   };
 
@@ -3606,7 +3623,7 @@ const App = () => {
         id: layerName,
         metadata: {
           name: feature.alias,
-          type: CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+          type: CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
           lineColor: feature.color,
         },
         type: "line",
