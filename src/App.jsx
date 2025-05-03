@@ -139,6 +139,7 @@ let timers = []; //array of timers for seeing when asynchronous calls have finis
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN
 
 
+
 const App = () => {
   const dispatch = useDispatch();
 
@@ -713,6 +714,7 @@ const App = () => {
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
       if (projState.projectData.metadata.PLANNING_UNIT_NAME) {
+        console.log("projState.projectData.metadata.PLANNING_UNIT_NAME ", projState.projectData.metadata.PLANNING_UNIT_NAME);
         const planningGrid = `${CONSTANTS.MAPBOX_USER}.${projState.projectData.metadata.PLANNING_UNIT_NAME}`
         console.log("planningGrid ", planningGrid);
         await changePlanningGrid(planningGrid);
@@ -2132,8 +2134,15 @@ const App = () => {
       const style = await getValidStyle(basemap);
       console.log("basemap style ", style);
       await createMap(style);
-      addWDPASource();
-      addWDPALayer();
+
+      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
+      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
+      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
+      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
+      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
+      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
+      // addWDPASource();
+      // addWDPALayer();
 
       // Add the planning unit layers (if a project has already been loaded)
       if (tileset) {
@@ -2218,6 +2227,7 @@ const App = () => {
     try {
       // Get the tileset metadata
       const tileset = await getMetadata(tilesetid);
+      console.log("tileset in change planning grid line 2219 called postlogin ----  ", tileset);
       // Remove the existing layers (e.g., results layer, planning unit layer)
       removePlanningGridLayers();
       // Add the new planning grid layers using the obtained tileset
@@ -2239,7 +2249,7 @@ const App = () => {
   const getMetadata = async (tilesetId) => {
     try {
       const response = await fetch(
-        `https://api.mapbox.com/v4/${tilesetId}.json?secure&access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg`
+        `https://api.mapbox.com/v4/${tilesetId}.json?secure&access_token=${mapboxgl.accessToken}`
       );
 
       const data = await response.json();
@@ -2455,6 +2465,8 @@ const App = () => {
         .layers.filter((item) => item.type === "symbol");
       beforeLayer = symbolLayers.length ? symbolLayers[0].id : "";
     }
+    console.log("mapLayer, beforeLayer ", mapLayer, beforeLayer);
+
     // Add the layer to the map
     map.current.addLayer(mapLayer, beforeLayer);
   };
