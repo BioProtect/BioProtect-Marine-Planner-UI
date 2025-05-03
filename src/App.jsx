@@ -130,11 +130,14 @@ import parse from "wellknown";
 import useWebSocketHandler from "./WebSocketHandler";
 import { zoomToBounds } from "./Helpers";
 
+import.meta.env.VITE_MAPBOX_TOKEN
+
+
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
 let timers = []; //array of timers for seeing when asynchronous calls have finished
-mapboxgl.accessToken =
-  "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg";
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN
+
 
 const App = () => {
   const dispatch = useDispatch();
@@ -152,7 +155,7 @@ const App = () => {
 
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
-  const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState("");
+  const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState("feb_2023");
   const [newWDPAVersion, setNewWDPAVersion] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [lng, setLng] = useState(-70.9);
@@ -261,6 +264,7 @@ const App = () => {
 
   const selectServerByName = useCallback(
     (servername) => {
+      console.log("servername ----------------- ", servername);
       // Remove the search part of the URL
       window.history.replaceState({}, document.title, "/");
       const server = projState.bpServers.find(
@@ -691,10 +695,15 @@ const App = () => {
   //the user is validated so login
   const postLoginSetup = async () => {
     try {
+      setWDPAVectorTilesLayerName(registry.WDPA.latest_version);
+      console.log("registry.WDPA.latest_version ----------- ", registry.WDPA.latest_version);
+
       const currentBasemap = uiState.basemaps.find(
         (item) => item.name === uiState.basemap
       );
       await loadBasemap(currentBasemap);
+      console.log("currentBasemap ", currentBasemap);
+
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
       setPUTabInactive();
@@ -933,7 +942,6 @@ const App = () => {
     formData.append("user", owner);
     formData.append("proj", proj);
     appendToFormData(formData, parameters);
-    console.log("formData ", formData);
     //post to the server and return a promise
     // return await _post("updateProjectParameters", formData); - old 
     // # POST /projects?action=update
@@ -1062,13 +1070,7 @@ const App = () => {
       }
     });
 
-    // Get the selected feature ids
     getSelectedFeatureIds();
-    console.log("processedFeatures ", processedFeatures);
-    console.log("processedFeatures.filter((item) => item.selected) ", processedFeatures.filter((item) => item.selected));
-
-
-    // Update state
     dispatch(setAllFeatures(processedFeatures));
     dispatch(setProjectFeatures(processedFeatures.filter((item) => item.selected)));
   };
@@ -1148,7 +1150,6 @@ const App = () => {
 
   const createNewProject = async (proj) => {
     const formData = prepareFormDataNewProject(proj, user);
-    console.log("formData ", formData);
     // formData should be in the following format
     // {
     //     "user": "username",
@@ -1250,11 +1251,7 @@ const App = () => {
 
   const getProjects = async () => {
     // const response = await _get(`getProjects?user=${user}`); - old 
-    console.log("`projects?action=list&user=${userId}` ", `projects?action=list&user=${userId}`);
-    console.log("userId ", userId);
     const response = await _get(`projects?action=list&user=${userId}`);
-    console.log("response ", response);
-
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
       (proj) =>
@@ -1926,14 +1923,11 @@ const App = () => {
 
   //instantiates the mapboxgl map
   const createMap = (url) => {
-    console.log("create map url ", url);
     if (map.current) {
       if (map.current.isStyleLoaded()) {
         map.current.setStyle(url);
       } else {
         map.current.once("styledata", () => {
-          console.log("url ", url);
-
           map.current.setStyle(url);
         });
       }
@@ -2132,6 +2126,7 @@ const App = () => {
   };
   //sets the basemap either on project load, or if the user changes it
   const loadBasemap = async (basemap) => {
+    console.log("basemap ", basemap);
     try {
       dispatch(setBasemap(basemap.name));
       const style = await getValidStyle(basemap);
@@ -2142,6 +2137,7 @@ const App = () => {
 
       // Add the planning unit layers (if a project has already been loaded)
       if (tileset) {
+        console.log("tileset ", tileset);
         addPlanningGridLayers(tileset);
 
         // Get the results, if any
@@ -2247,8 +2243,6 @@ const App = () => {
       );
 
       const data = await response.json();
-      console.log("Metadata for planningGrid ", data);
-
       if (data.message && data.message.includes("does not exist")) {
         throw new Error(
           `The tileset '${tilesetId}' was not found. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='_blank'>here</a>`
@@ -2360,16 +2354,32 @@ const App = () => {
     }
   };
 
+  const removeWDPA = () => {
+    // If the map already has the WDPA layer, remove it first:
+    if (map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME)) {
+      map.current.removeLayer(CONSTANTS.WDPA_LAYER_NAME);
+    }
+    // If the map already has the WDPA source, remove it:
+    if (map.current.getSource(CONSTANTS.WDPA_SOURCE_NAME)) {
+      map.current.removeSource(CONSTANTS.WDPA_SOURCE_NAME);
+    }
+  };
+
+
   //adds the WDPA vector tile layer source - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
   const addWDPASource = () => {
+    removeWDPA();
+
     //add the source for the wdpa
     const yr = projState.bpServer.wdpa_version.substr(-4); //get the year from the wdpa_version
+    console.log("yr ", yr);
     const attribution = `IUCN and UNEP-WCMC (${yr}), The World Database on Protected Areas (WDPA) ${projState.bpServer.wdpa_version}, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
 
     const tiles = [
       `${registry.WDPA.tilesUrl}layer=marxan:${wdpaVectorTileLayer}&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}`,
     ];
-
+    console.log("registry.WDPA.tilesUrl ", registry.WDPA.tilesUrl);
+    console.log("CONSTANTS.WDPA_SOURCE_NAME ", CONSTANTS.WDPA_SOURCE_NAME);
     setWdpaAttribution(attribution);
     map.current.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
       attribution: attribution,
@@ -2377,6 +2387,8 @@ const App = () => {
       tiles: tiles,
     });
   };
+
+
 
   //adds the WDPA vector tile layer - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
   const addWDPALayer = () => {
@@ -2389,6 +2401,10 @@ const App = () => {
         ["2", "rgb(63,127,191)"],
       ],
     };
+    console.log("CONSTANTS.WDPA_LAYER_NAME ", CONSTANTS.WDPA_LAYER_NAME);
+    console.log("CONSTANTS.WDPA_SOURCE_NAME ", CONSTANTS.WDPA_SOURCE_NAME);
+    console.log("wdpaVectorTileLayer ", wdpaVectorTileLayer);
+
 
     addMapLayer({
       id: CONSTANTS.WDPA_LAYER_NAME,
@@ -2402,7 +2418,6 @@ const App = () => {
       layout: {
         visibility: "visible",
       },
-      // "filter": ["==", "wdpaid", -1],
       paint: {
         "fill-color": fills,
         "fill-outline-color": fills,
@@ -2954,7 +2969,6 @@ const App = () => {
   // const openFeaturesDialog = async (showClearSelectAll) => {
   const openFeaturesDialog = async () => {
     // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
-    console.log("featuresDialogOpen", featureState.dialogs);
     // dispatch(setAddingRemovingFeatures(showClearSelectAll));
     dispatch(
       toggleFeatureD({
@@ -3294,8 +3308,6 @@ const App = () => {
 
   //updates the properties of a feature and then updates the features state
   const updateFeature = (feature, newProps) => {
-    console.log("feature, newProps ", feature, newProps);
-    console.log("updateFeature........ ");
     let features = [...featureState.allFeatures];
     const index = features.findIndex((element) => element.id === feature.id);
     if (index !== -1) {
@@ -3469,7 +3481,6 @@ const App = () => {
     fetch(`${tileJSON}`)
       .then(res => res.json())
       .then(tj => {
-        console.log("tj ", tj);
         if (tj.bounds) {
           map.current.fitBounds(
             [

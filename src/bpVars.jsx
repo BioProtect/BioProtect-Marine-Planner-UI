@@ -95,9 +95,7 @@ export const INITIAL_VARS = {
     metadataUrl:
       "https://www.protectedplanet.net/en/resources/february-2023-update-of-the-wdpa-and-wd-oecm",
   },
-  MBAT: "sk.eyJ1IjoiYW5kcmV3Y290dGFtIiwiYSI6ImNsZHc1NjQ3cDA0NGwzcnJ4bHQ4cGU4OGYifQ.Jb1-is7c96_-x3aheAKyLg",
-  MBAT_PUBLIC:
-    "pk.eyJ1IjoiYW5kcmV3Y290dGFtIiwiYSI6ImNsY3N4aHM5czB1YjkzbmxoNzN1NHk3aGYifQ.LzpyM7lJ5-f0vjshJoaNXg",
+
   NOTIFICATIONS: [
     {
       id: 1,

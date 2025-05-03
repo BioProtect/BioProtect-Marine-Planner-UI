@@ -93,8 +93,8 @@
     "tilesUrl": "https://geospatial.jrc.ec.europa.eu/geoserver/gwc/service/wmts?",
     "metadataUrl": "https://www.protectedplanet.net/en/resources/february-2023-update-of-the-wdpa-and-wd-oecm"
   },
-  "MBAT": "sk.eyJ1IjoiYW5kcmV3Y290dGFtIiwiYSI6ImNsZHc1NjQ3cDA0NGwzcnJ4bHQ4cGU4OGYifQ.Jb1-is7c96_-x3aheAKyLg",
-  "MBAT_PUBLIC": "pk.eyJ1IjoiYW5kcmV3Y290dGFtIiwiYSI6ImNsY3N4aHM5czB1YjkzbmxoNzN1NHk3aGYifQ.LzpyM7lJ5-f0vjshJoaNXg",
+  "MBAT": "sk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY21hNm90dXQ3MHZqbzJuczhjZWZ3ZHRjZyJ9.-fXDC4ob8V1nGDkFs22o7A",
+  "MBAT_PUBLIC": "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY21hNm83ejF6MDZkNjJqc2dyb3Ezb3EybSJ9.7ccssBLpU0yg10O8Izty6A",
   "NOTIFICATIONS": [
     {
       "id": 1,
