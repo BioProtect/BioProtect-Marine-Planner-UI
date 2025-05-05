@@ -715,7 +715,7 @@ const App = () => {
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
       if (projState.projectData.metadata.PLANNING_UNIT_NAME) {
         console.log("projState.projectData.metadata.PLANNING_UNIT_NAME ", projState.projectData.metadata.PLANNING_UNIT_NAME);
-        const planningGrid = `${CONSTANTS.MAPBOX_USER}.${projState.projectData.metadata.PLANNING_UNIT_NAME}`
+        const planningGrid = `${projState.projectData.metadata.PLANNING_UNIT_NAME}`
         console.log("planningGrid ", planningGrid);
         await changePlanningGrid(planningGrid);
         await getResults(userData.name, projState.projectData.name);
@@ -984,9 +984,7 @@ const App = () => {
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
       if (projectResp.metadata.PLANNING_UNIT_NAME) {
-        await changePlanningGrid(
-          `${CONSTANTS.MAPBOX_USER}.${projectResp.metadata.PLANNING_UNIT_NAME}`
-        );
+        await changePlanningGrid(`${projectResp.metadata.PLANNING_UNIT_NAME}`);
         await getResults(user, projectResp.project);
       }
       // Set a local variable - Dont need to track state with these variables as they are not bound to anything
@@ -1252,6 +1250,8 @@ const App = () => {
   };
 
   const getProjects = async () => {
+    console.log("projects?action=list&user=${userId} ", userId);
+
     // const response = await _get(`getProjects?user=${user}`); - old 
     const response = await _get(`projects?action=list&user=${userId}`);
     //filter the projects so that private ones arent shown
@@ -2223,22 +2223,26 @@ const App = () => {
     }
   };
 
-  const changePlanningGrid = async (tilesetid) => {
+  const changePlanningGrid = async (tilesetId) => {
     try {
       // Get the tileset metadata
-      const tileset = await getMetadata(tilesetid);
-      console.log("tileset in change planning grid line 2219 called postlogin ----  ", tileset);
+      // const tileset = await getMetadata(tilesetId);
+      const response = await fetch(`http://0.0.0.0:3000/${tilesetId}`);
+      const data = await response.json();
+      console.log("data ", data);
+
+      console.log("response ", response);
       // Remove the existing layers (e.g., results layer, planning unit layer)
       removePlanningGridLayers();
       // Add the new planning grid layers using the obtained tileset
-      addPlanningGridLayers(tileset);
+      addPlanningGridLayers(data.name);
       // Zoom to the layers' extent if bounds are available
-      if (tileset.bounds) {
-        zoomToBounds(map, tileset.bounds);
+      if (data.bounds) {
+        zoomToBounds(map, data.bounds);
       }
       // Update the state with the new tileset information
-      setTileset(tileset);
-      return tileset;
+      setTileset(data);
+      return data;
     } catch (error) {
       dispatch(setSnackbarMessage(error));
       throw error;
@@ -2266,26 +2270,44 @@ const App = () => {
   };
 
   //adds the results, planning unit, planning unit edit etc layers to the map
-  const addPlanningGridLayers = (tileset) => {
+  // const addPlanningGridLayers = (tileset) => {
+  const addPlanningGridLayers = (puLayerName) => {
+    const sourceId = `martin_src_${puLayerName}`;
+    console.log("sourceId ", sourceId);
+    const resultsLayerId = `martin_layer_results_${puLayerName}`;
+    console.log("resultsLayerId ", resultsLayerId);
+    const costsLayerId = `martin_layer_costs_${puLayerName}`;
+    console.log("costsLayerId ", costsLayerId);
+    const puLayerId = `martin_layer_pu_${puLayerName}`;
+    console.log("puLayerId ", puLayerId);
+    const statusLayerId = `martin_layer_status_${puLayerName}`;
+    console.log("statusLayerId ", statusLayerId);
+
     //add the source for the planning unit layers
-    map.current.addSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME, {
-      type: "vector",
-      url: "mapbox://" + tileset.id,
+    // map.current.addSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME, {
+    //   type: "vector",
+    //   url: "mapbox://" + tileset.id,
+    // });
+
+
+    map.current.addSource(sourceId, {
+      type: 'vector',
+      url: `http://0.0.0.0:3000/${puLayerName}`
     });
 
     //add the results layer
     addMapLayer({
-      id: CONSTANTS.RESULTS_LAYER_NAME,
+      id: resultsLayerId,
       metadata: {
         name: "Results",
         type: CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
       },
       type: "fill",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      source: sourceId,
       layout: {
         visibility: "visible",
       },
-      "source-layer": tileset.name,
+      "source-layer": puLayerName,
       paint: {
         "fill-color": "rgba(0, 0, 0, 0)",
         "fill-outline-color": "rgba(0, 0, 0, 0)",
@@ -2294,38 +2316,37 @@ const App = () => {
     });
     //add the planning units costs layer
     addMapLayer({
-      id: CONSTANTS.COSTS_LAYER_NAME,
+      id: costsLayerId,
       metadata: {
         name: "Planning Unit Cost",
         type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST,
       },
       type: "fill",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      source: sourceId,
       layout: {
         visibility: "none",
       },
-      "source-layer": tileset.name,
+      "source-layer": puLayerName,
       paint: {
         "fill-color": "rgba(255, 0, 0, 0)",
         "fill-outline-color": "rgba(150, 150, 150, 0)",
         "fill-opacity": CONSTANTS.PU_COSTS_LAYER_OPACITY,
       },
     });
-    //set the result layer in app state so that it can update the Legend component and its opacity control
-    setResultsLayer(map.current.getLayer(CONSTANTS.RESULTS_LAYER_NAME));
+
     //add the planning unit layer
     addMapLayer({
-      id: CONSTANTS.PU_LAYER_NAME,
+      id: puLayerId,
       metadata: {
         name: "Planning Unit",
         type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
       },
       type: "fill",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      source: sourceId,
       layout: {
-        visibility: "none",
+        visibility: "visible",
       },
-      "source-layer": tileset.name,
+      "source-layer": puLayerName,
       paint: {
         "fill-color": "rgba(0, 0, 0, 0)",
         "fill-outline-color":
@@ -2335,22 +2356,25 @@ const App = () => {
     });
     //add the planning units manual edit layer - this layer shows which individual planning units have had their status changed
     addMapLayer({
-      id: CONSTANTS.STATUS_LAYER_NAME,
+      id: statusLayerId,
       metadata: {
         name: "Planning Unit Status",
         type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS,
       },
       type: "line",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      source: sourceId,
       layout: {
         visibility: "none",
       },
-      "source-layer": tileset.name,
+      "source-layer": puLayerName,
       paint: {
         "line-color": "rgba(150, 150, 150, 0)",
         "line-width": CONSTANTS.STATUS_LAYER_LINE_WIDTH,
       },
     });
+
+    //set the result layer in app state so that it can update the Legend component and its opacity control
+    setResultsLayer(map.current.getLayer(resultsLayerId));
   };
 
   const removePlanningGridLayers = () => {
@@ -3037,13 +3061,20 @@ const App = () => {
   };
 
   const openCumulativeImpactDialog = async () => {
-    dispatch(
-      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
-    );
-    try {
-      await getImpacts();
-    } catch (e) {
-      dispatch(setSnackbarMessage("no impacts found"));
+    setLoading(true);
+    if (allImpacts.length < 1) {
+      const response = await _get("getAllImpacts");
+      setAllImpacts(response.data);
+      dispatch(
+        toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
+      );
+      setLoading(false);
+    } else {
+      // Open the dialog if there is data already loaded
+      dispatch(
+        toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
+      );
+      setLoading(false);
     }
   };
 
@@ -3627,7 +3658,7 @@ const App = () => {
       addMapLayer(mapLayer, beforeLayer);
       updateFeature(feature, { feature_layer_loaded: true });
       // Helper function tozom to layer to see if its working 
-      zoomToLayer(tileJSON)
+      // zoomToLayer(tileJSON)
     }
   };
 

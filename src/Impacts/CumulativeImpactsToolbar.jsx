@@ -9,59 +9,61 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 
-const CumulativeImpactsToolbar = (props) => {
+const CumulativeImpactsToolbar = ({
+  loading,
+  userRole,
+  openImportedActivitesDialog,
+  openHumanActivitiesDialog,
+  // deleteImpact,
+  selectedImpact,
+  selectedProject,
+}) => {
   return (
     <div>
-      {props.metadataOV && (
-        <div className="tabTitle">
-          This is an imported project. Only features from this project are
-          shown.
-        </div>
-      )}
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
-        {props.userRole !== "ReadOnly" && !props.metadataOV ? (
+        {userRole !== "ReadOnly" ? (
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="New CI function"
-            onClick={props.openHumanActivitiesDialog}
+            onClick={openHumanActivitiesDialog}
           >
             Add Activity
           </Button>
         ) : null}
 
-        {!props.metadataOV && props.userRole !== "ReadOnly" ? (
+        {userRole !== "ReadOnly" ? (
           <Button
-            show={!props.metadataOV && props.userRole !== "ReadOnly"}
+            show={userRole !== "ReadOnly"}
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="View uploaded activities"
-            onClick={props.openImportedActivitesDialog}
-            disabled={props.loading}
+            onClick={openImportedActivitesDialog}
+            disabled={loading}
           >
             Run Cumulative Impact
           </Button>
         ) : null}
 
-        <Button
+        {/* <Button
           startIcon={
             <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
           }
           title="Delete feature"
-          onClick={props.deleteImpact}
+          onClick={deleteImpact}
           disabled={
-            props.selectedImpact === undefined ||
-            props.loading ||
-            (props.selectedImpact &&
-              props.selectedImpact.created_by === "global admin")
+            selectedImpact === undefined ||
+            loading ||
+            (selectedImpact &&
+              selectedImpact.created_by === "global admin")
           }
         >
           Delete
-        </Button>
+        </Button> */}
 
         <Button
           startIcon={<FontAwesomeIcon icon={faCircle} />}
           title="Clear all Impact layers"
-          // onClick={props.clearAllImpacts}
-          disabled={!props.selectedProject || props.loading}
+          // onClick={clearAllImpacts}
+          disabled={!selectedProject || loading}
         >
           Clear all
         </Button>
