@@ -60,6 +60,14 @@ const ImportImpactsDialog = (props) => {
       });
   };
 
+  const clickRow = (evt, rowInfo) => {
+    console.log("rowInfo ", rowInfo);
+    setSelectedActivity(rowInfo)
+
+  }
+
+
+
   const closeDialog = () => {
     setStepIndex(0);
     setFilename("");
@@ -133,7 +141,9 @@ const ImportImpactsDialog = (props) => {
             ableToSelectAll={false}
             searchColumns={["category", "activity"]}
             searchText={searchText}
-            selectedActivity={selectedActivity}
+            selected={[selectedActivity]}
+            clickRow={clickRow}
+
           />
         </div>
       )}

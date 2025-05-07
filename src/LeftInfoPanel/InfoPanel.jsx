@@ -26,7 +26,6 @@ const InfoPanel = (props) => {
   const puState = useSelector((state) => state.planningUnit)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const project = useSelector(selectUserProject);
-
   const userData = useSelector(selectCurrentUser);
 
   const [editingProjectName, setEditingProjectName] = useState(false);
@@ -124,6 +123,7 @@ const InfoPanel = (props) => {
   );
 
   const handleChange = (e) => {
+    console.log("e ", e);
     return e.target.id === "projectName"
       ? props.renameProject(e.target.value)
       : props.renameDescription(e.target.value);
@@ -206,10 +206,13 @@ const InfoPanel = (props) => {
   const combinedDisplayStyles = { ...panelStyle, ...displayStyle };
   const titleDisplayStyle = { display: editingProjectName ? "block" : "none" };
   const combinedDisplayStyle = { ...titleStyle, ...titleDisplayStyle };
+
+
   return projState.projectData ? (
     <React.Fragment>
       <div className="infoPanel" style={combinedDisplayStyles}>
         <Paper elevation={2} className="InfoPanelPaper" mb={4}>
+
           <Paper elevation={2} className="titleBar">
             {userData.role === "ReadOnly" ? (
               <span className="projectNameEditBox" title={`${projState.projectData.project.name} (Read-only)`}>
@@ -246,7 +249,6 @@ const InfoPanel = (props) => {
           {currentTabIndex === 0 && (
             <ProjectTabContent
               toggleProjectPrivacy={toggleProjectPrivacy}
-              metadata={props.metadata}
               owner={props.owner}
               updateDetails={handleChange}
             />

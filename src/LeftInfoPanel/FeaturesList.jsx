@@ -34,6 +34,7 @@ const FeaturesList = ({
 
 
   const handleIconClick = (evt, feature) => {
+    evt.stopPropagation();
     setMenuAnchor(evt.target);
     dispatch(setCurrentFeature(feature));
     dispatch(
@@ -76,7 +77,7 @@ const FeaturesList = ({
   return (
     <List
       sx={{
-        maxHeight: 440, // 👈 adjust as needed
+        maxHeight: 440,
         overflowY: "auto", // ensures scroll
         border: "1px solid #e0e0e0", // optional: visual separation
         borderRadius: 1, // optional: rounded corners

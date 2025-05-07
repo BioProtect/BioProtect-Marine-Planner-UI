@@ -15,10 +15,17 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import { setAddToProject } from "../slices/projectSlice";
-import { setFeatureDatasetFilename } from "../slices/uiSlice";
+import { setFeatureDatasetFilename } from "../slices/featureSlice";
 import { toggleFeatureD } from "../slices/featureSlice";
 
-const ImportFeaturesDialog = (props) => {
+const ImportFeaturesDialog = ({
+  importFeatures,
+  loading,
+  fileUpload,
+  unzipShapefile,
+  getShapefileFieldnames,
+  deleteShapefile,
+}) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
@@ -37,12 +44,15 @@ const ImportFeaturesDialog = (props) => {
 
   const handleNext = () => {
     if (stepIndex === 0) {
-      props.unzipShapefile(uiState.featureDatasetFilename).then((response) => {
+      unzipShapefile(featureState.featureDatasetFilename).then((response) => {
         setShapeFile(`${response.rootfilename}.shp`);
         setStepIndex(stepIndex + 1);
       });
     } else if (stepIndex === steps.length - 1) {
-      importFeatures();
+      importFeatures(featureState.featureDatasetFilename, name, description, shapeFile, splitField)
+        .then(() => {
+          closeDialog();
+        });
     } else {
       setStepIndex(stepIndex + 1);
     }
@@ -54,25 +64,17 @@ const ImportFeaturesDialog = (props) => {
   const handleSplitFieldChange = (event) => setSplitField(event.target.value);
   const resetFieldnames = () => setFieldNames([]);
 
-  const getShapefileFieldnames = () => {
-    props.getShapefileFieldnames(shapeFile).then((response) => {
+  const handleGetShapefileFieldnames = () => {
+    getShapefileFieldnames(shapeFile).then((response) => {
       setFieldNames(response.fieldnames);
     });
-  };
-
-  const importFeatures = () => {
-    props
-      .importFeatures(uiState.featureDatasetFilename, name, description, shapeFile, splitField)
-      .then(() => {
-        closeDialog();
-      });
   };
 
   const handleAddToProjectChange = (evt) => dispatch(setAddToProject(evt.target.checked));
 
   const closeDialog = () => {
     if (shapeFile) {
-      props.deleteShapefile(uiState.featureDatasetFilename, shapeFile);
+      deleteShapefile(featureState.featureDatasetFilename, shapeFile);
     }
     setStepIndex(0);
     setFieldNames([]);
@@ -96,26 +98,26 @@ const ImportFeaturesDialog = (props) => {
   };
 
   const _disabled =
-    (stepIndex === 0 && uiState.featureDatasetFilename === "") ||
-    (stepIndex === 1 && props.loading);
+    (stepIndex === 0 && featureState.featureDatasetFilename === "") ||
+    (stepIndex === 1 && loading);
 
   return (
     <Dialog
       open={featureState.dialogs.importFeaturesDialogOpen}
       onClose={closeDialog}
       onCancel={() => closeDialog()}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
     >
       <DialogTitle>Import Features</DialogTitle>
       <DialogContent>
         {stepIndex === 0 && (
           <FileUpload
-            loading={props.loading}
-            fileUpload={props.fileUpload}
+            loading={loading}
+            fileUpload={fileUpload}
             fileMatch=".zip"
             mandatory={true}
-            filename={uiState.featureDatasetFilename}
+            filename={featureState.featureDatasetFilename}
             destFolder="imports"
             label="Shapefile"
           />
@@ -132,7 +134,7 @@ const ImportFeaturesDialog = (props) => {
               value="multiple"
               control={<Radio />}
               label="Split into multiple features"
-              onClick={getShapefileFieldnames}
+              onClick={() => handleGetShapefileFieldnames()}
             />
           </RadioGroup>
         )}
@@ -192,7 +194,7 @@ const ImportFeaturesDialog = (props) => {
       <DialogActions>
         <Button
           onClick={handlePrev}
-          disabled={stepIndex === 0 || props.loading}
+          disabled={stepIndex === 0 || loading}
         >
           Back
         </Button>

@@ -56,10 +56,14 @@ const MenuBar = ({
   };
 
   const togglePanel = (e, val) => {
+    console.log("val ", val);
     const valueToToggle =
       val === "infoPanelOpen"
         ? dialogStates.infoPanelOpen
         : dialogStates.resultsPanelOpen;
+    console.log("val ", val);
+    console.log("!valueToToggle ", !valueToToggle);
+
     dispatch(
       toggleDialog({
         dialogName: val,

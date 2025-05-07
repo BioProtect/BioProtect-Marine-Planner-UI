@@ -12,24 +12,29 @@ import { useSelector } from "react-redux";
 
 const ProjectTabContent = ({
   toggleProjectPrivacy,
-  metadata,
   owner,
   updateDetails
 }) => {
   const userData = useSelector(selectCurrentUser);
+  const projState = useSelector((state) => state.project);
+  const metadata = projState.projectData.metadata
+
+
   const [editing, setEditing] = useState(false);
   const handleChange = (e) => {
     setEditing(false);
     updateDetails(e);
   };
-
+  console.log(metadata)
   return (
     <div>
       <Card sx={{ minWidth: 275 }}>
         <CardContent>
+
           <Typography variant="h5" component="div">
             Description
           </Typography>
+
           <Typography variant="body2" color="text.secondary">
             {editing ? (
               <span onClick={setEditing(true)}>
@@ -44,24 +49,26 @@ const ProjectTabContent = ({
               ></input>
             )}
           </Typography>
+
           <Typography variant="h5" component="div">
             Created
           </Typography>
+
           <Typography variant="body2" color="text.secondary">
             <span className="createDate">{metadata.CREATEDATE}</span>
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             {userData.username !== owner && (
-              <span>
-                <span className="tabTitle tabTitleTopMargin">Created by</span>
-                <span className="createDate">{owner}</span>
-              </span>
+              <span className="tabTitle tabTitleTopMargin">Created by</span>
             )}
-            {metadata.OLDVERSION && (
-              <span className="tabTitle tabTitleTopMargin">
-                Imported project
-              </span>
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {userData.username !== owner && (
+              <span className="createDate">{owner || userData.username}</span>
             )}
           </Typography>
         </CardContent>
+
         <CardActions>
           {userData.role !== "ReadOnly" && (
             <FormControlLabel
@@ -77,6 +84,7 @@ const ProjectTabContent = ({
             />
           )}
         </CardActions>
+
       </Card>
     </div>
   );

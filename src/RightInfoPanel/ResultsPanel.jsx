@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import Button from "@mui/material/Button";
 import Clipboard from "@mui/icons-material/Assignment";
@@ -12,11 +12,13 @@ import Tab from "@mui/material/Tab";
 import Table from "@mui/material/Table";
 import Tabs from "@mui/material/Tabs";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";
+import { useSelector } from "react-redux";
 
 let runtime = 0;
 const activeTabArr = ["legend", "solutions", "log"];
 
 const ResultsPanel = (props) => {
+  const uiState = useSelector((state) => state.ui);
   const [showClipboard, setShowClipboard] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState(undefined);
   const [runtimeStr, setRuntimeStr] = useState("00:00s");
@@ -24,6 +26,7 @@ const ResultsPanel = (props) => {
   const [currentTabIndex, setCurrentTabIndex] = useState(
     activeTabArr.indexOf(props.activeResultsTab) || 0
   );
+
 
   const prevProps = useRef();
   useEffect(() => {
@@ -118,18 +121,24 @@ const ResultsPanel = (props) => {
     props.setActiveTab(activeTabArr[tabIndex]);
   };
 
+  const panelStyle = useMemo(() => ({
+    top: "60px",
+    width: "300px",
+    height: "400px",
+    position: "absolute",
+    right: "140px",
+  }), [])
+
+  const displayStyle = {
+    display: uiState.dialogStates.resultsPanelOpen ? "block" : "none",
+  };
+
+  const combinedDisplayStyles = { ...panelStyle, ...displayStyle };
+
+
   return (
     <React.Fragment>
-      <div
-        style={{
-          top: "60px",
-          width: "300px",
-          height: "400px",
-          position: "absolute",
-          right: "140px",
-          display: props.open ? "block" : "none",
-        }}
-      >
+      <div className="resultsPanel" style={combinedDisplayStyles}>
         <Paper elevation={2} className="ResultsPanelPaper" mb={4}>
           <div className="resultsTitle">Results</div>
           <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
@@ -195,7 +204,7 @@ const ResultsPanel = (props) => {
                     style: {
                       background:
                         rowInfo.original.Run_Number ===
-                        (selectedSolution && selectedSolution.Run_Number)
+                          (selectedSolution && selectedSolution.Run_Number)
                           ? "aliceblue"
                           : "",
                     },

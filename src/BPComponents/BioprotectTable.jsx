@@ -38,9 +38,6 @@ const BioprotectTable = (props) => {
   const [orderBy, setOrderBy] = useState("category");
   const [searchQuery, setSearchQuery] = useState("");
 
-  console.log("************************* ", props.dataFiltered)
-  console.log("************************* ", props.selected)
-
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");

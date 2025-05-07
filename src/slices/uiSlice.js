@@ -157,9 +157,6 @@ const uiSlice = createSlice({
     setSelectedFeatureIds(state, action) {
       state.selectedFeatureIds = action.payload;
     },
-    setFeatureDatasetFilename(state, action) {
-      state.featureDatasetFilename = action.payload;
-    },
     toggleDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogStates[dialogName] = isOpen;
@@ -176,7 +173,6 @@ export const {
   setActiveResultsTab,
   setIdentifyFeatures,
   setSelectedFeatureIds,
-  setFeatureDatasetFilename,
   toggleProjectDialog,
   toggleDialog,
 } = uiSlice.actions;

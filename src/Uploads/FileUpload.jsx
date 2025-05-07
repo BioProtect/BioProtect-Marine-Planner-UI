@@ -6,7 +6,7 @@ import {
 } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
 
-import { setFeatureDatasetFilename } from "../slices/uiSlice";
+import { setFeatureDatasetFilename } from "../slices/featureSlice";
 
 // FileUpload component refactored to use React 18 and MUI 5
 const FileUpload = (props) => {
@@ -68,22 +68,25 @@ const FileUpload = (props) => {
       >
         {props.label}
       </Typography>
+
       <Box display="flex" alignItems="center">
+
         <IconButton
           component="label"
           sx={{ cursor: "pointer" }}
           title="Click to upload a file"
+          onChange={handleChange}
+          onClick={handleClick}
         >
           <UploadFileIcon />
           <input
             type="file"
-            onChange={handleChange}
-            onClick={handleClick}
             accept={props.fileMatch}
             id={id}
             style={{ display: "none" }}
           />
         </IconButton>
+
         <Typography
           sx={{ width: "168px", textOverflow: "ellipsis", overflow: "hidden" }}
         >

@@ -3270,9 +3270,12 @@ const App = () => {
     if (activities.length < 1) {
       const response = await _get("getActivities");
       const data = await JSON.parse(response.data);
+      console.log("data---------- ", data);
       setActivities(data);
     }
-    setHumanActivitiesDialogOpen(true);
+    dispatch(
+      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: true })
+    );
   };
 
   //create new impact from the created pressures

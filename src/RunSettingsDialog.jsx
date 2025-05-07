@@ -19,6 +19,7 @@ const RunSettingsDialog = ({
   userRole,
 }) => {
   const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const dispatch = useDispatch();
   const [data, setData] = useState([]);
   const [updateEnabled, setUpdateEnabled] = useState(false);
   const closeDialog = () =>
