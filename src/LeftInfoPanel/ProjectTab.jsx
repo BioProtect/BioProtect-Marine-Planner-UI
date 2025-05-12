@@ -25,7 +25,6 @@ const ProjectTabContent = ({
     setEditing(false);
     updateDetails(e);
   };
-  console.log(metadata)
   return (
     <div>
       <Card sx={{ minWidth: 275 }}>

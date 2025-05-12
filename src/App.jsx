@@ -424,6 +424,7 @@ const App = () => {
       return new Promise((resolve, reject) => {
         jsonp(projState.bpServer.endpoint + params, { timeout })
           .promise.then((response) => {
+            console.log("response ", response);
             setLoading(false);
             checkForErrors(response)
               ? reject(response.error) : resolve(response);
@@ -974,6 +975,7 @@ const App = () => {
   };
 
   const loadProject = async (proj, user, ...options) => {
+    //  projState.projectData
     try {
       resetResults();
       setRenderer(projectResp.renderer);
@@ -2229,9 +2231,6 @@ const App = () => {
       // const tileset = await getMetadata(tilesetId);
       const response = await fetch(`http://0.0.0.0:3000/${tilesetId}`);
       const data = await response.json();
-      console.log("data ", data);
-
-      console.log("response ", response);
       // Remove the existing layers (e.g., results layer, planning unit layer)
       removePlanningGridLayers();
       // Add the new planning grid layers using the obtained tileset
@@ -2273,15 +2272,10 @@ const App = () => {
   // const addPlanningGridLayers = (tileset) => {
   const addPlanningGridLayers = (puLayerName) => {
     const sourceId = `martin_src_${puLayerName}`;
-    console.log("sourceId ", sourceId);
     const resultsLayerId = `martin_layer_results_${puLayerName}`;
-    console.log("resultsLayerId ", resultsLayerId);
     const costsLayerId = `martin_layer_costs_${puLayerName}`;
-    console.log("costsLayerId ", costsLayerId);
     const puLayerId = `martin_layer_pu_${puLayerName}`;
-    console.log("puLayerId ", puLayerId);
     const statusLayerId = `martin_layer_status_${puLayerName}`;
-    console.log("statusLayerId ", statusLayerId);
 
     //add the source for the planning unit layers
     // map.current.addSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME, {
@@ -2435,10 +2429,6 @@ const App = () => {
         ["2", "rgb(63,127,191)"],
       ],
     };
-    console.log("CONSTANTS.WDPA_LAYER_NAME ", CONSTANTS.WDPA_LAYER_NAME);
-    console.log("CONSTANTS.WDPA_SOURCE_NAME ", CONSTANTS.WDPA_SOURCE_NAME);
-    console.log("wdpaVectorTileLayer ", wdpaVectorTileLayer);
-
 
     addMapLayer({
       id: CONSTANTS.WDPA_LAYER_NAME,
@@ -2480,8 +2470,6 @@ const App = () => {
 
   //centralised code to add a layer to the maps current style
   const addMapLayer = (mapLayer, beforeLayer) => {
-    console.log("mapLayer, beforeLayer ", mapLayer, beforeLayer);
-
     // If a beforeLayer is not passed get the first symbol layer (i.e. label layer)
     if (!beforeLayer) {
       const symbolLayers = map.current
@@ -2489,7 +2477,6 @@ const App = () => {
         .layers.filter((item) => item.type === "symbol");
       beforeLayer = symbolLayers.length ? symbolLayers[0].id : "";
     }
-    console.log("mapLayer, beforeLayer ", mapLayer, beforeLayer);
 
     // Add the layer to the map
     map.current.addLayer(mapLayer, beforeLayer);
@@ -3270,7 +3257,6 @@ const App = () => {
     if (activities.length < 1) {
       const response = await _get("getActivities");
       const data = await JSON.parse(response.data);
-      console.log("data---------- ", data);
       setActivities(data);
     }
     dispatch(
@@ -4187,30 +4173,37 @@ const App = () => {
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
   const getPlanningUnitsCostData = async (forceReload) => {
+    const project_id = projState.projectData.project.id;
     if (owner === "") {
-      setOwner(user);
+      setOwner(userId);
     }
-    const url = `getPlanningUnitsCostData?user=${owner}&project=${projState.project}`;
     try {
       // If cost data is already loaded and reload is not forced
       if (costData && !forceReload) {
         return costData;
+      } else {
+        // Construct the URL for fetching cost data
+        const url = `getPlanningUnitsCostData?user=${userId}&project=${project_id}`;
+        // Fetch the cost data from the server
+        const response = await _get(url);
+        console.log("response ", response);
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // Fetch the cost data if not already loaded or force reload is requested
+        // const response = await _get(url);  // TRIGGERING MASSIVE RELOAD ALL THE TIME 
+        // SORT THIS OUT LATER
+        // Save the cost data to a local variable
+        setCostData(response);
       }
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // Fetch the cost data if not already loaded or force reload is requested
-      // const response = await _get(url);  // TRIGGERING MASSIVE RELOAD ALL THE TIME 
-      // SORT THIS OUT LATER
-      // Save the cost data to a local variable
-      setCostData(response);
+
       return response;
     } catch (error) {
       // Handle the error (this can be customized based on your requirements)

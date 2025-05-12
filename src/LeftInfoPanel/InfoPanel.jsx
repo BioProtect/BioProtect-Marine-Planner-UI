@@ -262,7 +262,12 @@ const InfoPanel = (props) => {
               showTargetButton />
           )}
           {currentTabIndex === 2 && (
-            <PlanningUnitsTab {...props} userRole={userData.role} startStopPuEditSession={startStopPuEditSession} />
+            <PlanningUnitsTab
+              {...props}
+              userRole={userData.role}
+              startStopPuEditSession={startStopPuEditSession}
+
+            />
           )}
 
           <Paper>
