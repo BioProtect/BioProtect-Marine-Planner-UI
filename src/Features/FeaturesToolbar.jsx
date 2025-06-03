@@ -106,7 +106,7 @@ const FeaturesToolbar = ({
         await deleteFeature(feature.feature_class_name).unwrap();
         const updatedFeatureIds = uiState.selectedFeatureIds.filter((id) => id !== feature.id);
         const updatedFeatures = uiState.allFeatures.filter((item) => item.id !== feature.id);
-
+        dispatch(setSnackbarOpen(true));
         dispatch(setSnackbarMessage("Feature deleted"));
         dispatch(setSelectedFeatureIds(updatedFeatureIds));
         dispatch(setAllFeatures(updatedFeatures));
@@ -121,6 +121,7 @@ const FeaturesToolbar = ({
       }
     } catch (err) {
       console.error("Error deleting feature:", err);
+      dispatch(setSnackbarOpen(true));
       dispatch(setSnackbarMessage("Failed to delete feature due to an error."));
     }
   };

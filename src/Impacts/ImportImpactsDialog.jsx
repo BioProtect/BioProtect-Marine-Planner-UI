@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { setSnackbarMessage, setSnackbarOpen } from "../slices/uiSlice";
 
 import FileUpload from "../FileUpload";
 import MarxanDialog from "../MarxanDialog";
@@ -7,6 +8,7 @@ import MarxanTextField from "../MarxanTextField";
 import Sync from "@mui/icons-material/Sync";
 import TableRow from "../TableRow";
 import ToolbarButton from "../ToolbarButton";
+import { useDispatch } from "react-redux";
 
 const INITIAL_STATE = {
   steps: ["Select Activity", "raster", "metadata"],
@@ -18,12 +20,12 @@ const INITIAL_STATE = {
 };
 
 const ImportImpactsDialog = (props) => {
+  const dispatch = useDispatch();
   const [stepIndex, setStepIndex] = useState(0);
   const [filename, setFilename] = useState("");
   const [description, setDescription] = useState("");
   const [searchText, setSearchText] = useState("");
   const [selectedActivity, setSelectedActivity] = useState("");
-  const [message, setMessage] = useState("");
 
   const { steps, title } = INITIAL_STATE;
 
@@ -41,7 +43,9 @@ const ImportImpactsDialog = (props) => {
     props
       .importImpacts(filename, selectedActivity, description)
       .then((response) => {
-        setMessage(response);
+
+        dispatch(setSnackbarMessage(response));
+        dispatch(setSnackbarOpen(true))
         closeDialog();
       });
   };
@@ -53,7 +57,7 @@ const ImportImpactsDialog = (props) => {
     setDescription("");
     setSearchText("");
     setSelectedActivity("");
-    setMessage("");
+    dispatch(setSnackbarMessage(""));
     props.onCancel();
   };
 

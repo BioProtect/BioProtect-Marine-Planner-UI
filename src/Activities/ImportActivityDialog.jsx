@@ -13,6 +13,8 @@ import React, { useCallback, useState } from "react";
 import FileUpload from "../FileUpload";
 import MarxanTable from "../MarxanTable";
 import SyncIcon from "@mui/icons-material/Sync";
+import { setSnackbarMessage } from "../slices/uiSlice";
+import { useDispatch } from "react-redux";
 
 const title = ["Import Activity", "Upload Raster File"];
 
@@ -22,19 +24,20 @@ const ImportActivityDialog = ({
   activities,
   loading,
 }) => {
+  const dispatch = useDispatch();
   const [steps, setSteps] = useState(["Select Activity", "Raster Upload"]);
   const [stepIndex, setStepIndex] = useState(0);
   const [filename, setFilename] = useState("");
   const [description, setDescription] = useState("");
   const [searchtext, setSearchtext] = useState("");
   const [selectedActivity, setSelectedActivity] = useState("");
-  const [message, setMessage] = useState("");
 
   const handleNext = () => {
     if (stepIndex === steps.length - 1) {
       saveActivityToDb(filename, selectedActivity, description)
         .then((response) => {
-          setMessage(response);
+          dispatch(setSnackbarOpen(true));
+          dispatch(setSnackbarMessage(response));
           closeDialog();
         })
         .catch((error) => console.error(error));
@@ -53,7 +56,7 @@ const ImportActivityDialog = ({
     setDescription("");
     setSearchtext("");
     setSelectedActivity("");
-    setMessage("");
+    dispatch(setSnackbarMessage(""));
     onCancel();
   };
 

@@ -52,8 +52,7 @@ const PlanningUnitsTab = (props) => {
                   style={{
                     display: puState.puEditing ? "inline-block" : "none",
                   }}
-                  className="puManualEditClear"
-                >
+                  className="puManualEditClear">
                   <FontAwesomeIcon
                     icon={faEraser}
                     onClick={(e) => props.clearManualEdits(e)}

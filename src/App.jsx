@@ -445,24 +445,29 @@ const App = () => {
   //makes a POST request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   const _post = useCallback(
     async (
-      method,
+      endpointPath,
       formData,
       timeout = CONSTANTS.TIMEOUT,
       withCredentials = CONSTANTS.SEND_CREDENTIALS
     ) => {
       setLoading(true);
+      console.log("withCredentials ", withCredentials);
+
 
       try {
         const controller = new AbortController();
         const { signal } = controller;
+        let timeoutId = null;
         // Set a timeout to abort the request if it takes too long
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        if (timeout > 0) {
+          timeoutId = setTimeout(() => controller.abort(), timeout);
+        }
 
         const response = await fetch(
-          projState.bpServer.endpoint + method,
-          formData,
+          projState.bpServer.endpoint + endpointPath,
           {
             method: "POST",
+            body: formData,
             credentials: withCredentials,
             signal, // Pass the AbortSignal to the fetch call
           }
@@ -497,10 +502,9 @@ const App = () => {
 
   // Main logging method - all log messages use this method
   const messageLogger = useCallback((message) => {
-    // Add a timestamp to the message
     const timestampedMessage = { ...message, timestamp: new Date() };
     setLogMessages((prevState) => [
-      ...prevState.logMessages,
+      ...prevState,
       timestampedMessage,
     ]);
   }, []);
@@ -509,18 +513,20 @@ const App = () => {
   // removes a message from the log by matching on pid and status or just status
   // update the messages state - filter previous messages state by pid and status
   const removeMessageFromLog = useCallback((status, pid) => {
-    setLogMessages((prevState) => [
-      prevState.logMessages.filter((message) => {
+    setLogMessages((prevState) =>
+      prevState.filter((message) => {
         return pid !== undefined
           ? !(message.pid === pid && message.status === status)
-          : !(message.status === status);
-      }),
-    ]);
+          : message.status !== status;
+      })
+    );
   }, []);
 
 
   //logs the message if necessary - this removes duplicates
   const logMessage = useCallback((message) => {
+    if (!message || typeof message.status !== "string") return;
+
     const handleSocketClosedUnexpectedly = () => {
       messageLogger({
         method: message.method,
@@ -532,44 +538,30 @@ const App = () => {
     };
 
     const handlePidMessage = () => {
-      if (message.status === "RunningMarxan") {
-        return;
-      }
       const existingMessages = logMessages.filter(
         (_message) => _message.pid === message.pid
       );
+      const latestStatus = existingMessages.at(-1)?.status;
 
-      if (existingMessages.length > 0) {
-        const latestStatus = existingMessages[existingMessages.length - 1].status;
-
-        if (message.status !== latestStatus) {
-          if (message.status === "Finished") {
-            removeMessageFromLog("RunningQuery", message.pid);
-          }
-          messageLogger(message);
+      if (!existingMessages.length || message.status !== latestStatus) {
+        if (message.status === "Finished") {
+          removeMessageFromLog("RunningQuery", message.pid);
         }
-      } else {
-        // First message for this PID
         messageLogger(message);
       }
     };
 
     const handleGeneralMessage = () => {
-      const isDuplicateAllowed =
-        message.status === "RunningMarxan" ||
-        message.status === "Started" ||
-        message.status === "Finished";
-
-      if (!isDuplicateAllowed) {
+      const allowDuplicates = ["RunningMarxan", "Started", "Finished"];
+      if (!allowDuplicates.includes(message.status)) {
         removeMessageFromLog(message.status);
       }
       messageLogger(message);
     };
 
-    // Main logic
     if (message.status === "SocketClosedUnexpectedly") {
       handleSocketClosedUnexpectedly();
-    } else if (message.hasOwnProperty("pid")) {
+    } else if ("pid" in message) {
       handlePidMessage();
     } else {
       handleGeneralMessage();
@@ -577,8 +569,7 @@ const App = () => {
   }, [logMessages, messageLogger, removeMessageFromLog, setPid]);
 
 
-  const handleWebSocket = useWebSocketHandler(
-    projState,
+  const useWebSocket = useWebSocketHandler(
     checkForErrors,
     logMessage,
     setPreprocessing,
@@ -586,6 +577,15 @@ const App = () => {
     newFeatureCreated,
     removeMessageFromLog
   );
+
+  const handleWebSocket = async (url) => {
+    try {
+      const message = await useWebSocket(url);
+      console.log("WebSocket finished successfully:", message);
+    } catch (err) {
+      console.error("WebSocket failed:", err);
+    }
+  };
   // ------------------------------------------------------------------- //
   // ------------------------------------------------------------------- //
   // ------------------------------------------------------------------- //
@@ -667,12 +667,14 @@ const App = () => {
     try {
       // Send request to delete the user
       await deleteUser(user).unwrap();
+      dispatch(setSnackbarOpen(true));
       dispatch(setSnackbarMessage("User Deleted"))
       // Update local state to remove the deleted user
       const usersCopy = userState.users.filter((item) => item.user !== user);
       dispatch(setUsers(usersCopy));
       // Check if the current project belongs to the deleted user
       if (owner === user) {
+        dispatch(setSnackbarOpen(true));
         dispatch(setSnackbarMessage("Current project no longer exists. Loading next available."))
         // Load the next available project
         const nextProject = projState.projects.find((project) => project.user !== user);
@@ -685,6 +687,7 @@ const App = () => {
       }
     } catch (error) {
       // Handle errors
+      dispatch(setSnackbarOpen(true));
       dispatch(setSnackbarMessage("Failed to delete user: ", error))
     }
   };
@@ -1010,6 +1013,7 @@ const App = () => {
       }
       if (error.toString().includes("does not exist")) {
         // Handle case where project does not exist
+        dispatch(setSnackbarOpen(true));
         dispatch(setSnackbarMessage("Loading first available project"));
         await loadProject("", user);
         return;
@@ -1164,7 +1168,7 @@ const App = () => {
     // }
     // const response = await _post("createProject", formData); - old
     const response = await _post("projects?action=create", formData);
-
+    dispatch(setSnackbarOpen(true));
     dispatch(setSnackbarMessage(response.info));
     dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
 
@@ -1190,6 +1194,7 @@ const App = () => {
       await getProjects();
 
       // Show a snackbar message, but allow it to be silent if specified
+      dispatch(setSnackbarOpen(true));
       dispatch(setSnackbarMessage(response.info, silent));
 
       // Check if the deleted project is the current one
@@ -1228,6 +1233,7 @@ const App = () => {
     // const response = await _get(`cloneProject?user=${user}&project=${proj}`); - old 
     const response = await _get(`projects?action=clone&user=${user}&project=${proj}`);
     getProjects();
+    dispatch(setSnackbarOpen(true));
     dispatch(setSnackbarMessage(response.info));
   };
 
@@ -1239,6 +1245,7 @@ const App = () => {
       );
 
       // dispatch(setProject(newName)); // FIX THIS - UPDATE NAME OF PROJECT ONLY. 
+      dispatch(setSnackbarOpen(true));
       dispatch(setSnackbarMessage(response.info));
       return "Project renamed";
     }
@@ -1437,6 +1444,7 @@ const App = () => {
 
     // Check if solutions are present
     if (response.ssoln?.length > 0) {
+      dispatch(setSnackbarOpen(true));
       dispatch(setSnackbarMessage(response.info));
       renderSolution(response.ssoln, true);
 
@@ -1508,17 +1516,22 @@ const App = () => {
 
   // Uploads a single file to a specific folder - value is the filename
   const uploadFileToFolder = async (value, filename, destFolder) => {
+    console.log("value, filename, destFolder ", value, filename, destFolder);
     setLoading(true);
 
     const formData = new FormData();
     formData.append("value", value); // The binary data for the file
     formData.append("filename", filename); // The filename
     formData.append("destFolder", destFolder); // The folder to upload to
+    console.log("formData after ", formData.entries());
 
     try {
-      return await _post("uploadFileToFolder", formData);
+      const resp = await _post("uploadFileToFolder", formData);
+      console.log("================ resp ", resp);
+      return resp
     } catch (error) {
-      throw new Error("Failed to upload file to folder");
+      console.log("error ", error);
+      throw new Error("Failed to upload file to folder: ", error);
     }
   };
 
@@ -2243,6 +2256,8 @@ const App = () => {
       setTileset(data);
       return data;
     } catch (error) {
+      console.log("error ", error);
+      dispatch(setSnackbarOpen(true));
       dispatch(setSnackbarMessage(error));
       throw error;
     }
@@ -2284,9 +2299,17 @@ const App = () => {
     // });
 
 
-    map.current.addSource(sourceId, {
-      type: 'vector',
-      url: `http://0.0.0.0:3000/${puLayerName}`
+    if (!map.current.getSource(sourceId)) {
+      map.current.addSource(sourceId, {
+        type: 'vector',
+        url: `http://0.0.0.0:3000/${puLayerName}`
+      });
+    }
+
+    [resultsLayerId, costsLayerId, puLayerId, statusLayerId].forEach((layerId) => {
+      if (map.current.getLayer(layerId)) {
+        map.current.removeLayer(layerId);
+      }
     });
 
     //add the results layer
@@ -2876,6 +2899,8 @@ const App = () => {
   const deletePlanningGrid = async (feature_class_name, silent) => {
     const response = await useDeletePlanningUnitQuery(feature_class_name);
     //update the planning unit grids
+
+    dispatch(setSnackbarOpen(!silent));
     dispatch(setSnackbarMessage(response.info, silent));
   };
 
@@ -2931,6 +2956,7 @@ const App = () => {
       if (result.error) {
         const errorMsg = `Mapbox upload error: ${result.error}. See <a href='${CONSTANTS.ERRORS_PAGE}#mapbox-upload-error' target='blank'>here</a>`;
         messageLogger({ error: errorMsg, status: "UploadFailed" });
+        dispatch(setSnackbarOpen(true));
         dispatch(setSnackbarMessage(errorMsg));
         clearMapboxTimer(uploadid);
         throw new Error(result.error);
@@ -3484,29 +3510,17 @@ const App = () => {
     await _get(`getShapefileFieldnames?filename=${filename}`);
 
   //create new features from the already uploaded zipped shapefile
-  const importFeatures = async (
-    zipfile,
-    name,
-    description,
-    shapefile,
-    spiltfield
-  ) => {
-    //start the logging
+  const importFeatures = async (zipfile, name, description, shapefile, splitfield) => {
     startLogging();
+
     const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}`;
-    const url =
-      name !== ""
-        ? `${baseUrl}&name=${name}&description=${description}`
-        : `${baseUrl}&splitfield=${splitfield}`;
+    const url = name !== ""
+      ? `${baseUrl}&name=${name}&description=${description}`
+      : `${baseUrl}&splitfield=${splitfield}`;
 
     const message = await handleWebSocket(url);
-    //get the uploadIds, get a promise array to see when all of the uploads are done
-    const promiseArray = message.uploadIds.map((uploadId) =>
-      pollMapbox(uploadId)
-    );
-
-    await Promise.all(promiseArray);
-    return "All features uploaded";
+    console.log("Feature import complete:", message);
+    return message;
   };
 
   const zoomToLayer = (tileJSON) => {

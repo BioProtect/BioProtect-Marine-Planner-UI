@@ -4,6 +4,7 @@ import {
   Sync as SyncIcon,
   UploadFile as UploadFileIcon,
 } from "@mui/icons-material";
+import { setSnackbarMessage, setSnackbarOpen } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import { setFeatureDatasetFilename } from "../slices/featureSlice";
@@ -13,7 +14,7 @@ const FileUpload = (props) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(false);
-  const [destinationFolder, setDestinationFolder] = useState("");
+  const [destinationFolder, setDestinationFolder] = useState("imports");
   const id = `upload-${props.parameter}`;
 
   const handleChange = async (e) => {
@@ -24,27 +25,33 @@ const FileUpload = (props) => {
     if (e.target.files.length) {
       setLoading(true);
       const target = e.target.files[0];
+      console.log("target ", target);
+      const filename = target.name;
+      console.log("destinationFolder -- ", destinationFolder)
       // upload file  - if its an impact it uploads slightly differently
       try {
         let response;
         if (props.selectedActivity) {
+          console.log("props.selectedActivity ", props.selectedActivity);
           response = await props.fileUpload({
             value: target,
-            filename: target.name,
+            filename: filename,
             destFolder: destinationFolder,
             activity: props.selectedActivity,
           });
         } else {
           response = await props.fileUpload(
             target,
-            target.name,
-            destinationFolder
+            filename,
+            destinationFolder,
           );
         }
         dispatch(setFeatureDatasetFilename(response.file));
-        props.setMessage(response.info);
+        dispatch(setSnackbarOpen(true));
+        dispatch(setSnackbarMessage(response.info));
       } catch (error) {
-        console.error("File upload error: ", error);
+        dispatch(setSnackbarOpen(true));
+        dispatch(setSnackbarMessage("Error: ", error));
       } finally {
         setLoading(false);
         setActive(false);

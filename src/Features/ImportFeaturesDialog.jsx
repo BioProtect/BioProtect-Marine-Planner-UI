@@ -30,13 +30,14 @@ const ImportFeaturesDialog = ({
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
   const featureState = useSelector((state) => state.feature)
+  console.log("featureState ", featureState);
   const [steps, setSteps] = useState([
     "shapefile",
     "single_or_multiple",
     "metadata",
   ]);
   const [stepIndex, setStepIndex] = useState(0);
-  const [fieldNames, setFieldNames] = useState([]);
+  const [fieldnames, setFieldNames] = useState([]);
   const [splitField, setSplitField] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -46,6 +47,7 @@ const ImportFeaturesDialog = ({
     if (stepIndex === 0) {
       unzipShapefile(featureState.featureDatasetFilename).then((response) => {
         setShapeFile(`${response.rootfilename}.shp`);
+        setName(`${response.rootfilename}`)
         setStepIndex(stepIndex + 1);
       });
     } else if (stepIndex === steps.length - 1) {
@@ -128,7 +130,7 @@ const ImportFeaturesDialog = ({
               value="single"
               control={<Radio />}
               label="Create single feature"
-              onClick={resetFieldnames}
+              onClick={() => resetFieldnames()}
             />
             <FormControlLabel
               value="multiple"
@@ -145,7 +147,7 @@ const ImportFeaturesDialog = ({
                 <TextField
                   fullWidth
                   value={name}
-                  onChange={handleNameChange}
+                  onChange={(e) => handleNameChange(e)}
                   label="Enter a name"
                   margin="dense"
                   variant="outlined"
@@ -153,7 +155,7 @@ const ImportFeaturesDialog = ({
                 <TextField
                   fullWidth
                   value={description}
-                  onChange={handleDescriptionChange}
+                  onChange={(e) => handleDescriptionChange(e)}
                   label="Enter a description"
                   multiline
                   rows={2}
@@ -165,7 +167,7 @@ const ImportFeaturesDialog = ({
               <Select
                 fullWidth
                 value={splitField}
-                onChange={handleSplitFieldChange}
+                onChange={(e) => handleSplitFieldChange(e)}
                 displayEmpty
                 inputProps={{ "aria-label": "Split features by" }}
               >
@@ -183,7 +185,7 @@ const ImportFeaturesDialog = ({
               control={
                 <Checkbox
                   checked={projState.addToProject}
-                  onChange={handleAddToProjectChange}
+                  onChange={(e) => handleAddToProjectChange(e)}
                 />
               }
               label="Add to project"
@@ -199,7 +201,7 @@ const ImportFeaturesDialog = ({
           Back
         </Button>
         <Button
-          onClick={handleNext}
+          onClick={() => handleNext()}
           disabled={
             _disabled ||
             (stepIndex === 2 &&

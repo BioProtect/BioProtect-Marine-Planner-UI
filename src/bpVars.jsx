@@ -137,7 +137,8 @@ export const INITIAL_VARS = {
 export const CONSTANTS = {
   DOCS_ROOT: "https://docs.marxanweb.org/",
   ERRORS_PAGE: "https://docs.marxanweb.org/errors.html",
-  SEND_CREDENTIALS: true, //if true all post requests will send credentials
+  // SEND_CREDENTIALS: true, //if true all post requests will send credentials
+  SEND_CREDENTIALS: "include",
   TORNADO_PATH: "/server/",
   TIMEOUT: 0, //disable timeout setting
   // MAPBOX_USER: "blishten",

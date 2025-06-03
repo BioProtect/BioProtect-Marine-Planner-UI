@@ -10,6 +10,7 @@ import MarxanTextField from "../MarxanTextField";
 import Sync from "@mui/icons-material/Sync";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { generateTableCols } from "../Helpers";
+import { setSnackbarMessage } from "../slices/uiSlice";
 import { toggleDialog } from "../slices/uiSlice";
 
 // Initial state configuration
@@ -36,7 +37,6 @@ const ImportImpactsDialog = (props) => {
   const [description, setDescription] = useState("");
   const [searchText, setSearchText] = useState("");
   const [selectedActivity, setSelectedActivity] = useState("");
-  const [message, setMessage] = useState("");
 
   const handleNext = () => {
     if (stepIndex === INITIAL_STATE.steps.length - 1) {
@@ -54,7 +54,8 @@ const ImportImpactsDialog = (props) => {
     props
       .saveActivityToDb(filename, selectedActivity, description)
       .then((response) => {
-        setMessage(response);
+        dispatch(setSnackbarOpen(true));
+        dispatch(setSnackbarMessage(response));
         closeDialog();
         props.openImportedActivitesDialog();
       });
@@ -74,7 +75,7 @@ const ImportImpactsDialog = (props) => {
     setDescription("");
     setSearchText("");
     setSelectedActivity("");
-    setMessage("");
+    dispatch(setSnackbarMessage(""));
     dispatch(
       toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: false })
     );

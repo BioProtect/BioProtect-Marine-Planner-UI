@@ -17,6 +17,7 @@ const ResendPasswordDialog = ({
   const resendPassword = async () => {
     try {
       const { data: response, error } = useResendPasswordQuery(userState.user);
+      dispatch(setSnackbarOpen(true));
       dispatch(setSnackbarMessage(response.info));
       dispatch(
         toggleDialog({ dialogName: "resendPasswordDialogOpen", isOpen: false })
