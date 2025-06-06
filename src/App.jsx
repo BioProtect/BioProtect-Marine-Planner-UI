@@ -122,6 +122,7 @@ import UsersDialog from "./User/UsersDialog";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import classyBrew from "classybrew";
+import { featureApiSlice } from "./slices/featureSlice";
 /*eslint-disable no-unused-vars*/
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
@@ -390,18 +391,23 @@ const App = () => {
 
   const newFeatureCreated = useCallback(
     async (id) => {
-      const [fetchFeature] = useGetFeatureQuery();
-      const { data } = fetchFeature(id);
-      if (!data || !data.data?.length) {
-        return;
-      }
-      const featureData = data.data[0];
-      dispatch(addFeatureAttributes(featureData));
-      addNewFeature([featureData]);
+      try {
+        const result = await dispatch(featureApi.endpoints.getFeature.initiate(id));
 
-      if (addToProject) {
-        dispatch(addFeature(featureData));
-        await updateSelectedFeatures();
+        const featureData = result.data?.data?.[0];
+        console.log("featureData ", featureData);
+
+        if (!featureData) return;
+
+        dispatch(addFeatureAttributes(featureData));
+        addNewFeature([featureData]);
+
+        if (addToProject) {
+          dispatch(addFeature(featureData));
+          await updateSelectedFeatures();
+        }
+      } catch (err) {
+        console.error("Failed to load feature:", err);
       }
     },
     [dispatch]
@@ -569,7 +575,7 @@ const App = () => {
   }, [logMessages, messageLogger, removeMessageFromLog, setPid]);
 
 
-  const useWebSocket = useWebSocketHandler(
+  const startWebSocket = useWebSocketHandler(
     checkForErrors,
     logMessage,
     setPreprocessing,
@@ -580,7 +586,7 @@ const App = () => {
 
   const handleWebSocket = async (url) => {
     try {
-      const message = await useWebSocket(url);
+      const message = await startWebSocket(url);
       console.log("WebSocket finished successfully:", message);
     } catch (err) {
       console.error("WebSocket failed:", err);
@@ -4292,7 +4298,7 @@ const App = () => {
             openUsersDialog={openUsersDialog}
             openRunLogDialog={openRunLogDialog}
             openGapAnalysisDialog={openGapAnalysisDialog}
-            userRole={userData.role}
+            userRole={userData}
             metadata={metadata}
             cleanup={cleanup}
           />

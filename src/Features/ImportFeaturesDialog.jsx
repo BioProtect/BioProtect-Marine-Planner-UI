@@ -52,7 +52,7 @@ const ImportFeaturesDialog = ({
       });
     } else if (stepIndex === steps.length - 1) {
       importFeatures(featureState.featureDatasetFilename, name, description, shapeFile, splitField)
-        .then(() => {
+        .then((resp) => {
           closeDialog();
         });
     } else {

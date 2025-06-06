@@ -23,6 +23,7 @@ const useWebSocketHandler = (
 
             ws.onmessage = async (evt) => {
                 const message = JSON.parse(evt.data);
+                console.log("message from websocker - ", message);
 
                 if (!checkForErrors(message)) {
                     logMessage(message);
