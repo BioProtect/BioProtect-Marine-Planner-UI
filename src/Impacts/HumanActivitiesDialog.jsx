@@ -19,7 +19,7 @@ const INITIAL_STATE = {
   title: ["Select Activity", "Import or Draw", "Upload Data"],
 };
 
-const ImportImpactsDialog = (props) => {
+const HumanActivitiesDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
@@ -137,7 +137,7 @@ const ImportImpactsDialog = (props) => {
         <div id="activityTable">
           <BioprotectTable
             title="Select an activity then upload your raster file"
-            data={props.activities}
+            data={uiState.activities}
             tableColumns={tableColumns}
             ableToSelectAll={false}
             searchColumns={["category", "activity"]}
@@ -211,4 +211,4 @@ const ImportImpactsDialog = (props) => {
   );
 };
 
-export default ImportImpactsDialog;
+export default HumanActivitiesDialog;

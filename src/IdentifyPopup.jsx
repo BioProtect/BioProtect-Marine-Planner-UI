@@ -26,6 +26,7 @@ const IdentifyPopup = ({
 }) => {
   const uiState = useSelector((state) => state.ui);
   const puState = useSelector((state) => state.planningUnit)
+  const featureState = useSelector((state) => state.feature);
   const [selectedTab, setSelectedTab] = useState("pu");
   const [timer, setTimer] = useState(null);
 
@@ -119,22 +120,19 @@ const IdentifyPopup = ({
         <span>ID: {puState.identifyPlanningUnits.puData.id}</span>
       </div>
       {puState.identifyPlanningUnits.features?.length > 0 ? (
-        renderTabContent(puState.identifyPlanningUnits.features, [
-          {
-            render: (row) => <div title={row.alias}>{row.alias}</div>,
-          },
-          {
-            render: (row) => renderArea(row.amount, row.source),
-          },
-        ])
+        renderTabContent(puState.identifyPlanningUnits.features, [{
+          render: (row) => <div title={row.alias}>{row.alias}</div>,
+        }, {
+          render: (row) => renderArea(row.amount, row.source),
+        }])
       ) : (
         <div className="featureList">No features occur in this planning unit</div>
       )}
     </div>
   );
 
-  const featuresTab = uiState.identifiedFeatures?.length > 0 && (
-    renderTabContent(uiState.identifiedFeatures, [
+  const featuresTab = featureState.identifiedFeatures?.length > 0 && (
+    renderTabContent(featureState.identifiedFeatures, [
       {
         render: (row) => <div title={row.alias}>{row.alias}</div>,
       },

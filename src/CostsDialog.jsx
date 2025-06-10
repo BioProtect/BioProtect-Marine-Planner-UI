@@ -15,6 +15,7 @@ import { toggleDialog } from "./slices/uiSlice";
 
 const CostsDialog = (props) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
 
   const [selectedCost, setSelectedCost] = useState(undefined);
@@ -120,7 +121,7 @@ const CostsDialog = (props) => {
           <h3 className="dialogTitleStyle">Use Cumulative Impact</h3>
           <Table
             {...props}
-            data={props.allImpacts}
+            data={uiState.allImpacts}
             columns={[
               {
                 Header: "Name",
@@ -143,7 +144,7 @@ const CostsDialog = (props) => {
               style: {
                 background:
                   rowInfo.original.name ===
-                  (state.selectedCost && state.selectedCost.name)
+                    (state.selectedCost && state.selectedCost.name)
                     ? "aliceblue"
                     : "",
               },

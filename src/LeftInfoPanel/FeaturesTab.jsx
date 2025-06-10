@@ -1,5 +1,11 @@
 import React, { useState } from "react";
 import { selectCurrentUser, setCredentials } from "../slices/authSlice";
+import {
+  setAddingRemovingFeatures,
+  setFeaturePlanningUnits,
+  setFeatureProjects,
+  toggleFeatureD,
+} from "../slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -11,12 +17,18 @@ import { toggleDialog } from "../slices/uiSlice";
 
 const FeaturesTab = (props) => {
   const dispatch = useDispatch();
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
   const userData = useSelector(selectCurrentUser);
+  const featureState = useSelector((state) => state.feature);
 
 
-  const openFeaturesDialog = (evt) => {
-    props.openFeaturesDialog(true);
+  const handleOpenFeaturesDialog = () => {
+    dispatch(setAddingRemovingFeatures(true));
+    dispatch(
+      toggleFeatureD({
+        dialogName: "featuresDialogOpen",
+        isOpen: true,
+      })
+    );
   };
 
   return (
@@ -56,7 +68,7 @@ const FeaturesTab = (props) => {
             <Button
               variant="contained"
               label="+/-"
-              onClick={openFeaturesDialog}
+              onClick={() => handleOpenFeaturesDialog()}
               title="Add/remove features from the project"
             >
               +/-

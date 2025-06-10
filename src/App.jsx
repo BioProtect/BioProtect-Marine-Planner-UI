@@ -29,11 +29,11 @@ import {
 } from "./slices/authSlice";
 import {
   setActiveTab,
+  setActivities,
   setBasemap,
-  setIdentifyFeatures,
   setSnackbarMessage,
   setSnackbarOpen,
-  toggleDialog,
+  toggleDialog
 } from "./slices/uiSlice";
 import {
   setAddingRemovingFeatures,
@@ -44,6 +44,7 @@ import {
   setFeatureMetadata,
   setFeaturePlanningUnits,
   setFeatureProjects,
+  setIdentifiedFeatures,
   setSelectedFeatureIds,
   toggleFeatureD,
   useCreateFeatureFromLinestringMutation,
@@ -168,7 +169,6 @@ const App = () => {
   const [costData, setCostData] = useState(null);
   const [previousIucnCategory, setPreviousIucnCategory] = useState(null);
   const [planningCostsTrigger, setPlanningCostsTrigger] = useState(false);
-  const [activities, setActivities] = useState([]);
   const [pid, setPid] = useState("");
   const [allImpacts, setAllImpacts] = useState([]);
   const [atlasLayers, setAtlasLayers] = useState([]);
@@ -2089,7 +2089,7 @@ const App = () => {
 
       //set the state to populate the identify popup
       setIdentifyVisible(true);
-      dispatch(setIdentifyFeatures(idFeatures));
+      dispatch(setIdentifiedFeatures(idFeatures));
       setidentifyProtectedAreas(idProtectedAreas);
     }
   };
@@ -3081,7 +3081,7 @@ const App = () => {
 
   const openCumulativeImpactDialog = async () => {
     setLoading(true);
-    if (allImpacts.length < 1) {
+    if (uiState.allImpacts.length < 1) {
       const response = await _get("getAllImpacts");
       setAllImpacts(response.data);
       dispatch(
@@ -3174,7 +3174,7 @@ const App = () => {
   };
 
   const openCostsDialog = async () => {
-    if (!allImpacts?.length) {
+    if (!uiState.allImpacts?.length) {
       await getImpacts();
     }
     setCostsDialogOpen(true);
@@ -3210,14 +3210,14 @@ const App = () => {
   //toggles the impact layer on the map
   const toggleImpactLayer = (impact) => {
     if (impact.tilesetid === "") {
-      setSnackBar(
-        `This impact does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='blank'>here</a>`
-      )
+      dispatch(setSnackBar(`This feature does not seem to have a tileset.`));
       return;
     }
     // this.closeImpactMenu();
     const layerName = impact.tilesetid.split(".")[1];
     const layerId = "marxan_impact_layer_" + layerName;
+    // const layerId = "martin_impact_layer_" + layerName;
+    // const tilesURL = `http://0.0.0.0:3000/${layerName}/{z}/{x}/{y}.png`;
 
     if (map.current.getLayer(layerId)) {
       removeMapLayer(layerId);
@@ -3225,30 +3225,31 @@ const App = () => {
       updateImpact(impact, { impact_layer_loaded: false });
     } else {
       //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
-      const layers = getLayers([
-        CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
-      ]);
-      //get the before layer
-      const beforeLayer = layers.length > 0 ? layers[0].id : "";
+      const layers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER]);
+      const beforeLayer = layers.length > 0 ? layers[0].id : undefined;
+
+      map.current.addSource(layerId, {
+        type: "raster",
+        tiles: [tilesURL],
+        tileSize: 256,
+      });
+
       const rasterLayer = {
         id: layerId,
+        type: "raster",
+        source: layerId,
+        layout: {
+          visibility: "visible",
+        },
+        paint: {
+          "raster-opacity": 0.85,
+        },
         metadata: {
           name: impact.alias,
           type: "impact",
         },
-        type: "raster",
-        source: {
-          type: "raster",
-          tiles: [
-            `https://api.mapbox.com/v4/${impact.tilesetid}/{z}/{x}/{y}.png256?access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg`,
-          ],
-        },
-        layout: {
-          visibility: "visible",
-        },
-        "source-layer": layerName,
-        paint: { "raster-opacity": 0.85 },
       };
+
       addMapLayer(rasterLayer, beforeLayer);
       updateImpact(impact, { impact_layer_loaded: true });
     }
@@ -3257,7 +3258,7 @@ const App = () => {
   //gets the ids of the selected impacts
   const getSelectedImpactIds = () => {
     // Use map and filter to get selected impact IDs in one line
-    const ids = allImpacts
+    const ids = uiState.allImpacts
       .filter((impact) => impact.selected)
       .map((impact) => impact.id);
 
@@ -3268,7 +3269,7 @@ const App = () => {
   //updates the properties of a impact and then updates the impacts state
   const updateImpact = (impact, newProps) => {
     // Create a shallow copy of the impacts array
-    const impacts = [...allImpacts];
+    const impacts = [...uiState.allImpacts];
 
     // Find the index of the impact to update
     const index = impacts.findIndex((element) => element.id === impact.id);
@@ -3286,10 +3287,10 @@ const App = () => {
   };
 
   const openHumanActivitiesDialog = async () => {
-    if (activities.length < 1) {
+    if (uiState.activities.length < 1) {
       const response = await _get("getActivities");
       const data = await JSON.parse(response.data);
-      setActivities(data);
+      dispatch(setActivities(data));
     }
     dispatch(
       toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: true })
@@ -3517,12 +3518,19 @@ const App = () => {
 
   //create new features from the already uploaded zipped shapefile
   const importFeatures = async (zipfile, name, description, shapefile, splitfield) => {
+    console.log("splitfield ", splitfield);
+    console.log("shapefile ", shapefile);
+    console.log("description ", description);
+    console.log("name ", name);
+    console.log("zipfile ", zipfile);
     startLogging();
 
     const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}`;
+    console.log("baseUrl ", baseUrl);
     const url = name !== ""
       ? `${baseUrl}&name=${name}&description=${description}`
       : `${baseUrl}&splitfield=${splitfield}`;
+    console.log("url ", url);
 
     const message = await handleWebSocket(url);
     console.log("Feature import complete:", message);
@@ -3621,14 +3629,11 @@ const App = () => {
   //toggles the feature layer on the map
   const toggleFeatureLayer = (feature) => {
     if (feature.tilesetid === "") {
-      dispatch(
-        setSnackBar(
-          `This feature does not seem to have a tileset.`
-        )
-      );
+      dispatch(setSnackBar(`This feature does not seem to have a tileset.`));
       return;
     }
     const tableName = feature.tilesetid.split(".")[1];
+    console.log("tableName ", tableName);
     const sourceId = `martin_src_${tableName}`;
     const layerId = `martin_layer_${tableName}`;
     const tileJSON = `http://0.0.0.0:3000/${tableName}`
@@ -4472,14 +4477,15 @@ const App = () => {
             loading={loading || uploading}
             newFeatureCreated={newFeatureCreated}
           />
-          <ImportFeaturesDialog
-            importFeatures={importFeatures}
-            loading={loading || preprocessing || uploading}
-            fileUpload={uploadFileToFolder}
-            unzipShapefile={unzipShapefile}
-            getShapefileFieldnames={getShapefileFieldnames}
-            deleteShapefile={deleteShapefile}
-          />
+          {featureState.dialogs.importFeaturesDialogOpen ? (
+            <ImportFeaturesDialog
+              importFeatures={importFeatures}
+              loading={loading || preprocessing || uploading}
+              fileUpload={uploadFileToFolder}
+              unzipShapefile={unzipShapefile}
+              getShapefileFieldnames={getShapefileFieldnames}
+              deleteShapefile={deleteShapefile}
+            />) : null})
           <ImportFromWebDialog
             loading={loading || preprocessing || uploading}
             importFeatures={importFeaturesFromWeb}
@@ -4504,7 +4510,6 @@ const App = () => {
             costname={metadata?.COSTS}
             deleteCost={deleteCost}
             data={costnames}
-            allImpacts={allImpacts}
             planningUnitName={metadata?.PLANNING_UNIT_NAME}
             createCostsFromImpact={createCostsFromImpact}
           />
@@ -4611,9 +4616,9 @@ const App = () => {
 
           <CumulativeImpactDialog
             loading={loading || uploading}
-            openHumanActivitiesDialog={openHumanActivitiesDialog}
+            _get={_get}
             metadata={metadata}
-            allImpacts={allImpacts}
+
             clickImpact={clickImpact}
             initialiseDigitising={initialiseDigitising}
             selectedImpactIds={selectedImpactIds}
@@ -4623,7 +4628,6 @@ const App = () => {
           <HumanActivitiesDialog
             loading={loading || uploading}
             metadata={metadata}
-            activities={activities}
             initialiseDigitising={initialiseDigitising}
             userRole={userData.role}
             fileUpload={uploadRaster}

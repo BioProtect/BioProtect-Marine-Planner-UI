@@ -1,17 +1,16 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { setActivities, toggleDialog } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import CumulativeImpactsToolbar from "./CumulativeImpactsToolbar";
 import Loading from "../Loading";
 import MarxanDialog from "../MarxanDialog";
-import { toggleDialog } from "../slices/uiSlice";
 
 const CumulativeImpactDialog = ({
   loading,
-  openHumanActivitiesDialog,
+  _get,
   metadata,
-  allImpacts,
   clickImpact,
   initialiseDigitising,
   selectedImpactIds,
@@ -35,8 +34,20 @@ const CumulativeImpactDialog = ({
   //   setSelectedImpact(undefined);
   // }, [selectedImpact, deleteImpact]);
 
+  const openHumanActivitiesDialog = async () => {
+    if (uiState.activities.length < 1) {
+      const response = await _get("getActivities");
+      const data = await JSON.parse(response.data);
+      dispatch(setActivities(data));
+    }
+    dispatch(
+      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: true })
+    );
+  };
+
+
   const handleOpenHumanActivitiesDialog = useCallback(() => {
-    closeDialog();
+    // closeDialog();
     openHumanActivitiesDialog();
   }, [openHumanActivitiesDialog]);
 
@@ -90,7 +101,7 @@ const CumulativeImpactDialog = ({
           ? thisRow.index + 1
           : previousRow.index;
 
-      if (filteredRows.length < allImpacts.length) {
+      if (filteredRows.length < uiState.allImpacts.length) {
         selectedIds = toggleSelectionState(
           selectedImpactIds,
           filteredRows,
@@ -100,7 +111,7 @@ const CumulativeImpactDialog = ({
       } else {
         selectedIds = toggleSelectionState(
           selectedImpactIds,
-          allImpacts,
+          uiState.allImpacts,
           idx1,
           idx2
         );
@@ -160,7 +171,6 @@ const CumulativeImpactDialog = ({
 
   const closeDialog = () => {
     setSelectedActivity(undefined);
-
     dispatch(
       toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: false })
     );
@@ -181,9 +191,9 @@ const CumulativeImpactDialog = ({
     >
       <React.Fragment key="k10">
         <div id="projectsTable">
-          {allImpacts ? (
+          {uiState.allImpacts ? (
             <BioprotectTable
-              data={allImpacts}
+              data={uiState.allImpacts}
               tableColumns={columns}
               ableToSelectAll={false}
               searchColumns={["alias", "description", "source", "created_by"]}

@@ -91,9 +91,19 @@ const initialState = {
   basemap: "BioProtect",
   basemaps: mapboxBasemaps,
 
+  activities: [],
+  allImpacts: [],
+
   dialogStates: {
     aboutDialogOpen: false,
+
     activitiesDialogOpen: false,
+    cumulativeImpactDialogOpen: false,
+    humanActivitiesDialogOpen: false,
+    importedActivitiesDialogOpen: false,
+    openImportImpactsDialog: false,
+
+
     alertDialogOpen: false,
     atlasLayersDialogOpen: false,
     changePasswordDialogOpen: false,
@@ -101,15 +111,11 @@ const initialState = {
     clumpingDialogOpen: false,
     costsDialogOpen: false,
     importCostsDialogOpen: false,
-    cumulativeImpactDialogOpen: false,
     gapAnalysisDialogOpen: false,
     helpMenuOpen: false,
-    humanActivitiesDialogOpen: false,
-    importedActivitiesDialogOpen: false,
     importImpactPopoverOpen: false,
     importFromWebDialogOpen: false,
     infoPanelOpen: false,
-    openImportImpactsDialog: false,
     profileDialogOpen: false,
     registerDialogOpen: false,
     resendPasswordDialogOpen: false,
@@ -151,9 +157,6 @@ const uiSlice = createSlice({
     setActiveResultsTab(state, action) {
       state.activeResultsTab = action.payload;
     },
-    setIdentifyFeatures(state, action) {
-      state.identifiedFeatures = action.payload;
-    },
     setSelectedFeatureIds(state, action) {
       state.selectedFeatureIds = action.payload;
     },
@@ -161,6 +164,9 @@ const uiSlice = createSlice({
       const { dialogName, isOpen } = action.payload;
       state.dialogStates[dialogName] = isOpen;
     },
+    setActivities(state, action) {
+      state.activities = action.payload;
+    }
   },
 });
 
@@ -171,9 +177,9 @@ export const {
   setSnackbarMessage,
   setActiveTab,
   setActiveResultsTab,
-  setIdentifyFeatures,
   setSelectedFeatureIds,
   toggleProjectDialog,
   toggleDialog,
+  setActivities
 } = uiSlice.actions;
 export default uiSlice.reducer;

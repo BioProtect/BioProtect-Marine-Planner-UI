@@ -90,13 +90,20 @@ const FeaturesDialog = ({
     ));
 
   const addOrRemoveFeature = (feature) => {
+    console.log(" ------------------------------ addOrRemoveFeature ");
+    console.log("feature ", feature);
+    console.log("featureState.selectedFeatureIds ", featureState.selectedFeatureIds);
+
     return [...featureState.selectedFeatureIds].includes(feature.id)
       ? removeFeature(feature)
       : addFeature(feature);
   };
 
   const clickRow = (event, rowInfo) => {
+    console.log("--------------------------- clickRow ");
     console.log("event, rowInfo ", event, rowInfo);
+    console.log("featureState.addingRemovingFeatures ", featureState.addingRemovingFeatures);
+
     if (featureState.addingRemovingFeatures) {
       // Allow users to select multiple features using the shift key
       if (event.shiftKey) {
@@ -107,6 +114,8 @@ const FeaturesDialog = ({
       }
       setPreviousRow(rowInfo);
     } else {
+      console.log("--------------------------- setSelectedFeature ");
+
       dispatch(setSelectedFeature(rowInfo.original));
     }
   };
@@ -130,7 +139,7 @@ const FeaturesDialog = ({
     const idx2 =
       previousRow.index < thisRow.index ? thisRow.index + 1 : previousRow.index;
 
-    if (filteredRows.length < uiState.allFeatures.length) {
+    if (filteredRows.length < featureState.allFeatures.length) {
       return toggleSelectionState(
         featureState.selectedFeatureIds,
         filteredRows,
@@ -140,7 +149,7 @@ const FeaturesDialog = ({
     } else {
       return toggleSelectionState(
         featureState.selectedFeatureIds,
-        uiState.allFeatures,
+        featureState.allFeatures,
         idx1,
         idx2
       );
@@ -148,11 +157,11 @@ const FeaturesDialog = ({
   };
 
   const selectAllFeatures = () => {
-    if (filteredRows.length < uiState.allFeatures.length) {
+    if (filteredRows.length < featureState.allFeatures.length) {
       const selectedIds = filteredRows.map((feature) => feature.id);
       dispatch(setSelectedFeatureIds(selectedIds));
     } else {
-      dispatch(setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id)));
+      dispatch(setSelectedFeatureIds(featureState.allFeatures.map((feature) => feature.id)));
     }
   };
 
