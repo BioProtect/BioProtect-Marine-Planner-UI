@@ -27,7 +27,6 @@ import { toggleDialog } from "../slices/uiSlice";
 const ImportedActivitiesDialog = ({
   loading,
   metadata,
-  uploadedActivities,
   userRole,
   runCumulativeImpact,
 }) => {
@@ -66,7 +65,7 @@ const ImportedActivitiesDialog = ({
     );
   };
 
-  const filteredActivities = uploadedActivities.filter(
+  const filteredActivities = uiState.uploadedActivities.filter(
     (activity) =>
       activity.activity.toLowerCase().includes(searchText) ||
       activity.description.toLowerCase().includes(searchText) ||

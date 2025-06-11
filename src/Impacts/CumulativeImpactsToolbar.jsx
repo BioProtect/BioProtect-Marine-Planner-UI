@@ -1,23 +1,23 @@
 import {
   faCircle,
-  faPlusCircle,
-  faTrashAlt,
+  faPlusCircle
 } from "@fortawesome/free-solid-svg-icons";
 
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React from "react";
+import { toggleDialog } from "../slices/uiSlice";
+import { useDispatch } from "react-redux";
 
 const CumulativeImpactsToolbar = ({
   loading,
   userRole,
-  openImportedActivitesDialog,
   openHumanActivitiesDialog,
   // deleteImpact,
   selectedImpact,
   selectedProject,
 }) => {
+  const dispatch = useDispatch();
   return (
     <div>
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
@@ -36,7 +36,12 @@ const CumulativeImpactsToolbar = ({
             show={userRole !== "ReadOnly"}
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="View uploaded activities"
-            onClick={openImportedActivitesDialog}
+            onClick={() => dispatch(
+              toggleDialog({
+                dialogName: "importedActivitiesDialogOpen",
+                isOpen: true
+              })
+            )}
             disabled={loading}
           >
             Run Cumulative Impact
@@ -68,7 +73,7 @@ const CumulativeImpactsToolbar = ({
           Clear all
         </Button>
       </ButtonGroup>
-    </div>
+    </div >
   );
 };
 

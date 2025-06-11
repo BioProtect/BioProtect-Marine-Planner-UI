@@ -35,11 +35,7 @@ const ServerDetailsDialog = ({ loading, newWDPAVersion, registry }) => {
         {newServerSoftware && (
           <FontAwesomeIcon
             icon={faExclamationTriangle}
-            title={
-              "A new version of Marxan Server is available (" +
-              registry.SERVER_VERSION +
-              ")"
-            }
+            title={`A new version of Marxan Server is available - ${registry.SERVER_VERSION}`}
           />
         )}
         {cellInfo.key === "WDPA version" && (
@@ -62,29 +58,29 @@ const ServerDetailsDialog = ({ loading, newWDPAVersion, registry }) => {
 
   const data = server
     ? [
-        { key: "Name", value: server.name },
-        { key: "Description", value: server.description },
-        { key: "Host", value: server.host },
-        { key: "System", value: server.system },
-        { key: "Processors", value: server.processor_count },
-        { key: "Disk space", value: server.disk_space },
-        { key: "RAM", value: server.ram },
-        {
-          key: "Marxan Server version",
-          value: server.server_version,
-        },
-        { key: "WDPA version", value: server.wdpa_version },
-        {
-          key: "Planning grid units limit",
-          value: server.planning_grid_units_limit,
-        },
-        {
-          key: "Shutdown",
-          value: server.shutdowntime
-            ? new Date(server.shutdowntime).toLocaleString()
-            : "Never",
-        },
-      ]
+      { key: "Name", value: server.name },
+      { key: "Description", value: server.description },
+      { key: "Host", value: server.host },
+      { key: "System", value: server.system },
+      { key: "Processors", value: server.processor_count },
+      { key: "Disk space", value: server.disk_space },
+      { key: "RAM", value: server.ram },
+      {
+        key: "Marxan Server version",
+        value: server.server_version,
+      },
+      { key: "WDPA version", value: server.wdpa_version },
+      {
+        key: "Planning grid units limit",
+        value: server.planning_grid_units_limit,
+      },
+      {
+        key: "Shutdown",
+        value: server.shutdowntime
+          ? new Date(server.shutdowntime).toLocaleString()
+          : "Never",
+      },
+    ]
     : [];
 
   const closeDialog = () =>

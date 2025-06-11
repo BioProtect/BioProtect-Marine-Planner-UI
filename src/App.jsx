@@ -31,8 +31,10 @@ import {
   setActiveTab,
   setActivities,
   setBasemap,
+  setLoading,
   setSnackbarMessage,
   setSnackbarOpen,
+  setUploadedActivities,
   toggleDialog
 } from "./slices/uiSlice";
 import {
@@ -172,7 +174,6 @@ const App = () => {
   const [pid, setPid] = useState("");
   const [allImpacts, setAllImpacts] = useState([]);
   const [atlasLayers, setAtlasLayers] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [clumpingRunning, setClumpingRunning] = useState(false);
   const [costnames, setCostnames] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
@@ -215,7 +216,6 @@ const App = () => {
   const [tileset, setTileset] = useState(null);
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
-  const [uploadedActivities, setUploadedActivities] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [visibleLayers, setVisibleLayers] = useState([]);
   const [wdpaAttribution, setWdpaAttribution] = useState("");
@@ -426,18 +426,18 @@ const App = () => {
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   const _get = useCallback(
     (params, timeout = CONSTANTS.TIMEOUT) => {
-      setLoading(true);
+      dispatch(setLoading(true));
       return new Promise((resolve, reject) => {
         jsonp(projState.bpServer.endpoint + params, { timeout })
           .promise.then((response) => {
             console.log("response ", response);
-            setLoading(false);
+            dispatch(setLoading(false));
             checkForErrors(response)
               ? reject(response.error) : resolve(response);
           })
           .catch((err) => {
             console.log("err ", err);
-            setLoading(false);
+            dispatch(setLoading(false));
             setSnackBar(
               `Request timeout - See <a href='${CONSTANTS.ERRORS_PAGE}#request-timeout' target='blank'>here</a>`
             );
@@ -456,7 +456,7 @@ const App = () => {
       timeout = CONSTANTS.TIMEOUT,
       withCredentials = CONSTANTS.SEND_CREDENTIALS
     ) => {
-      setLoading(true);
+      dispatch(setLoading(true));
       console.log("withCredentials ", withCredentials);
 
 
@@ -492,7 +492,7 @@ const App = () => {
         }
         throw err;
       } finally {
-        setLoading(false);
+        dispatch(setLoading(false));
       }
     },
     [projState.bpServer.endpoint, checkForErrors, setSnackBar]
@@ -717,6 +717,10 @@ const App = () => {
 
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
+
+      const activitiesData = await _get("getUploadedActivities");
+      dispatch(setUploadedActivities(activitiesData.data));
+
       setPUTabInactive();
       setResultsPanelOpen(true);
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
@@ -1523,7 +1527,7 @@ const App = () => {
   // Uploads a single file to a specific folder - value is the filename
   const uploadFileToFolder = async (value, filename, destFolder) => {
     console.log("value, filename, destFolder ", value, filename, destFolder);
-    setLoading(true);
+    dispatch(setLoading(true));
 
     const formData = new FormData();
     formData.append("value", value); // The binary data for the file
@@ -2373,7 +2377,7 @@ const App = () => {
       paint: {
         "fill-color": "rgba(0, 0, 0, 0)",
         "fill-outline-color":
-          "rgba(150, 150, 150, " + CONSTANTS.PU_LAYER_OPACITY + ")",
+          `rgba(150, 150, 150, ${CONSTANTS.PU_LAYER_OPACITY})`,
         "fill-opacity": CONSTANTS.PU_LAYER_OPACITY,
       },
     });
@@ -2430,10 +2434,10 @@ const App = () => {
     //add the source for the wdpa
     const yr = projState.bpServer.wdpa_version.substr(-4); //get the year from the wdpa_version
     console.log("yr ", yr);
-    const attribution = `IUCN and UNEP-WCMC (${yr}), The World Database on Protected Areas (WDPA) ${projState.bpServer.wdpa_version}, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
+    const attribution = `IUCN and UNEP- WCMC(${yr}), The World Database on Protected Areas(WDPA) ${projState.bpServer.wdpa_version}, Cambridge, UK: UNEP - WCMC.Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
 
     const tiles = [
-      `${registry.WDPA.tilesUrl}layer=marxan:${wdpaVectorTileLayer}&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}`,
+      `${registry.WDPA.tilesUrl}layer = marxan: ${wdpaVectorTileLayer} & tilematrixset=EPSG: 900913 & Service=WMTS & Request=GetTile & Version=1.0.0 & Format=application / x - protobuf; type = mapbox - vector & TileMatrix=EPSG: 900913: { z }& TileCol={ x }& TileRow={ y } `,
     ];
     console.log("registry.WDPA.tilesUrl ", registry.WDPA.tilesUrl);
     console.log("CONSTANTS.WDPA_SOURCE_NAME ", CONSTANTS.WDPA_SOURCE_NAME);
@@ -2673,7 +2677,7 @@ const App = () => {
     //add the planning unit manual exceptions
     if (puState.planningUnits.length > 0) {
       puState.planningUnits.forEach((item) =>
-        formData.append(`status${item[0]}`, item[1])
+        formData.append(`status${item[0]} `, item[1])
       );
     }
     //post to the server
@@ -2811,7 +2815,7 @@ const App = () => {
   const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
     startLogging();
     const message = await handleWebSocket(
-      `createPlanningUnitGrid?iso3=${iso3}&domain=${domain}&areakm2=${areakm2}&shape=${shape}`,
+      `createPlanningUnitGrid ? iso3 = ${iso3}& domain=${domain}& areakm2=${areakm2}& shape=${shape} `,
     );
     await newPlanningGridCreated(message);
     setNewPlanningGridDialogOpen(false);
@@ -2826,7 +2830,7 @@ const App = () => {
   ) => {
     startLogging();
     const message = await handleWebSocket(
-      `createMarinePlanningUnitGrid?filename=${filename}&planningGridName=${planningGridName}&areakm2=${areakm2}&shape=${shape}`,
+      `createMarinePlanningUnitGrid ? filename = ${filename}& planningGridName=${planningGridName}& areakm2=${areakm2}& shape=${shape} `,
     );
     await newMarinePlanningGridCreated(message);
     dispatch(
@@ -2914,7 +2918,7 @@ const App = () => {
   const exportPlanningGrid = async (featureName) => {
     try {
       const response = await useExportPlanningUnitQuery(featureName)
-      return `${projState.bpServer.endpoint}exports/${response.filename}`;
+      return `${projState.bpServer.endpoint} exports / ${response.filename} `;
     } catch (error) {
       throw new Error("Failed to export planning grid");
     }
@@ -2923,7 +2927,7 @@ const App = () => {
   //gets a list of projects that use a particular planning grid
   const getProjectsForPlanningGrid = async (feature_class_name) =>
     await _get(
-      `listProjectsForPlanningGrid?feature_class_name=${feature_class_name}`
+      `listProjectsForPlanningGrid ? feature_class_name = ${feature_class_name} `
     );
 
   const getCountries = async () => {
@@ -2935,10 +2939,10 @@ const App = () => {
   const uploadToMapBox = async (feature_class_name, mapbox_layer_name) => {
     try {
       const response = _get(
-        `uploadTilesetToMapBox?feature_class_name=${feature_class_name}&mapbox_layer_name=${mapbox_layer_name}`,
+        `uploadTilesetToMapBox ? feature_class_name = ${feature_class_name}& mapbox_layer_name=${mapbox_layer_name} `,
         300000
       );
-      setLoading(true);
+      dispatch(setLoading(true));
       return await pollMapbox(response.uploadid);
     } catch (error) {
       console.error();
@@ -3062,38 +3066,38 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   const openAtlasLayersDialog = async () => {
-    setLoading(true);
+    dispatch(setLoading(true));
     if (atlasLayers.length < 1) {
       const data = await getAtlasLayers();
       setAtlasLayers(data);
       dispatch(
         toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true })
       );
-      setLoading(false);
+      dispatch(setLoading(false));
     } else {
       // Open the dialog if there is data already loaded
       dispatch(
         toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true })
       );
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
   const openCumulativeImpactDialog = async () => {
-    setLoading(true);
+    dispatch(setLoading(true));
     if (uiState.allImpacts.length < 1) {
       const response = await _get("getAllImpacts");
       setAllImpacts(response.data);
       dispatch(
         toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
       );
-      setLoading(false);
+      dispatch(setLoading(false));
     } else {
       // Open the dialog if there is data already loaded
       dispatch(
         toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
       );
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
@@ -3168,11 +3172,6 @@ const App = () => {
     }
   };
 
-  const openImportedActivitesDialog = async () => {
-    await getUploadedActivities();
-    setImportedActivitiesDialogOpen(true);
-  };
-
   const openCostsDialog = async () => {
     if (!uiState.allImpacts?.length) {
       await getImpacts();
@@ -3180,10 +3179,6 @@ const App = () => {
     setCostsDialogOpen(true);
   };
 
-  const getUploadedActivities = async () => {
-    const response = await _get("getUploadedActivities");
-    setUploadedActivities(response.data);
-  };
 
   //when a user clicks a impact in the ImpactsDialog
   const clickImpact = (impact, event, previousRow) => {
@@ -3300,29 +3295,29 @@ const App = () => {
   //create new impact from the created pressures
   const importImpacts = async (filename, selectedActivity, description) => {
     //start the logging
-    setLoading(true);
+    dispatch(setLoading(true));
     startLogging();
 
     const url = `runCumumlativeImpact?filename=${filename}&activity=${selectedActivity}&description=${description}`;
     const message = await handleWebSocket(url);
     await pollMapbox(message.uploadId);
-    setLoading(false);
+    dispatch(setLoading(false));
     return "Cumulative Impact Layer uploaded";
   };
 
   const runCumulativeImpact = async (selectedUploadedActivityIds) => {
-    setLoading(true);
+    dispatch(setLoading(true));
     startLogging();
 
     await handleWebSocket(
       `runCumumlativeImpact?selectedIds=${selectedUploadedActivityIds}`,
     );
-    setLoading(false);
+    dispatch(setLoading(false));
     return "Cumulative Impact Layer uploaded";
   };
 
   const uploadRaster = async (data) => {
-    setLoading(true);
+    dispatch(setLoading(true));
     messageLogger({
       method: "uploadRaster",
       status: "In Progress",
@@ -3336,27 +3331,22 @@ const App = () => {
     return response;
   };
 
-  const openActivitiesDialog = async () => {
-    await getUploadedActivities();
-    setActivitiesDialogOpen(true);
-  };
-
   //create new impact from the created pressures
   const saveActivityToDb = async (filename, selectedActivity, description) => {
     //start the logging
-    setLoading(true);
+    dispatch(setLoading(true));
     startLogging();
     const url = `saveRaster?filename=${filename}&activity=${selectedActivity}&description=${description}`;
     await handleWebSocket(url);
-    setLoading(false);
+    dispatch(setLoading(false));
     return "Raster saved to db";
   };
 
   const createCostsFromImpact = async (data) => {
-    setLoading(true);
+    dispatch(setLoading(true));
     startLogging();
     await handleWebSocket(`createCostsFromImpact?user=${owner}&project=${projState.project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`);
-    setLoading(false);
+    dispatch(setLoading(false));
     addCost(data.alias);
     return "Costs created from Cumulative impact";
   };
@@ -4283,20 +4273,17 @@ const App = () => {
         <Loading />
       ) : (
         <React.Fragment>
-          <div
-            ref={mapContainer}
-            className="map-container absolute top right left bottom"
-          />
-          {loading ? <Loading /> : null}
+          <div ref={mapContainer} className="map-container absolute top right left bottom"></div>
+          {uiState.loading ? <Loading /> : null}
           {token ? null : (
             <LoginDialog
               open={!token}
-              loading={loading}
+              loading={uiState.loading}
             />
           )}
           <ResendPasswordDialog
             open={dialogStates.resendPasswordDialogOpen}
-            loading={loading}
+            loading={uiState.loading}
           />
           <ToolsMenu
             menuAnchor={menuAnchor}
@@ -4319,14 +4306,14 @@ const App = () => {
             <UserSettingsDialog
               open={dialogStates.userSettingsDialogOpen}
               onCancel={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
-              loading={loading}
+              loading={uiState.loading}
               saveOptions={saveOptions}
               loadBasemap={loadBasemap}
             />
           ) : null}
           <UsersDialog
             open={dialogStates.usersDialogOpen}
-            loading={loading}
+            loading={uiState.loading}
             deleteUser={handleDeleteUser}
             changeRole={changeRole}
             guestUserEnabled={projState.bpServer.guestUserEnabled}
@@ -4335,7 +4322,7 @@ const App = () => {
             open={dialogStates.profileDialogOpen}
             onOk={() => setProfileDialogOpen(false)}
             onCancel={() => setProfileDialogOpen(false)}
-            loading={loading}
+            loading={uiState.loading}
             updateUser={handleUpdateUser}
           />
           <AboutDialog
@@ -4371,7 +4358,7 @@ const App = () => {
               costnames={costnames}
               changeCostname={changeCostname}
               loadCostsLayer={loadCostsLayer}
-              loading={loading}
+              loading={uiState.loading}
               setMenuAnchor={setMenuAnchor}
             // protectedAreaIntersections={protectedAreaIntersections}
             />) : null}
@@ -4404,7 +4391,6 @@ const App = () => {
             metadata={metadata}
             costsLoading={costsLoading}
           />
-
           {identifyVisible ? (
             <IdentifyPopup
               visible={identifyVisible}
@@ -4415,7 +4401,7 @@ const App = () => {
               reportUnits={userData.reportUnits}
             />) : null}
           <ProjectsDialog
-            loading={loading}
+            loading={uiState.loading}
             oldVersion={metadata?.OLDVERSION}
             deleteProject={deleteProject}
             loadProject={loadProject}
@@ -4427,7 +4413,7 @@ const App = () => {
           <ProjectsListDialog />
           <NewProjectDialog
             registry={registry}
-            loading={loading}
+            loading={uiState.loading}
             openFeaturesDialog={openFeaturesDialog}
             selectedCosts={selectedCosts}
             createNewProject={createNewProject}
@@ -4439,28 +4425,28 @@ const App = () => {
             createNewNationalProject={createNewNationalProject}
           />
           <NewPlanningGridDialog
-            loading={loading || preprocessing || uploading}
+            loading={uiState.loading || preprocessing || uploading}
             createNewPlanningUnitGrid={createNewPlanningUnitGrid}
             countries={countries}
           />
           <NewMarinePlanningGridDialog
-            loading={loading || preprocessing || uploading}
+            loading={uiState.loading || preprocessing || uploading}
             createNewPlanningUnitGrid={createNewMarinePlanningUnitGrid}
             fileUpload={uploadFileToFolder}
           />
           <ImportPlanningGridDialog
             importPlanningUnitGrid={importPlanningUnitGrid}
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             fileUpload={uploadFileToFolder}
           />
           <FeatureInfoDialog
             open={true}
-            loading={loading}
+            loading={uiState.loading}
             updateFeature={updateFeature}
           />
           <FeaturesDialog
             onOk={updateSelectedFeatures}
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             metadata={metadata}
             userRole={userData.role}
             openFeaturesDialog={openFeaturesDialog}
@@ -4470,28 +4456,28 @@ const App = () => {
           />
           {featureState.dialogs.featureDialogOpen ? (
             <FeatureDialog
-              loading={loading}
+              loading={uiState.loading}
               getTilesetMetadata={getMetadata}
             />) : null}
           <NewFeatureDialog
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             newFeatureCreated={newFeatureCreated}
           />
           {featureState.dialogs.importFeaturesDialogOpen ? (
             <ImportFeaturesDialog
               importFeatures={importFeatures}
-              loading={loading || preprocessing || uploading}
+              loading={uiState.loading || preprocessing || uploading}
               fileUpload={uploadFileToFolder}
               unzipShapefile={unzipShapefile}
               getShapefileFieldnames={getShapefileFieldnames}
               deleteShapefile={deleteShapefile}
-            />) : null})
+            />) : null}
           <ImportFromWebDialog
-            loading={loading || preprocessing || uploading}
+            loading={uiState.loading || preprocessing || uploading}
             importFeatures={importFeaturesFromWeb}
           />
           <PlanningGridsDialog
-            loading={loading}
+            loading={uiState.loading}
             unauthorisedMethods={unauthorisedMethods}
             openNewPlanningGridDialog={openNewPlanningGridDialog}
             exportPlanningGrid={exportPlanningGrid}
@@ -4519,7 +4505,7 @@ const App = () => {
             fileUpload={uploadFileToProject}
           />
           <RunSettingsDialog
-            loading={loading || preprocessing}
+            loading={uiState.loading || preprocessing}
             updateRunParams={updateRunParams}
             runParams={runParams}
             showClumpingDialog={showClumpingDialog}
@@ -4530,7 +4516,7 @@ const App = () => {
               open={dialogStates.classificationDialogOpen}
               onOk={() => setClassificationDialogOpen(false)}
               onCancel={() => setClassificationDialogOpen(false)}
-              loading={loading}
+              loading={uiState.loading}
               renderer={renderer}
               changeColorCode={changeColorCode}
               changeRenderer={changeRenderer}
@@ -4539,8 +4525,7 @@ const App = () => {
               summaryStats={summaryStats}
               brew={brew}
               dataBreaks={dataBreaks}
-            />
-          ) : null}
+            />) : null}
           <ClumpingDialog
             hideClumpingDialog={hideClumpingDialog}
             tileset={tileset}
@@ -4552,9 +4537,9 @@ const App = () => {
             clumpingRunning={clumpingRunning}
             updateRunParams={updateRunParams}
           />
-          <ResetDialog onOk={resetServer} loading={loading} />
+          <ResetDialog onOk={resetServer} loading={uiState.loading} />
           <RunLogDialog
-            loading={loading}
+            loading={uiState.loading}
             preprocessing={preprocessing}
             unauthorisedMethods={unauthorisedMethods}
             runLogs={runLogs}
@@ -4565,7 +4550,7 @@ const App = () => {
             runlogTimer={runlogTimer}
           />
           <ServerDetailsDialog
-            loading={loading}
+            loading={uiState.loading}
             newWDPAVersion={newWDPAVersion}
             registry={registry}
           />
@@ -4596,7 +4581,7 @@ const App = () => {
             updateTargetValueForFeatures={updateTargetValueForFeatures}
           />
           <GapAnalysisDialog
-            loading={loading}
+            loading={uiState.loading}
             showCancelButton={true}
             setGapAnalysis={setGapAnalysis}
             gapAnalysis={gapAnalysis}
@@ -4609,35 +4594,31 @@ const App = () => {
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog
               map={map}
-              loading={loading}
+              loading={uiState.loading}
               atlasLayers={atlasLayers}
-            />
-          ) : null}
+            />) : null}
 
           <CumulativeImpactDialog
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             _get={_get}
             metadata={metadata}
 
             clickImpact={clickImpact}
             initialiseDigitising={initialiseDigitising}
             selectedImpactIds={selectedImpactIds}
-            openImportedActivitesDialog={openImportedActivitesDialog}
             userRole={userData.role}
           />
           <HumanActivitiesDialog
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             metadata={metadata}
             initialiseDigitising={initialiseDigitising}
             userRole={userData.role}
             fileUpload={uploadRaster}
             saveActivityToDb={saveActivityToDb}
-            openImportedActivitesDialog={openImportedActivitesDialog}
           />
           <RunCumuluativeImpactDialog
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             metadata={metadata}
-            uploadedActivities={uploadedActivities}
             userRole={userData.role}
             runCumulativeImpact={runCumulativeImpact}
           />
@@ -4646,7 +4627,6 @@ const App = () => {
             userRole={userData.role}
             openFeaturesDialog={openFeaturesDialog}
             openProjectsDialog={openProjectsDialog}
-            openActivitiesDialog={openActivitiesDialog}
             openPlanningGridsDialog={openPlanningGridsDialog}
             openCumulativeImpactDialog={openCumulativeImpactDialog}
             openAtlasLayersDialog={openAtlasLayersDialog}

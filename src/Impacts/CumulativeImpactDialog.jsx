@@ -14,15 +14,12 @@ const CumulativeImpactDialog = ({
   clickImpact,
   initialiseDigitising,
   selectedImpactIds,
-  openImportedActivitesDialog,
   userRole
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projState = useSelector((state) => state.project);
-  const featureState = useSelector((state) => state.feature)
-  const puState = useSelector((state) => state.planningUnit)
 
   const [searchText, setSearchText] = useState("");
   const [selectedImpact, setSelectedImpact] = useState(undefined);
@@ -211,7 +208,6 @@ const CumulativeImpactDialog = ({
           loading={loading}
           metadataOV={metadata.OLDVERSION}
           userRole={userRole}
-          openImportedActivitesDialog={openImportedActivitesDialog}
           openHumanActivitiesDialog={handleOpenHumanActivitiesDialog}
           // deleteImpact={handleDeleteImpact}
           selectedImpact={selectedImpact}

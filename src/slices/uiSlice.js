@@ -84,6 +84,8 @@ const mapboxBasemaps = [
 ];
 
 const initialState = {
+  loading: false,
+
   snackbarOpen: false,
   snackbarMessage: "",
   activeTab: "project",
@@ -93,6 +95,7 @@ const initialState = {
 
   activities: [],
   allImpacts: [],
+  uploadedActivities: [],
 
   dialogStates: {
     aboutDialogOpen: false,
@@ -166,7 +169,14 @@ const uiSlice = createSlice({
     },
     setActivities(state, action) {
       state.activities = action.payload;
+    },
+    setUploadedActivities(state, action) {
+      state.uploadedActivities = action.payload;
+    },
+    setLoading(state, action) {
+      state.loading = action.payload;
     }
+
   },
 });
 
@@ -180,6 +190,8 @@ export const {
   setSelectedFeatureIds,
   toggleProjectDialog,
   toggleDialog,
-  setActivities
+  setActivities,
+  setUploadedActivities,
+  setLoading
 } = uiSlice.actions;
 export default uiSlice.reducer;

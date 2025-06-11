@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { setLoading, setSnackbarMessage, toggleDialog } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -10,8 +11,6 @@ import MarxanTextField from "../MarxanTextField";
 import Sync from "@mui/icons-material/Sync";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { generateTableCols } from "../Helpers";
-import { setSnackbarMessage } from "../slices/uiSlice";
-import { toggleDialog } from "../slices/uiSlice";
 
 // Initial state configuration
 const INITIAL_STATE = {
@@ -23,15 +22,6 @@ const HumanActivitiesDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
   const [stepIndex, setStepIndex] = useState(0);
   const [filename, setFilename] = useState("");
   const [description, setDescription] = useState("");
@@ -40,7 +30,7 @@ const HumanActivitiesDialog = (props) => {
 
   const handleNext = () => {
     if (stepIndex === INITIAL_STATE.steps.length - 1) {
-      saveActivityToDb();
+      handleSaveActivity(filename, selectedActivity, description);
     } else {
       setStepIndex(stepIndex + 1);
     }
@@ -50,24 +40,25 @@ const HumanActivitiesDialog = (props) => {
     setStepIndex(stepIndex - 1);
   };
 
-  const saveActivityToDb = () => {
-    props
-      .saveActivityToDb(filename, selectedActivity, description)
-      .then((response) => {
-        dispatch(setSnackbarOpen(true));
-        dispatch(setSnackbarMessage(response));
-        closeDialog();
-        props.openImportedActivitesDialog();
-      });
+  const handleSaveActivity = async (filename, selectedActivity, description) => {
+    dispatch(setLoading(true));
+    startLogging();
+    const url = `saveRaster?filename=${filename}&activity=${selectedActivity}&description=${description}`;
+    const response = await handleWebSocket(url);
+    dispatch(setLoading(false));
+    dispatch(setSnackbarOpen(true));
+    dispatch(setSnackbarMessage(response));
+    closeDialog();
+    dispatch(toggleDialog({
+      dialogName: "importedActivitiesDialogOpen",
+      isOpen: true
+    }))
   };
 
   const clickRow = (evt, rowInfo) => {
     console.log("rowInfo ", rowInfo);
     setSelectedActivity(rowInfo)
-
   }
-
-
 
   const closeDialog = () => {
     setStepIndex(0);
@@ -209,6 +200,6 @@ const HumanActivitiesDialog = (props) => {
       )}
     </MarxanDialog>
   );
-};
+}
 
 export default HumanActivitiesDialog;
