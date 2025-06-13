@@ -20,7 +20,7 @@ import { selectCurrentUser } from "../slices/authSlice";
 import { toggleFeatureD } from "../slices/featureSlice";
 import { useListFeatureProjectsQuery } from "../slices/featureSlice";
 
-const FeatureDialog = ({ loading, getTilesetMetadata }) => {
+const FeatureDialog = ({ getTilesetMetadata }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
@@ -65,7 +65,7 @@ const FeatureDialog = ({ loading, getTilesetMetadata }) => {
   return (
     <MarxanDialog
       open={featureDialogs.featureDialogOpen}
-      loading={loading}
+      loading={uiState.loading}
       onOk={closeDialog}
       onClose={closeDialog}
       showCancelButton={false}

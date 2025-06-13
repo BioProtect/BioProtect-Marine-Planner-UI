@@ -20,7 +20,6 @@ import { toggleFeatureD } from "../slices/featureSlice";
 
 const ImportFeaturesDialog = ({
   importFeatures,
-  loading,
   fileUpload,
   unzipShapefile,
   getShapefileFieldnames,
@@ -101,7 +100,7 @@ const ImportFeaturesDialog = ({
 
   const _disabled =
     (stepIndex === 0 && featureState.featureDatasetFilename === "") ||
-    (stepIndex === 1 && loading);
+    (stepIndex === 1 && uiState.loading);
 
   return (
     <Dialog
@@ -115,7 +114,7 @@ const ImportFeaturesDialog = ({
       <DialogContent>
         {stepIndex === 0 && (
           <FileUpload
-            loading={loading}
+            loading={uiState.loading}
             fileUpload={fileUpload}
             fileMatch=".zip"
             mandatory={true}
@@ -196,7 +195,7 @@ const ImportFeaturesDialog = ({
       <DialogActions>
         <Button
           onClick={handlePrev}
-          disabled={stepIndex === 0 || loading}
+          disabled={stepIndex === 0 || uiState.loading}
         >
           Back
         </Button>

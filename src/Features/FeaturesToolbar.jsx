@@ -18,7 +18,6 @@ import MenuItem from "@mui/material/MenuItem";
 const FeaturesToolbar = ({
   metadata,
   userRole,
-  loading,
   selectAllFeatures,
   _newByDigitising }) => {
   const dispatch = useDispatch();
@@ -144,7 +143,7 @@ const FeaturesToolbar = ({
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="New feature"
-            disabled={loading}
+            disabled={uiState.loading}
             aria-controls={open ? "basic-menu" : undefined}
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
@@ -169,7 +168,7 @@ const FeaturesToolbar = ({
           <Button
             startIcon={<Import style={{ height: "20px", width: "20px" }} />}
             title="Create new features from existing data"
-            disabled={loading}
+            disabled={uiState.loading}
             aria-controls={open ? "basic-menu" : undefined}
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
@@ -210,7 +209,7 @@ const FeaturesToolbar = ({
             title="Delete feature"
             disabled={
               featureState.selectedFeature === undefined ||
-              loading ||
+              uiState.loading ||
               (featureState.selectedFeature &&
                 featureState.selectedFeature.created_by === "global admin")
             }

@@ -8,12 +8,12 @@ import { toggleDialog } from "./slices/uiSlice";
 
 const AtlasLayersDialog = ({
   map,
-  loading,
   atlasLayers,
 }) => {
   const [selectedLayers, setSelectedLayers] = useState([]);
 
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const tableColumns = generateTableCols([{ id: "title", label: "title" }]);
 
@@ -57,7 +57,7 @@ const AtlasLayersDialog = ({
         open={dialogStates.atlasLayersDialogOpen}
         onOk={() => closeDialog()}
         onCancel={() => clearSelectedLayers()}
-        loading={loading}
+        loading={uiState.loading}
         title="Atlas Layers Selection"
         showCancelButton={true}
         cancelLabel="Clear all Layers"

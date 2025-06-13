@@ -9,12 +9,12 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useCallback, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import FileUpload from "../FileUpload";
 import MarxanTable from "../MarxanTable";
 import SyncIcon from "@mui/icons-material/Sync";
 import { setSnackbarMessage } from "../slices/uiSlice";
-import { useDispatch } from "react-redux";
 
 const title = ["Import Activity", "Upload Raster File"];
 
@@ -22,9 +22,9 @@ const ImportActivityDialog = ({
   onCancel,
   saveActivityToDb,
   activities,
-  loading,
 }) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui)
   const [steps, setSteps] = useState(["Select Activity", "Raster Upload"]);
   const [stepIndex, setStepIndex] = useState(0);
   const [filename, setFilename] = useState("");
@@ -139,14 +139,14 @@ const ImportActivityDialog = ({
         <Button
           variant="outlined"
           onClick={handlePrev}
-          disabled={stepIndex === 0 || loading}
+          disabled={stepIndex === 0 || uiState.loading}
         >
           Back
         </Button>
         <Button
           variant="contained"
           onClick={handleNext}
-          disabled={isNextDisabled || loading}
+          disabled={isNextDisabled || uiState.loading}
           startIcon={stepIndex === steps.length - 1 ? <SyncIcon /> : null}
         >
           {stepIndex === steps.length - 1 ? "Save Activity" : "Next"}

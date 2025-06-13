@@ -27,13 +27,13 @@ import MetChart from "./MetChart";
 import { toggleDialog } from "./slices/uiSlice";
 
 const GapAnalysisDialog = ({
-  loading,
   setGapAnalysis,
   gapAnalysis,
   preprocessing,
   metadata,
 }) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const projState = useSelector((state) => state.project);
 
@@ -117,7 +117,7 @@ const GapAnalysisDialog = ({
 
   return (
     <MarxanDialog
-      loading={loading}
+      loading={uiState.loading}
       open={dialogStates.gapAnalysisDialogOpen}
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}

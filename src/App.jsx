@@ -4283,7 +4283,6 @@ const App = () => {
           )}
           <ResendPasswordDialog
             open={dialogStates.resendPasswordDialogOpen}
-            loading={uiState.loading}
           />
           <ToolsMenu
             menuAnchor={menuAnchor}
@@ -4441,12 +4440,10 @@ const App = () => {
           />
           <FeatureInfoDialog
             open={true}
-            loading={uiState.loading}
             updateFeature={updateFeature}
           />
           <FeaturesDialog
             onOk={updateSelectedFeatures}
-            loading={uiState.loading || uploading}
             metadata={metadata}
             userRole={userData.role}
             openFeaturesDialog={openFeaturesDialog}
@@ -4455,10 +4452,8 @@ const App = () => {
             refreshFeatures={refreshFeatures}
           />
           {featureState.dialogs.featureDialogOpen ? (
-            <FeatureDialog
-              loading={uiState.loading}
-              getTilesetMetadata={getMetadata}
-            />) : null}
+            <FeatureDialog getTilesetMetadata={getMetadata} />)
+            : null}
           <NewFeatureDialog
             loading={uiState.loading || uploading}
             newFeatureCreated={newFeatureCreated}
@@ -4466,7 +4461,6 @@ const App = () => {
           {featureState.dialogs.importFeaturesDialogOpen ? (
             <ImportFeaturesDialog
               importFeatures={importFeatures}
-              loading={uiState.loading || preprocessing || uploading}
               fileUpload={uploadFileToFolder}
               unzipShapefile={unzipShapefile}
               getShapefileFieldnames={getShapefileFieldnames}
@@ -4496,7 +4490,6 @@ const App = () => {
             costname={metadata?.COSTS}
             deleteCost={deleteCost}
             data={costnames}
-            planningUnitName={metadata?.PLANNING_UNIT_NAME}
             createCostsFromImpact={createCostsFromImpact}
           />
           <ImportCostsDialog
@@ -4505,7 +4498,6 @@ const App = () => {
             fileUpload={uploadFileToProject}
           />
           <RunSettingsDialog
-            loading={uiState.loading || preprocessing}
             updateRunParams={updateRunParams}
             runParams={runParams}
             showClumpingDialog={showClumpingDialog}
@@ -4516,7 +4508,6 @@ const App = () => {
               open={dialogStates.classificationDialogOpen}
               onOk={() => setClassificationDialogOpen(false)}
               onCancel={() => setClassificationDialogOpen(false)}
-              loading={uiState.loading}
               renderer={renderer}
               changeColorCode={changeColorCode}
               changeRenderer={changeRenderer}
@@ -4537,9 +4528,8 @@ const App = () => {
             clumpingRunning={clumpingRunning}
             updateRunParams={updateRunParams}
           />
-          <ResetDialog onOk={resetServer} loading={uiState.loading} />
+          <ResetDialog onOk={resetServer} />
           <RunLogDialog
-            loading={uiState.loading}
             preprocessing={preprocessing}
             unauthorisedMethods={unauthorisedMethods}
             runLogs={runLogs}
@@ -4557,7 +4547,6 @@ const App = () => {
           <UpdateWDPADialog
             newWDPAVersion={newWDPAVersion}
             updateWDPA={updateWDPA}
-            loading={preprocessing}
             registry={registry}
           />
           <AlertDialog />
@@ -4581,7 +4570,6 @@ const App = () => {
             updateTargetValueForFeatures={updateTargetValueForFeatures}
           />
           <GapAnalysisDialog
-            loading={uiState.loading}
             showCancelButton={true}
             setGapAnalysis={setGapAnalysis}
             gapAnalysis={gapAnalysis}
@@ -4594,7 +4582,6 @@ const App = () => {
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog
               map={map}
-              loading={uiState.loading}
               atlasLayers={atlasLayers}
             />) : null}
 

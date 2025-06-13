@@ -8,7 +8,6 @@ import Loading from "../Loading";
 import MarxanDialog from "../MarxanDialog";
 
 const CumulativeImpactDialog = ({
-  loading,
   _get,
   metadata,
   clickImpact,
@@ -178,7 +177,7 @@ const CumulativeImpactDialog = ({
       open={dialogStates.cumulativeImpactDialogOpen}
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}
-      loading={loading}
+      loading={uiState.loading}
       autoDetectWindowHeight={false}
       title="Impacts"
       showSearchBox={true}
@@ -205,7 +204,6 @@ const CumulativeImpactDialog = ({
           )}
         </div>
         <CumulativeImpactsToolbar
-          loading={loading}
           metadataOV={metadata.OLDVERSION}
           userRole={userRole}
           openHumanActivitiesDialog={handleOpenHumanActivitiesDialog}

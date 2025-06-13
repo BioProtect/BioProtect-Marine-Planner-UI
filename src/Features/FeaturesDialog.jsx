@@ -12,7 +12,6 @@ import {
 
 const FeaturesDialog = ({
   onOk,
-  loading,
   metadata,
   userRole,
   openFeaturesDialog,
@@ -215,7 +214,7 @@ const FeaturesDialog = ({
   return (
     <MarxanDialog
       open={featureState.dialogs.featuresDialogOpen}
-      loading={loading}
+      loading={uiState.loading}
       onOk={handleClickOk}
       showCancelButton={featureState.addingRemovingFeatures}
       autoDetectWindowHeight={false}
@@ -226,7 +225,6 @@ const FeaturesDialog = ({
         <FeaturesToolbar
           metadata={metadata}
           userRole={userRole}
-          loading={loading}
           selectAllFeatures={() => selectAllFeatures()}
           _newByDigitising={_newByDigitising}
         />

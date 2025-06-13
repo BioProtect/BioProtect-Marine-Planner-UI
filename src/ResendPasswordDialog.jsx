@@ -6,12 +6,12 @@ import { useResendPasswordQuery } from "./slices/userSlice";
 
 const ResendPasswordDialog = ({
   open,
-  loading,
   resending,
 }) => {
   const [resendEmail, setResendEmail] = useState("");
   const dispatch = useDispatch();
   const userState = useSelector((state) => state.user)
+  const uiState = useSelector((state) => state.ui)
 
 
   const resendPassword = async () => {
@@ -49,7 +49,7 @@ const ResendPasswordDialog = ({
           value={resendEmail}
           onChange={(e) => setResendEmail(e.target.value)}
           onKeyDown={handleKeyPress}
-          disabled={loading}
+          disabled={uiState.loading}
           autoFocus
         />
       </DialogContent>
@@ -59,7 +59,7 @@ const ResendPasswordDialog = ({
         </Button>
         <Button
           onClick={resendPassword}
-          disabled={!resendEmail || loading}
+          disabled={!resendEmail || uiState.loading}
           variant="contained"
           color="primary"
         >

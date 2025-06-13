@@ -9,11 +9,10 @@ import { toggleDialog } from "./slices/uiSlice";
 const UpdateWDPADialog = ({
   registry,
   newWDPAVersion,
-  loading,
   updateWDPA,
 }) => {
   const dispatch = useDispatch();
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const uiState = useSelector((state) => state.ui);
   const htmlContent = registry
     ? `${registry.WDPA.latest_version} is available. Details <a href='${registry.WDPA.metadataUrl}' target='_blank'>here</a>. Click below to update.`
     : "";
@@ -25,8 +24,8 @@ const UpdateWDPADialog = ({
 
   return (
     <MarxanDialog
-      loading={loading}
-      open={dialogStates.updateWDPADialogOpen}
+      loading={uiState.loading}
+      open={uiState.dialogStates.updateWDPADialogOpen}
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}
       contentWidth={380}
@@ -42,7 +41,7 @@ const UpdateWDPADialog = ({
             title="Update WDPA"
             onClick={updateWDPA}
             label="Update"
-            disabled={loading}
+            disabled={uiState.loading}
           />
         </div>
       )}

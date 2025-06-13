@@ -16,7 +16,7 @@ import MarxanDialog from "../MarxanDialog";
 import { selectCurrentUser } from "../slices/authSlice";
 import { toggleFeatureD } from "../slices/featureSlice";
 
-const FeatureInfoDialog = ({ loading, updateFeature }) => {
+const FeatureInfoDialog = ({ updateFeature }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
@@ -191,7 +191,7 @@ const FeatureInfoDialog = ({ loading, updateFeature }) => {
   return (
     <MarxanDialog
       open={featureState.dialogs.featureInfoDialogOpen}
-      loading={loading}
+      loading={uiState.loading}
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}
       title="Properties"

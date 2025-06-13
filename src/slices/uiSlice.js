@@ -85,7 +85,6 @@ const mapboxBasemaps = [
 
 const initialState = {
   loading: false,
-
   snackbarOpen: false,
   snackbarMessage: "",
   activeTab: "project",
@@ -96,6 +95,7 @@ const initialState = {
   activities: [],
   allImpacts: [],
   uploadedActivities: [],
+  selectedActivity: "",
 
   dialogStates: {
     aboutDialogOpen: false,
@@ -175,6 +175,9 @@ const uiSlice = createSlice({
     },
     setLoading(state, action) {
       state.loading = action.payload;
+    },
+    setSelectedActivity(state, action) {
+      state.selectedActivity = action.payload;
     }
 
   },
@@ -192,6 +195,7 @@ export const {
   toggleDialog,
   setActivities,
   setUploadedActivities,
-  setLoading
+  setLoading,
+  setSelectedActivity
 } = uiSlice.actions;
 export default uiSlice.reducer;

@@ -14,6 +14,13 @@ import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "./slices/uiSlice";
 
 const CostsDialog = (props) => {
+  const {
+    unauthorisedMethods,
+    costname,
+    deleteCost,
+    data,
+    createCostsFromImpact,
+  } = props
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
@@ -22,10 +29,10 @@ const CostsDialog = (props) => {
 
   const changeCost = (event, cost) => setSelectedCost(cost);
 
-  const costFromImpact = (e, data) => props.createCostsFromImpact(data);
+  const costFromImpact = (e, data) => createCostsFromImpact(data);
 
-  const deleteCost = () => {
-    props.deleteCost(selectedCost.name);
+  const handleDeleteCost = () => {
+    deleteCost(selectedCost.name);
     setSelectedCost(undefined);
   };
 
@@ -40,7 +47,7 @@ const CostsDialog = (props) => {
     );
   };
 
-  const _data = props.data.map((item) => ({ name: item }));
+  const _data = data.map((item) => ({ name: item }));
 
   return (
     <MarxanDialog
@@ -87,10 +94,9 @@ const CostsDialog = (props) => {
         /> */}
         <div id="costsToolbar">
           <ToolbarButton
-            show={props.userRole !== "ReadOnly"}
             icon={<Import style={{ height: "20px", width: "20px" }} />}
             title="Upload a new costs file"
-            disabled={props.loading}
+            disabled={uiState.loading}
             onClick={() =>
               dispatch(
                 toggleDialog({
@@ -102,18 +108,18 @@ const CostsDialog = (props) => {
             label={"Import"}
           />
           <ToolbarButton
-            show={!props.unauthorisedMethods.includes("deletePlanningUnitGrid")}
+            show={!unauthorisedMethods.includes("deletePlanningUnitGrid")}
             icon={
               <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
             }
             title="Delete cost profile"
             disabled={
               !selectedCost ||
-              (selectedCost && selectedCost.name === props.costname) ||
+              (selectedCost && selectedCost.name === costname) ||
               (selectedCost &&
                 selectedCost.name === CONSTANTS.UNIFORM_COST_NAME)
             }
-            onClick={deleteCost}
+            onClick={handleDeleteCost}
             label={"Delete"}
           />
         </div>

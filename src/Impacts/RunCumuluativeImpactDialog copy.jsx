@@ -231,12 +231,6 @@ class ImportedActivitiesDialog extends React.Component {
                 shown.
               </div>
               <ToolbarButton
-                show={
-                  this.props.userRole !== "ReadOnly" &&
-                    !this.props.metadata.OLDVERSION
-                    ? "true"
-                    : "false"
-                }
                 icon={<FontAwesomeIcon icon={faPlusCircle} />}
                 title="Run Cumulative Impact Function"
                 primary={true}

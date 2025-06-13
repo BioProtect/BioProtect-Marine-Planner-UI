@@ -14,7 +14,7 @@ import { setAddToProject } from "../slices/projectSlice";
 import { useCreateFeatureFromLinestringMutation } from "../slices/featureSlice";
 
 // Functional component version using React 18 and MUI 5
-const NewFeatureDialog = ({ loading, newFeatureCreated }) => {
+const NewFeatureDialog = ({ newFeatureCreated }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);

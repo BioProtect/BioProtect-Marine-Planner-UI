@@ -12,13 +12,12 @@ import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "./slices/uiSlice";
 
 const RunSettingsDialog = ({
-  loading,
   updateRunParams,
   runParams,
   showClumpingDialog,
   userRole,
 }) => {
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const uiState = useSelector((state) => state.ui);
   const dispatch = useDispatch();
   const [data, setData] = useState([]);
   const [updateEnabled, setUpdateEnabled] = useState(false);
@@ -94,8 +93,8 @@ const RunSettingsDialog = ({
 
   return (
     <MarxanDialog
-      loading={loading}
-      open={dialogStates.settingsDialogOpen}
+      loading={uiState.loading}
+      open={uiState.dialogStates.settingsDialogOpen}
       onOk={handleUpdateRunParams}
       onCancel={() => closeDialog()}
       fullWidth={false}

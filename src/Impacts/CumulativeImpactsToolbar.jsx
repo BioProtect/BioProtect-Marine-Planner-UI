@@ -2,15 +2,14 @@ import {
   faCircle,
   faPlusCircle
 } from "@fortawesome/free-solid-svg-icons";
+import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { toggleDialog } from "../slices/uiSlice";
-import { useDispatch } from "react-redux";
 
 const CumulativeImpactsToolbar = ({
-  loading,
   userRole,
   openHumanActivitiesDialog,
   // deleteImpact,
@@ -18,6 +17,7 @@ const CumulativeImpactsToolbar = ({
   selectedProject,
 }) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   return (
     <div>
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
@@ -33,7 +33,6 @@ const CumulativeImpactsToolbar = ({
 
         {userRole !== "ReadOnly" ? (
           <Button
-            show={userRole !== "ReadOnly"}
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="View uploaded activities"
             onClick={() => dispatch(
@@ -42,7 +41,7 @@ const CumulativeImpactsToolbar = ({
                 isOpen: true
               })
             )}
-            disabled={loading}
+            disabled={uiState.loading}
           >
             Run Cumulative Impact
           </Button>
@@ -68,7 +67,7 @@ const CumulativeImpactsToolbar = ({
           startIcon={<FontAwesomeIcon icon={faCircle} />}
           title="Clear all Impact layers"
           // onClick={clearAllImpacts}
-          disabled={!selectedProject || loading}
+          disabled={!selectedProject || uiState.loading}
         >
           Clear all
         </Button>

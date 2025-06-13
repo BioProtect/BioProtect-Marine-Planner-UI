@@ -14,6 +14,7 @@ import {
   RENDERERS,
   TOPCLASSES,
 } from "./classificationConstants";
+import { useDispatch, useSelector } from "react-redux";
 
 import ColorSelector from "./ColorSelector";
 import MarxanDialog from "./MarxanDialog";
@@ -21,6 +22,8 @@ import React from "react";
 import RendererSelector from "./RendererSelector";
 
 const ClassificationDialog = (props) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui);
   const renderer = props.renderer || {};
   const dataBreaks = Array.isArray(props.dataBreaks) ? props.dataBreaks : [];
   const summaryStats = props.summaryStats || [];
@@ -35,7 +38,7 @@ const ClassificationDialog = (props) => {
       open={props.open}
       onOk={props.onOk}
       onCancel={props.onCancel}
-      loading={props.loading}
+      loading={uiState.loading}
       showCancelButton={false}
       helpLink={"user.html#changing-how-the-results-are-displayed"}
       title="Classification"

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { setLoading, setSnackbarMessage, toggleDialog } from "../slices/uiSlice";
+import { setLoading, setSelectedActivity, setSnackbarMessage, toggleDialog } from "../slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
 import FileUpload from "../Uploads/FileUpload";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
@@ -26,11 +27,10 @@ const HumanActivitiesDialog = (props) => {
   const [filename, setFilename] = useState("");
   const [description, setDescription] = useState("");
   const [searchText, setSearchText] = useState("");
-  const [selectedActivity, setSelectedActivity] = useState("");
 
   const handleNext = () => {
     if (stepIndex === INITIAL_STATE.steps.length - 1) {
-      handleSaveActivity(filename, selectedActivity, description);
+      handleSaveActivity(filename, uiState.selectedActivity, description);
     } else {
       setStepIndex(stepIndex + 1);
     }
@@ -56,8 +56,7 @@ const HumanActivitiesDialog = (props) => {
   };
 
   const clickRow = (evt, rowInfo) => {
-    console.log("rowInfo ", rowInfo);
-    setSelectedActivity(rowInfo)
+    dispatch(setSelectedActivity(rowInfo));
   }
 
   const closeDialog = () => {
@@ -65,7 +64,7 @@ const HumanActivitiesDialog = (props) => {
     setFilename("");
     setDescription("");
     setSearchText("");
-    setSelectedActivity("");
+    dispatch(setSelectedActivity(""));
     dispatch(setSnackbarMessage(""));
     dispatch(
       toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: false })
@@ -78,34 +77,35 @@ const HumanActivitiesDialog = (props) => {
   ]);
 
   const isNextDisabled = () => {
-    if (stepIndex === 0) return selectedActivity === "";
+    if (stepIndex === 0) return uiState.selectedActivity === "";
     if (stepIndex === 1) return filename === "";
     return false;
   };
 
   const actions = (
-    <div style={{ margin: "0 16px" }}>
+    <div>
       {stepIndex !== 1 && (
-        <div style={{ marginTop: 12 }}>
-          <Button
-            label="Back"
-            disabled={stepIndex === 0 || props.loading}
-            onClick={handlePrev}
-          />
-          <Button
-            label={
-              stepIndex === INITIAL_STATE.steps.length - 1
+        <div>
+          <ButtonGroup aria-label="Basic button group" fullWidth={true}>
+            <Button
+              onClick={handlePrev}
+              disabled={stepIndex === 0 || loading}
+            >
+              Back
+            </Button>
+            <Button
+              onClick={() => handleNext()}
+              disabled={
+                isNextDisabled() ||
+                props.loading ||
+                (stepIndex === 2 && (filename === "" || description === ""))
+              }
+            >
+              {stepIndex === INITIAL_STATE.steps.length - 1
                 ? "Save to Database"
-                : "Next"
-            }
-            onClick={handleNext}
-            disabled={
-              isNextDisabled() ||
-              props.loading ||
-              (stepIndex === 2 && (filename === "" || description === ""))
-            }
-            primary={true}
-          />
+                : "Next"}
+            </Button>
+          </ButtonGroup>
         </div>
       )}
     </div>
@@ -119,10 +119,9 @@ const HumanActivitiesDialog = (props) => {
       onClose={() => closeDialog()}
       okLabel={"Cancel"}
       title={INITIAL_STATE.title[stepIndex]}
-      showSearchBox={true}
-      searchTextChanged={setSearchText}
       actions={actions}
       helpLink={"user.html#importing-from-a-shapefile"}
+      fullWidth={true}
     >
       {stepIndex === 0 && (
         <div id="activityTable">
@@ -133,16 +132,15 @@ const HumanActivitiesDialog = (props) => {
             ableToSelectAll={false}
             searchColumns={["category", "activity"]}
             searchText={searchText}
-            selected={[selectedActivity]}
+            selected={[uiState.selectedActivity]}
             clickRow={clickRow}
-
+            showSearchBox={true}
           />
         </div>
       )}
       {stepIndex === 1 && (
         <div>
           <Button
-            show={props.userRole !== "ReadOnly" && !props.metadata.OLDVERSION}
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="Import"
             disabled={props.loading}
@@ -151,7 +149,6 @@ const HumanActivitiesDialog = (props) => {
             Import from Raster
           </Button>
           <Button
-            show={props.userRole !== "ReadOnly" && !props.metadata.OLDVERSION}
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="Draw on screen"
             disabled={true}
@@ -180,7 +177,7 @@ const HumanActivitiesDialog = (props) => {
           </div>
           <FileUpload
             {...props}
-            selectedActivity={selectedActivity}
+            selectedActivity={uiState.selectedActivity}
             fileMatch={".tif"}
             mandatory={true}
             filename={filename}
