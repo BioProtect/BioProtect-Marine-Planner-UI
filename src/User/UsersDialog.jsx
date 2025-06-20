@@ -5,8 +5,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanTable from "../MarxanTable";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
-import { toggleDialog } from "../slices/uiSlice";
-import { useListUsersQuery } from "../slices/userSlice";
+import { toggleDialog } from "@slices/uiSlice";
+import { useListUsersQuery } from "@slices/userSlice";
 
 const USER_ROLES = ["User", "ReadOnly", "Admin"];
 

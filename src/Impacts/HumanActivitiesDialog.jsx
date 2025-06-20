@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { setLoading, setSelectedActivity, setSnackbarMessage, toggleDialog } from "../slices/uiSlice";
+import { setLoading, setSelectedActivity, setSnackbarMessage, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
 import MarxanTextField from "../MarxanTextField";
 import Sync from "@mui/icons-material/Sync";
+import TextField from "@mui/material/TextField";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { generateTableCols } from "../Helpers";
 
@@ -82,38 +83,37 @@ const HumanActivitiesDialog = (props) => {
     return false;
   };
 
-  const actions = (
-    <div>
+  const actions =
+    <ButtonGroup aria-label="Basic button group" >
       {stepIndex !== 1 && (
-        <div>
-          <ButtonGroup aria-label="Basic button group" fullWidth={true}>
-            <Button
-              onClick={handlePrev}
-              disabled={stepIndex === 0 || loading}
-            >
-              Back
-            </Button>
-            <Button
-              onClick={() => handleNext()}
-              disabled={
-                isNextDisabled() ||
-                props.loading ||
-                (stepIndex === 2 && (filename === "" || description === ""))
-              }
-            >
-              {stepIndex === INITIAL_STATE.steps.length - 1
-                ? "Save to Database"
-                : "Next"}
-            </Button>
-          </ButtonGroup>
-        </div>
+        <>
+          <Button
+            onClick={handlePrev}
+            disabled={stepIndex === 0 || uiState.loading}
+          >
+            Back
+          </Button>
+          <Button
+            onClick={() => handleNext()}
+            disabled={
+              isNextDisabled() ||
+              uiState.loading ||
+              (stepIndex === 2 && (filename === "" || description === ""))
+            }
+          >
+            {stepIndex === INITIAL_STATE.steps.length - 1
+              ? "Save to Database"
+              : "Next"}
+          </Button>
+        </>
       )}
-    </div>
-  );
+    </ButtonGroup>;
+
+
 
   return (
     <MarxanDialog
-      loading={props.loading}
+      loading={uiState.loading}
       open={dialogStates.humanActivitiesDialogOpen}
       onOk={() => closeDialog()}
       onClose={() => closeDialog()}
@@ -143,7 +143,7 @@ const HumanActivitiesDialog = (props) => {
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="Import"
-            disabled={props.loading}
+            disabled={uiState.loading}
             onClick={handleNext}
           >
             Import from Raster
@@ -166,7 +166,7 @@ const HumanActivitiesDialog = (props) => {
               className="spin"
               style={{
                 display:
-                  props.loading || props.showSpinner ? "inline-block" : "none",
+                  uiState.loading || props.showSpinner ? "inline-block" : "none",
                 color: "rgb(255, 64, 129)",
                 top: "15px",
                 right: "41px",
@@ -177,7 +177,6 @@ const HumanActivitiesDialog = (props) => {
           </div>
           <FileUpload
             {...props}
-            selectedActivity={uiState.selectedActivity}
             fileMatch={".tif"}
             mandatory={true}
             filename={filename}
@@ -186,12 +185,14 @@ const HumanActivitiesDialog = (props) => {
             label="Raster"
             style={{ paddingTop: "10px" }}
           />
-          <MarxanTextField
+          <TextField
+            fullWidth={true}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            multiLine={true}
-            rows={2}
-            floatingLabelText="Enter a description"
+            multiline
+            rows={4}
+            label="Enter a description"
+            variant="outlined"
           />
         </div>
       )}

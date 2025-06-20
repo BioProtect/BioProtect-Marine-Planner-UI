@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { faLock, faShareAlt } from "@fortawesome/free-solid-svg-icons";
-import { selectCurrentUser, selectUserProject } from "../slices/authSlice";
-import { setActiveTab, toggleDialog } from "../slices/uiSlice";
+import { selectCurrentUser, selectUserProject } from "@slices/authSlice";
+import { setActiveTab, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";

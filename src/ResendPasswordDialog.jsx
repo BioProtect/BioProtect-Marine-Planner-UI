@@ -2,7 +2,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } 
 import { React, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { useResendPasswordQuery } from "./slices/userSlice";
+import { useResendPasswordQuery } from "@slices/userSlice";
 
 const ResendPasswordDialog = ({
   open,

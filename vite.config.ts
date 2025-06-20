@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import path from "path";
 import react from "@vitejs/plugin-react-swc";
 import svgr from "vite-plugin-svgr";
 import viteTsconfigPaths from "vite-tsconfig-paths";
@@ -8,21 +9,19 @@ export default defineConfig({
   base: "/",
   plugins: [
     react(),
-    viteTsconfigPaths(),
     svgr({
       include: "**/*.svg?react",
     }),
   ],
-  test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: "./src/setupTests.ts",
-    css: true,
-    reporters: ["verbose"],
-    coverage: {
-      reporter: ["text", "json", "html"],
-      include: ["src/**/*"],
-      exclude: [],
+  resolve: {
+    alias: {
+      "@slices": path.resolve(__dirname, "./src/slices"),
+      "@planningGrids": path.resolve(__dirname, "./src/planningGrids"),
+      "@projects": path.resolve(__dirname, "./src/projects"),
+      "@features": path.resolve(__dirname, "./src/features"),
+      "@navbars": path.resolve(__dirname, "./src/navbars"),
+      "@images": path.resolve(__dirname, "./src/images"),
+      // You can add more aliases as needed
     },
   },
   server: {

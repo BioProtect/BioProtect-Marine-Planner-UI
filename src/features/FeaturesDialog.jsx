@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { setSelectedFeature, setSelectedFeatureIds, toggleFeatureD } from "../slices/featureSlice";
+import { setSelectedFeature, setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -8,7 +8,7 @@ import MarxanDialog from "../MarxanDialog";
 import { generateTableCols } from "../Helpers";
 import {
   toggleDialog,
-} from "../slices/uiSlice";
+} from "@slices/uiSlice";
 
 const FeaturesDialog = ({
   onOk,

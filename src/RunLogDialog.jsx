@@ -22,7 +22,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "./MarxanDialog";
 import Sync from "@mui/icons-material/Sync";
 import ToolbarButton from "./ToolbarButton";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const RunLogDialog = ({
   preprocessing,

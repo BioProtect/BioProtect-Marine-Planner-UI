@@ -4,17 +4,16 @@ import { useDispatch, useSelector } from "react-redux";
 import MarxanDialog from "./MarxanDialog";
 import React from "react";
 import ToolbarButton from "./ToolbarButton";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const UpdateWDPADialog = ({
-  registry,
   newWDPAVersion,
   updateWDPA,
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
-  const htmlContent = registry
-    ? `${registry.WDPA.latest_version} is available. Details <a href='${registry.WDPA.metadataUrl}' target='_blank'>here</a>. Click below to update.`
+  const htmlContent = uiState.registry
+    ? `${uiState.registry.WDPA.latest_version} is available. Details <a href='${uiState.registry.WDPA.metadataUrl}' target='_blank'>here</a>. Click below to update.`
     : "";
 
   const closeDialog = () =>

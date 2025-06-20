@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import FileUpload from "../FileUpload";
 import MarxanTable from "../MarxanTable";
 import SyncIcon from "@mui/icons-material/Sync";
-import { setSnackbarMessage } from "../slices/uiSlice";
+import { setSnackbarMessage } from "@slices/uiSlice";
 
 const title = ["Import Activity", "Upload Raster File"];
 

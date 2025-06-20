@@ -11,17 +11,17 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../../MarxanDialog";
 import React from "react";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
-import { toggleDialog } from "../../slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
-const ServerDetailsDialog = ({ loading, newWDPAVersion, registry }) => {
+const ServerDetailsDialog = ({ loading, newWDPAVersion }) => {
   const dispatch = useDispatch();
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const uiState = useSelector((state) => state.ui);
   const projectState = useSelector((state) => state.project);
   const server = projectState.bpServer;
   const renderWithIcon = (cellInfo) => {
     const newServerSoftware =
       cellInfo.key === "Marxan Server version" &&
-      server.server_version !== registry.SERVER_VERSION;
+      server.server_version !== uiState.registry.SERVER_VERSION;
 
     return (
       <React.Fragment>
@@ -35,7 +35,7 @@ const ServerDetailsDialog = ({ loading, newWDPAVersion, registry }) => {
         {newServerSoftware && (
           <FontAwesomeIcon
             icon={faExclamationTriangle}
-            title={`A new version of Marxan Server is available - ${registry.SERVER_VERSION}`}
+            title={`A new version of Marxan Server is available - ${uiState.registry.SERVER_VERSION}`}
           />
         )}
         {cellInfo.key === "WDPA version" && (
@@ -91,7 +91,7 @@ const ServerDetailsDialog = ({ loading, newWDPAVersion, registry }) => {
   return (
     <MarxanDialog
       loading={loading}
-      open={dialogStates.serverDetailsDialogOpen}
+      open={uiState.dialogStates.serverDetailsDialogOpen}
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}
       onClose={() => closeDialog()}

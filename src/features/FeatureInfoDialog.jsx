@@ -13,8 +13,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
-import { selectCurrentUser } from "../slices/authSlice";
-import { toggleFeatureD } from "../slices/featureSlice";
+import { selectCurrentUser } from "@slices/authSlice";
+import { toggleFeatureD } from "@slices/featureSlice";
 
 const FeatureInfoDialog = ({ updateFeature }) => {
   const dispatch = useDispatch();

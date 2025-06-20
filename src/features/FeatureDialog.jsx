@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useState } from "react";
-import { setProjectList, setProjectListDialogHeading, setProjectListDialogTitle, toggleProjDialog } from "../slices/projectSlice";
+import { setProjectList, setProjectListDialogHeading, setProjectListDialogTitle, toggleProjDialog } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BPTableRow from "../BPComponents/BPTableRow";
@@ -16,9 +16,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
 import { getArea } from "../Helpers";
-import { selectCurrentUser } from "../slices/authSlice";
-import { toggleFeatureD } from "../slices/featureSlice";
-import { useListFeatureProjectsQuery } from "../slices/featureSlice";
+import { selectCurrentUser } from "@slices/authSlice";
+import { toggleFeatureD } from "@slices/featureSlice";
+import { useListFeatureProjectsQuery } from "@slices/featureSlice";
 
 const FeatureDialog = ({ getTilesetMetadata }) => {
   const dispatch = useDispatch();

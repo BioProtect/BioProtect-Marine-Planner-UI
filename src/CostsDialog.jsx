@@ -11,7 +11,7 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import ToolbarButton from "./ToolbarButton";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const CostsDialog = (props) => {
   const {

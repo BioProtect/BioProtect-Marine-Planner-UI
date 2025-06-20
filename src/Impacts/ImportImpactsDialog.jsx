@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { setSnackbarMessage, setSnackbarOpen } from "../slices/uiSlice";
+import { setSnackbarMessage, setSnackbarOpen } from "@slices/uiSlice";
 
 import FileUpload from "../FileUpload";
 import MarxanDialog from "../MarxanDialog";

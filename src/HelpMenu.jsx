@@ -10,7 +10,7 @@ import Menu from "@mui/material/Menu";
 import MenuBarListItem from "./MenuBarListItem";
 import MenuItem from "@mui/material/MenuItem";
 import React from "react";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const HelpMenu = (props) => {
   const dispatch = useDispatch();

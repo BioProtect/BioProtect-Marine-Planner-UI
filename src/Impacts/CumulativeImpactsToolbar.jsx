@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { toggleDialog } from "../slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const CumulativeImpactsToolbar = ({
   userRole,

@@ -6,7 +6,7 @@ import {
   toggleDialog,
   togglePUD,
   toggleProjectDialog,
-} from "../slices/uiSlice";
+} from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

@@ -9,7 +9,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import React from "react";
 import ToolbarButton from "./ToolbarButton";
 import grey from "@mui/material/colors/grey";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 class SelectCostFeatures extends React.Component {
   constructor(props) {

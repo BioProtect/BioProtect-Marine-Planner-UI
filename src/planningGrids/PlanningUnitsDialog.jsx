@@ -1,6 +1,6 @@
 import { Box, Paper, Stack } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
-import { setPlanningUnitGrids, useListPlanningUnitsQuery } from "../slices/planningUnitSlice"
+import { setPlanningUnitGrids, useListPlanningUnitsQuery } from "@slices/planningUnitSlice"
 import { useDispatch, useSelector } from "react-redux";
 
 import SelectMapboxLayer from "../SelectMapboxLayer";

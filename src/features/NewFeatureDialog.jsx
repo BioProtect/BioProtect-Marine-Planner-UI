@@ -10,8 +10,8 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
-import { setAddToProject } from "../slices/projectSlice";
-import { useCreateFeatureFromLinestringMutation } from "../slices/featureSlice";
+import { setAddToProject } from "@slices/projectSlice";
+import { useCreateFeatureFromLinestringMutation } from "@slices/featureSlice";
 
 // Functional component version using React 18 and MUI 5
 const NewFeatureDialog = ({ newFeatureCreated }) => {

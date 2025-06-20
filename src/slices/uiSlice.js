@@ -91,6 +91,7 @@ const initialState = {
   activeResultsTab: "legend",
   basemap: "BioProtect",
   basemaps: mapboxBasemaps,
+  registry: {},
 
   activities: [],
   allImpacts: [],
@@ -178,6 +179,9 @@ const uiSlice = createSlice({
     },
     setSelectedActivity(state, action) {
       state.selectedActivity = action.payload;
+    },
+    setRegistry(state, action) {
+      state.registry = action.payload;
     }
 
   },
@@ -196,6 +200,7 @@ export const {
   setActivities,
   setUploadedActivities,
   setLoading,
-  setSelectedActivity
+  setSelectedActivity,
+  setRegistry
 } = uiSlice.actions;
 export default uiSlice.reducer;

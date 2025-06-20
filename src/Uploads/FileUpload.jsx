@@ -4,20 +4,23 @@ import {
   Sync as SyncIcon,
   UploadFile as UploadFileIcon,
 } from "@mui/icons-material";
-import { setSnackbarMessage, setSnackbarOpen } from "../slices/uiSlice";
+import { setSnackbarMessage, setSnackbarOpen } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-import { setFeatureDatasetFilename } from "../slices/featureSlice";
+import { setFeatureDatasetFilename } from "@slices/featureSlice";
 
 // FileUpload component refactored to use React 18 and MUI 5
 const FileUpload = (props) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui)
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(false);
   const [destinationFolder, setDestinationFolder] = useState("imports");
-  const id = `upload-${props.parameter}`;
+  const id = `upload-${props.filename}`;
 
   const handleChange = async (e) => {
+    console.log("handling change in file upload ", e);
+    console.log("handling change in file upload target ", e.target);
     if (props.destFolder) {
       setDestinationFolder(props.destFolder);
     }
@@ -31,13 +34,13 @@ const FileUpload = (props) => {
       // upload file  - if its an impact it uploads slightly differently
       try {
         let response;
-        if (props.selectedActivity) {
-          console.log("props.selectedActivity ", props.selectedActivity);
+        if (uiState.selectedActivity) {
+          console.log("selectedActivity ", uiState.selectedActivity);
           response = await props.fileUpload({
             value: target,
             filename: filename,
             destFolder: destinationFolder,
-            activity: props.selectedActivity,
+            activity: uiState.selectedActivity.activity,
           });
         } else {
           response = await props.fileUpload(
@@ -46,7 +49,7 @@ const FileUpload = (props) => {
             destinationFolder,
           );
         }
-        dispatch(setFeatureDatasetFilename(response.file));
+        console.log(response)
         dispatch(setSnackbarOpen(true));
         dispatch(setSnackbarMessage(response.info));
       } catch (error) {
@@ -73,7 +76,7 @@ const FileUpload = (props) => {
           color: active ? "primary.main" : "text.secondary",
         }}
       >
-        {props.label}
+        {props.label} - {props.filename}
       </Typography>
 
       <Box display="flex" alignItems="center">

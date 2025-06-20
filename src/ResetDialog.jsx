@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import MarxanDialog from "./MarxanDialog";
 import React from "react";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const ResetDialog = ({ onOk, loading }) => {
   const dispatch = useDispatch();

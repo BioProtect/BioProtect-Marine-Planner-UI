@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { selectCurrentUser, setCredentials } from "../slices/authSlice";
+import { selectCurrentUser, setCredentials } from "@slices/authSlice";
 import {
   setAddingRemovingFeatures,
   setFeaturePlanningUnits,
   setFeatureProjects,
   toggleFeatureD,
-} from "../slices/featureSlice";
+} from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -13,7 +13,7 @@ import FeaturesList from "./FeaturesList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Stack from "@mui/material/Stack";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
-import { toggleDialog } from "../slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const FeaturesTab = (props) => {
   const dispatch = useDispatch();

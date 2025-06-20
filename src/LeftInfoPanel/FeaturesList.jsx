@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import {
   setCurrentFeature,
   toggleFeatureD,
-} from "../slices/featureSlice";
+} from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import IconButton from "@mui/material/IconButton";
@@ -15,8 +15,8 @@ import ListItemText from "@mui/material/ListItemText";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TargetIcon from "../TargetIcon";
 import { grey } from "@mui/material/colors";
-import { selectCurrentUser } from "../slices/authSlice";
-import { setProjectFeatures } from "../slices/projectSlice";
+import { selectCurrentUser } from "@slices/authSlice";
+import { setProjectFeatures } from "@slices/projectSlice";
 
 const FeaturesList = ({
   simple,

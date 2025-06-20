@@ -11,8 +11,8 @@ import RemoveFromMap from "@mui/icons-material/VisibilityOff";
 import RemoveFromProject from "@mui/icons-material/Remove";
 import ZoomIn from "@mui/icons-material/ZoomIn";
 import { generateTableCols } from "../Helpers";
-import { selectCurrentUser } from "../slices/authSlice";
-import { toggleFeatureD } from "../slices/featureSlice";
+import { selectCurrentUser } from "@slices/authSlice";
+import { toggleFeatureD } from "@slices/featureSlice";
 
 const FeatureMenu = ({
   anchorEl,

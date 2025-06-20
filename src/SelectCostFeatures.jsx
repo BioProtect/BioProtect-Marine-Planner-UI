@@ -7,7 +7,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ToolbarButton from "./ToolbarButton";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 import { useDispatch } from "react-redux";
 
 const SelectCostFeatures = ({ selectedCosts }) => {

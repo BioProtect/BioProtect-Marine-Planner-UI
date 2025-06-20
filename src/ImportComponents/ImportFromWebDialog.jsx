@@ -10,8 +10,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
-import { setAddToProject } from "../slices/projectSlice";
-import { toggleFeatureD } from "../slices/featureSlice";
+import { setAddToProject } from "@slices/projectSlice";
+import { toggleFeatureD } from "@slices/featureSlice";
 
 const SOURCE_TYPES = ["Web Feature Service"];
 

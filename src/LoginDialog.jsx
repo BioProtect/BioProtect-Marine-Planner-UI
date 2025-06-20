@@ -1,8 +1,8 @@
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
-import { getUserProject, selectServer } from "./slices/projectSlice";
-import { selectCurrentToken, selectCurrentUser } from "./slices/authSlice";
-import { setBasemap, setSnackbarMessage, setSnackbarOpen } from "./slices/uiSlice";
+import { getUserProject, selectServer } from "@slices/projectSlice";
+import { selectCurrentToken, selectCurrentUser } from "@slices/authSlice";
+import { setBasemap, setSnackbarMessage, setSnackbarOpen } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -25,8 +25,8 @@ import React from "react";
 import Select from "@mui/material/Select";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { setCredentials } from "./slices/authSlice";
-import { useLoginMutation } from "./slices/authApiSlice";
+import { setCredentials } from "@slices/authSlice";
+import { useLoginMutation } from "@slices/authApiSlice";
 
 const LoginDialog = ({ open, postLoginSetup }) => {
   const [selectOpen, setSelectOpen] = useState(false);

@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import CONSTANTS from "../constants";
 import FileUpload from "../Uploads/FileUpload";
 import MarxanDialog from "../MarxanDialog";
-import { togglePUD } from "../slices/planningUnitSlice";
+import { togglePUD } from "@slices/planningUnitSlice";
 
 const NewMarinePlanningGridDialog = ({
   loading,

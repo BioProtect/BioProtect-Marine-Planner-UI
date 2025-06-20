@@ -1,20 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { setAllFeatures, toggleFeatureD } from "../../slices/featureSlice.js";
+import { setAllFeatures, toggleFeatureD } from "@slices/featureSlice.js";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
-import FeaturesDialog from "../../Features/FeaturesDialog";
+import FeaturesDialog from "@features/FeaturesDialog";
 import MarxanDialog from "../../MarxanDialog";
 import Metadata from "../../Metadata";
-import PlanningUnitsDialog from "../../PlanningGrids/PlanningUnitsDialog";
+import PlanningUnitsDialog from "@planningGrids/PlanningUnitsDialog";
 import SelectCostFeatures from "../../SelectCostFeatures";
 import SelectFeatures from "../../LeftInfoPanel/FeaturesTab.jsx";
-import { setSelectedFeatureIds } from "../../slices/featureSlice.js"
-import { togglePUD } from "../../slices/planningUnitSlice.js";
-import { toggleProjDialog } from "../../slices/projectSlice.js";
+import { setSelectedFeatureIds } from "@slices/featureSlice.js"
+import { togglePUD } from "@slices/planningUnitSlice.js";
+import { toggleProjDialog } from "@slices/projectSlice.js";
 
 const NewProjectDialog = ({
-  registry,
   loading,
   openFeaturesDialog,
   selectedCosts,

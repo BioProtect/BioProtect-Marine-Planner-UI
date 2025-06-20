@@ -10,7 +10,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
-import { toggleProjDialog } from "../slices/projectSlice";
+import { toggleProjDialog } from "@slices/projectSlice";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 

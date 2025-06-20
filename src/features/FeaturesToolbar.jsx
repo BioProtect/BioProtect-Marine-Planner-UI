@@ -5,7 +5,7 @@ import {
   faTimesCircle,
   faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
-import { setAllFeatures, setSelectedFeature, setSelectedFeatureIds, toggleFeatureD, useDeleteFeatureMutation } from "../slices/featureSlice";
+import { setAllFeatures, setSelectedFeature, setSelectedFeatureIds, toggleFeatureD, useDeleteFeatureMutation } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";

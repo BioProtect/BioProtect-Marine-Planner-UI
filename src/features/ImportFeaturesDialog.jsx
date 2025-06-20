@@ -14,9 +14,9 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
-import { setAddToProject } from "../slices/projectSlice";
-import { setFeatureDatasetFilename } from "../slices/featureSlice";
-import { toggleFeatureD } from "../slices/featureSlice";
+import { setAddToProject } from "@slices/projectSlice";
+import { setFeatureDatasetFilename } from "@slices/featureSlice";
+import { toggleFeatureD } from "@slices/featureSlice";
 
 const ImportFeaturesDialog = ({
   importFeatures,

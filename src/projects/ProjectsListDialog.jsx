@@ -12,8 +12,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 import MarxanDialog from "../MarxanDialog";
 import React from "react";
-import { selectCurrentUser } from "../slices/authSlice";
-import { toggleProjDialog } from "../slices/projectSlice";
+import { selectCurrentUser } from "@slices/authSlice";
+import { toggleProjDialog } from "@slices/projectSlice";
 
 const ProjectsListDialog = () => {
   const dispatch = useDispatch();

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { setActivities, toggleDialog } from "../slices/uiSlice";
+import { setActivities, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";

@@ -6,7 +6,7 @@ import MarxanDialog from "../../MarxanDialog";
 import Step0 from "./Step0";
 import Step1 from "./Step1";
 import ToolbarButton from "../../ToolbarButton";
-import { toggleProjDialog } from "../../slices/projectSlice";
+import { toggleProjDialog } from "@slices/projectSlice";
 
 const NewProjectWizardDialog = (props) => {
   const dispatch = useDispatch();

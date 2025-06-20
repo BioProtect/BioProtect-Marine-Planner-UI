@@ -3,7 +3,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
+import { getPaintProperty, getTypeProperty } from "./features/featuresService";
 import {
   getUserProject,
   initialiseServers,
@@ -18,7 +18,7 @@ import {
   setProjectLoaded,
   setProjects,
   toggleProjDialog
-} from "./slices/projectSlice";
+} from "@slices/projectSlice";
 import {
   selectCurrentToken,
   selectCurrentUser,
@@ -26,17 +26,18 @@ import {
   selectIsUserLoggedIn,
   selectUserProject,
   setCredentials,
-} from "./slices/authSlice";
+} from "@slices/authSlice";
 import {
   setActiveTab,
   setActivities,
   setBasemap,
   setLoading,
+  setRegistry,
   setSnackbarMessage,
   setSnackbarOpen,
   setUploadedActivities,
   toggleDialog
-} from "./slices/uiSlice";
+} from "@slices/uiSlice";
 import {
   setAddingRemovingFeatures,
   setAllFeatures,
@@ -52,8 +53,8 @@ import {
   useCreateFeatureFromLinestringMutation,
   useGetFeatureQuery,
   useListFeaturePUsQuery,
-} from "./slices/featureSlice";
-import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery } from "./slices/planningUnitSlice";
+} from "@slices/featureSlice";
+import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery } from "@slices/planningUnitSlice";
 import {
   setUsers,
   useCreateUserMutation,
@@ -61,7 +62,7 @@ import {
   useGetUserQuery,
   useLogoutUserMutation,
   useUpdateUserMutation,
-} from "./slices/userSlice";
+} from "@slices/userSlice";
 // SERVICES
 import { useDispatch, useSelector } from "react-redux";
 
@@ -72,19 +73,19 @@ import ClassificationDialog from "./ClassificationDialog";
 import ClumpingDialog from "./ClumpingDialog";
 import CostsDialog from "./CostsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
-import FeatureDialog from "./Features/FeatureDialog";
-import FeatureInfoDialog from "./Features/FeatureInfoDialog";
-import FeatureMenu from "./Features/FeatureMenu";
-import FeaturesDialog from "./Features/FeaturesDialog";
+import FeatureDialog from "./features/FeatureDialog";
+import FeatureInfoDialog from "./features/FeatureInfoDialog";
+import FeatureMenu from "./features/FeatureMenu";
+import FeaturesDialog from "./features/FeaturesDialog";
 import GapAnalysisDialog from "./GapAnalysisDialog";
 import HelpMenu from "./HelpMenu";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import IdentifyPopup from "./IdentifyPopup";
 import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
-import ImportFeaturesDialog from "./Features/ImportFeaturesDialog";
+import ImportFeaturesDialog from "./features/ImportFeaturesDialog";
 import ImportFromWebDialog from "./ImportComponents/ImportFromWebDialog";
-import ImportPlanningGridDialog from "./PlanningGrids/ImportPlanningGridDialog";
+import ImportPlanningGridDialog from "./planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
 import LoginDialog from "./LoginDialog";
@@ -93,16 +94,16 @@ import { Map } from "mapbox-gl"; // Assuming you're using mapbox-gl
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
-import NewFeatureDialog from "./Features/NewFeatureDialog";
-import NewMarinePlanningGridDialog from "./PlanningGrids/NewMarinePlanningGridDialog";
-import NewPlanningGridDialog from "./PlanningGrids/NewPlanningGridDialog";
-import NewProjectDialog from "./Projects/NewProject/NewProjectDialog";
-import NewProjectWizardDialog from "./Projects/NewProject/NewProjectWizardDialog";
-import PlanningGridDialog from "./PlanningGrids/PlanningGridDialog";
-import PlanningGridsDialog from "./PlanningGrids/PlanningGridsDialog";
+import NewFeatureDialog from "./features/NewFeatureDialog";
+import NewMarinePlanningGridDialog from "./planningGrids/NewMarinePlanningGridDialog";
+import NewPlanningGridDialog from "./planningGrids/NewPlanningGridDialog";
+import NewProjectDialog from "@projects/NewProject/NewProjectDialog";
+import NewProjectWizardDialog from "@projects/NewProject/NewProjectWizardDialog";
+import PlanningGridDialog from "./planningGrids/PlanningGridDialog";
+import PlanningGridsDialog from "./planningGrids/PlanningGridsDialog";
 import ProfileDialog from "./User/ProfileDialog";
-import ProjectsDialog from "./Projects/ProjectsDialog";
-import ProjectsListDialog from "./Projects/ProjectsListDialog";
+import ProjectsDialog from "@projects/ProjectsDialog";
+import ProjectsListDialog from "@projects/ProjectsListDialog";
 import ResendPasswordDialog from "./ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./RightInfoPanel/ResultsPanel";
@@ -125,7 +126,7 @@ import UsersDialog from "./User/UsersDialog";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import classyBrew from "classybrew";
-import { featureApiSlice } from "./slices/featureSlice";
+import { featureApiSlice } from "@slices/featureSlice";
 /*eslint-disable no-unused-vars*/
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
@@ -202,7 +203,6 @@ const App = () => {
   const [protectedAreaIntersections, setProtectedAreaIntersections] = useState(
     []
   );
-  const [registry, setRegistry] = useState(undefined);
   const [renderer, setRenderer] = useState({});
   const [resultsPanelOpen, setResultsPanelOpen] = useState(false);
   const [runLogs, setRunLogs] = useState([]);
@@ -290,7 +290,7 @@ const App = () => {
       try {
         initialiseServers(INITIAL_VARS.MARXAN_SERVERS);
         setBrew(new classyBrew());
-        setRegistry(INITIAL_VARS);
+        dispatch(setRegistry(INITIAL_VARS));
         setInitialLoading(false);
 
         if (searchParams.has("project")) {
@@ -706,8 +706,8 @@ const App = () => {
   //the user is validated so login
   const postLoginSetup = async () => {
     try {
-      setWDPAVectorTilesLayerName(registry.WDPA.latest_version);
-      console.log("registry.WDPA.latest_version ----------- ", registry.WDPA.latest_version);
+      setWDPAVectorTilesLayerName(uiState.registry.WDPA.latest_version);
+      console.log("registry.WDPA.latest_version ----------- ", uiState.registry.WDPA.latest_version);
 
       const currentBasemap = uiState.basemaps.find(
         (item) => item.name === uiState.basemap
@@ -807,15 +807,15 @@ const App = () => {
     const newNotifications = [];
 
     //see if there are any new notifications from the marxan-registry
-    if (registry.NOTIFICATIONS.length > 0) {
-      addNotifications(registry.NOTIFICATIONS);
+    if (uiState.registry.NOTIFICATIONS.length > 0) {
+      addNotifications(uiState.registry.NOTIFICATIONS);
     }
     // Check for new version of wdpa data
     // From the Marxan Registry WDPA object - if there is then show a notification to admin users
     if (newWDPAVersion) {
       addNotifications([
         {
-          id: "wdpa_update_" + registry.WDPA.latest_version,
+          id: "wdpa_update_" + uiState.registry.WDPA.latest_version,
           html: "A new version of the WDPA is available. Go to Help | Server Details for more information.",
           type: "Data Update",
           showForRoles: ["Admin"],
@@ -823,10 +823,10 @@ const App = () => {
       ]);
     }
     //see if there is a new version of the marxan-client software
-    if (MARXAN_CLIENT_VERSION !== registry.CLIENT_VERSION) {
+    if (MARXAN_CLIENT_VERSION !== uiState.registry.CLIENT_VERSION) {
       addNotifications([
         {
-          id: "marxan_client_update_" + registry.CLIENT_VERSION,
+          id: "marxan_client_update_" + uiState.registry.CLIENT_VERSION,
           html:
             "A new version of marxan-client is available (" +
             MARXAN_CLIENT_VERSION +
@@ -837,13 +837,13 @@ const App = () => {
       ]);
     }
     //see if there is a new version of the marxan-server software
-    if (projState.bpServer.server_version !== registry.SERVER_VERSION) {
+    if (projState.bpServer.server_version !== uiState.registry.SERVER_VERSION) {
       addNotifications([
         {
-          id: "marxan_server_update_" + registry.SERVER_VERSION,
+          id: "marxan_server_update_" + uiState.registry.SERVER_VERSION,
           html:
             "A new version of marxan-server is available (" +
-            registry.SERVER_VERSION +
+            uiState.registry.SERVER_VERSION +
             "). Go to Help | Server Details for more information.",
           type: "Software Update",
           showForRoles: ["Admin"],
@@ -2437,9 +2437,9 @@ const App = () => {
     const attribution = `IUCN and UNEP- WCMC(${yr}), The World Database on Protected Areas(WDPA) ${projState.bpServer.wdpa_version}, Cambridge, UK: UNEP - WCMC.Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
 
     const tiles = [
-      `${registry.WDPA.tilesUrl}layer = marxan: ${wdpaVectorTileLayer} & tilematrixset=EPSG: 900913 & Service=WMTS & Request=GetTile & Version=1.0.0 & Format=application / x - protobuf; type = mapbox - vector & TileMatrix=EPSG: 900913: { z }& TileCol={ x }& TileRow={ y } `,
+      `${uiState.registry.WDPA.tilesUrl}layer = marxan: ${wdpaVectorTileLayer} & tilematrixset=EPSG: 900913 & Service=WMTS & Request=GetTile & Version=1.0.0 & Format=application / x - protobuf; type = mapbox - vector & TileMatrix=EPSG: 900913: { z }& TileCol={ x }& TileRow={ y } `,
     ];
-    console.log("registry.WDPA.tilesUrl ", registry.WDPA.tilesUrl);
+    console.log("registry.WDPA.tilesUrl ", uiState.registry.WDPA.tilesUrl);
     console.log("CONSTANTS.WDPA_SOURCE_NAME ", CONSTANTS.WDPA_SOURCE_NAME);
     setWdpaAttribution(attribution);
     map.current.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
@@ -2953,7 +2953,7 @@ const App = () => {
   const pollStatus = async (uploadid) => {
     try {
       const response = await fetch(
-        `https://api.mapbox.com/uploads/v1/${CONSTANTS.MAPBOX_USER}/${uploadid}?access_token=${registry.MBAT}`
+        `https://api.mapbox.com/uploads/v1/${CONSTANTS.MAPBOX_USER}/${uploadid}?access_token=${uiState.registry.MBAT}`
       );
       const result = await response.json();
 
@@ -3318,6 +3318,7 @@ const App = () => {
 
   const uploadRaster = async (data) => {
     dispatch(setLoading(true));
+    console.log("Uploading Raster ", data)
     messageLogger({
       method: "uploadRaster",
       status: "In Progress",
@@ -3325,7 +3326,7 @@ const App = () => {
     });
     const formData = new FormData();
     Object.keys(data).forEach((key) => formData.append(key, data[key]));
-
+    console.log("raster form data ", formData)
     //the binary data for the file, the filename
     const response = await _post("uploadRaster", formData);
     return response;
@@ -3970,18 +3971,18 @@ const App = () => {
     startLogging();
     //call the webservice
     const message = await handleWebSocket(
-      `updateWDPA?downloadUrl=${registry.WDPA.downloadUrl}&wdpaVersion=${registry.WDPA.latest_version}`
+      `updateWDPA?downloadUrl=${uiState.registry.WDPA.downloadUrl}&wdpaVersion=${uiState.registry.WDPA.latest_version}`
     );
     // Websocket has finished - set the new version of the wdpa
 
     setNewWDPAVersion(false);
     setBpServer({
       ...prev,
-      wdpa_version: registry.WDPA.latest_version,
+      wdpa_version: uiState.registry.WDPA.latest_version,
     });
     await delay(1000);
     //set the source for the WDPA layer to the new vector tiles
-    setWDPAVectorTilesLayerName(registry.WDPA.latest_version);
+    setWDPAVectorTilesLayerName(uiState.registry.WDPA.latest_version);
     // Remove the existing WDPA layer and source
     removeMapLayer(CONSTANTS.WDPA_LAYER_NAME);
     if (map.current && map.current.getSource(CONSTANTS.WDPA_SOURCE_NAME)) {
@@ -4411,7 +4412,6 @@ const App = () => {
           />
           <ProjectsListDialog />
           <NewProjectDialog
-            registry={registry}
             loading={uiState.loading}
             openFeaturesDialog={openFeaturesDialog}
             selectedCosts={selectedCosts}
@@ -4542,12 +4542,10 @@ const App = () => {
           <ServerDetailsDialog
             loading={uiState.loading}
             newWDPAVersion={newWDPAVersion}
-            registry={registry}
           />
           <UpdateWDPADialog
             newWDPAVersion={newWDPAVersion}
             updateWDPA={updateWDPA}
-            registry={registry}
           />
           <AlertDialog />
           <Snackbar

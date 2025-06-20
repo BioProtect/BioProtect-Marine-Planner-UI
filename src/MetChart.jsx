@@ -6,7 +6,7 @@ import Divider from "@mui/material/Divider";
 import React from "react";
 import Typography from "@mui/material/Typography";
 import { getArea } from "./Helpers";
-import { selectCurrentUser } from "./slices/authSlice";
+import { selectCurrentUser } from "@slices/authSlice";
 
 const MetChart = ({
   title,

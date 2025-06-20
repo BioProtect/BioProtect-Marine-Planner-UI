@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import MarxanDialog from "./MarxanDialog";
 import { isValidTargetValue } from "./Helpers";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const TargetDialog = ({ updateTargetValueForFeatures, ...props }) => {
   const dispatch = useDispatch();

@@ -22,7 +22,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { toggleDialog } from "../slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const ImportedActivitiesDialog = ({
   loading,

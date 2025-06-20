@@ -24,7 +24,7 @@ import { useDispatch, useSelector } from "react-redux";
 import CustomTooltip from "./CustomTooltip";
 import MarxanDialog from "./MarxanDialog";
 import MetChart from "./MetChart";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const GapAnalysisDialog = ({
   setGapAnalysis,

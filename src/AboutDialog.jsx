@@ -7,7 +7,7 @@ import biopama_small from "./images/biopama_small.png";
 import iucn from "./images/iucn.png";
 import jrc_logo_color_small from "./images/jrc_logo_color_small.png";
 import mapbox_small from "./images/mapbox_small.png";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 import wcmc from "./images/wcmc.png";
 
 const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {

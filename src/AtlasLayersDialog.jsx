@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import BioprotectTable from "./BPComponents/BioprotectTable";
 import MarxanDialog from "./MarxanDialog";
 import { generateTableCols } from "./Helpers";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const AtlasLayersDialog = ({
   map,

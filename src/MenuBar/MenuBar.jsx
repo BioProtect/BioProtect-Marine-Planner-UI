@@ -22,9 +22,9 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import { selectCurrentUser } from "../slices/authSlice";
-import { toggleDialog } from "../slices/uiSlice";
-import { toggleFeatureD } from "../slices/featureSlice";
+import { selectCurrentUser } from "@slices/authSlice";
+import { toggleDialog } from "@slices/uiSlice";
+import { toggleFeatureD } from "@slices/featureSlice";
 
 const MenuBar = ({
   open,

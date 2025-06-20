@@ -7,7 +7,7 @@ import Checkbox from "@mui/material/Checkbox";
 import { FormControlLabel } from "@mui/material";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Typography from "@mui/material/Typography";
-import { selectCurrentUser } from "../slices/authSlice";
+import { selectCurrentUser } from "@slices/authSlice";
 import { useSelector } from "react-redux";
 
 const ProjectTabContent = ({
