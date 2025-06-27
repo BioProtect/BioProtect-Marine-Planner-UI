@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { setLoading, setSelectedActivity, setSnackbarMessage, toggleDialog } from "@slices/uiSlice";
+import { setLoading, setSelectedActivity, setSnackbarMessage, setSnackbarOpen, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -31,7 +31,7 @@ const HumanActivitiesDialog = (props) => {
 
   const handleNext = () => {
     if (stepIndex === INITIAL_STATE.steps.length - 1) {
-      handleSaveActivity(filename, uiState.selectedActivity, description);
+      handleSaveActivity(filename, uiState.selectedActivity.activity, description);
     } else {
       setStepIndex(stepIndex + 1);
     }
@@ -42,13 +42,19 @@ const HumanActivitiesDialog = (props) => {
   };
 
   const handleSaveActivity = async (filename, selectedActivity, description) => {
+    console.log("selectedActivity ", selectedActivity);
     dispatch(setLoading(true));
-    startLogging();
+    props.startLogging();
     const url = `saveRaster?filename=${filename}&activity=${selectedActivity}&description=${description}`;
-    const response = await handleWebSocket(url);
-    dispatch(setLoading(false));
+    const response = await props.handleWebSocket(url).catch(err => {
+      console.error("WebSocket failed:", err);
+      return { error: `WebSocket error occurred - ${err.message}` };
+    });
+
+    const message = response?.info || response?.error || "No response";
     dispatch(setSnackbarOpen(true));
-    dispatch(setSnackbarMessage(response));
+    dispatch(setSnackbarMessage(message));
+    dispatch(setLoading(false));
     closeDialog();
     dispatch(toggleDialog({
       dialogName: "importedActivitiesDialogOpen",
@@ -78,8 +84,12 @@ const HumanActivitiesDialog = (props) => {
   ]);
 
   const isNextDisabled = () => {
-    if (stepIndex === 0) return uiState.selectedActivity === "";
-    if (stepIndex === 1) return filename === "";
+    if (stepIndex === 0) {
+      return uiState.selectedActivity === "";
+    }
+    if (stepIndex === 1) {
+      return filename === "";
+    }
     return false;
   };
 
@@ -160,21 +170,6 @@ const HumanActivitiesDialog = (props) => {
       )}
       {stepIndex === 2 && (
         <div>
-          <div>
-            {props.runningImpactMessage}
-            <Sync
-              className="spin"
-              style={{
-                display:
-                  uiState.loading || props.showSpinner ? "inline-block" : "none",
-                color: "rgb(255, 64, 129)",
-                top: "15px",
-                right: "41px",
-                height: "22px",
-                width: "22px",
-              }}
-            />
-          </div>
           <FileUpload
             {...props}
             fileMatch={".tif"}
@@ -182,7 +177,7 @@ const HumanActivitiesDialog = (props) => {
             filename={filename}
             setFilename={setFilename}
             destFolder={"imports"}
-            label="Raster"
+            label="Upload Raster"
             style={{ paddingTop: "10px" }}
           />
           <TextField

@@ -588,8 +588,10 @@ const App = () => {
     try {
       const message = await startWebSocket(url);
       console.log("WebSocket finished successfully:", message);
+      return message
     } catch (err) {
       console.error("WebSocket failed:", err);
+      return { error: `Websocket error occured ${err.reason}  - ${err}` }
     }
   };
   // ------------------------------------------------------------------- //
@@ -4600,6 +4602,8 @@ const App = () => {
             userRole={userData.role}
             fileUpload={uploadRaster}
             saveActivityToDb={saveActivityToDb}
+            startLogging={startLogging}
+            handleWebSocket={handleWebSocket}
           />
           <RunCumuluativeImpactDialog
             loading={uiState.loading || uploading}

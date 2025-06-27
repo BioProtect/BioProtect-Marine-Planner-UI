@@ -1,12 +1,9 @@
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import React, { useState } from "react";
-import {
-  Sync as SyncIcon,
-  UploadFile as UploadFileIcon,
-} from "@mui/icons-material";
 import { setSnackbarMessage, setSnackbarOpen } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
+import UploadFile from "@mui/icons-material/UploadFileTwoTone";
 import { setFeatureDatasetFilename } from "@slices/featureSlice";
 
 // FileUpload component refactored to use React 18 and MUI 5
@@ -19,8 +16,6 @@ const FileUpload = (props) => {
   const id = `upload-${props.filename}`;
 
   const handleChange = async (e) => {
-    console.log("handling change in file upload ", e);
-    console.log("handling change in file upload target ", e.target);
     if (props.destFolder) {
       setDestinationFolder(props.destFolder);
     }
@@ -28,14 +23,11 @@ const FileUpload = (props) => {
     if (e.target.files.length) {
       setLoading(true);
       const target = e.target.files[0];
-      console.log("target ", target);
       const filename = target.name;
-      console.log("destinationFolder -- ", destinationFolder)
       // upload file  - if its an impact it uploads slightly differently
       try {
         let response;
         if (uiState.selectedActivity) {
-          console.log("selectedActivity ", uiState.selectedActivity);
           response = await props.fileUpload({
             value: target,
             filename: filename,
@@ -49,7 +41,7 @@ const FileUpload = (props) => {
             destinationFolder,
           );
         }
-        console.log(response)
+        props.setFilename(response.file)
         dispatch(setSnackbarOpen(true));
         dispatch(setSnackbarMessage(response.info));
       } catch (error) {
@@ -76,7 +68,7 @@ const FileUpload = (props) => {
           color: active ? "primary.main" : "text.secondary",
         }}
       >
-        {props.label} - {props.filename}
+        {props.label} {props.filename}
       </Typography>
 
       <Box display="flex" alignItems="center">
@@ -88,7 +80,7 @@ const FileUpload = (props) => {
           onChange={handleChange}
           onClick={handleClick}
         >
-          <UploadFileIcon />
+          <UploadFile color="primary" fontSize='large' />
           <input
             type="file"
             accept={props.fileMatch}
@@ -98,7 +90,7 @@ const FileUpload = (props) => {
         </IconButton>
 
         <Typography
-          sx={{ width: "168px", textOverflow: "ellipsis", overflow: "hidden" }}
+          sx={{ width: "168px", textOverflow: "ellipsis" }}
         >
           {props.filename}
         </Typography>

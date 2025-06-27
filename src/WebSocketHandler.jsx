@@ -52,7 +52,7 @@ const useWebSocketHandler = (
                 } else {
                     logMessage(message);
                     setPreprocessing(false);
-                    reject(message.error);
+                    reject(new Error(message.error || "WebSocket error occurred"));
                     ws.close();
                 }
             };
@@ -61,28 +61,24 @@ const useWebSocketHandler = (
                 console.error("WebSocket error:", evt);
                 logMessage({ status: "WebSocketError", detail: evt });
                 setPreprocessing(false);
-                reject(evt);
+                reject(new Error("WebSocket connection error"));
                 ws.close();
             };
 
             ws.onclose = (evt) => {
                 setPreprocessing(false);
                 console.warn("WebSocket closed:", evt);
-                if (!evt.wasClean) {
+                if (!evt.wasClean || evt.code !== 1000) {
+                    let reason = evt.reason || "No reason provided"
                     logMessage({
                         status: "SocketClosedUnexpectedly",
                         code: evt.code,
-                        reason: evt.reason || "No reason provided",
+                        reason: reason,
                     });
+                    reject(new Error(`WebSocket closed unexpectedly: ${evt.code} - ${reason}`));
                 } else {
                     logMessage({ status: "SocketClosedCleanly" });
                 }
-
-                // 403 usually has code 1006 (abnormal closure)
-                if (evt.code === 1006) {
-                    reject(new Error("WebSocket closed with code 1006 — possible 403 or CORS issue."));
-                }
-                reject(evt);
             };
         });
     }, [projState.bpServer.websocketEndpoint, checkForErrors, logMessage, setPreprocessing, setPid, newFeatureCreated, removeMessageFromLog]);
