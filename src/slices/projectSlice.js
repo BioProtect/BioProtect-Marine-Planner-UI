@@ -120,6 +120,7 @@ const initialState = {
   registry: INITIAL_VARS,
   status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
+
   projectData: {},
   projects: [],
   projectList: [],
@@ -158,14 +159,13 @@ export const initialiseServers = createAsyncThunk(
   }
 );
 
-
 // Thunk to fetch the user's project only if not already in state
 export const getUserProject = createAsyncThunk(
   "projects/getUserProject",
   async (projectId, { getState, dispatch, rejectWithValue }) => {
     try {
       if (!projectId) {
-        const project = getState().auth.project;
+        const project = getState().auth.userData.project.id;
         projectId = project?.id;
       }
 
@@ -173,9 +173,16 @@ export const getUserProject = createAsyncThunk(
         return rejectWithValue("No project with that ID found");
       }
 
-      const data = await dispatch(
-        projectApiSlice.endpoints.getProject.initiate(projectId)
-      ).unwrap();
+      try {
+        const data = await dispatch(
+          projectApiSlice.endpoints.getProject.initiate(projectId)
+        ).unwrap();
+      } catch (error) {
+        console.log("Error getting project data: ", error)
+      }
+
+
+      console.log("data in getUserProject", data);
 
       const response = JSON.parse(data);
       console.log("🔥 Project Data:", response);
@@ -196,6 +203,15 @@ export const getUserProject = createAsyncThunk(
   }
 );
 
+// projectSlice.js
+const switchProject = createAsyncThunk(
+  "project/switchProject",
+  async (projectId, { dispatch }) => {
+    const data = await dispatch(getUserProject(projectId)).unwrap();
+    console.log("data in sitch project ", data);
+    return data;
+  }
+);
 
 
 const projectSlice = createSlice({
@@ -316,6 +332,7 @@ export const {
   setRenderer,
   setProjectPlanningUnits,
   setProjectCosts,
-  toggleProjDialog
+  toggleProjDialog,
 } = projectSlice.actions;
+export { switchProject };
 export default projectSlice.reducer;

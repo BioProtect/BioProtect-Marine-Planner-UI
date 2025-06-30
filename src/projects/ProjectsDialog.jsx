@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from "react";
 import { setActiveTab, toggleDialog } from "@slices/uiSlice";
+import { switchProject, toggleProjDialog } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
-import { toggleProjDialog } from "@slices/projectSlice";
 
 const ProjectsDialog = ({
   loading, oldVersion, deleteProject, loadProject, cloneProject, exportProject, userRole, unauthorisedMethods
@@ -42,8 +42,20 @@ const ProjectsDialog = ({
   //   setSelectedProject(project);
   // }, []);
 
+  // const handleProjectChange = (event, row) => {
+  //   console.log("handle project change = event, row ", event, row);
+  // };
+
   const handleProjectChange = (event, row) => {
-    console.log("handle project change = event, row ", event, row);
+    const projectId = row?.id;
+    if (!projectId) {
+      console.warn("Invalid project selected");
+      return;
+    }
+
+    console.log("Project row info:", row);
+    console.log("Switching to project:", projectId);
+    dispatch(switchProject(projectId));
   };
 
   const sortDate = useCallback((a, b, desc) => {

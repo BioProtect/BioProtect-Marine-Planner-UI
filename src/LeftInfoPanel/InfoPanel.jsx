@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { faLock, faShareAlt } from "@fortawesome/free-solid-svg-icons";
-import { selectCurrentUser, selectUserProject } from "@slices/authSlice";
 import { setActiveTab, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -16,6 +15,7 @@ import Settings from "@mui/icons-material/Settings";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import { selectCurrentUser } from "@slices/authSlice";
 
 const activeTabArr = ["project", "features", "planning_units"];
 
@@ -25,7 +25,6 @@ const InfoPanel = (props) => {
   const projState = useSelector((state) => state.project);
   const puState = useSelector((state) => state.planningUnit)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const project = useSelector(selectUserProject);
   const userData = useSelector(selectCurrentUser);
 
   const [editingProjectName, setEditingProjectName] = useState(false);

@@ -24,8 +24,6 @@ import {
   selectCurrentUser,
   selectCurrentUserId,
   selectIsUserLoggedIn,
-  selectUserProject,
-  setCredentials,
 } from "@slices/authSlice";
 import {
   setActiveTab,
@@ -235,7 +233,7 @@ const App = () => {
 
   const userId = useSelector(selectCurrentUserId);
   const userData = useSelector(selectCurrentUser);
-  const project = useSelector(selectUserProject);
+  const project = useSelector((state) => state.project.projectData);
   const isLoggedIn = useSelector(selectIsUserLoggedIn);
 
   const [logoutUser] = useLogoutUserMutation();
