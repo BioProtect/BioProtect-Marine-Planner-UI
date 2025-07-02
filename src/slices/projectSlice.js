@@ -173,14 +173,9 @@ export const getUserProject = createAsyncThunk(
         return rejectWithValue("No project with that ID found");
       }
 
-      try {
-        const data = await dispatch(
-          projectApiSlice.endpoints.getProject.initiate(projectId)
-        ).unwrap();
-      } catch (error) {
-        console.log("Error getting project data: ", error)
-      }
-
+      const data = await dispatch(
+        projectApiSlice.endpoints.getProject.initiate(projectId)
+      ).unwrap();
 
       console.log("data in getUserProject", data);
 
