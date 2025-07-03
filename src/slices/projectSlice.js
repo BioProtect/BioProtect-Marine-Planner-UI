@@ -265,9 +265,6 @@ const projectSlice = createSlice({
     setProjects(state, action) {
       state.projects = action.payload;
     },
-    setProjectData(state, action) {
-      state.projectData = action.payload;
-    },
     setRenderer: (state, action) => {
       state.renderer = action.payload;
     },

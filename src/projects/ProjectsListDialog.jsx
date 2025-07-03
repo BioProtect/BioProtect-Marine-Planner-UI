@@ -59,7 +59,8 @@ const ProjectsListDialog = () => {
       open={projState.dialogs.projectsListDialogOpen}
       showCancelButton={false}
       autoDetectWindowHeight={false}
-      title={projState.projectListDialogTitle}
+      // title={projState.projectListDialogTitle}
+      title="Hello project lists dialog"
       contentWidth={500}
       helpLink={"user.html#projects-list"}
       onOk={() => closeDialog()}

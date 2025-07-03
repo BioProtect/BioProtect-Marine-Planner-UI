@@ -13,38 +13,32 @@ const ProjectsDialog = ({
 }) => {
   const dispatch = useDispatch();
   const projState = useSelector((state) => state.project);
+  console.log("projState ", projState);
 
   const handleDeleteProject = useCallback(() => {
-    deleteProject(projState.project.user, projState.project.name);
-  }, [projState.project]);
+    deleteProject(projState.projectData.user, projState.projectData.name);
+  }, [projState.projectData]);
 
   const loadAndClose = useCallback(() => {
-    loadProject(projState.project.name, projState.project.user);
+    loadProject(projState.projectData.name, projState.projectData.user);
     dispatch(
       toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
-  }, [projState.project]);
+  }, [projState.projectData]);
 
   const handleCloneProject = useCallback(() => {
-    cloneProject(projState.project.user, projState.project.name);
+    cloneProject(projState.projectData.user, projState.projectData.name);
   }, [cloneProject]);
 
   const handleExportProject = useCallback(() => {
-    exportProject(projState.project.user, projState.project.name).then((url) => {
+    exportProject(projState.projectData.user, projState.projectData.name).then((url) => {
       window.location = url;
     });
     dispatch(
       toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
-  }, [projState.project]);
+  }, [projState.projectData]);
 
-  // const changeProject = useCallback((event, project) => {
-  //   setSelectedProject(project);
-  // }, []);
-
-  // const handleProjectChange = (event, row) => {
-  //   console.log("handle project change = event, row ", event, row);
-  // };
 
   const handleProjectChange = (event, row) => {
     const projectId = row?.id;
@@ -52,9 +46,6 @@ const ProjectsDialog = ({
       console.warn("Invalid project selected");
       return;
     }
-
-    console.log("Project row info:", row);
-    console.log("Switching to project:", projectId);
     dispatch(switchProject(projectId));
   };
 
@@ -95,7 +86,7 @@ const ProjectsDialog = ({
         okLabel={userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
         onOk={loadAndClose}
         onCancel={() => closeDialog()}
-        okDisabled={!projState.project}
+        okDisabled={!projState.projectData}
         showCancelButton={true}
         autoDetectWindowHeight={false}
         title="Projects"

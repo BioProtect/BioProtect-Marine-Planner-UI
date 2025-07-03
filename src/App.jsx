@@ -988,7 +988,9 @@ const App = () => {
   };
 
   const loadProject = async (proj, user, ...options) => {
-    //  projState.projectData
+    // Okay so this has chnaged with the database andmoving to slices and whatnot. 
+    // Need to check how this works - where is it being called from and what details are needed to load a project
+    // so switch project would seem to do what needs to be done for this function so can this be ditched? 
     try {
       resetResults();
       setRenderer(projectResp.renderer);
