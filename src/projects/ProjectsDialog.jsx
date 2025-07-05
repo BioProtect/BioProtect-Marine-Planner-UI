@@ -20,7 +20,7 @@ const ProjectsDialog = ({
   }, [projState.projectData]);
 
   const loadAndClose = useCallback(() => {
-    loadProject(projState.projectData.name, projState.projectData.user);
+    loadProject();
     dispatch(
       toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );

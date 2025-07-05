@@ -4,6 +4,7 @@ import {
   getServerCapabilities,
 } from "../Server/serverFunctions";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { setSnackbarMessage, setSnackbarOpen } from "./uiSlice";
 
 import { INITIAL_VARS } from "../bpVars";
 import { apiSlice } from "./apiSlice";
@@ -121,6 +122,8 @@ const initialState = {
   status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
 
+  costData: null,
+
   projectData: {},
   projects: [],
   projectList: [],
@@ -164,13 +167,27 @@ export const getUserProject = createAsyncThunk(
   "projects/getUserProject",
   async (projectId, { getState, dispatch, rejectWithValue }) => {
     try {
+
       if (!projectId) {
         const project = getState().auth.userData.project.id;
         projectId = project?.id;
       }
 
       if (!projectId) {
-        return rejectWithValue("No project with that ID found");
+        const allProjects = await dispatch(
+          projectApiSlice.endpoints.listProjects.initiate()
+        ).unwrap();
+        dispatch(setSnackbarMessage("No Project with that id found. Loading first available project"))
+        dispatch(setSnackbarOpen(true))
+
+        const parsed = typeof allProjects === "string" ? JSON.parse(allProjects) : allProjects;
+        const firstProject = parsed.projects?.[0];
+
+        if (!firstProject) {
+          return rejectWithValue("No projects found for user");
+        }
+
+        projectId = firstProject.id;
       }
 
       const data = await dispatch(
@@ -193,6 +210,8 @@ export const getUserProject = createAsyncThunk(
       return response; // Assuming response has { project: { id, name, ... } }
     } catch (error) {
       console.error("Failed to fetch project:", error);
+      dispatch(setSnackbarMessage("Failed to fetch project: ", error))
+      dispatch(setSnackbarOpen(true))
       return rejectWithValue(error.message);
     }
   }
@@ -237,6 +256,9 @@ const projectSlice = createSlice({
     },
     setAddToProject(state, action) {
       state.addToProject = action.payload;
+    },
+    setCostData(state, action) {
+      state.costData = action.payload;
     },
     setFiles(state, action) {
       state.files = action.payload;
@@ -313,6 +335,7 @@ export const {
   setBpServer,
   selectServer,
   setAddToProject,
+  setCostData,
   setProjectData,
   setProjectFeatures,
   setProjectImpacts,

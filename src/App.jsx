@@ -9,6 +9,7 @@ import {
   initialiseServers,
   selectServer,
   setBpServer,
+  setCostData,
   setProjectData,
   setProjectFeatures,
   setProjectImpacts,
@@ -167,7 +168,6 @@ const App = () => {
   const [zoom, setZoom] = useState(9);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [runMarxanResponse, setRunMarxanResponse] = useState({});
-  const [costData, setCostData] = useState(null);
   const [previousIucnCategory, setPreviousIucnCategory] = useState(null);
   const [planningCostsTrigger, setPlanningCostsTrigger] = useState(false);
   const [pid, setPid] = useState("");
@@ -987,29 +987,42 @@ const App = () => {
     setRunParams(parameters);
   };
 
-  const loadProject = async (proj, user, ...options) => {
+  const loadProject = async () => {
     // Okay so this has chnaged with the database andmoving to slices and whatnot. 
     // Need to check how this works - where is it being called from and what details are needed to load a project
     // so switch project would seem to do what needs to be done for this function so can this be ditched? 
+    const proj = projState.projectData;
     try {
       resetResults();
-      setRenderer(projectResp.renderer);
-      setCostnames(projectResp.costnames);
-      setOwner(user);
+      setRenderer(proj.renderer);
+      setCostnames(proj.costnames);
+      setOwner(proj.user);
       dispatch(setProjectLoaded(true));
       setPlanningCostsTrigger(true);
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
-      if (projectResp.metadata.PLANNING_UNIT_NAME) {
-        await changePlanningGrid(`${projectResp.metadata.PLANNING_UNIT_NAME}`);
-        await getResults(user, projectResp.project);
-      }
+      // if (proj.metadata.pu_alias) {
+      //   const puLayerName = `pu_${proj.metadata.pu_alias.toLowerCase().replace(" ", "_")}`
+      //   console.log('puLayerName: ', puLayerName)
+      //   await changePlanningGrid(puLayerName);
+      //   await getResults(proj.user, proj.project);
+      // }
+      const resolution = proj.active_resolution || 6; // fallback to default
+      const area = proj.metadata.pu_alias || "default";
+      const puLayerName = `v_h3_${area.toLowerCase().replace(/\s+/g, "_")}_res${resolution}`;
+
+      console.log("Loading tileset:", puLayerName);
+      await changePlanningGrid(puLayerName);
+
+      await getResults(proj.user, proj.project);
+
+
       // Set a local variable - Dont need to track state with these variables as they are not bound to anything
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
-        projectResp.metadata.OLDVERSION,
-        projectResp.features,
-        projectResp.feature_preprocessing,
+        proj.metadata.OLDVERSION,
+        proj.features,
+        proj.feature_preprocessing,
         allFeaturesData
       );
 
@@ -1118,7 +1131,7 @@ const App = () => {
   const resetResults = () => {
     setRunMarxanResponse({});
     setSolutions([]);//reset the run
-    setCostData(undefined); //reset the cost data
+    dispatch(setCostData(undefined)); //reset the cost data
     projState.projectFeatures.forEach((feature) => {
       if (feature.feature_layer_loaded) {
         toggleFeatureLayer(feature);
@@ -2250,30 +2263,36 @@ const App = () => {
     }
   };
 
-  const changePlanningGrid = async (tilesetId) => {
+  const changePlanningGrid = async (puLayerName) => {
+    console.log
     try {
-      // Get the tileset metadata
-      // const tileset = await getMetadata(tilesetId);
-      const response = await fetch(`http://0.0.0.0:3000/${tilesetId}`);
+      // Fetch tile metadata from Martin tile server
+      const response = await fetch(`http://0.0.0.0:3000/${puLayerName}`);
+      if (!response.ok) throw new Error("Failed to fetch tileset metadata");
       const data = await response.json();
-      // Remove the existing layers (e.g., results layer, planning unit layer)
+
+      // Remove any existing PU-related layers and sources
       removePlanningGridLayers();
-      // Add the new planning grid layers using the obtained tileset
+
+      // Add layers for the new planning unit grid
       addPlanningGridLayers(data.name);
-      // Zoom to the layers' extent if bounds are available
+
+      // Zoom to bounds if available
       if (data.bounds) {
         zoomToBounds(map, data.bounds);
       }
-      // Update the state with the new tileset information
+      // Update local state with tileset info
       setTileset(data);
       return data;
+
     } catch (error) {
-      console.log("error ", error);
+      console.error("Error loading planning grid:", error);
       dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage(error));
+      dispatch(setSnackbarMessage(error.message || "Error loading planning grid"));
       throw error;
     }
   };
+
 
   //gets all of the metadata for the tileset
   const getMetadata = async (tilesetId) => {
@@ -4184,7 +4203,7 @@ const App = () => {
   const loadCostsLayer = async (forceReload = false) => {
     setCostsLoading(true);
     const response = await getPlanningUnitsCostData(forceReload);
-    setCostData(response);
+    dispatch(setCostData(response));
     renderPuCostLayer(response);
     setCostsLoading(false);
   };
@@ -4197,20 +4216,13 @@ const App = () => {
     }
     try {
       // If cost data is already loaded and reload is not forced
-      if (costData && !forceReload) {
-        return costData;
+      if (projState.costData && !forceReload) {
+        return projState.costData;
       } else {
         // Construct the URL for fetching cost data
         const url = `getPlanningUnitsCostData?user=${userId}&project=${project_id}`;
         // Fetch the cost data from the server
         const response = await _get(url);
-        console.log("response ", response);
-        // ****************************************************************************
-        // ****************************************************************************
-        // ****************************************************************************
-        // ****************************************************************************
-        // ****************************************************************************
-        // ****************************************************************************
         // ****************************************************************************
         // ****************************************************************************
         // ****************************************************************************
@@ -4219,10 +4231,9 @@ const App = () => {
         // const response = await _get(url);  // TRIGGERING MASSIVE RELOAD ALL THE TIME 
         // SORT THIS OUT LATER
         // Save the cost data to a local variable
-        setCostData(response);
+        dispatch(setCostData(response));
+        return response;
       }
-
-      return response;
     } catch (error) {
       // Handle the error (this can be customized based on your requirements)
       console.error("Error loading planning units cost data:", error);
