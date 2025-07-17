@@ -189,6 +189,7 @@ export const getUserProject = createAsyncThunk(
 
         projectId = firstProject.id;
       }
+      console.log("projectId ", projectId);
 
       const data = await dispatch(
         projectApiSlice.endpoints.getProject.initiate(projectId)

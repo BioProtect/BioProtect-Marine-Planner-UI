@@ -727,11 +727,13 @@ const App = () => {
 
 
       // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
-      if (projState.projectData.metadata.PLANNING_UNIT_NAME) {
-        console.log("projState.projectData.metadata.PLANNING_UNIT_NAME ", projState.projectData.metadata.PLANNING_UNIT_NAME);
-        const planningGrid = `${projState.projectData.metadata.PLANNING_UNIT_NAME}`
-        console.log("planningGrid ", planningGrid);
-        await changePlanningGrid(planningGrid);
+      if (projState.projectData.metadata.pu_alias) {
+        const areaArr = projState.projectData.metadata.pu_alias.split(" (Res");
+        const area = areaArr[0].trim(); // "Celtic Seas"
+        const resolution = areaArr[1].replace(")", "").trim(); // "6"
+        const puLayerName = `v_h3_${area.toLowerCase().replace(/\s+/g, "_")}_res${resolution}`;
+        console.log("puLayerName ", puLayerName);
+        await changePlanningGrid(puLayerName);
         await getResults(userData.name, projState.projectData.name);
       }
       // Set a local variable - Dont need to track state with these variables as they are not bound to anything
@@ -1007,8 +1009,13 @@ const App = () => {
       //   await changePlanningGrid(puLayerName);
       //   await getResults(proj.user, proj.project);
       // }
-      const resolution = proj.active_resolution || 6; // fallback to default
-      const area = proj.metadata.pu_alias || "default";
+      const rawAlias = proj.metadata.pu_alias || "default (Res 6)";
+      const [areaPart, resPart] = rawAlias.split(" (Res");
+      const area = areaPart.trim();
+      const resolution = parseInt(resPart?.replace(")", "").trim()) || 6; // Fallback to 6 if missing
+
+      // Construct the layer name
+
       const puLayerName = `v_h3_${area.toLowerCase().replace(/\s+/g, "_")}_res${resolution}`;
 
       console.log("Loading tileset:", puLayerName);
@@ -2264,7 +2271,7 @@ const App = () => {
   };
 
   const changePlanningGrid = async (puLayerName) => {
-    console.log
+    console.log("============================= puLayerName ", puLayerName);
     try {
       // Fetch tile metadata from Martin tile server
       const response = await fetch(`http://0.0.0.0:3000/${puLayerName}`);
