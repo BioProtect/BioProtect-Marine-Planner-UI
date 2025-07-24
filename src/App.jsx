@@ -246,13 +246,18 @@ const App = () => {
   );
 
   useEffect(() => {
-    if (featurePUData) {
-      dispatch(setFeaturePlanningUnits(featurePUData) || [])
-    }
     if (projState.projectLoaded) {
       postLoginSetup();
     }
-  }, [dispatch, featurePUData, projState.projectLoaded]);
+  }, [projState.projectLoaded]);
+
+
+
+  useEffect(() => {
+    if (featurePUData) {
+      dispatch(setFeaturePlanningUnits(featurePUData) || [])
+    }
+  }, [dispatch, featurePUData]);
 
 
   useEffect(() => {
@@ -707,14 +712,16 @@ const App = () => {
   const postLoginSetup = async () => {
     try {
       setWDPAVectorTilesLayerName(uiState.registry.WDPA.latest_version);
-      console.log("registry.WDPA.latest_version ----------- ", uiState.registry.WDPA.latest_version);
-
       const currentBasemap = uiState.basemaps.find(
         (item) => item.name === uiState.basemap
       );
       await loadBasemap(currentBasemap);
-      console.log("currentBasemap ", currentBasemap);
+      if (projState.projectData.metadata.pu_tilesetid) {
+        await changePlanningGrid(projState.projectData.metadata.pu_tilesetid);
+        await getResults(userData.name, projState.projectData.name);
+      }
 
+      console.log("postLoginSetup - getting species dada ");
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
 
@@ -725,18 +732,6 @@ const App = () => {
       setResultsPanelOpen(true);
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
 
-
-      // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
-      if (projState.projectData.metadata.pu_alias) {
-        const areaArr = projState.projectData.metadata.pu_alias.split(" (Res");
-        const area = areaArr[0].trim(); // "Celtic Seas"
-        const resolution = areaArr[1].replace(")", "").trim(); // "6"
-        const puLayerName = `v_h3_${area.toLowerCase().replace(/\s+/g, "_")}_res${resolution}`;
-        console.log("puLayerName ", puLayerName);
-        await changePlanningGrid(puLayerName);
-        await getResults(userData.name, projState.projectData.name);
-      }
-      // Set a local variable - Dont need to track state with these variables as they are not bound to anything
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
         projState.projectData.metadata.OLDVERSION,
@@ -744,15 +739,14 @@ const App = () => {
         projState.projectData.feature_preprocessing,
         speciesData.data
       );
-
-
       return "Logged in";
     } catch (error) {
-      console.error("Login failed:", error);
-      // Handle error appropriately
+      dispatch(setSnackbarOpen(true));
+      dispatch(setSnackbarMessage("Login failed: ", error))
       throw error;
     }
   };
+
   //log out and reset some state
   const logout = async () => {
     dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
@@ -1002,35 +996,17 @@ const App = () => {
       dispatch(setProjectLoaded(true));
       setPlanningCostsTrigger(true);
 
-      // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
-      // if (proj.metadata.pu_alias) {
-      //   const puLayerName = `pu_${proj.metadata.pu_alias.toLowerCase().replace(" ", "_")}`
-      //   console.log('puLayerName: ', puLayerName)
-      //   await changePlanningGrid(puLayerName);
-      //   await getResults(proj.user, proj.project);
-      // }
-      const rawAlias = proj.metadata.pu_alias || "default (Res 6)";
-      const [areaPart, resPart] = rawAlias.split(" (Res");
-      const area = areaPart.trim();
-      const resolution = parseInt(resPart?.replace(")", "").trim()) || 6; // Fallback to 6 if missing
+      if (proj.metadata.pu_tilesetid) {
+        await changePlanningGrid(proj.metadata.pu_tilesetid);
+        await getResults(userData.name, proj.name);
+      }
 
-      // Construct the layer name
-
-      const puLayerName = `v_h3_${area.toLowerCase().replace(/\s+/g, "_")}_res${resolution}`;
-
-      console.log("Loading tileset:", puLayerName);
-      await changePlanningGrid(puLayerName);
-
-      await getResults(proj.user, proj.project);
-
-
-      // Set a local variable - Dont need to track state with these variables as they are not bound to anything
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
         proj.metadata.OLDVERSION,
         proj.features,
         proj.feature_preprocessing,
-        allFeaturesData
+        speciesData.data
       );
 
       // Activate the project tab
@@ -4420,16 +4396,17 @@ const App = () => {
               metadata={metadata}
               reportUnits={userData.reportUnits}
             />) : null}
-          <ProjectsDialog
-            loading={uiState.loading}
-            oldVersion={metadata?.OLDVERSION}
-            deleteProject={deleteProject}
-            loadProject={loadProject}
-            exportProject={exportProject}
-            cloneProject={cloneProject}
-            unauthorisedMethods={unauthorisedMethods}
-            userRole={userData.role}
-          />
+          {projState.dialogs.projectsDialogOpen ? (
+            <ProjectsDialog
+              loading={uiState.loading}
+              oldVersion={metadata?.OLDVERSION}
+              deleteProject={deleteProject}
+              loadProject={loadProject}
+              exportProject={exportProject}
+              cloneProject={cloneProject}
+              unauthorisedMethods={unauthorisedMethods}
+              userRole={userData.role}
+            />) : null}
           <ProjectsListDialog />
           <NewProjectDialog
             loading={uiState.loading}

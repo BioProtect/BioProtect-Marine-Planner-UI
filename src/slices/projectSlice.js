@@ -195,8 +195,6 @@ export const getUserProject = createAsyncThunk(
         projectApiSlice.endpoints.getProject.initiate(projectId)
       ).unwrap();
 
-      console.log("data in getUserProject", data);
-
       const response = JSON.parse(data);
       console.log("🔥 Project Data:", response);
 

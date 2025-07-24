@@ -5,7 +5,6 @@ import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Checkbox from "@mui/material/Checkbox";
 import { FormControlLabel } from "@mui/material";
-import ResolutionSelector from "../projects/ResolutionSelector";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Typography from "@mui/material/Typography";
 import { selectCurrentUser } from "@slices/authSlice";
@@ -30,8 +29,6 @@ const ProjectTabContent = ({
     <div>
       <Card sx={{ minWidth: 275 }}>
         <CardContent>
-          ??
-          <ResolutionSelector />
 
           <Typography variant="h5" component="div">
             Description
