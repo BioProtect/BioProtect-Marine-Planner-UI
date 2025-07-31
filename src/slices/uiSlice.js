@@ -85,8 +85,6 @@ const mapboxBasemaps = [
 
 const initialState = {
   loading: false,
-  snackbarOpen: false,
-  snackbarMessage: "",
   activeTab: "project",
   activeResultsTab: "legend",
   basemap: "BioProtect",
@@ -137,6 +135,8 @@ const initialState = {
     welcomeDialogOpen: false,
     toolsMenuOpen: false,
   },
+
+  importLog: [],
 };
 
 const uiSlice = createSlice({
@@ -148,12 +148,6 @@ const uiSlice = createSlice({
     },
     setBasemaps(state, action) {
       state.basemaps = action.payload;
-    },
-    setSnackbarOpen(state, action) {
-      state.snackbarOpen = action.payload;
-    },
-    setSnackbarMessage(state, action) {
-      state.snackbarMessage = action.payload;
     },
     setActiveTab(state, action) {
       state.activeTab = action.payload;
@@ -182,7 +176,22 @@ const uiSlice = createSlice({
     },
     setRegistry(state, action) {
       state.registry = action.payload;
+    },
+    addToImportLog: (state, action) => {
+      state.importLog.push(action.payload);
+    },
+    removeImportLogMessage: (state, action) => {
+      const matchText = action.payload;
+      state.importLog = state.importLog.filter((msg) =>
+        typeof msg === "string"
+          ? !msg.includes(matchText)
+          : !(msg.info && msg.info.includes(matchText))
+      );
+    },
+    clearImportLog: (state) => {
+      state.importLog = [];
     }
+
 
   },
 });
@@ -190,8 +199,6 @@ const uiSlice = createSlice({
 export const {
   setBasemap,
   setBasemaps,
-  setSnackbarOpen,
-  setSnackbarMessage,
   setActiveTab,
   setActiveResultsTab,
   setSelectedFeatureIds,
@@ -201,6 +208,9 @@ export const {
   setUploadedActivities,
   setLoading,
   setSelectedActivity,
-  setRegistry
+  setRegistry,
+  addToImportLog,
+  removeImportLogMessage,
+  clearImportLog,
 } = uiSlice.actions;
 export default uiSlice.reducer;

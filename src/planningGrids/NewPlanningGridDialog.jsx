@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import {
-  setSnackbarMessage,
-  setSnackbarOpen,
-  toggleDialog,
-} from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectSelect from "../BPComponents/BioprotectSelect";
 import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
+import {
+  toggleDialog,
+} from "@slices/uiSlice";
 import { togglePUD } from "@slices/planningUnitSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 
 const NewPlanningGridDialog = ({
   loading,
@@ -24,16 +23,15 @@ const NewPlanningGridDialog = ({
   const [shape, setShape] = useState("");
   const [areakm2, setAreaKm2] = useState(undefined);
   const [domainEnabled, setDomainEnabled] = useState(true);
+  const { showMessage } = useAppSnackbar();
 
   const handleIso3Change = (value) => {
     if (["FJI", "KIR", "NZL", "RUS", "TUV", "USA", "WLF"].includes(value)) {
       setIso3(undefined);
       // Optionally show an error if the country spans the meridian
-      dispatch(setSnackbarOpen(true));
-      dispatch(
-        setSnackbarMessage(
-          "Countries that span the meridian are currently not supported..."
-        )
+      showMessage(
+        "Countries that span the meridian are currently not supported...",
+        "error"
       );
     } else {
       setIso3(value);

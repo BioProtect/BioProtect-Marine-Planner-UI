@@ -3,6 +3,18 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  addToImportLog,
+  clearImportLog,
+  removeImportLogMessage,
+  setActiveTab,
+  setActivities,
+  setBasemap,
+  setLoading,
+  setRegistry,
+  setUploadedActivities,
+  toggleDialog,
+} from "@slices/uiSlice";
 import { getPaintProperty, getTypeProperty } from "./features/featuresService";
 import {
   getUserProject,
@@ -26,17 +38,6 @@ import {
   selectCurrentUserId,
   selectIsUserLoggedIn,
 } from "@slices/authSlice";
-import {
-  setActiveTab,
-  setActivities,
-  setBasemap,
-  setLoading,
-  setRegistry,
-  setSnackbarMessage,
-  setSnackbarOpen,
-  setUploadedActivities,
-  toggleDialog
-} from "@slices/uiSlice";
 import {
   setAddingRemovingFeatures,
   setAllFeatures,
@@ -131,6 +132,8 @@ import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
 import parse from "wellknown";
+import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useSnackbar } from "notistack";
 import useWebSocketHandler from "./WebSocketHandler";
 import { zoomToBounds } from "./Helpers";
 
@@ -202,7 +205,6 @@ const App = () => {
     []
   );
   const [renderer, setRenderer] = useState({});
-  const [resultsPanelOpen, setResultsPanelOpen] = useState(false);
   const [runLogs, setRunLogs] = useState([]);
   const [runParams, setRunParams] = useState([]);
   const [runningImpactMessage, setRunningImpactMessage] =
@@ -238,6 +240,10 @@ const App = () => {
 
   const [logoutUser] = useLogoutUserMutation();
   const [updateUser] = useUpdateUserMutation();
+
+  const { showMessage } = useAppSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
+
 
   // ✅ Fetch planning unit data **ONLY when required values exist**
   const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
@@ -321,8 +327,7 @@ const App = () => {
 
   const setSnackBar = (message, silent = false) => {
     if (!silent) {
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage(message));
+      showMessage(message, "info");
     }
   };
 
@@ -332,7 +337,7 @@ const App = () => {
       if (!response) {
         const msg = "No response received from server";
         if (snackbarOpen) {
-          dispatch(setSnackbarMessage(msg));
+          showMessage(msg, "info");
         }
         return true;
       }
@@ -379,6 +384,7 @@ const App = () => {
             ? response.error
             : "No error message returned";
         console.error("Error message from server: " + error);
+        dispatch(addToImportLog("Error message from server: " + error));
       }
       return isError;
     },
@@ -433,7 +439,6 @@ const App = () => {
       return new Promise((resolve, reject) => {
         jsonp(projState.bpServer.endpoint + params, { timeout })
           .promise.then((response) => {
-            console.log("response ", response);
             dispatch(setLoading(false));
             checkForErrors(response)
               ? reject(response.error) : resolve(response);
@@ -461,8 +466,6 @@ const App = () => {
     ) => {
       dispatch(setLoading(true));
       console.log("withCredentials ", withCredentials);
-
-
       try {
         const controller = new AbortController();
         const { signal } = controller;
@@ -482,6 +485,8 @@ const App = () => {
           }
         );
         clearTimeout(timeoutId);
+        console.log("response in _post ", response);
+
         const data = await response.json();
 
         if (!checkForErrors(data)) {
@@ -505,67 +510,64 @@ const App = () => {
     //switches the results pane to the log tab and clears log if needs be
     setActiveTab("log");
     if (clearLog) {
-      setLogMessages([]);
+      dispatch(clearImportLog());
     }
   };
 
   // Main logging method - all log messages use this method
   const messageLogger = useCallback((message) => {
-    const timestampedMessage = { ...message, timestamp: new Date() };
-    setLogMessages((prevState) => [
-      ...prevState,
-      timestampedMessage,
-    ]);
-  }, []);
+    const timestampedMessage = { ...message, timestamp: new Date().toLocaleTimeString() };
+    dispatch(addToImportLog(timestampedMessage));
+  }, [dispatch]);
 
 
   // removes a message from the log by matching on pid and status or just status
   // update the messages state - filter previous messages state by pid and status
   const removeMessageFromLog = useCallback((status, pid) => {
-    setLogMessages((prevState) =>
-      prevState.filter((message) => {
-        return pid !== undefined
-          ? !(message.pid === pid && message.status === status)
-          : message.status !== status;
-      })
-    );
-  }, []);
+    const matchText = status;
+    dispatch(removeImportLogMessage(matchText));
+  }, [dispatch]);
 
 
   //logs the message if necessary - this removes duplicates
   const logMessage = useCallback((message) => {
     if (!message || typeof message.status !== "string") return;
 
+    const timestampedMessage = {
+      ...message,
+      time: new Date().toLocaleTimeString(),
+    };
+
     const handleSocketClosedUnexpectedly = () => {
-      messageLogger({
+      dispatch(addToImportLog({
         method: message.method,
         status: "Finished",
         error: "The WebSocket connection closed unexpectedly",
-      });
-      removeMessageFromLog("Preprocessing");
-      setPid(0);
+        time: timestampedMessage.time,
+      }));
+      dispatch(removeImportLogMessage("Preprocessing"));
+      dispatch(setPid(0));
     };
 
     const handlePidMessage = () => {
-      const existingMessages = logMessages.filter(
+      const existingMessages = uiState.importLog.filter(
         (_message) => _message.pid === message.pid
       );
       const latestStatus = existingMessages.at(-1)?.status;
 
       if (!existingMessages.length || message.status !== latestStatus) {
         if (message.status === "Finished") {
-          removeMessageFromLog("RunningQuery", message.pid);
+          dispatch(removeImportLogMessage("RunningQuery"));
         }
-        messageLogger(message);
+        dispatch(addToImportLog(timestampedMessage));
       }
     };
-
     const handleGeneralMessage = () => {
       const allowDuplicates = ["RunningMarxan", "Started", "Finished"];
       if (!allowDuplicates.includes(message.status)) {
-        removeMessageFromLog(message.status);
+        dispatch(removeImportLogMessage(message.status));
       }
-      messageLogger(message);
+      dispatch(addToImportLog(timestampedMessage));
     };
 
     if (message.status === "SocketClosedUnexpectedly") {
@@ -575,7 +577,7 @@ const App = () => {
     } else {
       handleGeneralMessage();
     }
-  }, [logMessages, messageLogger, removeMessageFromLog, setPid]);
+  }, [dispatch, uiState.importLog]);
 
 
   const startWebSocket = useWebSocketHandler(
@@ -678,15 +680,13 @@ const App = () => {
     try {
       // Send request to delete the user
       await deleteUser(user).unwrap();
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage("User Deleted"))
+      showMessage("User Deleted", "success");
       // Update local state to remove the deleted user
       const usersCopy = userState.users.filter((item) => item.user !== user);
       dispatch(setUsers(usersCopy));
       // Check if the current project belongs to the deleted user
       if (owner === user) {
-        dispatch(setSnackbarOpen(true));
-        dispatch(setSnackbarMessage("Current project no longer exists. Loading next available."))
+        showMessage("Current project no longer exists. Loading next available.", "success");
         // Load the next available project
         const nextProject = projState.projects.find((project) => project.user !== user);
         if (nextProject) {
@@ -697,9 +697,7 @@ const App = () => {
         deleteProjectsForUser(user);
       }
     } catch (error) {
-      // Handle errors
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage("Failed to delete user: ", error))
+      showMessage("Failed to delete user: ", "error")
     }
   };
 
@@ -729,8 +727,8 @@ const App = () => {
       dispatch(setUploadedActivities(activitiesData.data));
 
       setPUTabInactive();
-      setResultsPanelOpen(true);
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
+      dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: true }));
 
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
@@ -741,8 +739,7 @@ const App = () => {
       );
       return "Logged in";
     } catch (error) {
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage("Login failed: ", error))
+      showMessage(`Login failed: ${error}`, "error");
       throw error;
     }
   };
@@ -753,7 +750,7 @@ const App = () => {
     setBrew(new classyBrew());
     setPassword("");
     setRunParams([]);
-    setResultsPanelOpen(false);
+    dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: false }));
     setRenderer({});
     dispatch(setUser(""));
     dispatch(setProjectFeatures([]));
@@ -1012,6 +1009,7 @@ const App = () => {
       // Activate the project tab
       dispatch(setActiveTab("project"));
       setPUTabInactive();
+
       return "Project loaded";
     } catch (error) {
       console.log("error", error);
@@ -1021,8 +1019,7 @@ const App = () => {
       }
       if (error.toString().includes("does not exist")) {
         // Handle case where project does not exist
-        dispatch(setSnackbarOpen(true));
-        dispatch(setSnackbarMessage("Loading first available project"));
+        showMessage("Loading first available project", "info");
         await loadProject("", user);
         return;
       }
@@ -1176,10 +1173,8 @@ const App = () => {
     // }
     // const response = await _post("createProject", formData); - old
     const response = await _post("projects?action=create", formData);
-    dispatch(setSnackbarOpen(true));
-    dispatch(setSnackbarMessage(response.info));
+    showMessage(response.info, "success");
     dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
-
     await loadProject(response.name, response.user);
   };
 
@@ -1202,27 +1197,19 @@ const App = () => {
       await getProjects();
 
       // Show a snackbar message, but allow it to be silent if specified
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage(response.info, silent));
+      showMessage(response.info, "info", silent);
 
       // Check if the deleted project is the current one
       if (response.project === projState.project) {
-        dispatch(
-          setSnackbarMessage(
-            "Current project deleted - loading first available"
-          )
-        );
-
-        // Find the next available project
+        showMessage("Current project deleted - loading first available", "success")
         const nextProject = projState.projects.find((p) => p.name !== projState.project);
-
         if (nextProject) {
           await loadProject(nextProject.name, user);
         }
       }
     } catch (error) {
       console.error("Error deleting project:", error);
-      // Optionally handle the error, e.g., set an error state or notify the user
+      showMessage("Error deleting project:", "error");
     }
   };
 
@@ -1241,8 +1228,7 @@ const App = () => {
     // const response = await _get(`cloneProject?user=${user}&project=${proj}`); - old 
     const response = await _get(`projects?action=clone&user=${user}&project=${proj}`);
     getProjects();
-    dispatch(setSnackbarOpen(true));
-    dispatch(setSnackbarMessage(response.info));
+    showMessage(response.info, "success");
   };
 
   //rename a specific project on the server
@@ -1253,8 +1239,7 @@ const App = () => {
       );
 
       // dispatch(setProject(newName)); // FIX THIS - UPDATE NAME OF PROJECT ONLY. 
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage(response.info));
+      showMessage(response.info, "success");
       return "Project renamed";
     }
   };
@@ -1452,8 +1437,7 @@ const App = () => {
 
     // Check if solutions are present
     if (response.ssoln?.length > 0) {
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage(response.info));
+      showMessage(response.info, "success");
       renderSolution(response.ssoln, true);
 
       // Map the solutions to the required format
@@ -2035,18 +2019,24 @@ const App = () => {
       message !== "http status 200 returned without content." ||
       message == ""
     ) {
-      dispatch(
-        setSnackbarMessage(
-          `MapError: ${message}, Error status: ${e.error.status}`
-        )
-      );
+      showMessage(`MapError: ${message}, Error status: ${e.error.status}`, "error");
       console.error(message);
     }
   }, []);
 
   const mapClick = async (e) => {
     //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
+    console.log("map.current.getSource(mapbox-gl-draw-cold) ", map.current.getSource("mapbox-gl-draw-cold"));
+    console.log("puState.puEditing ", puState.puEditing);
+    console.log("CONSTANTS.LAYER_TYPE_PLANNING_UNITS ", CONSTANTS.LAYER_TYPE_PLANNING_UNITS);
+    console.log("CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS ", CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS);
+    console.log("CONSTANTS.LAYER_TYPE_PROTECTED_AREAS ", CONSTANTS.LAYER_TYPE_PROTECTED_AREAS);
+    console.log("CONSTANTS.LAYER_TYPE_FEATURE_LAYER ", CONSTANTS.LAYER_TYPE_FEATURE_LAYER);
+
+
     if (!puState.puEditing && !map.current.getSource("mapbox-gl-draw-cold")) {
+
+
       //get a list of the layers that we want to query for features
       const featureLayers = getLayers([
         CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
@@ -2057,7 +2047,9 @@ const App = () => {
       // Get the feature layer ids, get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
       // Set the popup point, get any planning unit features under the mouse
       const featureLayerIds = featureLayers.map((item) => item.id);
+      console.log("featureLayerIds ", featureLayerIds);
       const clickedFeatures = getRenderedFeatures(e.point, featureLayerIds);
+      console.log("clickedFeatures ", clickedFeatures);
       const puFeatures = getFeaturesByLayerStartsWith(
         clickedFeatures,
         "marxan_pu_"
@@ -2270,8 +2262,7 @@ const App = () => {
 
     } catch (error) {
       console.error("Error loading planning grid:", error);
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage(error.message || "Error loading planning grid"));
+      showMessage(error.message || "Error loading planning grid", "error");
       throw error;
     }
   };
@@ -2819,7 +2810,7 @@ const App = () => {
   const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
     startLogging();
     const message = await handleWebSocket(
-      `createPlanningUnitGrid ? iso3 = ${iso3}& domain=${domain}& areakm2=${areakm2}& shape=${shape} `,
+      `createPlanningUnitGrid?iso3 = ${iso3}& domain=${domain}& areakm2=${areakm2}& shape=${shape} `,
     );
     await newPlanningGridCreated(message);
     setNewPlanningGridDialogOpen(false);
@@ -2834,7 +2825,7 @@ const App = () => {
   ) => {
     startLogging();
     const message = await handleWebSocket(
-      `createMarinePlanningUnitGrid ? filename = ${filename}& planningGridName=${planningGridName}& areakm2=${areakm2}& shape=${shape} `,
+      `createMarinePlanningUnitGrid?filename=${filename}& planningGridName=${planningGridName}& areakm2=${areakm2}& shape=${shape} `,
     );
     await newMarinePlanningGridCreated(message);
     dispatch(
@@ -2914,8 +2905,7 @@ const App = () => {
     const response = await useDeletePlanningUnitQuery(feature_class_name);
     //update the planning unit grids
 
-    dispatch(setSnackbarOpen(!silent));
-    dispatch(setSnackbarMessage(response.info, silent));
+    showMessage(response.info, "info", silent);
   };
 
   //exports a planning grid to a zipped shapefile
@@ -2970,8 +2960,7 @@ const App = () => {
       if (result.error) {
         const errorMsg = `Mapbox upload error: ${result.error}. See <a href='${CONSTANTS.ERRORS_PAGE}#mapbox-upload-error' target='blank'>here</a>`;
         messageLogger({ error: errorMsg, status: "UploadFailed" });
-        dispatch(setSnackbarOpen(true));
-        dispatch(setSnackbarMessage(errorMsg));
+        showMessage(errorMsg, "error");
         clearMapboxTimer(uploadid);
         throw new Error(result.error);
       }
@@ -3209,7 +3198,7 @@ const App = () => {
   //toggles the impact layer on the map
   const toggleImpactLayer = (impact) => {
     if (impact.tilesetid === "") {
-      dispatch(setSnackBar(`This feature does not seem to have a tileset.`));
+      showMessage(`This feature does not seem to have a tileset.`, "error");
       return;
     }
     // this.closeImpactMenu();
@@ -3521,16 +3510,21 @@ const App = () => {
     startLogging();
 
     const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}`;
-    console.log("baseUrl ", baseUrl);
     const url = name !== ""
       ? `${baseUrl}&name=${name}&description=${description}`
       : `${baseUrl}&splitfield=${splitfield}`;
-    console.log("url ", url);
 
-    const message = await handleWebSocket(url);
-    console.log("Feature import complete:", message);
-    return message;
+    try {
+      const message = await handleWebSocket(url);
+      console.log("Feature import complete:", message);
+      return message;
+    } catch (error) {
+      console.error("Feature import failed:", error);
+      showMessage(error.message || "Failed to import features", "error");
+      throw error; // re-throw if you want the caller to handle it too
+    }
   };
+
 
   const zoomToLayer = (tileJSON) => {
     fetch(`${tileJSON}`)
@@ -3624,7 +3618,7 @@ const App = () => {
   //toggles the feature layer on the map
   const toggleFeatureLayer = (feature) => {
     if (feature.tilesetid === "") {
-      dispatch(setSnackBar(`This feature does not seem to have a tileset.`));
+      showMessage(`This feature does not seem to have a tileset.`, "error");
       return;
     }
     const tableName = feature.tilesetid.split(".")[1];
@@ -3895,11 +3889,7 @@ const App = () => {
     if (clashingPuids.length > 0) {
       //remove them from the puids
       puids = puids.filter((item) => !clashingPuids.includes(item));
-      dispatch(
-        setSnackbarMessage(
-          `Not all planning units have been added. See <a href='${CONSTANTS.ERRORS_PAGE}#not-all-planning-units-have-been-added' target='blank'>here</a>`
-        )
-      );
+      showMessage(`Not all planning units have been added.`, "error");
     }
     // Get all puids for existing iucn category - these will come from the previousPuids rather than getPuidsFromIucnCategory as there may have been some clashes and not all of the puids from getPuidsFromIucnCategory may actually be renderered
     //if the previousPuids are undefined then get them from the projects previousIucnCategory
@@ -4360,7 +4350,7 @@ const App = () => {
             />) : null}
 
           <ResultsPanel
-            open={resultsPanelOpen}
+            open={uiState.resultsPanelOpen}
             preprocessing={preprocessing}
             solutions={solutions}
             loadSolution={loadSolution}
@@ -4376,7 +4366,7 @@ const App = () => {
             messages={logMessages}
             activeResultsTab={uiState.activeResultsTab}
             setActiveTab={setActiveTab}
-            clearLog={() => setLogMessages([])}
+            clearLog={() => dispatch(clearImportLog())}
             owner={owner}
             resultsLayer={resultsLayer}
             wdpaLayer={wdpaLayer}
@@ -4545,12 +4535,6 @@ const App = () => {
             updateWDPA={updateWDPA}
           />
           <AlertDialog />
-          <Snackbar
-            open={uiState.snackbarOpen}
-            message={uiState.snackbarMessage}
-            onClose={() => dispatch(setSnackbarOpen(false))}
-            style={{ maxWidth: "800px !important" }}
-          />
           <FeatureMenu
             anchorEl={menuAnchor}
             removeFromProject={removeFromProject}

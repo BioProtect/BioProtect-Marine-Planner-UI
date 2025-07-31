@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -14,9 +14,11 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
+import { addToImportLog } from "../slices/uiSlice";
 import { setAddToProject } from "@slices/projectSlice";
-import { setFeatureDatasetFilename } from "@slices/featureSlice";
+import { setFeatureFilename } from "@slices/featureSlice";
 import { toggleFeatureD } from "@slices/featureSlice";
+import { useLogToSnackbar } from "@hooks/useLogToSnackbar";
 
 const ImportFeaturesDialog = ({
   importFeatures,
@@ -29,7 +31,6 @@ const ImportFeaturesDialog = ({
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
   const featureState = useSelector((state) => state.feature)
-  console.log("featureState ", featureState);
   const [steps, setSteps] = useState([
     "shapefile",
     "single_or_multiple",
@@ -41,19 +42,24 @@ const ImportFeaturesDialog = ({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [shapeFile, setShapeFile] = useState(null);
+  const [importLog, setImportLog] = useState([]);
+
+  useLogToSnackbar(() => true);
 
   const handleNext = () => {
     if (stepIndex === 0) {
-      unzipShapefile(featureState.featureDatasetFilename).then((response) => {
-        setShapeFile(`${response.rootfilename}.shp`);
-        setName(`${response.rootfilename}`)
+      unzipShapefile(featureState.featureFilename).then((response) => {
+        const shapeFilePath = response.rootfilename;
+        setShapeFile(`${shapeFilePath}.shp`);
+        setName(`${shapeFilePath}`)
         setStepIndex(stepIndex + 1);
+        handleGetShapefileFieldnames(`${shapeFilePath}.shp`);
       });
     } else if (stepIndex === steps.length - 1) {
-      importFeatures(featureState.featureDatasetFilename, name, description, shapeFile, splitField)
-        .then((resp) => {
-          closeDialog();
-        });
+      importFeatures(featureState.featureFilename, name, description, shapeFile, splitField).then((response) => {
+        dispatch(addToImportLog(response.message));
+        closeDialog();
+      });
     } else {
       setStepIndex(stepIndex + 1);
     }
@@ -65,9 +71,26 @@ const ImportFeaturesDialog = ({
   const handleSplitFieldChange = (event) => setSplitField(event.target.value);
   const resetFieldnames = () => setFieldNames([]);
 
-  const handleGetShapefileFieldnames = () => {
-    getShapefileFieldnames(shapeFile).then((response) => {
-      setFieldNames(response.fieldnames);
+  const handleGetShapefileFieldnames = (shapeFilePath) => {
+    if (shapeFilePath === undefined) {
+      shapeFilePath = shapeFile;
+    }
+    getShapefileFieldnames(shapeFilePath).then((response) => {
+      const { info, fieldnames, values } = response;
+      console.log("fieldnames, values ", fieldnames, values);
+      setFieldNames(fieldnames);
+
+      const descriptField = fieldnames.find((name) =>
+        name.toLowerCase().includes("descript")
+      );
+
+      if (descriptField && values?.length > 0) {
+        const value = values[0][descriptField];
+        console.log("value ", value);
+        if (value) {
+          setDescription(value);
+        }
+      }
     });
   };
 
@@ -75,7 +98,7 @@ const ImportFeaturesDialog = ({
 
   const closeDialog = () => {
     if (shapeFile) {
-      deleteShapefile(featureState.featureDatasetFilename, shapeFile);
+      deleteShapefile(featureState.featureFilename, shapeFile);
     }
     setStepIndex(0);
     setFieldNames([]);
@@ -83,7 +106,7 @@ const ImportFeaturesDialog = ({
     setName("");
     setDescription("");
     setShapeFile(null);
-    dispatch(setFeatureDatasetFilename(""));
+    dispatch(setFeatureFilename(""));
     dispatch(
       toggleFeatureD({
         dialogName: "featuresDialogOpen",
@@ -99,7 +122,7 @@ const ImportFeaturesDialog = ({
   };
 
   const _disabled =
-    (stepIndex === 0 && featureState.featureDatasetFilename === "") ||
+    (stepIndex === 0 && featureState.featureFilename === "") ||
     (stepIndex === 1 && uiState.loading);
 
   return (
@@ -118,7 +141,7 @@ const ImportFeaturesDialog = ({
             fileUpload={fileUpload}
             fileMatch=".zip"
             mandatory={true}
-            filename={featureState.featureDatasetFilename}
+            filename={featureState.featureFilename}
             destFolder="imports"
             label="Shapefile"
           />

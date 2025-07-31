@@ -19,6 +19,7 @@ const activeTabArr = ["legend", "solutions", "log"];
 
 const ResultsPanel = (props) => {
   const uiState = useSelector((state) => state.ui);
+
   const [showClipboard, setShowClipboard] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState(undefined);
   const [runtimeStr, setRuntimeStr] = useState("00:00s");
@@ -226,7 +227,7 @@ const ResultsPanel = (props) => {
               }}
             >
               <Log
-                messages={props.messages}
+                messages={uiState.importLog}
                 id="log"
                 mouseEnter={mouseEnter}
                 mouseLeave={mouseLeave}

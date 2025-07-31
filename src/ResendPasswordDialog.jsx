@@ -2,6 +2,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } 
 import { React, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useResendPasswordQuery } from "@slices/userSlice";
 
 const ResendPasswordDialog = ({
@@ -12,13 +13,13 @@ const ResendPasswordDialog = ({
   const dispatch = useDispatch();
   const userState = useSelector((state) => state.user)
   const uiState = useSelector((state) => state.ui)
+  const { showMessage } = useAppSnackbar();
 
 
   const resendPassword = async () => {
     try {
       const { data: response, error } = useResendPasswordQuery(userState.user);
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage(response.info));
+      showMessage(response.info, "success");
       dispatch(
         toggleDialog({ dialogName: "resendPasswordDialogOpen", isOpen: false })
       );

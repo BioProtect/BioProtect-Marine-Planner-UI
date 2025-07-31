@@ -2,8 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   setActiveResultsTab,
   setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
   toggleDialog,
   toggleProjectDialog,
 } from "@slices/uiSlice";

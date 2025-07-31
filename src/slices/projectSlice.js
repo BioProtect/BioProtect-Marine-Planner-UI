@@ -4,7 +4,6 @@ import {
   getServerCapabilities,
 } from "../Server/serverFunctions";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { setSnackbarMessage, setSnackbarOpen } from "./uiSlice";
 
 import { INITIAL_VARS } from "../bpVars";
 import { apiSlice } from "./apiSlice";
@@ -165,7 +164,9 @@ export const initialiseServers = createAsyncThunk(
 // Thunk to fetch the user's project only if not already in state
 export const getUserProject = createAsyncThunk(
   "projects/getUserProject",
-  async (projectId, { getState, dispatch, rejectWithValue }) => {
+  async (projectId, { getState, dispatch, rejectWithValue, extra }) => {
+    const { enqueueSnackbar } = extra || {};
+
     try {
 
       if (!projectId) {
@@ -177,19 +178,17 @@ export const getUserProject = createAsyncThunk(
         const allProjects = await dispatch(
           projectApiSlice.endpoints.listProjects.initiate()
         ).unwrap();
-        dispatch(setSnackbarMessage("No Project with that id found. Loading first available project"))
-        dispatch(setSnackbarOpen(true))
 
         const parsed = typeof allProjects === "string" ? JSON.parse(allProjects) : allProjects;
         const firstProject = parsed.projects?.[0];
 
         if (!firstProject) {
+          enqueueSnackbar?.("No projects found for user", { variant: "warning" })
           return rejectWithValue("No projects found for user");
         }
 
         projectId = firstProject.id;
       }
-      console.log("projectId ", projectId);
 
       const data = await dispatch(
         projectApiSlice.endpoints.getProject.initiate(projectId)
@@ -209,8 +208,7 @@ export const getUserProject = createAsyncThunk(
       return response; // Assuming response has { project: { id, name, ... } }
     } catch (error) {
       console.error("Failed to fetch project:", error);
-      dispatch(setSnackbarMessage("Failed to fetch project: ", error))
-      dispatch(setSnackbarOpen(true))
+      enqueueSnackbar?.(`Failed to fetch project: ${error}`, { variant: "error" });
       return rejectWithValue(error.message);
     }
   }

@@ -1,8 +1,6 @@
 import {
   setActiveResultsTab,
   setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
   toggleDialog,
   togglePUD,
   toggleProjectDialog,

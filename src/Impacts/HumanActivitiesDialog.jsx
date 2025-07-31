@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { setLoading, setSelectedActivity, setSnackbarMessage, setSnackbarOpen, toggleDialog } from "@slices/uiSlice";
+import { setLoading, setSelectedActivity, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -13,6 +13,7 @@ import Sync from "@mui/icons-material/Sync";
 import TextField from "@mui/material/TextField";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { generateTableCols } from "../Helpers";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 
 // Initial state configuration
 const INITIAL_STATE = {
@@ -28,6 +29,7 @@ const HumanActivitiesDialog = (props) => {
   const [filename, setFilename] = useState("");
   const [description, setDescription] = useState("");
   const [searchText, setSearchText] = useState("");
+  const { showMessage } = useAppSnackbar();
 
   const handleNext = () => {
     if (stepIndex === INITIAL_STATE.steps.length - 1) {
@@ -52,8 +54,7 @@ const HumanActivitiesDialog = (props) => {
     });
 
     const message = response?.info || response?.error || "No response";
-    dispatch(setSnackbarOpen(true));
-    dispatch(setSnackbarMessage(message));
+    showMessage(message, response?.error ? "error" : "success");
     dispatch(setLoading(false));
     closeDialog();
     dispatch(toggleDialog({
@@ -72,7 +73,6 @@ const HumanActivitiesDialog = (props) => {
     setDescription("");
     setSearchText("");
     dispatch(setSelectedActivity(""));
-    dispatch(setSnackbarMessage(""));
     dispatch(
       toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: false })
     );

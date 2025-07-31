@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { setSnackbarMessage, setSnackbarOpen } from "@slices/uiSlice";
 
 import FileUpload from "../FileUpload";
 import MarxanDialog from "../MarxanDialog";
@@ -8,6 +7,7 @@ import MarxanTextField from "../MarxanTextField";
 import Sync from "@mui/icons-material/Sync";
 import TableRow from "../TableRow";
 import ToolbarButton from "../ToolbarButton";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useDispatch } from "react-redux";
 
 const INITIAL_STATE = {
@@ -26,6 +26,7 @@ const ImportImpactsDialog = (props) => {
   const [description, setDescription] = useState("");
   const [searchText, setSearchText] = useState("");
   const [selectedActivity, setSelectedActivity] = useState("");
+  const { showMessage } = useAppSnackbar();
 
   const { steps, title } = INITIAL_STATE;
 
@@ -43,9 +44,7 @@ const ImportImpactsDialog = (props) => {
     props
       .importImpacts(filename, selectedActivity, description)
       .then((response) => {
-
-        dispatch(setSnackbarMessage(response));
-        dispatch(setSnackbarOpen(true))
+        showMessage(response, "success");
         closeDialog();
       });
   };
@@ -57,7 +56,6 @@ const ImportImpactsDialog = (props) => {
     setDescription("");
     setSearchText("");
     setSelectedActivity("");
-    dispatch(setSnackbarMessage(""));
     props.onCancel();
   };
 

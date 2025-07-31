@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from "react";
-import { setSnackbarMessage, setSnackbarOpen } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Box } from "@mui/material";
 import mapboxgl from "mapbox-gl";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 import { zoomToBounds } from "./Helpers";
 
 // Refactored functional component
@@ -16,6 +16,7 @@ const MapContainer2 = ({
   const dispatch = useDispatch();
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+  const { showMessage } = useAppSnackbar();
 
   useEffect(() => {
     // Initialize the map
@@ -52,8 +53,7 @@ const MapContainer2 = ({
         if (tileset.bounds) zoomToBounds(map, tileset.bounds);
       })
       .catch((error) => {
-        dispatch(setSnackbarOpen(true));
-        dispatch(setSnackbarMessage(error));
+        showMessage(`Error fetching tileset metadata: ${error}`, "error");
       });
 
     // Cleanup function to remove the map

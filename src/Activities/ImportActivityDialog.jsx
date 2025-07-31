@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import FileUpload from "../FileUpload";
 import MarxanTable from "../MarxanTable";
 import SyncIcon from "@mui/icons-material/Sync";
-import { setSnackbarMessage } from "@slices/uiSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 
 const title = ["Import Activity", "Upload Raster File"];
 
@@ -31,13 +31,13 @@ const ImportActivityDialog = ({
   const [description, setDescription] = useState("");
   const [searchtext, setSearchtext] = useState("");
   const [selectedActivity, setSelectedActivity] = useState("");
+  const { showMessage } = useAppSnackbar();
 
   const handleNext = () => {
     if (stepIndex === steps.length - 1) {
       saveActivityToDb(filename, selectedActivity, description)
         .then((response) => {
-          dispatch(setSnackbarOpen(true));
-          dispatch(setSnackbarMessage(response));
+          showMessage(response, "success");
           closeDialog();
         })
         .catch((error) => console.error(error));
@@ -56,7 +56,6 @@ const ImportActivityDialog = ({
     setDescription("");
     setSearchtext("");
     setSelectedActivity("");
-    dispatch(setSnackbarMessage(""));
     onCancel();
   };
 

@@ -21,6 +21,7 @@ export default defineConfig({
       "@features": path.resolve(__dirname, "./src/features"),
       "@navbars": path.resolve(__dirname, "./src/navbars"),
       "@images": path.resolve(__dirname, "./src/images"),
+      "@hooks": path.resolve(__dirname, "./src/hooks"),
       // You can add more aliases as needed
     },
   },

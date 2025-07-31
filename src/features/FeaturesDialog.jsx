@@ -1,5 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { setSelectedFeature, setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice";
+import {
+  setAddingRemovingFeatures,
+  setSelectedFeature,
+  setSelectedFeatureIds,
+  toggleFeatureD
+} from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -53,28 +58,6 @@ const FeaturesDialog = ({
     initialiseDigitising();
   };
 
-  // const openImportGBIFDialog = () => {
-  //   setImportGBIFDialogOpen(true);
-  //   dispatch(
-  //     toggleFeatureD({
-  //       dialogName: "importFeaturePopoverOpen",
-  //       isOpen: false,
-  //     })
-  //   );
-  //   dispatch(
-  //     toggleFeatureD({
-  //       dialogName: "newFeaturePopoverOpen",
-  //       isOpen: false,
-  //     })
-  //   );
-  //   dispatch(
-  //     toggleFeatureD({
-  //       dialogName: "featuresDialogOpen",
-  //       isOpen: false,
-  //     })
-  //   );
-  // };
-
   const removeFeature = (feature) => {
     const updatedFeatureIds = featureState.selectedFeatureIds.filter(
       (id) => id !== feature.id
@@ -83,25 +66,24 @@ const FeaturesDialog = ({
   };
 
   //adds a feature to the selectedFeatureIds array
-  const addFeature = (feature) =>
-    dispatch(setSelectedFeatureIds((prevState) =>
-      prevState.includes(feature.id) ? prevState : [...prevState, feature.id]
-    ));
+  const addFeature = (feature) => {
+    const currentSelected = featureState.selectedFeatureIds;
+    const updated = currentSelected.includes(feature.id)
+      ? currentSelected
+      : [...currentSelected, feature.id];
+    dispatch(setSelectedFeatureIds(updated));
+  };
 
   const addOrRemoveFeature = (feature) => {
-    console.log(" ------------------------------ addOrRemoveFeature ");
-    console.log("feature ", feature);
-    console.log("featureState.selectedFeatureIds ", featureState.selectedFeatureIds);
-
-    return [...featureState.selectedFeatureIds].includes(feature.id)
-      ? removeFeature(feature)
-      : addFeature(feature);
+    if (featureState.selectedFeatureIds.includes(feature.id)) {
+      removeFeature(feature);
+    } else {
+      addFeature(feature);
+    }
   };
 
   const clickRow = (event, rowInfo) => {
-    console.log("--------------------------- clickRow ");
-    console.log("event, rowInfo ", event, rowInfo);
-    console.log("featureState.addingRemovingFeatures ", featureState.addingRemovingFeatures);
+    if (!rowInfo || rowInfo.index === undefined) return;
 
     if (featureState.addingRemovingFeatures) {
       // Allow users to select multiple features using the shift key
@@ -109,13 +91,11 @@ const FeaturesDialog = ({
         const selectedIds = getFeaturesBetweenRows(previousRow, rowInfo);
         update(selectedIds);
       } else {
-        addOrRemoveFeature(rowInfo.original, event.shiftKey, previousRow);
+        addOrRemoveFeature(rowInfo, event.shiftKey, previousRow);
       }
       setPreviousRow(rowInfo);
     } else {
-      console.log("--------------------------- setSelectedFeature ");
-
-      dispatch(setSelectedFeature(rowInfo.original));
+      dispatch(setSelectedFeature(rowInfo));
     }
   };
 
@@ -211,18 +191,29 @@ const FeaturesDialog = ({
     { id: "created_by", label: "By" },
   ]);
 
+  const tableData = featureState.allFeatures.map((feature, index) => ({
+    ...feature,
+    index
+  }));
+
+  const closeDialog = () => {
+    dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }));
+    dispatch(setAddingRemovingFeatures(false));
+  }
+
   return (
     <MarxanDialog
       open={featureState.dialogs.featuresDialogOpen}
       loading={uiState.loading}
       onOk={handleClickOk}
+      onCancel={() => closeDialog()}
       showCancelButton={featureState.addingRemovingFeatures}
       autoDetectWindowHeight={false}
       title="Features"
       // showSearchBox={true}
       // searchTextChanged={searchTextChanged}
       actions={
-        <FeaturesToolbar
+        < FeaturesToolbar
           metadata={metadata}
           userRole={userRole}
           selectAllFeatures={() => selectAllFeatures()}
@@ -233,7 +224,7 @@ const FeaturesDialog = ({
       <div id="react-features-dialog-table">
         <BioprotectTable
           title="Features"
-          data={featureState.allFeatures}
+          data={tableData}
           tableColumns={columns}
           searchColumns={["alias", "description", "source", "created_by"]}
           dataFiltered={dataFiltered}
@@ -244,7 +235,7 @@ const FeaturesDialog = ({
           preview={() => previewFeature(featureMetadata)}
         />
       </div>
-    </MarxanDialog>
+    </MarxanDialog >
   );
 };
 

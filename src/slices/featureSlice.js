@@ -65,7 +65,7 @@ const initialState = {
   identifiedFeatures: [],
   selectedFeature: {},
   selectedFeatureIds: [],
-  featureDatasetFilename: "",
+  featureFilename: "",
   featureProjects: [],
   featurePlanningUnits: [],
   createdFeatureInfo: {},
@@ -109,8 +109,8 @@ const featureSlice = createSlice({
     setSelectedFeatureIds(state, action) {
       state.selectedFeatureIds = action.payload;
     },
-    setFeatureDatasetFilename(state, action) {
-      state.featureDatasetFilename = action.payload;
+    setFeatureFilename(state, action) {
+      state.featureFilename = action.payload;
     },
     setFeatureProjects(state, action) {
       state.featureProjects = action.payload;
@@ -141,7 +141,7 @@ export const {
   setIdentifiedFeatures,
   setSelectedFeature,
   setSelectedFeatureIds,
-  setFeatureDatasetFilename,
+  setFeatureFilename,
   setCreatedFeatureInfo,
   setFeaturePlanningUnits,
   toggleFeatureD,

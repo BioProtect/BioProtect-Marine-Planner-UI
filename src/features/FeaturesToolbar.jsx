@@ -14,6 +14,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Import from "@mui/icons-material/GetApp";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 
 const FeaturesToolbar = ({
   metadata,
@@ -30,6 +31,7 @@ const FeaturesToolbar = ({
   const importOpen = Boolean(importAnchorEl);
   const [deleteFeature, { isLoading }] = useDeleteFeatureMutation();
 
+  const { showMessage } = useAppSnackbar();
 
 
   const handleNewClick = (event) => setNewAnchorEl(event.currentTarget);
@@ -105,8 +107,7 @@ const FeaturesToolbar = ({
         await deleteFeature(feature.feature_class_name).unwrap();
         const updatedFeatureIds = uiState.selectedFeatureIds.filter((id) => id !== feature.id);
         const updatedFeatures = uiState.allFeatures.filter((item) => item.id !== feature.id);
-        dispatch(setSnackbarOpen(true));
-        dispatch(setSnackbarMessage("Feature deleted"));
+        showMessage("Feature deleted", "success");
         dispatch(setSelectedFeatureIds(updatedFeatureIds));
         dispatch(setAllFeatures(updatedFeatures));
         dispatch(setSelectedFeature({}));
@@ -120,8 +121,7 @@ const FeaturesToolbar = ({
       }
     } catch (err) {
       console.error("Error deleting feature:", err);
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage("Failed to delete feature due to an error."));
+      showMessage("Failed to delete feature due to an error.", "error");
     }
   };
 

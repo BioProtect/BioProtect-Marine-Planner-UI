@@ -1,10 +1,10 @@
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import React, { useState } from "react";
-import { setSnackbarMessage, setSnackbarOpen } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import UploadFile from "@mui/icons-material/UploadFileTwoTone";
-import { setFeatureDatasetFilename } from "@slices/featureSlice";
+import { setFeatureFilename } from "@slices/featureSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 
 // FileUpload component refactored to use React 18 and MUI 5
 const FileUpload = (props) => {
@@ -14,6 +14,8 @@ const FileUpload = (props) => {
   const [active, setActive] = useState(false);
   const [destinationFolder, setDestinationFolder] = useState("imports");
   const id = `upload-${props.filename}`;
+  const { showMessage } = useAppSnackbar();
+
 
   const handleChange = async (e) => {
     if (props.destFolder) {
@@ -41,12 +43,14 @@ const FileUpload = (props) => {
             destinationFolder,
           );
         }
-        props.setFilename(response.file)
-        dispatch(setSnackbarOpen(true));
-        dispatch(setSnackbarMessage(response.info));
+        if (!response || !response.file) {
+          throw new Error("Invalid response from upload");
+        }
+        console.log("response after file upload ", response);
+        dispatch(setFeatureFilename(response.file))
+        showMessage(response.info, "success")
       } catch (error) {
-        dispatch(setSnackbarOpen(true));
-        dispatch(setSnackbarMessage("Error: ", error));
+        showMessage(`Upload error: ${error.message || error}`, "error");
       } finally {
         setLoading(false);
         setActive(false);
