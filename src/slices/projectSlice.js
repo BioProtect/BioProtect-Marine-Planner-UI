@@ -133,6 +133,7 @@ const initialState = {
   projectFeatures: [],
   projectPlanningUnits: {},
   projectCosts: {},
+
   dialogs: {
     projectsListDialogOpen: false,
     newProjectDialogOpen: false,

@@ -1,7 +1,5 @@
 import { createSlice, current } from "@reduxjs/toolkit";
 
-import UserMenu from "../User/UserMenu";
-
 const mapboxBasemaps = [
   {
     name: "Charted",

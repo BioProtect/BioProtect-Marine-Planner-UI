@@ -13,7 +13,6 @@ const ProjectsDialog = ({
 }) => {
   const dispatch = useDispatch();
   const projState = useSelector((state) => state.project);
-  console.log("projState ", projState);
 
   const handleDeleteProject = useCallback(() => {
     deleteProject(projState.projectData.user, projState.projectData.name);

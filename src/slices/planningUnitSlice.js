@@ -3,33 +3,33 @@ import { createSlice } from "@reduxjs/toolkit";
 
 export const planningUnitApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    deletePlanningUnit: builder.mutation({
+    deletePlanningUnitGrid: builder.mutation({
       query: (featureName) => ({
         url: `planning-units?action=delete&feature_name=${featureName}`,
         method: "GET",
       }),
-      invalidatesTags: ["PlanningUnits"],
+      invalidatesTags: ["PlanningUnitGrids"],
     }),
-    exportPlanningUnit: builder.query({
+    exportPlanningUnitGrid: builder.query({
       query: (featureName) => ({
         url: `planning-units?action=export&name=${featureName}`,
         method: "GET",
       }),
     }),
-    listPlanningUnits: builder.query({
+    listPlanningUnitGrids: builder.query({
       query: () => ({
         url: `planning-units?action=list`,
         method: "GET",
       }),
-      providesTags: ["PlanningUnits"],
+      providesTags: ["PlanningUnitGrids"],
     }),
   }),
 })
 
 export const {
-  useDeletePlanningUnitQuery,
-  useExportPlanningUnitQuery,
-  useListPlanningUnitsQuery,
+  useDeletePlanningUnitGridMutation,
+  useExportPlanningUnitGridQuery,
+  useListPlanningUnitGridsQuery,
 } = planningUnitApiSlice;
 
 

@@ -36,22 +36,22 @@ const FeaturesDialog = ({
   const [importFeatureAnchor, setImportFeatureAnchor] = useState(null);
 
 
-  // const showNewFeaturePopover = (event) => {
-  //   setNewFeatureAnchor(event.currentTarget);
-  //   dispatch(
-  //     toggleFeatureD({
-  //       dialogName: "newFeaturePopoverOpen",
-  //       isOpen: true,
-  //     })
-  //   );
-  // };
+  const showNewFeaturePopover = (event) => {
+    setNewFeatureAnchor(event.currentTarget);
+    dispatch(
+      toggleFeatureD({
+        dialogName: "newFeaturePopoverOpen",
+        isOpen: true,
+      })
+    );
+  };
 
-  // const showImportFeaturePopover = (event) => {
-  //   setImportFeatureAnchor(event.currentTarget);
-  //   dispatch(
-  //     toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
-  //   );
-  // };
+  const showImportFeaturePopover = (event) => {
+    setImportFeatureAnchor(event.currentTarget);
+    dispatch(
+      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
+    );
+  };
 
   const _newByDigitising = () => {
     onOk();
@@ -83,6 +83,9 @@ const FeaturesDialog = ({
   };
 
   const clickRow = (event, rowInfo) => {
+    console.log("rowInfo ", rowInfo);
+    console.log("eatureState.addingRemovingFeatures ", featureState.addingRemovingFeatures);
+
     if (!rowInfo || rowInfo.index === undefined) return;
 
     if (featureState.addingRemovingFeatures) {
@@ -213,7 +216,7 @@ const FeaturesDialog = ({
       // showSearchBox={true}
       // searchTextChanged={searchTextChanged}
       actions={
-        < FeaturesToolbar
+        <FeaturesToolbar
           metadata={metadata}
           userRole={userRole}
           selectAllFeatures={() => selectAllFeatures()}

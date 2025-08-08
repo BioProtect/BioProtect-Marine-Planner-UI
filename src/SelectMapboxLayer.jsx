@@ -21,13 +21,15 @@ const SelectMapboxLayer = ({
   changeItem,
   width,
 }) => {
+  const [mapLayers, setmapLayers] = useState([])
+  const [mapSources, setmapSources] = useState([])
   const [selectedLayer, setSelectedLayer] = useState(selectedValue);
 
   // This effect will run when the selected layer changes
   useEffect(() => {
     if (selectedLayer) {
       const selectedItem = items.find(
-        (item) => item.feature_class_name === selectedLayer
+        (item) => item.tilesetid === selectedLayer
       );
       if (selectedItem && selectedItem.envelope) {
         const envelope = getLatLngLikeFromWKT(selectedItem.envelope);
@@ -41,6 +43,34 @@ const SelectMapboxLayer = ({
     }
   }, [selectedLayer]);
 
+  const getLatLngLikeFromWKT = (wkt) => {
+    console.log("Parsing WKT:", wkt);
+    try {
+      const geometry = wellknown.parse(wkt);
+
+      if (
+        geometry?.type === "MultiPolygon" &&
+        geometry.coordinates?.length > 0
+      ) {
+        const coords = geometry.coordinates[0][0];
+        const sw = coords[0];
+        const ne = coords[2];
+        return [
+          [sw[0], sw[1]],
+          [ne[0], ne[1]],
+        ];
+      }
+
+      throw new Error("Unsupported geometry type");
+    } catch (e) {
+      console.warn("Failed to parse WKT:", wkt, e.message);
+      return [
+        [0, 0],
+        [0, 0],
+      ];
+    }
+  };
+
   // Function to handle selecting an item
   const handleSelectChange = (event) => {
     const value = event.target.value;
@@ -48,73 +78,50 @@ const SelectMapboxLayer = ({
     changeItem(value);
   };
 
-  // Function to convert WKT to LatLng
-  const getLatLngLikeFromWKT = (wkt) => {
-    let envelope, returnVal;
-    const geometry = wellknown.parse(wkt);
 
-    if (geometry.coordinates.length > 1) {
-      let west = geometry.coordinates[0];
-      let east = geometry.coordinates[1];
-      returnVal = [
-        [east[0][1][0], east[0][1][1]],
-        [west[0][1][0] + 360, west[0][1][1]],
-      ];
-    } else {
-      envelope = geometry.coordinates[0];
-      returnVal = [
-        [envelope[0][0], envelope[0][1]],
-        [envelope[2][0], envelope[2][1]],
-      ];
-    }
-    return returnVal;
-  };
+  const addLayerToMap = async (tilesetid) => {
+    const sourceId = `martin_src_${tilesetid}`;
+    const layerId = `martin_layer_pu_${tilesetid}`;
+    const tileUrl = `http://localhost:3000/${tilesetid}`; // Replace with your actual Martin endpoint
 
-  // Function to add layer to the map
-  const addLayerToMap = (mapboxLayerName) => {
-    axios
-      .get(
-        `https://api.mapbox.com/v4/${mapboxUser}.${mapboxLayerName}.json?access_token=YOUR_ACCESS_TOKEN`
-      )
-      .then((response) => {
-        if (response.status === 200) {
-          const previousLayerId =
-            map.getStyle().layers[map.getStyle().layers.length - 1].id;
-
-          // Remove previous planning unit layer
-          if (previousLayerId.substr(0, 3) === "pu_") {
-            map.removeLayer(previousLayerId);
-          }
-
-          // Remove source if it exists
-          if (map.getSource(mapboxUser)) {
-            map.removeSource(mapboxUser);
-          }
-
-          // Add source and layer
-          map.addSource(mapboxUser, {
-            type: "vector",
-            url: `mapbox://${mapboxUser}.${mapboxLayerName}`,
-          });
-
-          map.addLayer({
-            id: mapboxLayerName,
-            type: "fill",
-            source: mapboxUser,
-            "source-layer": mapboxLayerName,
-            paint: {
-              "fill-color": "#f08",
-              "fill-opacity": 0.4,
-            },
-          });
-        } else {
-          console.log("The MapBox layer does not exist");
+    // Remove existing layer if it exists
+    // Remove previous layers
+    map.getStyle().layers.forEach((layer) => {
+      if (layer.id.startsWith("martin_layer_pu_")) {
+        if (map.getLayer(layer.id)) {
+          map.removeLayer(layer.id);
         }
-      })
-      .catch((error) => {
-        console.error("Error adding layer to map: ", error);
-      });
+      }
+    });
+
+    // Remove previous sources
+    Object.keys(map.getStyle().sources).forEach((source) => {
+      if (source.startsWith("martin_src_")) {
+        if (map.getSource(source)) {
+          map.removeSource(source);
+        }
+      }
+    });
+
+    // Add vector tile source from Martin
+    map.addSource(sourceId, {
+      type: 'vector',
+      url: `http://0.0.0.0:3000/${tilesetid}`
+    });
+
+    map.addLayer({
+      id: layerId,
+      type: "fill",
+      source: sourceId,
+      "source-layer": tilesetid, // MUST match the name of the view in PostGIS
+      paint: {
+        "fill-color": "#0080ff",
+        "fill-opacity": 0.2,
+        "fill-outline-color": "black",
+      },
+    });
   };
+
 
   return (
     <Select
@@ -124,8 +131,8 @@ const SelectMapboxLayer = ({
     >
       {items.map((item) => (
         <MenuItem
-          key={item.feature_class_name}
-          value={item.feature_class_name}
+          key={item.tilesetid}
+          value={item.tilesetid}
           style={{ fontSize: "12px" }}
         >
           {item.alias}

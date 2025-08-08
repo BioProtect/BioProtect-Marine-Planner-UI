@@ -1,6 +1,6 @@
 import { Box, Paper, Stack } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
-import { setPlanningUnitGrids, useListPlanningUnitsQuery } from "@slices/planningUnitSlice"
+import { setPlanningUnitGrids, useListPlanningUnitGridsQuery } from "@slices/planningUnitSlice"
 import { useDispatch, useSelector } from "react-redux";
 
 import SelectMapboxLayer from "../SelectMapboxLayer";
@@ -21,15 +21,23 @@ const PlanningUnitsDialog = ({
   // Reference for the map container div
   const mapContainer = useRef(null);
   const puState = useSelector((state) => state.planningUnit)
+  console.log("puState ", puState);
 
-  const { data: planningUnitsData } = useListPlanningUnitsQuery();
+  const { data: planningUnitsData } = useListPlanningUnitGridsQuery();
+  console.log("planningUnitsData ", planningUnitsData);
 
   useEffect(() => {
     if (planningUnitsData) {
-      dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []));
+      console.log("planningUnitsData: ", planningUnitsData);
+
+      // If it's a plain array
+      if (Array.isArray(planningUnitsData)) {
+        dispatch(setPlanningUnitGrids(planningUnitsData));
+      } else if (planningUnitsData.planning_unit_grids) {
+        dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids));
+      }
     }
   }, [dispatch, planningUnitsData]);
-
 
   // Initialize the Mapbox map once the component is mounted
   useEffect(() => {

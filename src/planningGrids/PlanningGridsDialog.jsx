@@ -5,7 +5,7 @@ import {
   toggleDialog,
   toggleProjectDialog,
 } from "@slices/uiSlice";
-import { setPlanningUnitGrids, togglePUD, useListPlanningUnitsQuery } from "@slices/planningUnitSlice";
+import { setPlanningUnitGrids, togglePUD, useListPlanningUnitGridsQuery } from "@slices/planningUnitSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -19,7 +19,7 @@ const PlanningGridsDialog = (props) => {
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const [searchText, setSearchText] = useState("");
   const [selectedPlanningGrid, setSelectedPlanningGrid] = useState(undefined);
-  const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitsQuery();
+  const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitGridsQuery();
 
   useEffect(() => {
     if (planningUnitsData) {

@@ -54,7 +54,7 @@ import {
   useGetFeatureQuery,
   useListFeaturePUsQuery,
 } from "@slices/featureSlice";
-import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery } from "@slices/planningUnitSlice";
+import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitGridMutation, useExportPlanningUnitGridQuery } from "@slices/planningUnitSlice";
 import {
   setUsers,
   useCreateUserMutation,
@@ -981,10 +981,12 @@ const App = () => {
   };
 
   const loadProject = async () => {
-    // Okay so this has chnaged with the database andmoving to slices and whatnot. 
+    // Okay so this has chnaged with the database and moving to slices and whatnot. 
     // Need to check how this works - where is it being called from and what details are needed to load a project
     // so switch project would seem to do what needs to be done for this function so can this be ditched? 
     const proj = projState.projectData;
+    console.log("proj ", proj.project.id);
+
     try {
       resetResults();
       setRenderer(proj.renderer);
@@ -2239,7 +2241,6 @@ const App = () => {
   };
 
   const changePlanningGrid = async (puLayerName) => {
-    console.log("============================= puLayerName ", puLayerName);
     try {
       // Fetch tile metadata from Martin tile server
       const response = await fetch(`http://0.0.0.0:3000/${puLayerName}`);
@@ -2902,7 +2903,7 @@ const App = () => {
 
   //deletes a planning grid
   const deletePlanningGrid = async (feature_class_name, silent) => {
-    const response = await useDeletePlanningUnitQuery(feature_class_name);
+    const response = await useDeletePlanningUnitGridMutation(feature_class_name);
     //update the planning unit grids
 
     showMessage(response.info, "info", silent);
@@ -2911,7 +2912,7 @@ const App = () => {
   //exports a planning grid to a zipped shapefile
   const exportPlanningGrid = async (featureName) => {
     try {
-      const response = await useExportPlanningUnitQuery(featureName)
+      const response = await useExportPlanningUnitGridQuery(featureName)
       return `${projState.bpServer.endpoint} exports / ${response.filename} `;
     } catch (error) {
       throw new Error("Failed to export planning grid");

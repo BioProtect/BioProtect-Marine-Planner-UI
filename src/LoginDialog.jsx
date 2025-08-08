@@ -60,7 +60,6 @@ const LoginDialog = ({ open, postLoginSetup }) => {
 
     try {
       const response = await login({ user, pwd }).unwrap();
-      console.log("LOGIN response ", response);
       dispatch(setCredentials({
         userId: response.userId,
         accessToken: response.accessToken,

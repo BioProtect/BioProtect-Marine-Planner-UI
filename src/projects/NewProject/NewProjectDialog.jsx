@@ -15,7 +15,6 @@ import { toggleProjDialog } from "@slices/projectSlice.js";
 
 const NewProjectDialog = ({
   loading,
-  openFeaturesDialog,
   selectedCosts,
   createNewProject,
   previewFeature,
