@@ -43,15 +43,10 @@ const PlanningGridsDialog = (props) => {
     setSelectedPlanningGrid(undefined);
   }, [props, selectedPlanningGrid]);
 
-  const handleNew = useCallback(() => {
-    props.openNewPlanningGridDialog();
-    closeDialog();
-  }, [props, closeDialog]);
-
   const handleNewMarine = useCallback(() => {
     dispatch(
       togglePUD({
-        dialogName: "newMarinePlanningGridDialogOpen",
+        dialogName: "newPlanningGridDialogOpen",
         isOpen: true,
       })
     );

@@ -15,7 +15,7 @@ import {
   setUploadedActivities,
   toggleDialog,
 } from "@slices/uiSlice";
-import { getPaintProperty, getTypeProperty } from "./features/featuresService";
+import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
   getUserProject,
   initialiseServers,
@@ -73,19 +73,19 @@ import ClassificationDialog from "./ClassificationDialog";
 import ClumpingDialog from "./ClumpingDialog";
 import CostsDialog from "./CostsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
-import FeatureDialog from "./features/FeatureDialog";
-import FeatureInfoDialog from "./features/FeatureInfoDialog";
-import FeatureMenu from "./features/FeatureMenu";
-import FeaturesDialog from "./features/FeaturesDialog";
+import FeatureDialog from "@features/FeatureDialog";
+import FeatureInfoDialog from "@features/FeatureInfoDialog";
+import FeatureMenu from "@features/FeatureMenu";
+import FeaturesDialog from "@features/FeaturesDialog";
 import GapAnalysisDialog from "./GapAnalysisDialog";
 import HelpMenu from "./HelpMenu";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import IdentifyPopup from "./IdentifyPopup";
 import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
-import ImportFeaturesDialog from "./features/ImportFeaturesDialog";
+import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
 import ImportFromWebDialog from "./ImportComponents/ImportFromWebDialog";
-import ImportPlanningGridDialog from "./planningGrids/ImportPlanningGridDialog";
+import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
 import LoginDialog from "./LoginDialog";
@@ -94,13 +94,12 @@ import { Map } from "mapbox-gl"; // Assuming you're using mapbox-gl
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
-import NewFeatureDialog from "./features/NewFeatureDialog";
-import NewMarinePlanningGridDialog from "./planningGrids/NewMarinePlanningGridDialog";
-import NewPlanningGridDialog from "./planningGrids/NewPlanningGridDialog";
+import NewFeatureDialog from "@features/NewFeatureDialog";
+import NewPlanningGridDialog from "@planningGrids/NewPlanningGridDialog";
 import NewProjectDialog from "@projects/NewProject/NewProjectDialog";
 import NewProjectWizardDialog from "@projects/NewProject/NewProjectWizardDialog";
-import PlanningGridDialog from "./planningGrids/PlanningGridDialog";
-import PlanningGridsDialog from "./planningGrids/PlanningGridsDialog";
+import PlanningGridDialog from "@planningGrids/PlanningGridDialog";
+import PlanningGridsDialog from "@planningGrids/PlanningGridsDialog";
 import ProfileDialog from "./User/ProfileDialog";
 import ProjectsDialog from "@projects/ProjectsDialog";
 import ProjectsListDialog from "@projects/ProjectsListDialog";
@@ -2807,18 +2806,10 @@ const App = () => {
       })
     );
   };
-  //creates a new planning grid unit
-  const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
-    startLogging();
-    const message = await handleWebSocket(
-      `createPlanningUnitGrid?iso3 = ${iso3}& domain=${domain}& areakm2=${areakm2}& shape=${shape} `,
-    );
-    await newPlanningGridCreated(message);
-    setNewPlanningGridDialogOpen(false);
-  };
+
 
   //creates a new planning grid unit
-  const createNewMarinePlanningUnitGrid = async (
+  const createNewPlanningUnitGrid = async (
     filename,
     planningGridName,
     areakm2,
@@ -2831,7 +2822,7 @@ const App = () => {
     await newMarinePlanningGridCreated(message);
     dispatch(
       togglePUD({
-        dialogName: "newMarinePlanningGridDialogOpen",
+        dialogName: "newPlanningGridDialogOpen",
         isOpen: false,
       })
     );
@@ -3760,25 +3751,6 @@ const App = () => {
     );
   };
 
-  const openNewProjectWizardDialog = async () => {
-    await getCountries();
-    dispatch(
-      toggleProjDialog({
-        dialogName: "newPlanningGridDialogOpen",
-        isOpen: true,
-      })
-    );
-  };
-
-  const openNewPlanningGridDialog = async () => {
-    await getCountries();
-    dispatch(
-      togglePUD({
-        dialogName: "newPlanningGridDialogOpen",
-        isOpen: true,
-      })
-    );
-  };
 
   const openUsersDialog = async () => {
     dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: true }));
@@ -4414,11 +4386,6 @@ const App = () => {
           <NewPlanningGridDialog
             loading={uiState.loading || preprocessing || uploading}
             createNewPlanningUnitGrid={createNewPlanningUnitGrid}
-            countries={countries}
-          />
-          <NewMarinePlanningGridDialog
-            loading={uiState.loading || preprocessing || uploading}
-            createNewPlanningUnitGrid={createNewMarinePlanningUnitGrid}
             fileUpload={uploadFileToFolder}
           />
           <ImportPlanningGridDialog
@@ -4461,7 +4428,6 @@ const App = () => {
           <PlanningGridsDialog
             loading={uiState.loading}
             unauthorisedMethods={unauthorisedMethods}
-            openNewPlanningGridDialog={openNewPlanningGridDialog}
             exportPlanningGrid={exportPlanningGrid}
             deletePlanningGrid={deletePlanningUnitGrid}
             previewPlanningGrid={previewPlanningGrid}

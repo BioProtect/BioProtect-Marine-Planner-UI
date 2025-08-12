@@ -1,122 +1,111 @@
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { Box, MenuItem, Select, TextField, Typography } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector, } from "react-redux";
 
-import BioprotectSelect from "../BPComponents/BioprotectSelect";
-import CONSTANTS from "../constants";
+import FileUpload from "../Uploads/FileUpload";
 import MarxanDialog from "../MarxanDialog";
-import {
-  toggleDialog,
-} from "@slices/uiSlice";
 import { togglePUD } from "@slices/planningUnitSlice";
-import useAppSnackbar from "@hooks/useAppSnackbar";
 
 const NewPlanningGridDialog = ({
   loading,
   createNewPlanningUnitGrid,
-  countries,
+  fileUpload,
 }) => {
+
   const dispatch = useDispatch();
   const puState = useSelector((state) => state.planningUnit)
+  const uiState = useSelector((state) => state.ui)
 
-  const [iso3, setIso3] = useState("");
-  const [domain, setDomain] = useState("");
-  const [shape, setShape] = useState("");
-  const [areakm2, setAreaKm2] = useState(undefined);
-  const [domainEnabled, setDomainEnabled] = useState(true);
-  const { showMessage } = useAppSnackbar();
+  const [filename, setFilename] = useState("");
+  const [planningGridName, setPlanningGridName] = useState("");
+  const [resolution, setResolution] = useState("6")
 
-  const handleIso3Change = (value) => {
-    if (["FJI", "KIR", "NZL", "RUS", "TUV", "USA", "WLF"].includes(value)) {
-      setIso3(undefined);
-      // Optionally show an error if the country spans the meridian
-      showMessage(
-        "Countries that span the meridian are currently not supported...",
-        "error"
+  const resolutionOptions = [{
+    label: "Basin resolution (36 km²)",
+    value: "6",
+  }, {
+    label: "Regional resolution (5 km²)",
+    value: "7",
+  }, {
+    label: "Local resolution (0.7 km²)",
+    value: "8",
+  }]
+
+  useEffect(() => {
+    if (uiState.fileUploadResponse?.file) {
+      setPlanningGridName(uiState.fileUploadResponse.file.replaceAll("_", " ").split(".")[0]);
+    }
+  }, [uiState.fileUploadResponse]);
+
+  const handleOk = async () => {
+    try {
+      await createNewPlanningUnitGrid(
+        filename,
+        resolution
       );
-    } else {
-      setIso3(value);
-    }
-
-    // Automatically set domain to terrestrial only if no marine area exists
-    const filteredCountry = countries.filter(
-      (country) => country.iso3 === value
-    )[0];
-
-    if (filteredCountry.has_marine) {
-      setDomainEnabled(true);
-    } else {
-      setDomain(1); // Assuming '1' corresponds to terrestrial
-      setDomainEnabled(false);
+      closeDialog();
+    } catch (error) {
+      console.error("Error creating planning grid:", error);
     }
   };
 
-  const handleOk = () => {
-    createNewPlanningUnitGrid(iso3, domain, areakm2, shape)
-      .then(() => {
-        () => closeDialog(); // Close the dialog after success
-      })
-      .catch((error) => {
-        console.error("Error creating planning grid:", error);
-      });
-  };
-
-  const closeDialog = () =>
+  const closeDialog = () => {
+    console.log("closeDialog");
     dispatch(
       togglePUD({
         dialogName: "newPlanningGridDialogOpen",
         isOpen: false,
       })
+
     );
+  }
+
 
   return (
     <MarxanDialog
       open={puState.dialogs.newPlanningGridDialogOpen}
-      fullWidth={true}
-      maxWidth="sm"
-      loading={loading}
       onOk={handleOk}
       onClose={() => closeDialog()}
       onCancel={() => closeDialog()}
-      okDisabled={!iso3 || !domain || !areakm2 || loading}
+      okDisabled={!resolution || loading}
       cancelLabel="Cancel"
-      showCancelButton={true}
-      helpLink="user.html#creating-new-planning-grids-using-marxan-web"
+      showCancelButton
       title="New planning grid"
     >
-      <p>{domainEnabled}</p>
-      <React.Fragment key="k13">
-        <BioprotectSelect
-          id="area of interest"
-          label="Area of Interest"
-          options={countries}
-          changeFunc={handleIso3Change}
-          displayField="name_iso31"
-          value={iso3}
+      <Box display="flex" flexDirection="column" gap={2}>
+        <FileUpload
+          loading={uiState.loading}
+          fileUpload={fileUpload}
+          fileMatch=".zip"
+          mandatory
+          filename={filename}
+          destFolder="data/tmp/"
+          label="Shapefile"
         />
-        <BioprotectSelect
-          id="select domain"
-          label="Domain"
-          options={CONSTANTS.DOMAINS}
-          changeFunc={setDomain}
-          disabled={!domainEnabled}
-          value={domain}
+        <TextField
+          label="Name"
+          fullWidth
+          value={planningGridName}
+          onChange={(e) => setPlanningGridName(e.target.value)}
         />
-        <BioprotectSelect
-          id="planning-unit"
-          label="Planning Unit Shape"
-          options={CONSTANTS.SHAPES}
-          changeFunc={setShape}
-          value={shape}
-        />
-        <BioprotectSelect
-          id="planning-area"
-          label="Area of each planning unit"
-          options={CONSTANTS.AREAKM2S}
-          changeFunc={setAreaKm2}
-          value={areakm2}
-        />
-      </React.Fragment>
-    </MarxanDialog>
+        <Box>
+          <Typography variant="body2" gutterBottom>
+            Resolution of planning grid
+          </Typography>
+          <Select
+            value={resolution}
+            onChange={(e) => setResolution(e.target.value)}
+            sx={{ width: "500px" }}
+          >
+            {resolutionOptions.map((item) => (
+              <MenuItem key={item.label} value={item.value}>
+                {item.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
+      </Box>
+    </MarxanDialog >
   );
 };
 

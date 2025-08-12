@@ -39,7 +39,6 @@ const initialState = {
   planningUnits: [],
   puEditing: false,
   dialogs: {
-    newMarinePlanningGridDialogOpen: false,
     newPlanningGridDialogOpen: false,
     importPlanningGridDialogOpen: false,
     planningGridDialogOpen: false,

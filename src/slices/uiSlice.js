@@ -94,6 +94,8 @@ const initialState = {
   uploadedActivities: [],
   selectedActivity: "",
 
+  fileUploadResponse: null,
+
   dialogStates: {
     aboutDialogOpen: false,
 
@@ -172,6 +174,9 @@ const uiSlice = createSlice({
     setSelectedActivity(state, action) {
       state.selectedActivity = action.payload;
     },
+    setFileUploadResponse(state, action) {
+      state.fileUploadResponse = action.payload;
+    },
     setRegistry(state, action) {
       state.registry = action.payload;
     },
@@ -207,6 +212,7 @@ export const {
   setLoading,
   setSelectedActivity,
   setRegistry,
+  setFileUploadResponse,
   addToImportLog,
   removeImportLogMessage,
   clearImportLog,

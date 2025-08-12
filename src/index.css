@@ -372,12 +372,6 @@ input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 50px white inset;
 }
 
-.newPUDialogPane {
-  /*width: 500px;*/
-  height: 500px;
-  /*margin-left: 80px;*/
-}
-
 .mapContainer2 {
   height: 300px;
 }

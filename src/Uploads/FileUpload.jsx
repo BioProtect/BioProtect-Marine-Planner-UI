@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import UploadFile from "@mui/icons-material/UploadFileTwoTone";
 import { setFeatureFilename } from "@slices/featureSlice";
+import { setFileUploadResponse } from "@slices/uiSlice";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 
 // FileUpload component refactored to use React 18 and MUI 5
@@ -47,6 +48,8 @@ const FileUpload = (props) => {
           throw new Error("Invalid response from upload");
         }
         console.log("response after file upload ", response);
+
+        dispatch(setFileUploadResponse(response))
         dispatch(setFeatureFilename(response.file))
         showMessage(response.info, "success")
       } catch (error) {
