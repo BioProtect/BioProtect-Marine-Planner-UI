@@ -13,15 +13,12 @@ const FileUpload = (props) => {
   const uiState = useSelector((state) => state.ui)
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(false);
-  const [destinationFolder, setDestinationFolder] = useState("imports");
   const id = `upload-${props.filename}`;
   const { showMessage } = useAppSnackbar();
 
 
   const handleChange = async (e) => {
-    if (props.destFolder) {
-      setDestinationFolder(props.destFolder);
-    }
+    const destFolder = props.destFolder || "imports";
 
     if (e.target.files.length) {
       setLoading(true);
@@ -34,14 +31,14 @@ const FileUpload = (props) => {
           response = await props.fileUpload({
             value: target,
             filename: filename,
-            destFolder: destinationFolder,
+            destFolder: destFolder,
             activity: uiState.selectedActivity.activity,
           });
         } else {
           response = await props.fileUpload(
             target,
             filename,
-            destinationFolder,
+            destFolder,
           );
         }
         if (!response || !response.file) {

@@ -1471,6 +1471,7 @@ const App = () => {
 
   // Uploads a single file to a specific folder - value is the filename
   const uploadFileToFolder = async (value, filename, destFolder) => {
+    console.log("uploading file with value, filename, destFolder ", value, ", ", filename, ", ", destFolder);
     dispatch(setLoading(true));
 
     const formData = new FormData();

@@ -11,6 +11,7 @@ import FeaturesDialog from "@features/FeaturesDialog";
 import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from '@mui/material/FormControlLabel';
+import Loading from "../Loading.jsx";
 import MarxanDialog from "../MarxanDialog.jsx";
 import PlanningUnitsDialog from "@planningGrids/PlanningUnitsDialog";
 import Radio from '@mui/material/Radio';
@@ -18,6 +19,7 @@ import RadioGroup from '@mui/material/RadioGroup';
 import SelectCostFeatures from "../SelectCostFeatures.jsx";
 import SelectFeatures from "../LeftInfoPanel/FeaturesTab.jsx";
 import TextField from "@mui/material/TextField";
+import { setLoading } from "@slices/uiSlice";
 import { toggleProjDialog } from "@slices/projectSlice.js";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { usePlanningGridWebSocket } from "@hooks/usePlanningGridWebSocket";
@@ -43,7 +45,6 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
   const [pu, setPu] = useState(""); // tileset id / selected grid id
 
   // upload → create grid inputs
-  const [filename, setFilename] = useState("")
   const [planningGridName, setPlanningGridName] = useState("");
   const [resolution, setResolution] = useState(7);
   const resolutionOptions = [
@@ -100,7 +101,7 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
   //creates a new planning grid unit
   const createPlanningUnitGrid = () => {
     createPlanningGridViaWebSocket({
-      shapefile_path: filename,
+      shapefile_path: uiState.fileUploadResponse.file_path,
       alias: planningGridName,
       description: `Grid created from uploaded shapefile`,
       resolution: resolution,
@@ -115,7 +116,6 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
           showMessage(result?.error || "Failed to create planning grid", "error");
           return;
         }
-
         showMessage(result?.info || "Planning grid created");
 
         const updated = await refetchPlanningUnitGrids();
@@ -134,15 +134,20 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
             console.log("Planning grid uploaded");
             showMessage("Planning grid uploaded", "success")
             setWaitingForUpload(true);
+            dispatch(setLoading(false));
 
             return
           }
         }
+        dispatch(setLoading(false));
 
         showMessage("Grid creation did not complete or was not found.", "error");
       },
       onError: (errMsg) => {
+        dispatch(setLoading(false));
+
         showMessage(`❌ ${errMsg}`, "error");
+
       },
     });
   };
@@ -167,17 +172,18 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
 
   const handleCreateNewPlanningGrid = async () => {
     console.log("filename,resolution: ", uiState.fileUploadResponse, resolution);
-    setFilename(`imports / ${uiState.fileUploadResponse?.file} `);
+    dispatch(setLoading(true));
     try {
       console.log("creating planning unit grid.....")
-      console.log("with params.. ", filename, ", ", planningGridName, ", ", resolution)
       await createPlanningUnitGrid(
-        filename,
+        uiState.fileUploadResponse.file,
         planningGridName,
         resolution
       );
     } catch (error) {
       console.error("Error creating planning grid:", error);
+      dispatch(setLoading(false)); // ensure we hide loading on immediate failure
+      showMessage(`Error creating planning grid: ${error}`, "error")
     }
   };
 
@@ -315,7 +321,7 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
               fileUpload={fileUpload}
               fileMatch=".zip"
               mandatory
-              destFolder="data/tmp/"
+              destFolder="data/tmp"
               label="Shapefile (.zip)"
             />
             <TextField
