@@ -1,11 +1,3 @@
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
 import React, { useEffect, useState } from "react";
 
 import MenuItem from "@mui/material/MenuItem";
@@ -15,36 +7,51 @@ import wellknown from "wellknown"; // Make sure to install wellknown library
 
 const SelectMapboxLayer = ({
   map,
-  mapboxUser,
   items,
   selectedValue,
   changeItem,
   width,
 }) => {
-  const [mapLayers, setmapLayers] = useState([])
-  const [mapSources, setmapSources] = useState([])
   const [selectedLayer, setSelectedLayer] = useState(selectedValue);
+
+  // Keep local state in sync with prop
+  useEffect(() => {
+    setSelectedLayer(selectedValue);
+  }, [selectedValue]);
 
   // This effect will run when the selected layer changes
   useEffect(() => {
-    if (selectedLayer) {
-      const selectedItem = items.find(
-        (item) => item.tilesetid === selectedLayer
-      );
-      if (selectedItem && selectedItem.envelope) {
+    if (!selectedLayer || !map || !items?.length) return;
+
+    const run = () => {
+      const selectedItem = items.find((i) => i.tilesetid === selectedLayer);
+      if (!selectedItem) return;
+
+      if (selectedItem.envelope) {
         const envelope = getLatLngLikeFromWKT(selectedItem.envelope);
-        map.fitBounds(envelope, {
-          easing: function (num) {
-            return 1;
-          },
-        });
+        try {
+          map.fitBounds(envelope, {
+            easing: function (num) {
+              return 1;
+            },
+          });
+        } catch (e) {
+          console.warn("fitBounds failed:", e);
+        }
       }
       addLayerToMap(selectedLayer);
+    };
+
+    // Wait until the style is ready
+    if (!map.isStyleLoaded?.()) {
+      map.once?.("load", run);
+    } else {
+      run();
     }
-  }, [selectedLayer]);
+  }, [selectedLayer, map, items]);
+
 
   const getLatLngLikeFromWKT = (wkt) => {
-    console.log("Parsing WKT:", wkt);
     try {
       const geometry = wellknown.parse(wkt);
 

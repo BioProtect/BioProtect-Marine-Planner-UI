@@ -14,26 +14,20 @@ import React from "react";
 const PlanningGridsToolbar = (props) => {
   return (
     <ButtonGroup aria-label="Basic button group">
-      {props.unauthorisedMethods.includes("createPlanningUnitGrid") ? null : (
-        <Button
-          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-          title="New planning grid"
-          onClick={props.handleNew}
-        >
-          New
-        </Button>
-      )}
-      {props.unauthorisedMethods.includes(
-        "createMarinePlanningUnitGrid"
-      ) ? null : (
-        <Button
-          startIcon={<FontAwesomeIcon icon={faFileCode} />}
-          title="Import from simple Shapefile"
-          onClick={props.handleNewMarine}
-        >
-          Import Shapefile
-        </Button>
-      )}
+      <Button
+        startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+        title="New planning grid"
+        onClick={props.handleNew}
+      >
+        New
+      </Button>
+      <Button
+        startIcon={<FontAwesomeIcon icon={faFileCode} />}
+        title="Import from simple Shapefile"
+        onClick={props.handleNewMarine}
+      >
+        Import Shapefile
+      </Button>
       {props.unauthorisedMethods.includes("importPlanningUnitGrid") ? null : (
         <Button
           startIcon={<ImportIcon style={{ height: "20px", width: "20px" }} />}

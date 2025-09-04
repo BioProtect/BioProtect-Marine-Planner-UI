@@ -1,5 +1,5 @@
 import { Box, Grid, Paper, Stack } from "@mui/material";
-import { setPlanningUnitGrids, useListPlanningUnitGridsQuery } from "@slices/planningUnitSlice";
+import { setCurrentPUGrid, setPlanningUnitGrids, useListPlanningUnitGridsQuery } from "@slices/planningUnitSlice";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -15,28 +15,18 @@ import { togglePUD } from "@slices/planningUnitSlice";
 
 const PlanningUnitsDialog = ({
   previewFeature,
-  changeItem,
-  pu,
-  openImportPlanningGridDialog,
   puMap,
   setPuMap,
 }) => {
   const dispatch = useDispatch();
-  const [planningUnitGridsReceived, setPlanningUnitGridsReceived] =
-    useState(false);
 
   // Reference for the map container div
   const mapContainer = useRef(null);
   const puState = useSelector((state) => state.planningUnit)
-  console.log("puState ", puState);
-
   const { data: planningUnitsData } = useListPlanningUnitGridsQuery();
-  console.log("planningUnitsData ", planningUnitsData);
 
   useEffect(() => {
     if (planningUnitsData) {
-      console.log("planningUnitsData: ", planningUnitsData);
-
       // If it's a plain array
       if (Array.isArray(planningUnitsData)) {
         dispatch(setPlanningUnitGrids(planningUnitsData));
@@ -46,6 +36,7 @@ const PlanningUnitsDialog = ({
     }
   }, [dispatch, planningUnitsData]);
 
+
   // Initialize the Mapbox map once the component is mounted
   useEffect(() => {
     const mapInstance = new mapboxgl.Map({
@@ -54,10 +45,8 @@ const PlanningUnitsDialog = ({
       center: [0, 0],
       zoom: 2,
     });
-
-    // Save the map instance to state
-    setPuMap(mapInstance);
-
+    // Wait until fully loaded before exposing it
+    mapInstance.on("load", () => setPuMap(mapInstance));
     return () => {
       if (mapInstance) mapInstance.remove(); // Clean up on unmount
     };
@@ -83,6 +72,8 @@ const PlanningUnitsDialog = ({
     closeDialog();
   }, [closeDialog]);
 
+  const changeItem = (event) => dispatch(setCurrentPUGrid(event));
+  const safeSelected = puState.currentPUGrid || puState.planningUnitGrids?.[0]?.tilesetid || "";
 
 
   return (
@@ -118,32 +109,12 @@ const PlanningUnitsDialog = ({
                 Select Planning Unit Grid
               </Typography>
               <SelectMapboxLayer
-                selectedValue={pu}
+                selectedValue={safeSelected}
                 map={puMap}
-                mapboxUser={"craicerjack"}
                 items={puState.planningUnitGrids}
                 changeItem={changeItem}
-                disabled={!planningUnitGridsReceived}
                 width={"500px"}
               />
-            </Grid>
-            <Grid item xs={12} sm={1}>
-              <Typography variant="h5" gutterBottom>
-                <h3>OR</h3>
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={5}>
-              <Typography variant="h6" gutterBottom>
-                Import a Shapefile
-              </Typography>
-              <Button
-                variant="outlined"
-                startIcon={<FontAwesomeIcon icon={faFileCode} />}
-                title="Import from simple Shapefile"
-                onClick={openNewPlanningGridDialog}
-              >
-                Import Shapefile
-              </Button>
             </Grid>
           </Grid>
         </Box>

@@ -1,5 +1,6 @@
+import { createSlice, current } from "@reduxjs/toolkit";
+
 import { apiSlice } from "./apiSlice";
-import { createSlice } from "@reduxjs/toolkit";
 
 export const planningUnitApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -32,12 +33,12 @@ export const {
   useListPlanningUnitGridsQuery,
 } = planningUnitApiSlice;
 
-
 const initialState = {
   identifyPlanningUnits: {},
   planningUnitGrids: [],
   planningUnits: [],
   puEditing: false,
+  currentPUGrid: "",
   dialogs: {
     newPlanningGridDialogOpen: false,
     importPlanningGridDialogOpen: false,
@@ -66,7 +67,10 @@ const planningUnitSlice = createSlice({
     togglePUD(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
-    }
+    },
+    setCurrentPUGrid(state, action) {
+      state.currentPUGrid = action.payload;
+    },
   }
 });
 
@@ -75,6 +79,7 @@ export const {
   setPlanningUnitGrids,
   setPlanningUnits,
   setPuEditing,
+  setCurrentPUGrid,
   togglePUD,
 } = planningUnitSlice.actions;
 export default planningUnitSlice.reducer;

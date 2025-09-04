@@ -17,12 +17,10 @@ import {
 } from "@slices/uiSlice";
 import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
-  getUserProject,
   initialiseServers,
   selectServer,
   setBpServer,
   setCostData,
-  setProjectData,
   setProjectFeatures,
   setProjectImpacts,
   setProjectList,
@@ -39,29 +37,31 @@ import {
   selectIsUserLoggedIn,
 } from "@slices/authSlice";
 import {
-  setAddingRemovingFeatures,
   setAllFeatures,
-  setCreatedFeatureInfo,
-  setCurrentFeature,
   setDigitisedFeatures,
   setFeatureMetadata,
   setFeaturePlanningUnits,
-  setFeatureProjects,
   setIdentifiedFeatures,
   setSelectedFeatureIds,
   toggleFeatureD,
-  useCreateFeatureFromLinestringMutation,
-  useGetFeatureQuery,
-  useListFeaturePUsQuery,
+  useListFeaturePUsQuery
 } from "@slices/featureSlice";
-import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitGridMutation, useExportPlanningUnitGridQuery } from "@slices/planningUnitSlice";
+import {
+  setIdentifyPlanningUnits,
+  setPlanningUnitGrids,
+  setPlanningUnits,
+  setPuEditing,
+  togglePUD,
+  useDeletePlanningUnitGridMutation,
+  useExportPlanningUnitGridQuery,
+  useListPlanningUnitGridsQuery
+} from "@slices/planningUnitSlice";
 import {
   setUsers,
   useCreateUserMutation,
   useDeleteUserMutation,
-  useGetUserQuery,
   useLogoutUserMutation,
-  useUpdateUserMutation,
+  useUpdateUserMutation
 } from "@slices/userSlice";
 // SERVICES
 import { useDispatch, useSelector } from "react-redux";
@@ -96,8 +96,7 @@ import MenuBar from "./MenuBar/MenuBar";
 //project components
 import NewFeatureDialog from "@features/NewFeatureDialog";
 import NewPlanningGridDialog from "@planningGrids/NewPlanningGridDialog";
-import NewProjectDialog from "@projects/NewProject/NewProjectDialog";
-import NewProjectWizardDialog from "@projects/NewProject/NewProjectWizardDialog";
+import NewProjectDialog from "@projects/NewProjectDialog";
 import PlanningGridDialog from "@planningGrids/PlanningGridDialog";
 import PlanningGridsDialog from "@planningGrids/PlanningGridsDialog";
 import ProfileDialog from "./User/ProfileDialog";
@@ -115,22 +114,19 @@ import ShareableLinkDialog from "./ShareableLinkDialog";
 /*global fetch*/
 /*global URLSearchParams*/
 /*global AbortController*/
-import Snackbar from "@mui/material/Snackbar";
 import TargetDialog from "./TargetDialog";
 import ToolsMenu from "./ToolsMenu";
 import UpdateWDPADialog from "./UpdateWDPADialog";
 import UserMenu from "./User/UserMenu";
 import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
+import classyBrew from "classybrew";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
-import classyBrew from "classybrew";
-import { featureApiSlice } from "@slices/featureSlice";
-/*eslint-disable no-unused-vars*/
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
-import parse from "wellknown";
+/*eslint-disable no-unused-vars*/
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useSnackbar } from "notistack";
 import useWebSocketHandler from "./WebSocketHandler";
@@ -243,6 +239,9 @@ const App = () => {
   const { showMessage } = useAppSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
+  const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
+
+
 
   // ✅ Fetch planning unit data **ONLY when required values exist**
   const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
@@ -274,7 +273,6 @@ const App = () => {
 
   const selectServerByName = useCallback(
     (servername) => {
-      console.log("servername ----------------- ", servername);
       // Remove the search part of the URL
       window.history.replaceState({}, document.title, "/");
       const server = projState.bpServers.find(
@@ -403,10 +401,7 @@ const App = () => {
         const result = await dispatch(featureApi.endpoints.getFeature.initiate(id));
 
         const featureData = result.data?.data?.[0];
-        console.log("featureData ", featureData);
-
         if (!featureData) return;
-
         dispatch(addFeatureAttributes(featureData));
         addNewFeature([featureData]);
 
@@ -464,7 +459,6 @@ const App = () => {
       withCredentials = CONSTANTS.SEND_CREDENTIALS
     ) => {
       dispatch(setLoading(true));
-      console.log("withCredentials ", withCredentials);
       try {
         const controller = new AbortController();
         const { signal } = controller;
@@ -484,8 +478,6 @@ const App = () => {
           }
         );
         clearTimeout(timeoutId);
-        console.log("response in _post ", response);
-
         const data = await response.json();
 
         if (!checkForErrors(data)) {
@@ -718,7 +710,6 @@ const App = () => {
         await getResults(userData.name, projState.projectData.name);
       }
 
-      console.log("postLoginSetup - getting species dada ");
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
 
@@ -984,7 +975,6 @@ const App = () => {
     // Need to check how this works - where is it being called from and what details are needed to load a project
     // so switch project would seem to do what needs to be done for this function so can this be ditched? 
     const proj = projState.projectData;
-    console.log("proj ", proj.project.id);
 
     try {
       resetResults();
@@ -1160,32 +1150,6 @@ const App = () => {
     return formData;
   };
 
-  const createNewProject = async (proj) => {
-    const formData = prepareFormDataNewProject(proj, user);
-    // formData should be in the following format
-    // {
-    //     "user": "username",
-    //     "project": "project_name",
-    //     "description": "Project description",
-    //     "planning_grid_name": "grid_name",
-    //     "interest_features": "feature1,feature2",
-    //     "target_values": "value1,value2",
-    //     "spf_values": "spf1,spf2"
-    // }
-    // const response = await _post("createProject", formData); - old
-    const response = await _post("projects?action=create", formData);
-    showMessage(response.info, "success");
-    dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
-    await loadProject(response.name, response.user);
-  };
-
-  const createNewNationalProject = async (params) =>
-    await createNewPlanningUnitGrid(
-      params.iso3,
-      params.domain,
-      params.areakm2,
-      params.shape
-    );
 
   //REST call to delete a specific project
   const deleteProject = async (user, proj, silent = false) => {
@@ -1253,8 +1217,6 @@ const App = () => {
   };
 
   const getProjects = async () => {
-    console.log("projects?action=list&user=${userId} ", userId);
-
     // const response = await _get(`getProjects?user=${user}`); - old 
     const response = await _get(`projects?action=list&user=${userId}`);
     //filter the projects so that private ones arent shown
@@ -1509,18 +1471,15 @@ const App = () => {
 
   // Uploads a single file to a specific folder - value is the filename
   const uploadFileToFolder = async (value, filename, destFolder) => {
-    console.log("value, filename, destFolder ", value, filename, destFolder);
     dispatch(setLoading(true));
 
     const formData = new FormData();
     formData.append("value", value); // The binary data for the file
     formData.append("filename", filename); // The filename
     formData.append("destFolder", destFolder); // The folder to upload to
-    console.log("formData after ", formData.entries());
 
     try {
       const resp = await _post("uploadFileToFolder", formData);
-      console.log("================ resp ", resp);
       return resp
     } catch (error) {
       console.log("error ", error);
@@ -1932,45 +1891,54 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
 
   //instantiates the mapboxgl map
+  // instantiates the mapboxgl map
   const createMap = (url) => {
+    // map already exists: switch style & wait for it
     if (map.current) {
-      if (map.current.isStyleLoaded()) {
+      const targetStyle = url || map.current.getStyle()?.sprite || null; // any truthy url is fine
+      return new Promise((resolve) => {
+        if (!url) {
+          // no style change requested; just ensure current style is ready
+          if (map.current.isStyleLoaded && map.current.isStyleLoaded()) {
+            resolve("Map style loaded");
+          } else {
+            map.current.once("style.load", () => resolve("Map style loaded"));
+          }
+          return;
+        }
+        // set listener BEFORE setStyle to avoid missing the event
+        map.current.once("style.load", () => resolve("Map style loaded"));
         map.current.setStyle(url);
-      } else {
-        map.current.once("styledata", () => {
-          map.current.setStyle(url);
-        });
-      }
-      return;
+      });
     }
-    // Check if the container is ready
+
+    // no map yet — make sure container exists
     if (!mapContainer.current) {
       console.warn("Map container not ready yet.");
-      return;
+      // return a resolved promise so callers that await won't hang
+      return Promise.resolve("Container not ready");
     }
 
     // Create a new Mapbox map instance
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8", // default style if no URL provided
-      center: [-18, 55], // your map's initial coordinates
-      zoom: 4, // your map's initial zoom level
+      style: url || "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
+      center: [-18, 55],
+      zoom: 4,
     });
 
+    // Event handlers (use .once where appropriate to avoid duplicates)
+    map.current.on("load", mapLoaded);
+    map.current.on("error", mapError);
+    map.current.on("click", mapClick);
+    map.current.on("styledata", mapStyleChanged);
 
-    // Event handlers
-    map.current.on("load", mapLoaded); // Triggered when the map loads
-    map.current.on("error", mapError); // Triggered on map errors
-    map.current.on("click", mapClick); // Triggered on map click events
-    map.current.on("styledata", mapStyleChanged); // Triggered when map style changes
-
-    // Return a promise to resolve when the map's style is fully loaded
+    // Resolve when the initial style is ready
     return new Promise((resolve) => {
-      map.current.on("style.load", () => {
-        resolve("Map style loaded");
-      });
+      map.current.once("style.load", () => resolve("Map style loaded"));
     });
   };
+
 
   const mapLoaded = (e) => {
     // map.current.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // currently full screen hides the info panel and setting position:absolute and z-index: 10000000000 doesnt work properly
@@ -2001,8 +1969,6 @@ const App = () => {
 
   //catch all event handler for map errors
   const mapError = useCallback((e) => {
-    console.log("Map error e: ", e);
-
     let message = "";
     switch (e.error.message) {
       case "Not Found":
@@ -2048,9 +2014,7 @@ const App = () => {
       // Get the feature layer ids, get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
       // Set the popup point, get any planning unit features under the mouse
       const featureLayerIds = featureLayers.map((item) => item.id);
-      console.log("featureLayerIds ", featureLayerIds);
       const clickedFeatures = getRenderedFeatures(e.point, featureLayerIds);
-      console.log("clickedFeatures ", clickedFeatures);
       const puFeatures = getFeaturesByLayerStartsWith(
         clickedFeatures,
         "marxan_pu_"
@@ -2144,11 +2108,9 @@ const App = () => {
   };
   //sets the basemap either on project load, or if the user changes it
   const loadBasemap = async (basemap) => {
-    console.log("basemap ", basemap);
     try {
       dispatch(setBasemap(basemap.name));
       const style = await getValidStyle(basemap);
-      console.log("basemap style ", style);
       await createMap(style);
 
       // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
@@ -2162,14 +2124,11 @@ const App = () => {
 
       // Add the planning unit layers (if a project has already been loaded)
       if (tileset) {
-        console.log("tileset ", tileset);
         addPlanningGridLayers(tileset);
-
         // Get the results, if any
         if (owner) {
           await getResults(owner, projState.project);
         }
-
         // Turn on/off layers depending on which tab is selected
         if (uiState.activeTab === "planningUnits") {
           setPUTabActive();
@@ -2291,6 +2250,8 @@ const App = () => {
   //adds the results, planning unit, planning unit edit etc layers to the map
   // const addPlanningGridLayers = (tileset) => {
   const addPlanningGridLayers = (puLayerName) => {
+    if (!map.current) return;
+
     const sourceId = `martin_src_${puLayerName}`;
     const resultsLayerId = `martin_layer_results_${puLayerName}`;
     const costsLayerId = `martin_layer_costs_${puLayerName}`;
@@ -2400,6 +2361,8 @@ const App = () => {
   };
 
   const removePlanningGridLayers = () => {
+    if (!map.current) return;
+
     const sourceName = CONSTANTS.PLANNING_UNIT_SOURCE_NAME;
     let layers = map.current.getStyle().layers;
     // Get dynamically added layers, remove them, and then remove sources
@@ -2428,14 +2391,11 @@ const App = () => {
 
     //add the source for the wdpa
     const yr = projState.bpServer.wdpa_version.substr(-4); //get the year from the wdpa_version
-    console.log("yr ", yr);
     const attribution = `IUCN and UNEP- WCMC(${yr}), The World Database on Protected Areas(WDPA) ${projState.bpServer.wdpa_version}, Cambridge, UK: UNEP - WCMC.Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
 
     const tiles = [
       `${uiState.registry.WDPA.tilesUrl}layer = marxan: ${wdpaVectorTileLayer} & tilematrixset=EPSG: 900913 & Service=WMTS & Request=GetTile & Version=1.0.0 & Format=application / x - protobuf; type = mapbox - vector & TileMatrix=EPSG: 900913: { z }& TileCol={ x }& TileRow={ y } `,
     ];
-    console.log("registry.WDPA.tilesUrl ", uiState.registry.WDPA.tilesUrl);
-    console.log("CONSTANTS.WDPA_SOURCE_NAME ", CONSTANTS.WDPA_SOURCE_NAME);
     setWdpaAttribution(attribution);
     map.current.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
       attribution: attribution,
@@ -2808,25 +2768,6 @@ const App = () => {
   };
 
 
-  //creates a new planning grid unit
-  const createNewPlanningUnitGrid = async (
-    filename,
-    planningGridName,
-    areakm2,
-    shape
-  ) => {
-    startLogging();
-    const message = await handleWebSocket(
-      `createMarinePlanningUnitGrid?filename=${filename}& planningGridName=${planningGridName}& areakm2=${areakm2}& shape=${shape} `,
-    );
-    await newMarinePlanningGridCreated(message);
-    dispatch(
-      togglePUD({
-        dialogName: "newPlanningGridDialogOpen",
-        isOpen: false,
-      })
-    );
-  };
 
   //imports a zipped shapefile as a new planning grid
   const importPlanningUnitGrid = async (zipFilename, alias, description) => {
@@ -2921,20 +2862,6 @@ const App = () => {
     setCountries(response.records);
   };
 
-  //uploads the named feature class to mapbox on the server
-  const uploadToMapBox = async (feature_class_name, mapbox_layer_name) => {
-    try {
-      const response = _get(
-        `uploadTilesetToMapBox ? feature_class_name = ${feature_class_name}& mapbox_layer_name=${mapbox_layer_name} `,
-        300000
-      );
-      dispatch(setLoading(true));
-      return await pollMapbox(response.uploadid);
-    } catch (error) {
-      console.error();
-      throw error;
-    }
-  };
 
   const pollStatus = async (uploadid) => {
     try {
@@ -3303,7 +3230,6 @@ const App = () => {
 
   const uploadRaster = async (data) => {
     dispatch(setLoading(true));
-    console.log("Uploading Raster ", data)
     messageLogger({
       method: "uploadRaster",
       status: "In Progress",
@@ -3311,7 +3237,6 @@ const App = () => {
     });
     const formData = new FormData();
     Object.keys(data).forEach((key) => formData.append(key, data[key]));
-    console.log("raster form data ", formData)
     //the binary data for the file, the filename
     const response = await _post("uploadRaster", formData);
     return response;
@@ -3494,11 +3419,6 @@ const App = () => {
 
   //create new features from the already uploaded zipped shapefile
   const importFeatures = async (zipfile, name, description, shapefile, splitfield) => {
-    console.log("splitfield ", splitfield);
-    console.log("shapefile ", shapefile);
-    console.log("description ", description);
-    console.log("name ", name);
-    console.log("zipfile ", zipfile);
     startLogging();
 
     const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}`;
@@ -3508,7 +3428,6 @@ const App = () => {
 
     try {
       const message = await handleWebSocket(url);
-      console.log("Feature import complete:", message);
       return message;
     } catch (error) {
       console.error("Feature import failed:", error);
@@ -3614,7 +3533,6 @@ const App = () => {
       return;
     }
     const tableName = feature.tilesetid.split(".")[1];
-    console.log("tableName ", tableName);
     const sourceId = `martin_src_${tableName}`;
     const layerId = `martin_layer_${tableName}`;
     const tileJSON = `http://0.0.0.0:3000/${tableName}`
@@ -4226,6 +4144,28 @@ const App = () => {
     return await _get("cleanup?");
   };
 
+  // --- HMR cleanup: place at the bottom of the module that owns the map instance ---
+  if (import.meta && import.meta.hot) {
+    import.meta.hot.dispose(() => {
+      try {
+        if (map?.current) {
+          // remove any listeners you added
+          map.current.off("load", mapLoaded);
+          map.current.off("error", mapError);
+          map.current.off("click", mapClick);
+          map.current.off("styledata", mapStyleChanged);
+
+          // destroy the map so the next hot module has a clean slate
+          map.current.remove();
+        }
+      } catch (e) {
+        console.warn("Map cleanup error on HMR dispose:", e);
+      } finally {
+        if (map) map.current = null;
+      }
+    });
+  }
+
 
   return (
     <div>
@@ -4375,17 +4315,11 @@ const App = () => {
             loading={uiState.loading}
             openFeaturesDialog={openFeaturesDialog}
             selectedCosts={selectedCosts}
-            createNewProject={createNewProject}
             previewFeature={previewFeature}
-          />
-          <NewProjectWizardDialog
-            okDisabled={true}
-            countries={countries}
-            createNewNationalProject={createNewNationalProject}
+            fileUpload={uploadFileToFolder}
           />
           <NewPlanningGridDialog
             loading={uiState.loading || preprocessing || uploading}
-            createNewPlanningUnitGrid={createNewPlanningUnitGrid}
             fileUpload={uploadFileToFolder}
           />
           <ImportPlanningGridDialog
