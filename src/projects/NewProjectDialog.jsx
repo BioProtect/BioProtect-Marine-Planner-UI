@@ -1,27 +1,31 @@
-import { MenuItem, Select, Typography } from "@mui/material";
+import { MenuItem, Select } from "@mui/material";
 import { setAllFeatures, setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice.js";
 import { setPlanningUnitGrids, useListPlanningUnitGridsQuery } from "@slices/planningUnitSlice";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useState } from "react";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import FeaturesDialog from "@features/FeaturesDialog";
 import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Loading from "../Loading.jsx";
 import MarxanDialog from "../MarxanDialog.jsx";
 import PlanningUnitsDialog from "@planningGrids/PlanningUnitsDialog";
+import ProjectFeaturesTable from "@projects/ProjectFeaturesTable"
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import SelectCostFeatures from "../SelectCostFeatures.jsx";
-import SelectFeatures from "../LeftInfoPanel/FeaturesTab.jsx";
+import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { setAddingRemovingFeatures } from "../slices/featureSlice.js";
 import { setLoading } from "@slices/uiSlice";
 import { toggleProjDialog } from "@slices/projectSlice.js";
 import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useMemo } from "react";
 import { usePlanningGridWebSocket } from "@hooks/usePlanningGridWebSocket";
 
 const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewFeature, fileUpload }) => {
@@ -59,11 +63,7 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
   const { createPlanningGridViaWebSocket } = usePlanningGridWebSocket();
   const { showMessage } = useAppSnackbar();
   const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
-
-
-  useEffect(() => {
-    dispatch(setAllFeatures(JSON.parse(JSON.stringify(uiState.allFeatures || []))));
-  }, [uiState.allFeatures]);
+  const selectedFeatures = useMemo(() => (featureState.allFeatures || []).filter((f) => (featureState.selectedFeatureIds || []).includes(f.id)), [featureState.allFeatures, featureState.selectedFeatureIds]);
 
   useEffect(() => {
     if (uiState.fileUploadResponse?.file) {
@@ -78,6 +78,11 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
     }
   }, [waitingForUpload]);
 
+  useEffect(() => {
+    if (stepIndex === 2) {
+      dispatch(setAddingRemovingFeatures(true));
+    }
+  }, [stepIndex, dispatch]);
 
   const createNewProject = async (proj) => {
     const formData = prepareFormDataNewProject(proj, user);
@@ -121,7 +126,6 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
         const updated = await refetchPlanningUnitGrids();
         const grids = updated?.data?.planning_unit_grids || [];
 
-
         if (grids.length > 0) {
           dispatch(setPlanningUnitGrids(grids));
           const newGrid = grids.find(
@@ -135,19 +139,15 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
             showMessage("Planning grid uploaded", "success")
             setWaitingForUpload(true);
             dispatch(setLoading(false));
-
             return
           }
         }
         dispatch(setLoading(false));
-
         showMessage("Grid creation did not complete or was not found.", "error");
       },
       onError: (errMsg) => {
         dispatch(setLoading(false));
-
         showMessage(`❌ ${errMsg}`, "error");
-
       },
     });
   };
@@ -155,20 +155,14 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
   // ----------------------------------------------------------------
 
   // navigation
-  const handleNext = () => {
-    if (stepIndex === 0) {
-      // choose path (upload vs select) on the next step
-      setStepIndex(1);
-      return;
-    }
-    setStepIndex((prev) => prev + 1);
-  };
+  const handleNext = () => setStepIndex((prev) => prev + 1);
   const handlePrev = () => setStepIndex((prev) => Math.max(prev - 1, 0));
 
   // form handlers
   const handleChangeName = (e) => setName(e.target.value);
   const handleChangeDescription = (e) => setDescription(e.target.value);
   const handleRadioChange = (e) => setPuGrid(e.target.value);
+  const handleOpenFeaturesDialog = () => dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true }));
 
   const handleCreateNewPlanningGrid = async () => {
     console.log("filename,resolution: ", uiState.fileUploadResponse, resolution);
@@ -187,7 +181,6 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
     }
   };
 
-
   const updateSelectedFeatures = () => {
     const updatedFeatures = uiState.allFeatures.map((feature) => ({
       ...feature,
@@ -200,22 +193,30 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
   };
 
   const clickFeature = (feature) => {
-    if (featureState.selectedFeatureIds.includes(feature.id)) {
-      removeFeature(feature);
+    const ids = featureState.selectedFeatureIds;
+    // if the feature is already included remove it, otherwise add it 
+    if (ids.includes(feature.id)) {
+      dispatch(setSelectedFeatureIds(ids.filter((id) => id !== feature.id)));
     } else {
-      addFeature(feature);
+      dispatch(setSelectedFeatureIds([...ids, feature.id]));
     }
   };
 
-  const addFeature = (feature) =>
-    dispatch(setSelectedFeatureIds((prevIds) => [...prevIds, feature.id]));
+  const removeSelectedFeature = (id) => {
+    const ids = featureState.selectedFeatureIds || [];
+    dispatch(setSelectedFeatureIds(ids.filter((x) => x !== id)));
+  };
 
-  const removeFeature = (feature) =>
-    dispatch(setSelectedFeatureIds((prevIds) => prevIds.filter((id) => id !== feature.id)));
+  const selectAllFeatures = () => {
+    const ids =
+      filteredRows.length < featureState.allFeatures.length
+        ? filteredRows.map((f) => f.id)
+        : featureState.allFeatures.map((f) => f.id);
+    dispatch(setSelectedFeatureIds(ids));
+  }
 
-  const selectAllFeatures = () =>
-    dispatch(setSelectedFeatureIds(uiState.allFeatures.map((feature) => feature.id)));
   const clearAllFeatures = () => dispatch(setSelectedFeatureIds([]));
+
 
   const handleCreateNewProject = () => {
     createNewProject({
@@ -262,7 +263,7 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
       <MarxanDialog
         open={projState.dialogs.newProjectDialogOpen}
         loading={loading}
-        title="New project"
+        title={`New project: ${steps[stepIndex]}`}
         fullWidth={true}
         actions={actions}
         okLabel="Cancel"
@@ -354,39 +355,40 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
 
         {/* STEP 2 — Features */}
         {stepIndex === 2 && (
-          <div style={{ height: "390px" }}>
-            <div className="tabTitle">Select the features</div>
-            <SelectFeatures
-              features={featureState.allFeatures.filter((item) => item.selected)}
-              openFeaturesDialog={() =>
-                dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true }))
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, height: 390 }}>
+            <ProjectFeaturesTable />
+
+            <Box>
+              <Button
+                variant="contained"
+                onClick={handleOpenFeaturesDialog}
+                title="Add/remove features from the project"
+              >
+                +/-
+              </Button>
+            </Box>
+
+            {/* Keep the dialog mounted so lazy-loading + selection work */}
+            <FeaturesDialog
+              open={featureState.dialogs.featuresDialogOpen}
+              onOk={updateSelectedFeatures}
+              onCancel={() =>
+                dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }))
               }
-              simple
-              showTargetButton={false}
-              leftmargin="0px"
-              maxheight="356px"
+              loadingFeatures={false}
+              metadata={{ OLDVERSION: false }}
+              userRole="User"
+              previewFeature={previewFeature}
             />
-          </div>
+          </Box>
         )}
+
 
 
         {/* STEP 3 — Costs */}
         {stepIndex === 3 && <SelectCostFeatures selectedCosts={selectedCosts} />}
       </MarxanDialog>
 
-      {/* Feature picker dialog */}
-      <FeaturesDialog
-        open={featureState.dialogs.featuresDialogOpen}
-        onOk={updateSelectedFeatures}
-        onCancel={() => dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }))}
-        loadingFeatures={false}
-        selectAllFeatures={selectAllFeatures}
-        clearAllFeatures={clearAllFeatures}
-        clickFeature={clickFeature}
-        metadata={{ OLDVERSION: false }}
-        userRole="User"
-        previewFeature={previewFeature}
-      />
     </>
   );
 };

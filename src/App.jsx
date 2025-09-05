@@ -427,28 +427,55 @@ const App = () => {
   // ---------------------------------------- //
   // ---------------------------------------- //
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
-  const _get = useCallback(
-    (params, timeout = CONSTANTS.TIMEOUT) => {
-      dispatch(setLoading(true));
-      return new Promise((resolve, reject) => {
-        jsonp(projState.bpServer.endpoint + params, { timeout })
-          .promise.then((response) => {
-            dispatch(setLoading(false));
-            checkForErrors(response)
-              ? reject(response.error) : resolve(response);
-          })
-          .catch((err) => {
-            console.log("err ", err);
-            dispatch(setLoading(false));
-            setSnackBar(
-              `Request timeout - See <a href='${CONSTANTS.ERRORS_PAGE}#request-timeout' target='blank'>here</a>`
-            );
-            reject(err);
-          });
-      });
-    },
-    [checkForErrors, setSnackBar]
+  // const _get = useCallback(
+  //   (params, timeout = CONSTANTS.TIMEOUT) => {
+  //     dispatch(setLoading(true));
+  //     return new Promise((resolve, reject) => {
+  //       jsonp(projState.bpServer.endpoint + params, { timeout })
+  //         .promise.then((response) => {
+  //           dispatch(setLoading(false));
+  //           checkForErrors(response)
+  //             ? reject(response.error) : resolve(response);
+  //         })
+  //         .catch((err) => {
+  //           console.log("err ", err);
+  //           dispatch(setLoading(false));
+  //           setSnackBar(
+  //             `Request timeout - See <a href='${CONSTANTS.ERRORS_PAGE}#request-timeout' target='blank'>here</a>`
+  //           );
+  //           reject(err);
+  //         });
+  //     });
+  //   },
+  //   [checkForErrors, setSnackBar]
+  // );
+
+  const _get = useCallback(async (path, { timeout = CONSTANTS.TIMEOUT } = {}) => {
+    const base = projState?.bpServer?.endpoint;
+    const url = new URL(path, base).toString();
+    dispatch(setLoading(true));
+
+    try {
+      const { promise } = jsonp(url, { timeout });
+      const response = await promise;
+
+      if (checkForErrors(response)) {
+        // If your checkForErrors returns truthy, throw the error it found
+        throw response?.error || new Error("Request failed");
+      }
+
+      return response;           // or `return response.data;` if you always want data
+    } catch (err) {
+      console.error("GET failed:", err);
+      showMessage('Request timeout', 'error')
+      throw err;                 // keep promise rejection behavior
+    } finally {
+      dispatch(setLoading(false));
+    }
+  },
+    [dispatch, checkForErrors, showMessage]
   );
+
 
   //makes a POST request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   const _post = useCallback(

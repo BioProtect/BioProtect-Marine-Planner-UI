@@ -38,6 +38,13 @@ const BioprotectTable = (props) => {
   const [orderBy, setOrderBy] = useState("category");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Normalize the incoming `selected` into a Set of IDs for fast lookup.
+  const selectedIdSet = useMemo(() => {
+    const sel = props.selected || [];
+    // supports array of IDs or array of objects with .id
+    return new Set(sel.map((s) => (typeof s === "object" ? s.id : s)));
+  }, [props.selected]);
+
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -58,25 +65,42 @@ const BioprotectTable = (props) => {
     return stableSort(filteredResult, getComparator(order, orderBy));
   }, [searchQuery, props.data, order, orderBy]);
 
+  // Let parent know what rows are visible (useful for shift-select logic)
+  useEffect(() => {
+    props.dataFiltered && props.dataFiltered(filteredData);
+  }, [filteredData, props.dataFiltered]);
+
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelected = props.data.map((obj) => obj);
-      props.updateSelection(newSelected);
+      // const newSelected = props.data.map((obj) => obj);
+      // props.updateSelection(newSelected);
+      // Prefer to send a list of IDs if caller passed IDs as `selected`
+      const newSelectedIds = props.data.map((r) => r.id);
+      if (props.updateSelection) {
+        // backward compat - caller expects objects
+        props.updateSelection(props.data);
+      }
+      if (props.updateSelectionIds) {
+        props.updateSelectionIds(newSelectedIds);
+      }
       return;
     }
-    props.updateSelection([]);
+    // props.updateSelection([]);
+    props.updateSelection && props.updateSelection([]);
+    props.updateSelectionIds && props.updateSelectionIds([]);
   };
 
   // should really be item in Object because were checking an obj. poor naming by me.
-  const isSelected = (objToCheck) => {
-    if (!props.selected || props.selected.length === 0) return false;
+  // const isSelected = (objToCheck) => {
+  //   if (!props.selected || props.selected.length === 0) return false;
 
-    if (props.isProject) {
-      return objToCheck.id === props.selected[0]?.id;
-    }
-
-    return objInArray(objToCheck, props.selected);
-  };
+  //   if (props.isProject) {
+  //     return objToCheck.id === props.selected[0]?.id;
+  //   }
+  //   return objInArray(objToCheck, props.selected);
+  // };
+  // Unified selected check (IDs set)
+  const isSelected = (row) => selectedIdSet.has(row.id);
 
   const visibleRows = useMemo(
     () => stableSort(filteredData, getComparator(order, orderBy)),
@@ -86,7 +110,7 @@ const BioprotectTable = (props) => {
   return (
     <Box sx={{ width: "100%" }}>
       <BPTableTitleWithSearch
-        numSelected={props.selected.length}
+        numSelected={props.selected.length || 0}
         title={props.title}
         setSearchQuery={setSearchQuery}
         showSearchBox={props.showSearchBox}
@@ -101,7 +125,7 @@ const BioprotectTable = (props) => {
           <BPTableHeadWithSort
             title={props.title}
             tableColumns={props.tableColumns}
-            numSelected={props.selected.length || []}
+            numSelected={props.selected.length || 0}
             order={order}
             orderBy={orderBy}
             onSelectAllClick={handleSelectAllClick}
@@ -127,7 +151,7 @@ const BioprotectTable = (props) => {
                   <TableCell padding="checkbox">
                     <Checkbox
                       color="primary"
-                      checked={isItemSelected}
+                      checked={(isItemSelected ? "checked" : "")}
                       inputProps={{
                         "aria-labelledby": labelId,
                       }}

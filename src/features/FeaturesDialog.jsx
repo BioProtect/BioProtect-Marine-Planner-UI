@@ -1,29 +1,23 @@
-import React, { useCallback, useEffect, useState } from "react";
 import {
   setAddingRemovingFeatures,
+  setAllFeatures,
   setSelectedFeature,
   setSelectedFeatureIds,
-  toggleFeatureD
+  toggleFeatureD,
 } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useState } from "react";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
+import { CONSTANTS } from "../bpVars";
 import FeaturesToolbar from "./FeaturesToolbar";
 import MarxanDialog from "../MarxanDialog";
 import { generateTableCols } from "../Helpers";
-import {
-  toggleDialog,
-} from "@slices/uiSlice";
+import jsonp from "jsonp-promise";
+import { setLoading } from "@slices/uiSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 
-const FeaturesDialog = ({
-  onOk,
-  metadata,
-  userRole,
-  openFeaturesDialog,
-  initialiseDigitising,
-  previewFeature,
-  refreshFeatures,
-}) => {
+const FeaturesDialog = ({ onOk, metadata, userRole, initialiseDigitising, previewFeature }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
@@ -34,118 +28,123 @@ const FeaturesDialog = ({
   const [filteredRows, setFilteredRows] = useState([]);
   const [newFeatureAnchor, setNewFeatureAnchor] = useState(null);
   const [importFeatureAnchor, setImportFeatureAnchor] = useState(null);
+  const { showMessage } = useAppSnackbar();
 
 
-  const showNewFeaturePopover = (event) => {
-    setNewFeatureAnchor(event.currentTarget);
-    dispatch(
-      toggleFeatureD({
-        dialogName: "newFeaturePopoverOpen",
-        isOpen: true,
-      })
-    );
-  };
 
-  const showImportFeaturePopover = (event) => {
-    setImportFeatureAnchor(event.currentTarget);
-    dispatch(
-      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
-    );
-  };
+  // Lazy-load features the first time the dialog opens (or whenever it's opened with an empty cache)
+  useEffect(() => {
+    const dialogIsOpen = featureState.dialogs.featuresDialogOpen;
+    const noFeatures = !featureState.allFeatures?.length;
+    const base = projState?.bpServer?.endpoint;
+    if (!dialogIsOpen || !noFeatures || !base) return;
+
+    if (!shouldLoad) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        dispatch(setLoading(true));
+        const url = new URL('getAllSpeciesData', base).toString();
+        const resp = await jsonp(url, { timeout: CONSTANTS.TIMEOUT }).promise;
+        if (cancelled) return;
+        // resp.data expected from your App.jsx usage
+        dispatch(setAllFeatures(resp?.data || []));
+      } catch (err) {
+        if (!cancelled) {
+          showMessage("Failed to load features:", err);
+          console.error("Failed to load features:", err);
+        }
+      } finally {
+        if (!cancelled) dispatch(setLoading(false));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [
+    featureState.dialogs.featuresDialogOpen,
+    featureState.allFeatures?.length,
+    dispatch
+  ]);
 
   const _newByDigitising = () => {
     onOk();
     initialiseDigitising();
   };
 
-  const removeFeature = (feature) => {
-    const updatedFeatureIds = featureState.selectedFeatureIds.filter(
-      (id) => id !== feature.id
-    );
-    dispatch(setSelectedFeatureIds(updatedFeatureIds));
-  };
+  // const showNewFeaturePopover = (event) => {
+  //   setNewFeatureAnchor(event.currentTarget);
+  //   dispatch(
+  //     toggleFeatureD({
+  //       dialogName: "newFeaturePopoverOpen",
+  //       isOpen: true,
+  //     })
+  //   );
+  // };
 
-  //adds a feature to the selectedFeatureIds array
-  const addFeature = (feature) => {
-    const currentSelected = featureState.selectedFeatureIds;
-    const updated = currentSelected.includes(feature.id)
-      ? currentSelected
-      : [...currentSelected, feature.id];
-    dispatch(setSelectedFeatureIds(updated));
-  };
+  // const showImportFeaturePopover = (event) => {
+  //   setImportFeatureAnchor(event.currentTarget);
+  //   dispatch(
+  //     toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
+  //   );
+  // };
 
   const addOrRemoveFeature = (feature) => {
-    if (featureState.selectedFeatureIds.includes(feature.id)) {
-      removeFeature(feature);
+    const ids = featureState.selectedFeatureIds || [];
+    // if the feature is already included remove it, otherwise add it 
+    if (ids.includes(feature.id)) {
+      dispatch(setSelectedFeatureIds(ids.filter((id) => id !== feature.id)));
     } else {
-      addFeature(feature);
-    }
-  };
-
-  const clickRow = (event, rowInfo) => {
-    console.log("rowInfo ", rowInfo);
-    console.log("eatureState.addingRemovingFeatures ", featureState.addingRemovingFeatures);
-
-    if (!rowInfo || rowInfo.index === undefined) return;
-
-    if (featureState.addingRemovingFeatures) {
-      // Allow users to select multiple features using the shift key
-      if (event.shiftKey) {
-        const selectedIds = getFeaturesBetweenRows(previousRow, rowInfo);
-        update(selectedIds);
-      } else {
-        addOrRemoveFeature(rowInfo, event.shiftKey, previousRow);
-      }
-      setPreviousRow(rowInfo);
-    } else {
-      dispatch(setSelectedFeature(rowInfo));
+      dispatch(setSelectedFeatureIds([...ids, feature.id]));
     }
   };
 
   const toggleSelectionState = (selectedIds, features, first, last) => {
-    const spannedFeatures = features.slice(first, last);
-    spannedFeatures.forEach((feature) => {
-      if (selectedIds.includes(feature.id)) {
-        selectedIds.splice(selectedIds.indexOf(feature.id), 1);
-      } else {
-        selectedIds.push(feature.id);
-      }
-    });
-    return selectedIds;
+    const next = [...selectedIds];
+    const spanned = features.slice(first, last);
+    for (const feature of spanned) {
+      const i = next.indexOf(feature.id);
+      if (i >= 0) next.splice(i, 1);
+      else next.push(feature.id);
+    }
+    return next;
   };
 
   // Function to allow users to select multiple features using the shift key
-  const getFeaturesBetweenRows = (previousRow, thisRow) => {
-    const idx1 =
-      previousRow.index < thisRow.index ? previousRow.index + 1 : thisRow.index;
-    const idx2 =
-      previousRow.index < thisRow.index ? thisRow.index + 1 : previousRow.index;
+  const getFeaturesBetweenRows = (prevRow, thisRow) => {
+    const from = prevRow.index < thisRow.index ? prevRow.index + 1 : thisRow.index;
+    const to = prevRow.index < thisRow.index ? thisRow.index + 1 : prevRow.index;
 
-    if (filteredRows.length < featureState.allFeatures.length) {
-      return toggleSelectionState(
-        featureState.selectedFeatureIds,
-        filteredRows,
-        idx1,
-        idx2
-      );
+    const base = filteredRows.length < featureState.allFeatures.length
+      ? filteredRows
+      : featureState.allFeatures;
+
+    return toggleSelectionState(featureState.selectedFeatureIds || [], base, from, to);
+  };
+
+  const clickRow = (event, row) => {
+    if (!row || row.index === undefined) return;
+
+    if (featureState.addingRemovingFeatures) {
+      if (event.shiftKey && previousRow) {
+        const nextIds = getFeaturesBetweenRows(previousRow, row);
+        dispatch(setSelectedFeatureIds(nextIds));
+      } else {
+        addOrRemoveFeature(row);
+      }
+      setPreviousRow(row);
     } else {
-      return toggleSelectionState(
-        featureState.selectedFeatureIds,
-        featureState.allFeatures,
-        idx1,
-        idx2
-      );
+      dispatch(setSelectedFeature(row));
     }
   };
 
   const selectAllFeatures = () => {
-    if (filteredRows.length < featureState.allFeatures.length) {
-      const selectedIds = filteredRows.map((feature) => feature.id);
-      dispatch(setSelectedFeatureIds(selectedIds));
-    } else {
-      dispatch(setSelectedFeatureIds(featureState.allFeatures.map((feature) => feature.id)));
-    }
+    const ids = filteredRows.length < featureState.allFeatures.length
+      ? filteredRows.map((f) => f.id)
+      : featureState.allFeatures.map((f) => f.id);
+    dispatch(setSelectedFeatureIds(ids));
   };
+
+  const clearAllFeatures = () => dispatch(setSelectedFeatureIds([]));
 
   const handleClickOk = () => {
     if (featureState.addingRemovingFeatures) {
@@ -157,33 +156,13 @@ const FeaturesDialog = ({
 
   const unselectFeature = () => {
     dispatch(setSelectedFeature(undefined));
-    dispatch(
-      toggleFeatureD({
-        dialogName: "importFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "newFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "featuresDialogOpen",
-        isOpen: false,
-      })
-    );
+    dispatch(toggleFeatureD({ dialogName: "importFeaturePopoverOpen", isOpen: false }));
+    dispatch(toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false }));
+    dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }));
   };
 
-  const searchTextChanged = (value) => {
-    setSearchText(value);
-  };
-
-  const dataFiltered = (filteredRows) => {
-    setFilteredRows(filteredRows);
-  };
+  const searchTextChanged = (value) => setSearchText(value);
+  const dataFiltered = (rows) => setFilteredRows(rows);
 
 
   const columns = generateTableCols([
@@ -209,7 +188,7 @@ const FeaturesDialog = ({
       open={featureState.dialogs.featuresDialogOpen}
       loading={uiState.loading}
       onOk={handleClickOk}
-      onCancel={() => closeDialog()}
+      onCancel={closeDialog}
       showCancelButton={featureState.addingRemovingFeatures}
       autoDetectWindowHeight={false}
       title="Features"
@@ -219,8 +198,9 @@ const FeaturesDialog = ({
         <FeaturesToolbar
           metadata={metadata}
           userRole={userRole}
-          selectAllFeatures={() => selectAllFeatures()}
+          selectAllFeatures={selectAllFeatures}
           _newByDigitising={_newByDigitising}
+          clearAll={clearAllFeatures}
         />
       }
     >
@@ -235,7 +215,7 @@ const FeaturesDialog = ({
           selectedFeatureIds={featureState.selectedFeatureIds}
           selectedFeature={featureState.selectedFeature}
           clickRow={clickRow}
-          preview={() => previewFeature(featureMetadata)}
+          preview={(row) => previewFeature?.(row)}
         />
       </div>
     </MarxanDialog >
