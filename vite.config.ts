@@ -2,17 +2,11 @@ import { defineConfig } from "vite";
 import path from "path";
 import react from "@vitejs/plugin-react-swc";
 import svgr from "vite-plugin-svgr";
-import viteTsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   // depending on your application, base can also be "/"
   base: "/",
-  plugins: [
-    react(),
-    svgr({
-      include: "**/*.svg?react",
-    }),
-  ],
+  plugins: [react(), svgr()],
   resolve: {
     alias: {
       "@slices": path.resolve(__dirname, "./src/slices"),

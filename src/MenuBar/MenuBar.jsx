@@ -5,12 +5,15 @@ import {
   faArrowAltCircleLeft,
   faArrowAltCircleRight,
   faBookOpen,
+  faFishFins,
+  faFolderOpen,
   faGlobeEurope,
   faLayerGroup,
   faQuestionCircle,
+  faShip,
   faStar,
   faThLarge,
-  faWrench,
+  faWrench
 } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -86,16 +89,16 @@ const MenuBar = ({
           <Avatar alt="BioProtect Logo" src={BioLogo} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             <AppBarIcon
-              icon={faBookOpen}
+              icon={faFolderOpen}
               onClick={() => openProjectsDialog()}
               title="Projects"
             />
             <AppBarIcon
-              icon={faStar}
+              icon={faFishFins}
               onClick={() => openFeaturesDialog()}
               title="Features"
             />
-            <AppBarIcon
+            {/* <AppBarIcon
               icon={faThLarge}
               onClick={() => openPlanningGridsDialog()}
               title="Planning grids"
@@ -104,9 +107,9 @@ const MenuBar = ({
               icon={faGlobeEurope}
               onClick={() => openAtlasLayersDialog()}
               title="Atlas Layers"
-            />
+            /> */}
             <AppBarIcon
-              icon={faLayerGroup}
+              icon={faShip}
               onClick={() => openCumulativeImpactDialog()}
               title="Impact"
             />

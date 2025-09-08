@@ -1,14 +1,12 @@
-import React, { useRef, useState } from "react";
-
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
-import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
-import Checkbox from "@mui/material/Checkbox";
-import { FormControlLabel } from "@mui/material";
-import TextareaAutosize from "@mui/material/TextareaAutosize";
+import Divider from "@mui/material/Divider";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { selectCurrentUser } from "@slices/authSlice";
 import { useSelector } from "react-redux";
+import { useState } from "react";
 
 const ProjectTabContent = ({
   toggleProjectPrivacy,
@@ -18,8 +16,7 @@ const ProjectTabContent = ({
   const userData = useSelector(selectCurrentUser);
   const projState = useSelector((state) => state.project);
   const metadata = projState.projectData.metadata
-
-
+  const project = projState.projectData.project
   const [editing, setEditing] = useState(false);
   const handleChange = (e) => {
     setEditing(false);
@@ -29,61 +26,50 @@ const ProjectTabContent = ({
     <div>
       <Card sx={{ minWidth: 275 }}>
         <CardContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
-          <Typography variant="h5" component="div">
-            Description
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            {editing ? (
-              <span onClick={setEditing(true)}>
-                {metadata.DESCRIPTION}
-              </span>
-            ) : (
-              <input
-                id="descriptionEdit"
-                value={metadata.DESCRIPTION || ""}
-                className="descriptionEditBox"
-                onChange={(e) => handleChange(e)}
-              ></input>
-            )}
-          </Typography>
-
-          <Typography variant="h5" component="div">
-            Created
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            <span className="createDate">{metadata.CREATEDATE}</span>
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {userData.username !== owner && (
-              <span className="tabTitle tabTitleTopMargin">Created by</span>
-            )}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {userData.username !== owner && (
-              <span className="createDate">{owner || userData.username}</span>
-            )}
-          </Typography>
-        </CardContent>
-
-        <CardActions>
-          {userData.role !== "ReadOnly" && (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={Boolean(metadata.PRIVATE)}
-                  onChange={toggleProjectPrivacy}
-                  size="small"
+            <Typography variant="h5" component="div">
+              Description
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {editing ? (
+                <TextField
+                  id="descriptionEdit"
+                  variant="standard"               // clean underline style
+                  value={project.description}
+                  autoFocus
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={() => setEditing(false)} // leave edit mode on blur
+                  InputProps={{ disableUnderline: false }}
+                  fullWidth
                 />
-              }
-              label="Private"
-              sx={{ fontSize: "12px" }}
-            />
-          )}
-        </CardActions>
+              ) : (
+                <span
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setEditing(true)}
+                >
+                  {project.description || "Click to add a description"}
+                </span>
+              )}
+            </Typography>
+            <Typography variant="h5" component="div">
+              Created
+            </Typography>
 
+            <Typography variant="body2">
+              <span className="createDate">  {new Date(metadata.createdate.split(".")[0] + "Z").toLocaleString()}</span>
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {userData.username !== owner && (
+                <span className="tabTitle tabTitleTopMargin">Created by</span>
+              )}
+              <br />
+              {userData.username !== owner && (
+                <span className="createDate">{owner || userData.username}</span>
+              )}
+            </Typography>
+          </Box>
+        </CardContent>
       </Card>
     </div>
   );

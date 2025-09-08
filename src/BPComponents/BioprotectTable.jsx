@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   descendingComparator,
   getComparator,
@@ -7,6 +7,7 @@ import {
 } from "../Helpers";
 import { useDispatch, useSelector } from "react-redux";
 
+import AppBarIcon from "../MenuBar/AppBarIcon";
 import BPTableHeadWithSort from "./BPTableHeadWithSort";
 import BPTableTitleWithSearch from "./BPTableTitleWithSearch";
 import Box from "@mui/material/Box";
@@ -16,6 +17,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
+import { faMagnifyingGlassPlus } from "@fortawesome/free-solid-svg-icons";
 
 // Props
 // 1. data (Array, Required)
@@ -66,8 +68,21 @@ const BioprotectTable = (props) => {
   }, [searchQuery, props.data, order, orderBy]);
 
   // Let parent know what rows are visible (useful for shift-select logic)
+  // useEffect(() => {
+  //   props.dataFiltered && props.dataFiltered(filteredData);
+  // }, [filteredData, props.dataFiltered]);
+
+  const lastSent = useRef([]);
   useEffect(() => {
-    props.dataFiltered && props.dataFiltered(filteredData);
+    if (!props.dataFiltered) return;
+    const a = lastSent.current;
+    const b = filteredData;
+    const sameLength = a.length === b.length;
+    const sameIds = sameLength && a.every((row, i) => row?.id === b[i]?.id);
+    if (!sameLength || !sameIds) {
+      props.dataFiltered(b);
+      lastSent.current = b;
+    }
   }, [filteredData, props.dataFiltered]);
 
   const handleSelectAllClick = (event) => {
@@ -102,10 +117,14 @@ const BioprotectTable = (props) => {
   // Unified selected check (IDs set)
   const isSelected = (row) => selectedIdSet.has(row.id);
 
-  const visibleRows = useMemo(
-    () => stableSort(filteredData, getComparator(order, orderBy)),
-    [props.data, order, orderBy]
-  );
+  // const visibleRows = useMemo(
+  //   () => stableSort(filteredData, getComparator(order, orderBy)),
+  //   [props.data, order, orderBy]
+  // );
+  // const visibleRows = useMemo(
+  //   () => stableSort(filteredData, getComparator(order, orderBy)),
+  //   [filteredData, order, orderBy]
+  // );
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -144,17 +163,20 @@ const BioprotectTable = (props) => {
                   role="checkbox"
                   aria-checked={isItemSelected}
                   tabIndex={-1}
-                  key={idx}
+                  key={row.id ?? idx}
                   selected={isItemSelected}
                   sx={{ cursor: "pointer" }}
                 >
                   <TableCell padding="checkbox">
                     <Checkbox
                       color="primary"
-                      checked={(isItemSelected ? "checked" : "")}
+                      checked={isItemSelected}
+                      // checked={(isItemSelected ? "checked" : "")}
                       inputProps={{
                         "aria-labelledby": labelId,
                       }}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => props.clickRow(e, row)}
                     />
                   </TableCell>
                   {props.tableColumns.map((column) => (
@@ -165,6 +187,21 @@ const BioprotectTable = (props) => {
                       {row[column.id]}
                     </TableCell>
                   ))}
+                  <TableCell
+                    align="center"
+                    sx={{ cursor: "pointer", color: "primary.main" }}
+
+                  >
+                    <AppBarIcon
+                      icon={faMagnifyingGlassPlus}
+                      onClick={(e) => {
+                        e.stopPropagation();         // don’t also trigger row click
+                        props.preview?.(row);        // call the preview callback
+                      }}
+                      title="Priview this feature"
+                    />
+                    Preview
+                  </TableCell>
                 </TableRow>
               );
             })}

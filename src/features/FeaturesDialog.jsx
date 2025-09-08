@@ -5,8 +5,8 @@ import {
   setSelectedFeatureIds,
   toggleFeatureD,
 } from "@slices/featureSlice";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import { CONSTANTS } from "../bpVars";
@@ -39,8 +39,6 @@ const FeaturesDialog = ({ onOk, metadata, userRole, initialiseDigitising, previe
     const base = projState?.bpServer?.endpoint;
     if (!dialogIsOpen || !noFeatures || !base) return;
 
-    if (!shouldLoad) return;
-
     let cancelled = false;
     (async () => {
       try {
@@ -63,7 +61,7 @@ const FeaturesDialog = ({ onOk, metadata, userRole, initialiseDigitising, previe
   }, [
     featureState.dialogs.featuresDialogOpen,
     featureState.allFeatures?.length,
-    dispatch
+    dispatch, projState?.bpServer?.endpoint
   ]);
 
   const _newByDigitising = () => {
@@ -161,9 +159,8 @@ const FeaturesDialog = ({ onOk, metadata, userRole, initialiseDigitising, previe
     dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }));
   };
 
-  const searchTextChanged = (value) => setSearchText(value);
-  const dataFiltered = (rows) => setFilteredRows(rows);
-
+  const searchTextChanged = useCallback((value) => setSearchText(value), []);
+  const dataFiltered = useCallback((rows) => setFilteredRows(rows), []);
 
   const columns = generateTableCols([
     { id: "alias", label: "alias" },
@@ -173,10 +170,12 @@ const FeaturesDialog = ({ onOk, metadata, userRole, initialiseDigitising, previe
     { id: "created_by", label: "By" },
   ]);
 
-  const tableData = featureState.allFeatures.map((feature, index) => ({
+  const tableData = useMemo(() => featureState.allFeatures.map((feature, index) => ({
     ...feature,
-    index
-  }));
+    index,
+  })),
+    [featureState.allFeatures]
+  );
 
   const closeDialog = () => {
     dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }));

@@ -1,5 +1,4 @@
 import "./index.css";
-import "typeface-roboto";
 
 import App from "./App";
 import { Provider } from "react-redux";
