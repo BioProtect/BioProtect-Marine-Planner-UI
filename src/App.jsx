@@ -3430,7 +3430,9 @@ const App = () => {
   //previews the feature
   const previewFeature = (featureMetadata) => {
     dispatch(setFeatureMetadata(featureMetadata));
-    setFeatureDialogOpen(true);
+    dispatch(
+      toggleFeatureD({ dialogName: "featureDialogOpen", isOpen: true })
+    );
   };
 
   //unzips a shapefile on the server

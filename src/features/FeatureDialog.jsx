@@ -79,7 +79,7 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
           color={featureState.featureMetadata.color}
           outlineColor="rgba(0, 0, 0, 0.2)"
         />
-        <Box className="metadataPanel" mt={2}>
+        <Box mt={2}>
           <Table>
             <TableBody>
               <TableRow>
