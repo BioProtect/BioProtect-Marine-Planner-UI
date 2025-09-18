@@ -71,3 +71,5 @@ The image builds the app with Node, then serves the static `build/` output via n
 ## License
 
 See [LICENSE](LICENSE).
+
+# BioProtect Marine Planner UI
