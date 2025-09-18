@@ -22,12 +22,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
 import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { toggleDialog } from "../slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const ImportedActivitiesDialog = ({
   loading,
   metadata,
-  uploadedActivities,
   userRole,
   runCumulativeImpact,
 }) => {
@@ -66,7 +65,7 @@ const ImportedActivitiesDialog = ({
     );
   };
 
-  const filteredActivities = uploadedActivities.filter(
+  const filteredActivities = uiState.uploadedActivities.filter(
     (activity) =>
       activity.activity.toLowerCase().includes(searchText) ||
       activity.description.toLowerCase().includes(searchText) ||

@@ -1,8 +1,5 @@
-import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
-import { getUserProject, selectServer } from "./slices/projectSlice";
-import { selectCurrentToken, selectCurrentUser } from "./slices/authSlice";
-import { setBasemap, setSnackbarMessage, setSnackbarOpen } from "./slices/uiSlice";
+import { getUserProject, selectServer } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -25,12 +22,13 @@ import React from "react";
 import Select from "@mui/material/Select";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { setCredentials } from "./slices/authSlice";
-import { useLoginMutation } from "./slices/authApiSlice";
+import { setCredentials } from "@slices/authSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useLoginMutation } from "@slices/authApiSlice";
+import { useSnackbar } from "notistack";
 
 const LoginDialog = ({ open, postLoginSetup }) => {
   const [selectOpen, setSelectOpen] = useState(false);
-  const dialogState = useSelector((state) => state.ui.dialogState);
   const projectState = useSelector((state) => state.project);
   const userRef = useRef(null);
   const [user, setUser] = useState("");
@@ -38,6 +36,9 @@ const LoginDialog = ({ open, postLoginSetup }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
   const dispatch = useDispatch();
+  const { showMessage } = useAppSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
+
 
   useLayoutEffect(() => {
     if (userRef.current) {
@@ -51,11 +52,6 @@ const LoginDialog = ({ open, postLoginSetup }) => {
     }
   }, [open]);
 
-  useEffect(() => {
-    dispatch(setSnackbarOpen(false));
-    dispatch(setSnackbarMessage(""));
-  }, [user, pwd]);
-
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event) => event.preventDefault();
 
@@ -66,11 +62,10 @@ const LoginDialog = ({ open, postLoginSetup }) => {
       const response = await login({ user, pwd }).unwrap();
       dispatch(setCredentials({
         userId: response.userId,
-        project: response.project,
         accessToken: response.accessToken,
         userData: response.userData
       }));
-      dispatch(getUserProject());
+      dispatch(getUserProject(response.project.id, { enqueueSnackbar }));
       setUser("");
       setPwd("");
     } catch (err) {
@@ -82,8 +77,7 @@ const LoginDialog = ({ open, postLoginSetup }) => {
       } else if (err.originalStatus === 401) {
         errMsg = "Unauthorized";
       }
-      dispatch(setSnackbarMessage(errMsg));
-      dispatch(setSnackbarOpen(true));
+      showMessage(errMsg, "error");
     }
   };
 

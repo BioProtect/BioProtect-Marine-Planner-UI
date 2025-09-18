@@ -1,15 +1,15 @@
-import { apiSlice } from "./slices/apiSlice";
-import authReducer from "./slices/authSlice";
+import { apiSlice } from "@slices/apiSlice";
+import authReducer from "@slices/authSlice";
 import { configureStore } from "@reduxjs/toolkit";
-import { featureApiSlice } from "./slices/featureSlice";
-import featureReducer from "./slices/featureSlice"
-import { planningUnitApiSlice } from "./slices/planningUnitSlice";
-import planningUnitReducer from "./slices/planningUnitSlice"; // Import the slice reducer
-import { projectApiSlice } from "./slices/projectSlice";
-import projectReducer from "./slices/projectSlice";
-import uiReducer from "./slices/uiSlice";
-import { userApiSlice } from "./slices/userSlice";
-import userReducer from "./slices/userSlice";
+import { featureApiSlice } from "@slices/featureSlice";
+import featureReducer from "@slices/featureSlice"
+import { planningUnitApiSlice } from "@slices/planningUnitSlice";
+import planningUnitReducer from "@slices/planningUnitSlice"; // Import the slice reducer
+import { projectApiSlice } from "@slices/projectSlice";
+import projectReducer from "@slices/projectSlice";
+import uiReducer from "@slices/uiSlice";
+import { userApiSlice } from "@slices/userSlice";
+import userReducer from "@slices/userSlice";
 
 const store = configureStore({
   reducer: {

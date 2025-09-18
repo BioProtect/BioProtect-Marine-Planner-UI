@@ -68,7 +68,7 @@ class UserSettingsDialog extends React.Component {
                   <MenuItem
                     value={item.name}
                     key={item.name}
-                    primaryText={item.alias}
+                    title={item.alias}
                     style={{ fontSize: "12px" }}
                     title={item.description}
                   />

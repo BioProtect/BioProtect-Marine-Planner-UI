@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import FileUpload from "../Uploads/FileUpload";
 import MarxanDialog from "../MarxanDialog";
-import { toggleDialog } from "../slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const ImportCostsDialog = ({
   addCost,

@@ -1,50 +1,56 @@
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import React, { useState } from "react";
-import {
-  Sync as SyncIcon,
-  UploadFile as UploadFileIcon,
-} from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
 
-import { setFeatureDatasetFilename } from "../slices/uiSlice";
+import UploadFile from "@mui/icons-material/UploadFileTwoTone";
+import { setFeatureFilename } from "@slices/featureSlice";
+import { setFileUploadResponse } from "@slices/uiSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 
 // FileUpload component refactored to use React 18 and MUI 5
 const FileUpload = (props) => {
   const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui)
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(false);
-  const [destinationFolder, setDestinationFolder] = useState("");
-  const id = `upload-${props.parameter}`;
+  const id = `upload-${props.filename}`;
+  const { showMessage } = useAppSnackbar();
+
 
   const handleChange = async (e) => {
-    if (props.destFolder) {
-      setDestinationFolder(props.destFolder);
-    }
+    const destFolder = props.destFolder || "imports";
 
     if (e.target.files.length) {
       setLoading(true);
       const target = e.target.files[0];
+      const filename = target.name;
       // upload file  - if its an impact it uploads slightly differently
       try {
         let response;
-        if (props.selectedActivity) {
+        if (uiState.selectedActivity) {
           response = await props.fileUpload({
             value: target,
-            filename: target.name,
-            destFolder: destinationFolder,
-            activity: props.selectedActivity,
+            filename: filename,
+            destFolder: destFolder,
+            activity: uiState.selectedActivity.activity,
           });
         } else {
           response = await props.fileUpload(
             target,
-            target.name,
-            destinationFolder
+            filename,
+            destFolder,
           );
         }
-        dispatch(setFeatureDatasetFilename(response.file));
-        props.setMessage(response.info);
+        if (!response || !response.file) {
+          throw new Error("Invalid response from upload");
+        }
+        console.log("response after file upload ", response);
+
+        dispatch(setFileUploadResponse(response))
+        dispatch(setFeatureFilename(response.file))
+        showMessage(response.info, "success")
       } catch (error) {
-        console.error("File upload error: ", error);
+        showMessage(`Upload error: ${error.message || error}`, "error");
       } finally {
         setLoading(false);
         setActive(false);
@@ -66,26 +72,29 @@ const FileUpload = (props) => {
           color: active ? "primary.main" : "text.secondary",
         }}
       >
-        {props.label}
+        {props.label} {props.filename}
       </Typography>
+
       <Box display="flex" alignItems="center">
+
         <IconButton
           component="label"
           sx={{ cursor: "pointer" }}
           title="Click to upload a file"
+          onChange={handleChange}
+          onClick={handleClick}
         >
-          <UploadFileIcon />
+          <UploadFile color="primary" fontSize='large' />
           <input
             type="file"
-            onChange={handleChange}
-            onClick={handleClick}
             accept={props.fileMatch}
             id={id}
             style={{ display: "none" }}
           />
         </IconButton>
+
         <Typography
-          sx={{ width: "168px", textOverflow: "ellipsis", overflow: "hidden" }}
+          sx={{ width: "168px", textOverflow: "ellipsis" }}
         >
           {props.filename}
         </Typography>

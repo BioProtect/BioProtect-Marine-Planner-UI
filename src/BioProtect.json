@@ -20,14 +20,14 @@
       "name": "Streets",
       "alias": "Mapbox Streets",
       "description": "A complete basemap, perfect for incorporating your own data.",
-      "id": "mapbox/streets-v10",
+      "id": "mapbox/streets-v12",
       "provider": "mapbox"
     },
     {
       "name": "Outdoors",
       "alias": "Mapbox Outdoors",
       "description": "General basemap tailored to hiking, biking and sport.",
-      "id": "mapbox/outdoors-v10",
+      "id": "mapbox/outdoors-v12",
       "provider": "mapbox"
     },
     {
@@ -41,7 +41,7 @@
       "name": "Light",
       "alias": "Mapbox Light",
       "description": "Subtle light backdrop for data visualizations.",
-      "id": "mapbox/light-v9",
+      "id": "mapbox/light-v11",
       "provider": "mapbox"
     },
     {
@@ -93,43 +93,63 @@
     "tilesUrl": "https://geospatial.jrc.ec.europa.eu/geoserver/gwc/service/wmts?",
     "metadataUrl": "https://www.protectedplanet.net/en/resources/february-2023-update-of-the-wdpa-and-wd-oecm"
   },
-  "MBAT": "sk.eyJ1IjoiYW5kcmV3Y290dGFtIiwiYSI6ImNsZHc1NjQ3cDA0NGwzcnJ4bHQ4cGU4OGYifQ.Jb1-is7c96_-x3aheAKyLg",
-  "MBAT_PUBLIC": "pk.eyJ1IjoiYW5kcmV3Y290dGFtIiwiYSI6ImNsY3N4aHM5czB1YjkzbmxoNzN1NHk3aGYifQ.LzpyM7lJ5-f0vjshJoaNXg",
+  "MBAT": "sk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY21hNm90dXQ3MHZqbzJuczhjZWZ3ZHRjZyJ9.-fXDC4ob8V1nGDkFs22o7A",
+  "MBAT_PUBLIC": "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY21hNm83ejF6MDZkNjJqc2dyb3Ezb3EybSJ9.7ccssBLpU0yg10O8Izty6A",
   "NOTIFICATIONS": [
     {
       "id": 1,
       "html": "The <a href='https://andrewcottam.github.io/marxan-web/documentation/docs_betatest.html' target='_blank'>Beta Test Programme</a> ends at the end of October. Let us know what you think!",
       "type": "News",
       "expires": "10/31/2019",
-      "showForRoles": ["Admin", "User", "ReadOnly"]
+      "showForRoles": [
+        "Admin",
+        "User",
+        "ReadOnly"
+      ]
     },
     {
       "id": 2,
       "html": "Tonga has achieved its marine Aichi Target 11, maybe - see <a href='http://macbio-pacific.info/updates/'' target='_blank'>here</a>",
       "type": "News",
       "expires": "01/01/2020",
-      "showForRoles": ["Admin", "User", "ReadOnly"]
+      "showForRoles": [
+        "Admin",
+        "User",
+        "ReadOnly"
+      ]
     },
     {
       "id": 3,
       "html": "New training course for Marxan Web, maybe",
       "type": "Training",
       "expires": "01/01/2020",
-      "showForRoles": ["Admin", "User", "ReadOnly"]
+      "showForRoles": [
+        "Admin",
+        "User",
+        "ReadOnly"
+      ]
     },
     {
       "id": 4,
       "html": "Zero draft of the <a href='https://www.cbd.int/article/2020-01-10-19-02-38' target='_blank'>Post-2020 Global Biodiversity Framework</a> published by the Convention on Biological Diversity Secretariat",
       "type": "News",
       "expires": "10/09/2020",
-      "showForRoles": ["Admin", "User", "ReadOnly"]
+      "showForRoles": [
+        "Admin",
+        "User",
+        "ReadOnly"
+      ]
     },
     {
       "id": 5,
       "html": "<i>'Spatial action planning for biodiversity in 2020 and beyond'</i>. Marxan Web Training Session on 14/06/2020 at the World Conservation Congress in Marseille",
       "type": "Training",
       "expires": "14/06/2020",
-      "showForRoles": ["Admin", "User", "ReadOnly"]
+      "showForRoles": [
+        "Admin",
+        "User",
+        "ReadOnly"
+      ]
     }
   ]
 }

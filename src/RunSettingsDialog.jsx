@@ -9,16 +9,15 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const RunSettingsDialog = ({
-  loading,
   updateRunParams,
   runParams,
-  showClumpingDialog,
   userRole,
 }) => {
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const uiState = useSelector((state) => state.ui);
+  const dispatch = useDispatch();
   const [data, setData] = useState([]);
   const [updateEnabled, setUpdateEnabled] = useState(false);
   const closeDialog = () =>
@@ -74,27 +73,16 @@ const RunSettingsDialog = ({
           >
             {data[cellInfo.index]["value"]}
           </div>
-          {data[cellInfo.index]["key"] === "BLM" && (
-            <FontAwesomeIcon
-              icon={faExternalLinkAlt}
-              onClick={showClumpingDialog}
-              title="Click to open the BLM comparison dialog"
-              style={{
-                cursor: "pointer",
-                marginLeft: "10px",
-              }}
-            />
-          )}
         </div>
       );
     },
-    [userRole, data, enableUpdate, handleBlur, showClumpingDialog]
+    [userRole, data, enableUpdate, handleBlur]
   );
 
   return (
     <MarxanDialog
-      loading={loading}
-      open={dialogStates.settingsDialogOpen}
+      loading={uiState.loading}
+      open={uiState.dialogStates.settingsDialogOpen}
       onOk={handleUpdateRunParams}
       onCancel={() => closeDialog()}
       fullWidth={false}

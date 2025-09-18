@@ -1,50 +1,50 @@
+import { createSlice, current } from "@reduxjs/toolkit";
+
 import { apiSlice } from "./apiSlice";
-import { createSlice } from "@reduxjs/toolkit";
 
 export const planningUnitApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    deletePlanningUnit: builder.mutation({
+    deletePlanningUnitGrid: builder.mutation({
       query: (featureName) => ({
         url: `planning-units?action=delete&feature_name=${featureName}`,
         method: "GET",
       }),
-      invalidatesTags: ["PlanningUnits"],
+      invalidatesTags: ["PlanningUnitGrids"],
     }),
-    exportPlanningUnit: builder.query({
+    exportPlanningUnitGrid: builder.query({
       query: (featureName) => ({
         url: `planning-units?action=export&name=${featureName}`,
         method: "GET",
       }),
     }),
-    listPlanningUnits: builder.query({
+    listPlanningUnitGrids: builder.query({
       query: () => ({
         url: `planning-units?action=list`,
         method: "GET",
       }),
-      providesTags: ["PlanningUnits"],
+      providesTags: ["PlanningUnitGrids"],
     }),
   }),
 })
 
 export const {
-  useDeletePlanningUnitQuery,
-  useExportPlanningUnitQuery,
-  useListPlanningUnitsQuery,
+  useDeletePlanningUnitGridMutation,
+  useExportPlanningUnitGridQuery,
+  useListPlanningUnitGridsQuery,
 } = planningUnitApiSlice;
-
 
 const initialState = {
   identifyPlanningUnits: {},
   planningUnitGrids: [],
   planningUnits: [],
   puEditing: false,
+  currentPUGrid: "",
   dialogs: {
-    newMarinePlanningGridDialogOpen: false,
     newPlanningGridDialogOpen: false,
     importPlanningGridDialogOpen: false,
     planningGridDialogOpen: false,
     planningGridsDialogOpen: false,
-  },
+  }
 }
 
 // Thunk to handle server initialization
@@ -67,7 +67,10 @@ const planningUnitSlice = createSlice({
     togglePUD(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
-    }
+    },
+    setCurrentPUGrid(state, action) {
+      state.currentPUGrid = action.payload;
+    },
   }
 });
 
@@ -76,6 +79,7 @@ export const {
   setPlanningUnitGrids,
   setPlanningUnits,
   setPuEditing,
+  setCurrentPUGrid,
   togglePUD,
 } = planningUnitSlice.actions;
 export default planningUnitSlice.reducer;

@@ -95,9 +95,7 @@ export const INITIAL_VARS = {
     metadataUrl:
       "https://www.protectedplanet.net/en/resources/february-2023-update-of-the-wdpa-and-wd-oecm",
   },
-  MBAT: "sk.eyJ1IjoiYW5kcmV3Y290dGFtIiwiYSI6ImNsZHc1NjQ3cDA0NGwzcnJ4bHQ4cGU4OGYifQ.Jb1-is7c96_-x3aheAKyLg",
-  MBAT_PUBLIC:
-    "pk.eyJ1IjoiYW5kcmV3Y290dGFtIiwiYSI6ImNsY3N4aHM5czB1YjkzbmxoNzN1NHk3aGYifQ.LzpyM7lJ5-f0vjshJoaNXg",
+
   NOTIFICATIONS: [
     {
       id: 1,
@@ -139,7 +137,8 @@ export const INITIAL_VARS = {
 export const CONSTANTS = {
   DOCS_ROOT: "https://docs.marxanweb.org/",
   ERRORS_PAGE: "https://docs.marxanweb.org/errors.html",
-  SEND_CREDENTIALS: true, //if true all post requests will send credentials
+  // SEND_CREDENTIALS: true, //if true all post requests will send credentials
+  SEND_CREDENTIALS: "include",
   TORNADO_PATH: "/server/",
   TIMEOUT: 0, //disable timeout setting
   // MAPBOX_USER: "blishten",
@@ -159,7 +158,6 @@ export const CONSTANTS = {
   SHAPES: ["Hexagon", "Square"],
   AREAKM2S: [10, 20, 30, 40, 50, 100],
   //layer source names
-  PLANNING_UNIT_SOURCE_NAME: "marxan_planning_units_source",
   WDPA_SOURCE_NAME: "marxan_wdpa_source",
   //layer names
   PU_LAYER_NAME: "marxan_pu_layer", //layer showing the planning units
@@ -173,7 +171,7 @@ export const CONSTANTS = {
   LAYER_TYPE_PLANNING_UNITS_STATUS: "status",
   LAYER_TYPE_PROTECTED_AREAS: "pas",
   LAYER_TYPE_FEATURE_LAYER: "feature",
-  LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER: "feature_puid",
+  LAYER_TYPE_FEATURE_PU_LAYER: "feature_puid",
   //planning unit statuses
   PU_STATUS_DEFAULT: {
     fillColor: "none",

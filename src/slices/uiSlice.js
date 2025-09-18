@@ -1,7 +1,5 @@
 import { createSlice, current } from "@reduxjs/toolkit";
 
-import UserMenu from "../User/UserMenu";
-
 const mapboxBasemaps = [
   {
     name: "Charted",
@@ -67,35 +65,57 @@ const mapboxBasemaps = [
     id: "",
     provider: "local",
   },
+  {
+    name: "BioProtect",
+    alias: "BioProtect",
+    description: "BioProtect basemap",
+    id: "craicerjack/cm4co2ve7000l01pfchhs2vv8",
+    provider: "mapbox",
+  },
+  {
+    name: "OSM",
+    alias: "Open Street Map",
+    description: "Open Street Map",
+    id: "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    provider: "local",
+  },
 ];
 
 const initialState = {
-  snackbarOpen: false,
-  snackbarMessage: "",
+  loading: false,
   activeTab: "project",
   activeResultsTab: "legend",
-  basemap: "Light",
+  basemap: "BioProtect",
   basemaps: mapboxBasemaps,
+  registry: {},
+
+  activities: [],
+  allImpacts: [],
+  uploadedActivities: [],
+  selectedActivity: "",
+
+  fileUploadResponse: null,
 
   dialogStates: {
     aboutDialogOpen: false,
+
     activitiesDialogOpen: false,
+    cumulativeImpactDialogOpen: false,
+    humanActivitiesDialogOpen: false,
+    importedActivitiesDialogOpen: false,
+    openImportImpactsDialog: false,
+
+
     alertDialogOpen: false,
     atlasLayersDialogOpen: false,
     changePasswordDialogOpen: false,
     classificationDialogOpen: false,
-    clumpingDialogOpen: false,
     costsDialogOpen: false,
     importCostsDialogOpen: false,
-    cumulativeImpactDialogOpen: false,
-    gapAnalysisDialogOpen: false,
     helpMenuOpen: false,
-    humanActivitiesDialogOpen: false,
-    importedActivitiesDialogOpen: false,
     importImpactPopoverOpen: false,
     importFromWebDialogOpen: false,
     infoPanelOpen: false,
-    openImportImpactsDialog: false,
     profileDialogOpen: false,
     registerDialogOpen: false,
     resendPasswordDialogOpen: false,
@@ -113,6 +133,8 @@ const initialState = {
     welcomeDialogOpen: false,
     toolsMenuOpen: false,
   },
+
+  importLog: [],
 };
 
 const uiSlice = createSlice({
@@ -125,46 +147,72 @@ const uiSlice = createSlice({
     setBasemaps(state, action) {
       state.basemaps = action.payload;
     },
-    setSnackbarOpen(state, action) {
-      state.snackbarOpen = action.payload;
-    },
-    setSnackbarMessage(state, action) {
-      state.snackbarMessage = action.payload;
-    },
     setActiveTab(state, action) {
       state.activeTab = action.payload;
     },
     setActiveResultsTab(state, action) {
       state.activeResultsTab = action.payload;
     },
-    setIdentifyFeatures(state, action) {
-      state.identifiedFeatures = action.payload;
-    },
     setSelectedFeatureIds(state, action) {
       state.selectedFeatureIds = action.payload;
-    },
-    setFeatureDatasetFilename(state, action) {
-      state.featureDatasetFilename = action.payload;
     },
     toggleDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogStates[dialogName] = isOpen;
     },
+    setActivities(state, action) {
+      state.activities = action.payload;
+    },
+    setUploadedActivities(state, action) {
+      state.uploadedActivities = action.payload;
+    },
+    setLoading(state, action) {
+      state.loading = action.payload;
+    },
+    setSelectedActivity(state, action) {
+      state.selectedActivity = action.payload;
+    },
+    setFileUploadResponse(state, action) {
+      state.fileUploadResponse = action.payload;
+    },
+    setRegistry(state, action) {
+      state.registry = action.payload;
+    },
+    addToImportLog: (state, action) => {
+      state.importLog.push(action.payload);
+    },
+    removeImportLogMessage: (state, action) => {
+      const matchText = action.payload;
+      state.importLog = state.importLog.filter((msg) =>
+        typeof msg === "string"
+          ? !msg.includes(matchText)
+          : !(msg.info && msg.info.includes(matchText))
+      );
+    },
+    clearImportLog: (state) => {
+      state.importLog = [];
+    }
+
+
   },
 });
 
 export const {
   setBasemap,
   setBasemaps,
-  setSnackbarOpen,
-  setSnackbarMessage,
   setActiveTab,
   setActiveResultsTab,
-  setIdentifyFeatures,
   setSelectedFeatureIds,
-  setFeatureDatasetFilename,
   toggleProjectDialog,
-  togglePUD,
   toggleDialog,
+  setActivities,
+  setUploadedActivities,
+  setLoading,
+  setSelectedActivity,
+  setRegistry,
+  setFileUploadResponse,
+  addToImportLog,
+  removeImportLogMessage,
+  clearImportLog,
 } = uiSlice.actions;
 export default uiSlice.reducer;

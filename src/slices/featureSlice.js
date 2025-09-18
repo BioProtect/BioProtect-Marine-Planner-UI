@@ -1,3 +1,4 @@
+import ImportFromWebDialog from "../ImportComponents/ImportFromWebDialog";
 import { apiSlice } from "./apiSlice";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -47,7 +48,7 @@ export const featureApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetFeatureQuery,
-  useDeleteFeatureQuery,
+  useDeleteFeatureMutation,
   useExportFeatureQuery,
   useListFeatureProjectsQuery,
   useListFeaturePUsQuery,
@@ -55,34 +56,37 @@ export const {
 } = featureApiSlice;
 
 
+const initialState = {
+  digitisedFeatures: [],
+  addingRemovingFeatures: false,
+  allFeatures: [], //all of the interest features in the metadata_interest_features table
+  currentFeature: {},
+  featureMetadata: {},
+  identifiedFeatures: [],
+  selectedFeature: {},
+  selectedFeatureIds: [],
+  featureFilename: "",
+  featureProjects: [],
+  featurePlanningUnits: [],
+  createdFeatureInfo: {},
+  dialogs: {
+    newFeatureDialogOpen: false,
+    featureDialogOpen: false,
+    featuresDialogOpen: false,
+    importFeaturePopoverOpen: false,
+    importFeaturesDialogOpen: false,
+    newFeaturePopoverOpen: false,
+    featureInfoDialogOpen: false,
+    featureMenuOpen: false,
+    importFromWebDialogOpen: false
+  },
+
+}
 
 // Thunk to handle server initialization
 const featureSlice = createSlice({
   name: "feature",
-  initialState: {
-    digitisedFeatures: [],
-    addingRemovingFeatures: false,
-    allFeatures: [], //all of the interest features in the metadata_interest_features table
-    currentFeature: {},
-    featureMetadata: {},
-    identifiedFeatures: [],
-    selectedFeature: {},
-    selectedFeatureIds: [],
-    featureDatasetFilename: "",
-    featureProjects: [],
-    featurePlanningUnits: [],
-    createdFeatureInfo: {},
-    dialogs: {
-      newFeatureDialogOpen: false,
-      featureDialogOpen: false,
-      featuresDialogOpen: false,
-      importFeaturePopoverOpen: false,
-      importFeaturesDialogOpen: false,
-      newFeaturePopoverOpen: false,
-      featureInfoDialogOpen: false,
-      featureMenuOpen: false,
-    },
-  },
+  initialState,
   reducers: {
     setAddingRemovingFeatures(state, action) {
       state.addingRemovingFeatures = action.payload;
@@ -105,8 +109,8 @@ const featureSlice = createSlice({
     setSelectedFeatureIds(state, action) {
       state.selectedFeatureIds = action.payload;
     },
-    setFeatureDatasetFilename(state, action) {
-      state.featureDatasetFilename = action.payload;
+    setFeatureFilename(state, action) {
+      state.featureFilename = action.payload;
     },
     setFeatureProjects(state, action) {
       state.featureProjects = action.payload;
@@ -137,7 +141,7 @@ export const {
   setIdentifiedFeatures,
   setSelectedFeature,
   setSelectedFeatureIds,
-  setFeatureDatasetFilename,
+  setFeatureFilename,
   setCreatedFeatureInfo,
   setFeaturePlanningUnits,
   toggleFeatureD,

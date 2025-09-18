@@ -9,10 +9,12 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useCallback, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import FileUpload from "../FileUpload";
 import MarxanTable from "../MarxanTable";
 import SyncIcon from "@mui/icons-material/Sync";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 
 const title = ["Import Activity", "Upload Raster File"];
 
@@ -20,21 +22,22 @@ const ImportActivityDialog = ({
   onCancel,
   saveActivityToDb,
   activities,
-  loading,
 }) => {
+  const dispatch = useDispatch();
+  const uiState = useSelector((state) => state.ui)
   const [steps, setSteps] = useState(["Select Activity", "Raster Upload"]);
   const [stepIndex, setStepIndex] = useState(0);
   const [filename, setFilename] = useState("");
   const [description, setDescription] = useState("");
   const [searchtext, setSearchtext] = useState("");
   const [selectedActivity, setSelectedActivity] = useState("");
-  const [message, setMessage] = useState("");
+  const { showMessage } = useAppSnackbar();
 
   const handleNext = () => {
     if (stepIndex === steps.length - 1) {
       saveActivityToDb(filename, selectedActivity, description)
         .then((response) => {
-          setMessage(response);
+          showMessage(response, "success");
           closeDialog();
         })
         .catch((error) => console.error(error));
@@ -53,7 +56,6 @@ const ImportActivityDialog = ({
     setDescription("");
     setSearchtext("");
     setSelectedActivity("");
-    setMessage("");
     onCancel();
   };
 
@@ -136,14 +138,14 @@ const ImportActivityDialog = ({
         <Button
           variant="outlined"
           onClick={handlePrev}
-          disabled={stepIndex === 0 || loading}
+          disabled={stepIndex === 0 || uiState.loading}
         >
           Back
         </Button>
         <Button
           variant="contained"
           onClick={handleNext}
-          disabled={isNextDisabled || loading}
+          disabled={isNextDisabled || uiState.loading}
           startIcon={stepIndex === steps.length - 1 ? <SyncIcon /> : null}
         >
           {stepIndex === steps.length - 1 ? "Save Activity" : "Next"}

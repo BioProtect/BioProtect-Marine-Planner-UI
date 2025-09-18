@@ -2,22 +2,24 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } 
 import { React, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { useResendPasswordQuery } from "./slices/userSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useResendPasswordQuery } from "@slices/userSlice";
 
 const ResendPasswordDialog = ({
   open,
-  loading,
   resending,
 }) => {
   const [resendEmail, setResendEmail] = useState("");
   const dispatch = useDispatch();
   const userState = useSelector((state) => state.user)
+  const uiState = useSelector((state) => state.ui)
+  const { showMessage } = useAppSnackbar();
 
 
   const resendPassword = async () => {
     try {
       const { data: response, error } = useResendPasswordQuery(userState.user);
-      dispatch(setSnackbarMessage(response.info));
+      showMessage(response.info, "success");
       dispatch(
         toggleDialog({ dialogName: "resendPasswordDialogOpen", isOpen: false })
       );
@@ -48,7 +50,7 @@ const ResendPasswordDialog = ({
           value={resendEmail}
           onChange={(e) => setResendEmail(e.target.value)}
           onKeyDown={handleKeyPress}
-          disabled={loading}
+          disabled={uiState.loading}
           autoFocus
         />
       </DialogContent>
@@ -58,7 +60,7 @@ const ResendPasswordDialog = ({
         </Button>
         <Button
           onClick={resendPassword}
-          disabled={!resendEmail || loading}
+          disabled={!resendEmail || uiState.loading}
           variant="contained"
           color="primary"
         >

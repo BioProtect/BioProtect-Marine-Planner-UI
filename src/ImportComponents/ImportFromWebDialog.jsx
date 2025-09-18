@@ -10,19 +10,19 @@ import DialogTitle from '@mui/material/DialogTitle';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
-import { setAddToProject } from "../slices/projectSlice";
+import { setAddToProject } from "@slices/projectSlice";
+import { toggleFeatureD } from "@slices/featureSlice";
 
 const SOURCE_TYPES = ["Web Feature Service"];
 
 const ImportFromWebDialog = ({
-  setImportFromWebDialogOpen,
+  open,
   importFeatures,
-  loading: parentLoading,
+  loading,
 }) => {
   const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const uiDialogs = useSelector((state) => state.ui.dialogStates);
-  const projState = useSelector((state) => state.project);
+  const projState = useSelector((state) => state.project)
+  const featureState = useSelector((state) => state.feature);
   const [steps] = useState(["type", "endpoint", "layer", "metadata"]);
   const [stepIndex, setStepIndex] = useState(0);
   const [name, setName] = useState("");
@@ -33,7 +33,6 @@ const ImportFromWebDialog = ({
   const [featureTypes, setFeatureTypes] = useState([]);
   const [featureType, setFeatureType] = useState("");
   const [validEndpoint, setValidEndpoint] = useState(true);
-  const [loading, setLoading] = useState(false);
 
   const handleNext = useCallback(() => {
     if (stepIndex === steps.length - 1) {
@@ -57,9 +56,13 @@ const ImportFromWebDialog = ({
     setFeatureTypes([]);
     setFeatureType("");
     setValidEndpoint(true);
-    setLoading(false);
-    setImportFromWebDialogOpen(false);
-  }, [setImportFromWebDialogOpen]);
+    dispatch(
+      toggleFeatureD({
+        dialogName: "importFromWebDialogOpen",
+        isOpen: false,
+      })
+    );
+  }, [dispatch]);
 
   const getCapabilities = useCallback((endpoint) => {
     return new Promise((resolve, reject) => {
@@ -77,7 +80,6 @@ const ImportFromWebDialog = ({
   const changeEndpoint = useCallback((event) => {
     const newValue = event.target.value;
     setEndpoint(newValue);
-    setLoading(true);
     setValidEndpoint(true);
 
     getCapabilities(newValue)
@@ -95,11 +97,9 @@ const ImportFromWebDialog = ({
 
         setFeatureTypes(parsedFeatureTypes);
         setSrs(parsedSrs);
-        setLoading(false);
         setValidEndpoint(true);
       })
       .catch(() => {
-        setLoading(false);
         setValidEndpoint(false);
       });
   },
@@ -202,16 +202,16 @@ const ImportFromWebDialog = ({
   };
 
   return (
-    <Dialog open={uiDialogs.importFromWebDialogOpen} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={featureState.dialogs.importFromWebDialogOpen} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Import from Web</DialogTitle>
       <DialogContent>{renderStepContent()}</DialogContent>
       <DialogActions>
-        <Button onClick={handlePrev} disabled={stepIndex === 0 || parentLoading}>
+        <Button onClick={handlePrev} disabled={stepIndex === 0 || loading}>
           Back
         </Button>
         <Button
           onClick={handleNext}
-          disabled={isNextDisabled() || parentLoading}
+          disabled={isNextDisabled() || loading}
           color="primary"
         >
           {stepIndex === steps.length - 1 ? "Finish" : "Next"}

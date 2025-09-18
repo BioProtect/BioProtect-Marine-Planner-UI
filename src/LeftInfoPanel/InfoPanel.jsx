@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { faLock, faShareAlt } from "@fortawesome/free-solid-svg-icons";
-import { selectCurrentUser, selectUserProject } from "../slices/authSlice";
-import { setActiveTab, toggleDialog } from "../slices/uiSlice";
+import { setActiveTab, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -16,6 +15,7 @@ import Settings from "@mui/icons-material/Settings";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import { selectCurrentUser } from "@slices/authSlice";
 
 const activeTabArr = ["project", "features", "planning_units"];
 
@@ -25,8 +25,6 @@ const InfoPanel = (props) => {
   const projState = useSelector((state) => state.project);
   const puState = useSelector((state) => state.planningUnit)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const project = useSelector(selectUserProject);
-
   const userData = useSelector(selectCurrentUser);
 
   const [editingProjectName, setEditingProjectName] = useState(false);
@@ -124,6 +122,7 @@ const InfoPanel = (props) => {
   );
 
   const handleChange = (e) => {
+    console.log("e ", e);
     return e.target.id === "projectName"
       ? props.renameProject(e.target.value)
       : props.renameDescription(e.target.value);
@@ -206,10 +205,13 @@ const InfoPanel = (props) => {
   const combinedDisplayStyles = { ...panelStyle, ...displayStyle };
   const titleDisplayStyle = { display: editingProjectName ? "block" : "none" };
   const combinedDisplayStyle = { ...titleStyle, ...titleDisplayStyle };
+
+
   return projState.projectData ? (
     <React.Fragment>
       <div className="infoPanel" style={combinedDisplayStyles}>
         <Paper elevation={2} className="InfoPanelPaper" mb={4}>
+
           <Paper elevation={2} className="titleBar">
             {userData.role === "ReadOnly" ? (
               <span className="projectNameEditBox" title={`${projState.projectData.project.name} (Read-only)`}>
@@ -246,16 +248,25 @@ const InfoPanel = (props) => {
           {currentTabIndex === 0 && (
             <ProjectTabContent
               toggleProjectPrivacy={toggleProjectPrivacy}
-              metadata={props.metadata}
               owner={props.owner}
               updateDetails={handleChange}
             />
           )}
           {currentTabIndex === 1 && (
-            <FeaturesTab {...props} leftmargin="10px" maxheight="409px" simple={false} showTargetButton />
+            <FeaturesTab
+              {...props}
+              leftmargin="10px"
+              maxheight="409px"
+              simple={false}
+              showTargetButton />
           )}
           {currentTabIndex === 2 && (
-            <PlanningUnitsTab {...props} userRole={userData.role} startStopPuEditSession={startStopPuEditSession} />
+            <PlanningUnitsTab
+              {...props}
+              userRole={userData.role}
+              startStopPuEditSession={startStopPuEditSession}
+
+            />
           )}
 
           <Paper>

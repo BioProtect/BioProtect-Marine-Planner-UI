@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   descendingComparator,
   getComparator,
@@ -7,6 +7,7 @@ import {
 } from "../Helpers";
 import { useDispatch, useSelector } from "react-redux";
 
+import AppBarIcon from "../MenuBar/AppBarIcon";
 import BPTableHeadWithSort from "./BPTableHeadWithSort";
 import BPTableTitleWithSearch from "./BPTableTitleWithSearch";
 import Box from "@mui/material/Box";
@@ -16,6 +17,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
+import { faMagnifyingGlassPlus } from "@fortawesome/free-solid-svg-icons";
 
 // Props
 // 1. data (Array, Required)
@@ -38,6 +40,13 @@ const BioprotectTable = (props) => {
   const [orderBy, setOrderBy] = useState("category");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Normalize the incoming `selected` into a Set of IDs for fast lookup.
+  const selectedIdSet = useMemo(() => {
+    const sel = props.selected || [];
+    // supports array of IDs or array of objects with .id
+    return new Set(sel.map((s) => (typeof s === "object" ? s.id : s)));
+  }, [props.selected]);
+
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -58,34 +67,69 @@ const BioprotectTable = (props) => {
     return stableSort(filteredResult, getComparator(order, orderBy));
   }, [searchQuery, props.data, order, orderBy]);
 
+  // Let parent know what rows are visible (useful for shift-select logic)
+  // useEffect(() => {
+  //   props.dataFiltered && props.dataFiltered(filteredData);
+  // }, [filteredData, props.dataFiltered]);
+
+  const lastSent = useRef([]);
+  useEffect(() => {
+    if (!props.dataFiltered) return;
+    const a = lastSent.current;
+    const b = filteredData;
+    const sameLength = a.length === b.length;
+    const sameIds = sameLength && a.every((row, i) => row?.id === b[i]?.id);
+    if (!sameLength || !sameIds) {
+      props.dataFiltered(b);
+      lastSent.current = b;
+    }
+  }, [filteredData, props.dataFiltered]);
+
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelected = props.data.map((obj) => obj);
-      props.updateSelection(newSelected);
+      // const newSelected = props.data.map((obj) => obj);
+      // props.updateSelection(newSelected);
+      // Prefer to send a list of IDs if caller passed IDs as `selected`
+      const newSelectedIds = props.data.map((r) => r.id);
+      if (props.updateSelection) {
+        // backward compat - caller expects objects
+        props.updateSelection(props.data);
+      }
+      if (props.updateSelectionIds) {
+        props.updateSelectionIds(newSelectedIds);
+      }
       return;
     }
-    props.updateSelection([]);
+    // props.updateSelection([]);
+    props.updateSelection && props.updateSelection([]);
+    props.updateSelectionIds && props.updateSelectionIds([]);
   };
 
   // should really be item in Object because were checking an obj. poor naming by me.
-  const isSelected = (objToCheck) => {
-    if (props.selected.length > 0) {
-      if (props.isProject) {
-        return objToCheck.id === props.selected[0].id;
-      }
-      return objInArray(objToCheck, props.selected);
-    }
-  };
+  // const isSelected = (objToCheck) => {
+  //   if (!props.selected || props.selected.length === 0) return false;
 
-  const visibleRows = useMemo(
-    () => stableSort(filteredData, getComparator(order, orderBy)),
-    [props.data, order, orderBy]
-  );
+  //   if (props.isProject) {
+  //     return objToCheck.id === props.selected[0]?.id;
+  //   }
+  //   return objInArray(objToCheck, props.selected);
+  // };
+  // Unified selected check (IDs set)
+  const isSelected = (row) => selectedIdSet.has(row.id);
+
+  // const visibleRows = useMemo(
+  //   () => stableSort(filteredData, getComparator(order, orderBy)),
+  //   [props.data, order, orderBy]
+  // );
+  // const visibleRows = useMemo(
+  //   () => stableSort(filteredData, getComparator(order, orderBy)),
+  //   [filteredData, order, orderBy]
+  // );
 
   return (
     <Box sx={{ width: "100%" }}>
       <BPTableTitleWithSearch
-        numSelected={props.selected.length}
+        numSelected={props.selected.length || 0}
         title={props.title}
         setSearchQuery={setSearchQuery}
         showSearchBox={props.showSearchBox}
@@ -100,7 +144,7 @@ const BioprotectTable = (props) => {
           <BPTableHeadWithSort
             title={props.title}
             tableColumns={props.tableColumns}
-            numSelected={props.selected.length || []}
+            numSelected={props.selected.length || 0}
             order={order}
             orderBy={orderBy}
             onSelectAllClick={handleSelectAllClick}
@@ -119,7 +163,7 @@ const BioprotectTable = (props) => {
                   role="checkbox"
                   aria-checked={isItemSelected}
                   tabIndex={-1}
-                  key={idx}
+                  key={row.id ?? idx}
                   selected={isItemSelected}
                   sx={{ cursor: "pointer" }}
                 >
@@ -127,9 +171,12 @@ const BioprotectTable = (props) => {
                     <Checkbox
                       color="primary"
                       checked={isItemSelected}
+                      // checked={(isItemSelected ? "checked" : "")}
                       inputProps={{
                         "aria-labelledby": labelId,
                       }}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => props.clickRow(e, row)}
                     />
                   </TableCell>
                   {props.tableColumns.map((column) => (
@@ -140,6 +187,22 @@ const BioprotectTable = (props) => {
                       {row[column.id]}
                     </TableCell>
                   ))}
+                  {(props.preview) && (
+                    <TableCell
+                      align="center"
+                      sx={{ cursor: "pointer", color: "primary.main" }}
+
+                    >
+                      <AppBarIcon
+                        icon={faMagnifyingGlassPlus}
+                        onClick={(e) => {
+                          e.stopPropagation();         // don’t also trigger row click
+                          props.preview?.(row);        // call the preview callback
+                        }}
+                        title="Priview this feature"
+                      />
+                      Preview
+                    </TableCell>)}
                 </TableRow>
               );
             })}

@@ -16,41 +16,43 @@ import { useSelector } from "react-redux";
 
 const PlanningUnitsTab = (props) => {
   const puState = useSelector((state) => state.planningUnit)
+  const projState = useSelector((state) => state.project)
+  const metadata = projState.projectData.metadata;
   return (
     <div>
       <Card sx={{ minWidth: 275 }}>
         <CardContent>
           <Stack spacing={2}>
-            <Typography variant="h5" component="div">
-              Planning Grid
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-              <p className="description">{props.metadata.pu_alias}</p>
+            <Typography variant="h5" component="div">Planning Grid</Typography>
+
+            <Typography variant="body1" component="div">
+              <span className="description">{metadata.pu_alias}</span>
             </Typography>
 
-            <Typography variant="h5" component="div">
-              Statuses
-            </Typography>
+            <Typography variant="h5" component="div">Statuses</Typography>
+
             <Stack direction="row" spacing={4}>
-              <Typography variant="subtitle1" color="text.secondary">
+
+              <Typography variant="body1" color="text.secondary">
                 <FontAwesomeIcon
                   icon={puState.puEditing ? faSave : faLock}
                   onClick={props.startStopPuEditSession}
                   title={puState.puEditing ? "Save" : "Manually edit"}
                 />
               </Typography>
-              <Typography variant="subtitle1" color="text.secondary">
+
+              <Typography variant="body1" color="text.secondary">
                 {puState.puEditing
                   ? "Click on the map to change the status"
                   : "Manually edit"}
               </Typography>
-              <Typography variant="subtitle1" color="text.secondary">
+
+              <Typography variant="body1" color="text.secondary">
                 <span
                   style={{
                     display: puState.puEditing ? "inline-block" : "none",
                   }}
-                  className="puManualEditClear"
-                >
+                  className="puManualEditClear">
                   <FontAwesomeIcon
                     icon={faEraser}
                     onClick={(e) => props.clearManualEdits(e)}
@@ -62,16 +64,18 @@ const PlanningUnitsTab = (props) => {
                   />
                 </span>
               </Typography>
-            </Stack>
 
-            <FormControl sx={{ m: 1, minWidth: 120 }}>
-              <InputLabel id="protected-areas-label">
-                Lock in Protected Areas
-              </InputLabel>
+            </Stack>
+            <FormControl sx={{ m: 1, minWidth: 120 }} >
+              <InputLabel id="protected-areas-label">Lock in Protected Areas</InputLabel>
               <Select
                 labelId="protected-areas-label"
                 id="protected-areas"
-                value={props.metadata.IUCN_CATEGORY}
+                value={
+                  CONSTANTS.IUCN_CATEGORIES.includes(metadata.IUCN_CATEGORY)
+                    ? metadata.IUCN_CATEGORY
+                    : CONSTANTS.IUCN_CATEGORIES[0] ?? ''
+                }
                 disabled={props.preprocessing || props.userRole === "ReadOnly"}
                 label="Lock in protected areas"
                 onChange={(event) => props.changeIucnCategory(event)}
@@ -86,23 +90,29 @@ const PlanningUnitsTab = (props) => {
               </Select>
             </FormControl>
 
+
             <Typography variant="h5" component="div">
               Costs
             </Typography>
 
             <FormControl sx={{ m: 1, minWidth: 120 }}>
-              <InputLabel id="protected-areas-label">
-                Use cost surface
-              </InputLabel>
+              <InputLabel id="protected-areas-label">Use cost surface</InputLabel>
               <Select
                 labelId="costs-select-label"
                 id="costs-select"
-                value={props.costname}
+                value={(() => {
+                  const names = projState.projectData.costnames ?? [];
+                  const current = projState.projectData.costname;
+                  // if current is in the list, use it; otherwise pick the first element (if any)
+                  return names.includes(current)
+                    ? current
+                    : names[0] ?? '';  // if names[0] is undefined, fall back to empty string
+                })()}
                 disabled={props.preprocessing || props.userRole === "ReadOnly"}
                 label="Use cost surface"
                 onChange={(event) => props.changeCostname(event)}
               >
-                {props.costnames.map((item) => {
+                {projState.projectData.costnames.map((item) => {
                   return (
                     <MenuItem value={item} key={item}>
                       {item}
@@ -114,7 +124,7 @@ const PlanningUnitsTab = (props) => {
           </Stack>
         </CardContent>
       </Card>
-    </div>
+    </div >
   );
 };
 

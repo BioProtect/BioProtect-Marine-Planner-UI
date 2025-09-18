@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import { blue } from "@mui/material/colors";
-import { selectCurrentUser } from "./slices/authSlice";
+import { selectCurrentUser } from "@slices/authSlice";
 import { useSelector } from "react-redux";
 
 const TargetIcon = ({

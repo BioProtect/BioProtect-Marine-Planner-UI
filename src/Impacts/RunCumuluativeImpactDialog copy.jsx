@@ -1,12 +1,10 @@
 import {
   setActiveResultsTab,
   setActiveTab,
-  setSnackbarMessage,
-  setSnackbarOpen,
   toggleDialog,
   togglePUD,
   toggleProjectDialog,
-} from "../slices/uiSlice";
+} from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -231,12 +229,6 @@ class ImportedActivitiesDialog extends React.Component {
                 shown.
               </div>
               <ToolbarButton
-                show={
-                  this.props.userRole !== "ReadOnly" &&
-                    !this.props.metadata.OLDVERSION
-                    ? "true"
-                    : "false"
-                }
                 icon={<FontAwesomeIcon icon={faPlusCircle} />}
                 title="Run Cumulative Impact Function"
                 primary={true}

@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "./MarxanDialog";
 import { faClipboard } from "@fortawesome/free-solid-svg-icons";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const ShareableLinkDialog = ({ shareableLinkUrl }) => {
   const dispatch = useDispatch();

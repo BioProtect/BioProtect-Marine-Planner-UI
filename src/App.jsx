@@ -3,13 +3,24 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { getPaintProperty, getTypeProperty } from "./Features/featuresService";
 import {
-  getUserProject,
+  addToImportLog,
+  clearImportLog,
+  removeImportLogMessage,
+  setActiveTab,
+  setActivities,
+  setBasemap,
+  setLoading,
+  setRegistry,
+  setUploadedActivities,
+  toggleDialog,
+} from "@slices/uiSlice";
+import { getPaintProperty, getTypeProperty } from "@features/featuresService";
+import {
   initialiseServers,
   selectServer,
   setBpServer,
-  setProjectData,
+  setCostData,
   setProjectFeatures,
   setProjectImpacts,
   setProjectList,
@@ -18,47 +29,40 @@ import {
   setProjectLoaded,
   setProjects,
   toggleProjDialog
-} from "./slices/projectSlice";
+} from "@slices/projectSlice";
 import {
   selectCurrentToken,
   selectCurrentUser,
   selectCurrentUserId,
   selectIsUserLoggedIn,
-  selectUserProject,
-  setCredentials,
-} from "./slices/authSlice";
+} from "@slices/authSlice";
 import {
-  setActiveTab,
-  setBasemap,
-  setIdentifyFeatures,
-  setSnackbarMessage,
-  setSnackbarOpen,
-  toggleDialog,
-} from "./slices/uiSlice";
-import {
-  setAddingRemovingFeatures,
   setAllFeatures,
-  setCreatedFeatureInfo,
-  setCurrentFeature,
   setDigitisedFeatures,
   setFeatureMetadata,
   setFeaturePlanningUnits,
-  setFeatureProjects,
+  setIdentifiedFeatures,
   setSelectedFeatureIds,
   toggleFeatureD,
-  useCreateFeatureFromLinestringMutation,
-  useGetFeatureQuery,
-  useListFeaturePUsQuery,
-} from "./slices/featureSlice";
-import { setIdentifyPlanningUnits, setPlanningUnitGrids, setPlanningUnits, setPuEditing, togglePUD, useDeletePlanningUnitQuery, useExportPlanningUnitQuery } from "./slices/planningUnitSlice";
+  useListFeaturePUsQuery
+} from "@slices/featureSlice";
+import {
+  setIdentifyPlanningUnits,
+  setPlanningUnitGrids,
+  setPlanningUnits,
+  setPuEditing,
+  togglePUD,
+  useDeletePlanningUnitGridMutation,
+  useExportPlanningUnitGridQuery,
+  useListPlanningUnitGridsQuery
+} from "@slices/planningUnitSlice";
 import {
   setUsers,
   useCreateUserMutation,
   useDeleteUserMutation,
-  useGetUserQuery,
   useLogoutUserMutation,
-  useUpdateUserMutation,
-} from "./slices/userSlice";
+  useUpdateUserMutation
+} from "@slices/userSlice";
 // SERVICES
 import { useDispatch, useSelector } from "react-redux";
 
@@ -66,40 +70,36 @@ import AboutDialog from "./AboutDialog";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import ClassificationDialog from "./ClassificationDialog";
-import ClumpingDialog from "./ClumpingDialog";
 import CostsDialog from "./CostsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
-import FeatureDialog from "./Features/FeatureDialog";
-import FeatureInfoDialog from "./Features/FeatureInfoDialog";
-import FeatureMenu from "./Features/FeatureMenu";
-import FeaturesDialog from "./Features/FeaturesDialog";
-import GapAnalysisDialog from "./GapAnalysisDialog";
+import FeatureDialog from "@features/FeatureDialog";
+import FeatureInfoDialog from "@features/FeatureInfoDialog";
+import FeatureMenu from "@features/FeatureMenu";
+import FeaturesDialog from "@features/FeaturesDialog";
 import HelpMenu from "./HelpMenu";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import IdentifyPopup from "./IdentifyPopup";
 import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
-import ImportFeaturesDialog from "./Features/ImportFeaturesDialog";
+import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
 import ImportFromWebDialog from "./ImportComponents/ImportFromWebDialog";
-import ImportPlanningGridDialog from "./PlanningGrids/ImportPlanningGridDialog";
+import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
 import LoginDialog from "./LoginDialog";
 import { Map } from "mapbox-gl"; // Assuming you're using mapbox-gl
 //mapbox imports
-import MapboxDraw from "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
-import NewFeatureDialog from "./Features/NewFeatureDialog";
-import NewMarinePlanningGridDialog from "./PlanningGrids/NewMarinePlanningGridDialog";
-import NewPlanningGridDialog from "./PlanningGrids/NewPlanningGridDialog";
-import NewProjectDialog from "./Projects/NewProject/NewProjectDialog";
-import NewProjectWizardDialog from "./Projects/NewProject/NewProjectWizardDialog";
-import PlanningGridDialog from "./PlanningGrids/PlanningGridDialog";
-import PlanningGridsDialog from "./PlanningGrids/PlanningGridsDialog";
+import NewFeatureDialog from "@features/NewFeatureDialog";
+import NewPlanningGridDialog from "@planningGrids/NewPlanningGridDialog";
+import NewProjectDialog from "@projects/NewProjectDialog";
+import PlanningGridDialog from "@planningGrids/PlanningGridDialog";
+import PlanningGridsDialog from "@planningGrids/PlanningGridsDialog";
 import ProfileDialog from "./User/ProfileDialog";
-import ProjectsDialog from "./Projects/ProjectsDialog";
-import ProjectsListDialog from "./Projects/ProjectsListDialog";
+import ProjectsDialog from "@projects/ProjectsDialog";
+import ProjectsListDialog from "@projects/ProjectsListDialog";
 import ResendPasswordDialog from "./ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./RightInfoPanel/ResultsPanel";
@@ -112,29 +112,33 @@ import ShareableLinkDialog from "./ShareableLinkDialog";
 /*global fetch*/
 /*global URLSearchParams*/
 /*global AbortController*/
-import Snackbar from "@mui/material/Snackbar";
 import TargetDialog from "./TargetDialog";
 import ToolsMenu from "./ToolsMenu";
-import UpdateWDPADialog from "./UpdateWDPADialog";
 import UserMenu from "./User/UserMenu";
 import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
+import classyBrew from "classybrew";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
-import classyBrew from "classybrew";
-/*eslint-disable no-unused-vars*/
 import jsonp from "jsonp-promise";
+import { layer } from "@fortawesome/fontawesome-svg-core";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
-import parse from "wellknown";
+/*eslint-disable no-unused-vars*/
+import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useSnackbar } from "notistack";
 import useWebSocketHandler from "./WebSocketHandler";
 import { zoomToBounds } from "./Helpers";
+
+import.meta.env.VITE_MAPBOX_TOKEN
+
 
 //GLOBAL VARIABLES
 let MARXAN_CLIENT_VERSION = packageJson.version;
 let timers = []; //array of timers for seeing when asynchronous calls have finished
-mapboxgl.accessToken =
-  "pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg";
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN
+
+
 
 const App = () => {
   const dispatch = useDispatch();
@@ -146,36 +150,27 @@ const App = () => {
   const puState = useSelector((state) => state.planningUnit)
   const featureState = useSelector((state) => state.feature)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const featureDialogs = useSelector((state) => state.ui.featureDialogStates);
-  const puDialogs = useSelector((state) => state.planningUnit);
   const token = useSelector(selectCurrentToken);
 
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
 
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
-  const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState("");
-  const [newWDPAVersion, setNewWDPAVersion] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [lng, setLng] = useState(-70.9);
   const [lat, setLat] = useState(42.35);
   const [zoom, setZoom] = useState(9);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [runMarxanResponse, setRunMarxanResponse] = useState({});
-  const [costData, setCostData] = useState(null);
   const [previousIucnCategory, setPreviousIucnCategory] = useState(null);
   const [planningCostsTrigger, setPlanningCostsTrigger] = useState(false);
-  const [activities, setActivities] = useState([]);
   const [pid, setPid] = useState("");
   const [allImpacts, setAllImpacts] = useState([]);
   const [atlasLayers, setAtlasLayers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [clumpingRunning, setClumpingRunning] = useState(false);
   const [costnames, setCostnames] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
   const [countries, setCountries] = useState([]);
   const [files, setFiles] = useState({});
-  const [gapAnalysis, setGapAnalysis] = useState([]);
   const [identifyProtectedAreas, setidentifyProtectedAreas] = useState([]);
   const [identifyVisible, setIdentifyVisible] = useState(false);
   /////////////////////////////////////////////////////////////////////////////
@@ -194,29 +189,22 @@ const App = () => {
   const [notifications, setNotifications] = useState([]);
   const [owner, setOwner] = useState("");
 
-
-
   const [preprocessing, setPreprocessing] = useState(false);
-
   const [protectedAreaIntersections, setProtectedAreaIntersections] = useState(
     []
   );
-  const [registry, setRegistry] = useState(undefined);
   const [renderer, setRenderer] = useState({});
-  const [resultsPanelOpen, setResultsPanelOpen] = useState(false);
   const [runLogs, setRunLogs] = useState([]);
   const [runParams, setRunParams] = useState([]);
   const [runningImpactMessage, setRunningImpactMessage] =
     useState("Import Activity");
   const [selectedCosts, setSelectedCosts] = useState([]);
   const [selectedImpactIds, setSelectedImpactIds] = useState([]);
-  const [selectedLayers, setSelectedLayers] = useState([]);
   const [shareableLink, setShareableLink] = useState(false);
   const [smallLinearGauge, setSmallLinearGauge] = useState(true);
   const [tileset, setTileset] = useState(null);
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
-  const [uploadedActivities, setUploadedActivities] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [visibleLayers, setVisibleLayers] = useState([]);
   const [wdpaAttribution, setWdpaAttribution] = useState("");
@@ -236,11 +224,18 @@ const App = () => {
 
   const userId = useSelector(selectCurrentUserId);
   const userData = useSelector(selectCurrentUser);
-  const project = useSelector(selectUserProject);
+  const project = useSelector((state) => state.project.projectData);
   const isLoggedIn = useSelector(selectIsUserLoggedIn);
 
   const [logoutUser] = useLogoutUserMutation();
   const [updateUser] = useUpdateUserMutation();
+
+  const { showMessage } = useAppSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
+
+  const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
+
+
 
   // ✅ Fetch planning unit data **ONLY when required values exist**
   const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
@@ -249,13 +244,18 @@ const App = () => {
   );
 
   useEffect(() => {
-    if (featurePUData) {
-      dispatch(setFeaturePlanningUnits(featurePUData) || [])
-    }
     if (projState.projectLoaded) {
       postLoginSetup();
     }
-  }, [dispatch, featurePUData, projState.projectLoaded]);
+  }, [projState.projectLoaded]);
+
+
+
+  useEffect(() => {
+    if (featurePUData) {
+      dispatch(setFeaturePlanningUnits(featurePUData) || [])
+    }
+  }, [dispatch, featurePUData]);
 
 
   useEffect(() => {
@@ -290,7 +290,7 @@ const App = () => {
       try {
         initialiseServers(INITIAL_VARS.MARXAN_SERVERS);
         setBrew(new classyBrew());
-        setRegistry(INITIAL_VARS);
+        dispatch(setRegistry(INITIAL_VARS));
         setInitialLoading(false);
 
         if (searchParams.has("project")) {
@@ -318,8 +318,7 @@ const App = () => {
 
   const setSnackBar = (message, silent = false) => {
     if (!silent) {
-      dispatch(setSnackbarOpen(true));
-      dispatch(setSnackbarMessage(message));
+      showMessage(message, "info");
     }
   };
 
@@ -329,7 +328,7 @@ const App = () => {
       if (!response) {
         const msg = "No response received from server";
         if (snackbarOpen) {
-          dispatch(setSnackbarMessage(msg));
+          showMessage(msg, "info");
         }
         return true;
       }
@@ -376,33 +375,29 @@ const App = () => {
             ? response.error
             : "No error message returned";
         console.error("Error message from server: " + error);
+        dispatch(addToImportLog("Error message from server: " + error));
       }
       return isError;
     },
     [responseIsTimeoutOrEmpty, isServerError]
   );
 
-  const setWDPAVectorTilesLayerName = useCallback((wdpa_version) => {
-    // Get the short version of the wdpa_version, e.g., August 2019 to aug_2019
-    const version =
-      wdpa_version.toLowerCase().substr(0, 3) + "_" + wdpa_version.substr(-4);
-    setWdpaVectorTileLayer(`wdpa_${version}_polygons`);
-  }, []);
-
   const newFeatureCreated = useCallback(
     async (id) => {
-      const [fetchFeature] = useGetFeatureQuery();
-      const { data } = fetchFeature(id);
-      if (!data || !data.data?.length) {
-        return;
-      }
-      const featureData = data.data[0];
-      dispatch(addFeatureAttributes(featureData));
-      dispatch(addNewFeature([featureData]));
+      try {
+        const result = await dispatch(featureApi.endpoints.getFeature.initiate(id));
 
-      if (addToProject) {
-        dispatch(addFeature(featureData));
-        await updateSelectedFeatures();
+        const featureData = result.data?.data?.[0];
+        if (!featureData) return;
+        dispatch(addFeatureAttributes(featureData));
+        addNewFeature([featureData]);
+
+        if (addToProject) {
+          dispatch(addFeature(featureData));
+          await updateSelectedFeatures();
+        }
+      } catch (err) {
+        console.error("Failed to load feature:", err);
       }
     },
     [dispatch]
@@ -419,50 +414,79 @@ const App = () => {
   // ---------------------------------------- //
   // ---------------------------------------- //
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
-  const _get = useCallback(
-    (params, timeout = CONSTANTS.TIMEOUT) => {
-      setLoading(true);
-      return new Promise((resolve, reject) => {
-        jsonp(projState.bpServer.endpoint + params, { timeout })
-          .promise.then((response) => {
-            setLoading(false);
-            checkForErrors(response)
-              ? reject(response.error) : resolve(response);
-          })
-          .catch((err) => {
-            console.log("err ", err);
-            setLoading(false);
-            setSnackBar(
-              `Request timeout - See <a href='${CONSTANTS.ERRORS_PAGE}#request-timeout' target='blank'>here</a>`
-            );
-            reject(err);
-          });
-      });
-    },
-    [checkForErrors, setSnackBar]
+  // const _get = useCallback(
+  //   (params, timeout = CONSTANTS.TIMEOUT) => {
+  //     dispatch(setLoading(true));
+  //     return new Promise((resolve, reject) => {
+  //       jsonp(projState.bpServer.endpoint + params, { timeout })
+  //         .promise.then((response) => {
+  //           dispatch(setLoading(false));
+  //           checkForErrors(response)
+  //             ? reject(response.error) : resolve(response);
+  //         })
+  //         .catch((err) => {
+  //           console.log("err ", err);
+  //           dispatch(setLoading(false));
+  //           setSnackBar(
+  //             `Request timeout - See <a href='${CONSTANTS.ERRORS_PAGE}#request-timeout' target='blank'>here</a>`
+  //           );
+  //           reject(err);
+  //         });
+  //     });
+  //   },
+  //   [checkForErrors, setSnackBar]
+  // );
+
+  const _get = useCallback(async (path, { timeout = CONSTANTS.TIMEOUT } = {}) => {
+    const base = projState?.bpServer?.endpoint;
+    const url = new URL(path, base).toString();
+    dispatch(setLoading(true));
+
+    try {
+      const { promise } = jsonp(url, { timeout });
+      const response = await promise;
+
+      if (checkForErrors(response)) {
+        // If your checkForErrors returns truthy, throw the error it found
+        throw response?.error || new Error("Request failed");
+      }
+
+      return response;           // or `return response.data;` if you always want data
+    } catch (err) {
+      console.error("GET failed:", err);
+      showMessage('Request timeout', 'error')
+      throw err;                 // keep promise rejection behavior
+    } finally {
+      dispatch(setLoading(false));
+    }
+  },
+    [dispatch, checkForErrors, showMessage]
   );
+
 
   //makes a POST request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   const _post = useCallback(
     async (
-      method,
+      endpointPath,
       formData,
       timeout = CONSTANTS.TIMEOUT,
       withCredentials = CONSTANTS.SEND_CREDENTIALS
     ) => {
-      setLoading(true);
-
+      dispatch(setLoading(true));
       try {
         const controller = new AbortController();
         const { signal } = controller;
+        let timeoutId = null;
         // Set a timeout to abort the request if it takes too long
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        if (timeout > 0) {
+          timeoutId = setTimeout(() => controller.abort(), timeout);
+        }
 
         const response = await fetch(
-          projState.bpServer.endpoint + method,
-          formData,
+          projState.bpServer.endpoint + endpointPath,
           {
             method: "POST",
+            body: formData,
             credentials: withCredentials,
             signal, // Pass the AbortSignal to the fetch call
           }
@@ -481,7 +505,7 @@ const App = () => {
         }
         throw err;
       } finally {
-        setLoading(false);
+        dispatch(setLoading(false));
       }
     },
     [projState.bpServer.endpoint, checkForErrors, setSnackBar]
@@ -491,94 +515,77 @@ const App = () => {
     //switches the results pane to the log tab and clears log if needs be
     setActiveTab("log");
     if (clearLog) {
-      setLogMessages([]);
+      dispatch(clearImportLog());
     }
   };
 
   // Main logging method - all log messages use this method
   const messageLogger = useCallback((message) => {
-    // Add a timestamp to the message
-    const timestampedMessage = { ...message, timestamp: new Date() };
-    setLogMessages((prevState) => [
-      ...prevState.logMessages,
-      timestampedMessage,
-    ]);
-  }, []);
+    const timestampedMessage = { ...message, timestamp: new Date().toLocaleTimeString() };
+    dispatch(addToImportLog(timestampedMessage));
+  }, [dispatch]);
 
 
   // removes a message from the log by matching on pid and status or just status
   // update the messages state - filter previous messages state by pid and status
   const removeMessageFromLog = useCallback((status, pid) => {
-    setLogMessages((prevState) => [
-      prevState.logMessages.filter((message) => {
-        return pid !== undefined
-          ? !(message.pid === pid && message.status === status)
-          : !(message.status === status);
-      }),
-    ]);
-  }, []);
+    const matchText = status;
+    dispatch(removeImportLogMessage(matchText));
+  }, [dispatch]);
 
 
   //logs the message if necessary - this removes duplicates
   const logMessage = useCallback((message) => {
+    if (!message || typeof message.status !== "string") return;
+
+    const timestampedMessage = {
+      ...message,
+      time: new Date().toLocaleTimeString(),
+    };
+
     const handleSocketClosedUnexpectedly = () => {
-      messageLogger({
+      dispatch(addToImportLog({
         method: message.method,
         status: "Finished",
         error: "The WebSocket connection closed unexpectedly",
-      });
-      removeMessageFromLog("Preprocessing");
-      setPid(0);
+        time: timestampedMessage.time,
+      }));
+      dispatch(removeImportLogMessage("Preprocessing"));
+      dispatch(setPid(0));
     };
 
     const handlePidMessage = () => {
-      if (message.status === "RunningMarxan") {
-        return;
-      }
-      const existingMessages = logMessages.filter(
+      const existingMessages = uiState.importLog.filter(
         (_message) => _message.pid === message.pid
       );
+      const latestStatus = existingMessages.at(-1)?.status;
 
-      if (existingMessages.length > 0) {
-        const latestStatus = existingMessages[existingMessages.length - 1].status;
-
-        if (message.status !== latestStatus) {
-          if (message.status === "Finished") {
-            removeMessageFromLog("RunningQuery", message.pid);
-          }
-          messageLogger(message);
+      if (!existingMessages.length || message.status !== latestStatus) {
+        if (message.status === "Finished") {
+          dispatch(removeImportLogMessage("RunningQuery"));
         }
-      } else {
-        // First message for this PID
-        messageLogger(message);
+        dispatch(addToImportLog(timestampedMessage));
       }
     };
-
     const handleGeneralMessage = () => {
-      const isDuplicateAllowed =
-        message.status === "RunningMarxan" ||
-        message.status === "Started" ||
-        message.status === "Finished";
-
-      if (!isDuplicateAllowed) {
-        removeMessageFromLog(message.status);
+      const allowDuplicates = ["RunningMarxan", "Started", "Finished"];
+      if (!allowDuplicates.includes(message.status)) {
+        dispatch(removeImportLogMessage(message.status));
       }
-      messageLogger(message);
+      dispatch(addToImportLog(timestampedMessage));
     };
 
-    // Main logic
     if (message.status === "SocketClosedUnexpectedly") {
       handleSocketClosedUnexpectedly();
-    } else if (message.hasOwnProperty("pid")) {
+    } else if ("pid" in message) {
       handlePidMessage();
     } else {
       handleGeneralMessage();
     }
-  }, [logMessages, messageLogger, removeMessageFromLog, setPid]);
+  }, [dispatch, uiState.importLog]);
 
 
-  const handleWebSocket = useWebSocketHandler(
-    projState,
+  const startWebSocket = useWebSocketHandler(
     checkForErrors,
     logMessage,
     setPreprocessing,
@@ -586,6 +593,17 @@ const App = () => {
     newFeatureCreated,
     removeMessageFromLog
   );
+
+  const handleWebSocket = async (url) => {
+    try {
+      const message = await startWebSocket(url);
+      console.log("WebSocket finished successfully:", message);
+      return message
+    } catch (err) {
+      console.error("WebSocket failed:", err);
+      return { error: `Websocket error occured ${err.reason}  - ${err}` }
+    }
+  };
   // ------------------------------------------------------------------- //
   // ------------------------------------------------------------------- //
   // ------------------------------------------------------------------- //
@@ -639,9 +657,12 @@ const App = () => {
         "updated",
         "validEmail",
       ]);
+      if (!!!user) {
+        user = userData
+      }
       const formData = new FormData();
-      formData.append("id", user.id)
-      formData.append("user", user);
+      formData.append("id", userId)
+      formData.append("user", userData.name);
       appendToFormData(formData, filteredParameters);
 
       await updateUser(formData);
@@ -664,13 +685,13 @@ const App = () => {
     try {
       // Send request to delete the user
       await deleteUser(user).unwrap();
-      dispatch(setSnackbarMessage("User Deleted"))
+      showMessage("User Deleted", "success");
       // Update local state to remove the deleted user
       const usersCopy = userState.users.filter((item) => item.user !== user);
       dispatch(setUsers(usersCopy));
       // Check if the current project belongs to the deleted user
       if (owner === user) {
-        dispatch(setSnackbarMessage("Current project no longer exists. Loading next available."))
+        showMessage("Current project no longer exists. Loading next available.", "success");
         // Load the next available project
         const nextProject = projState.projects.find((project) => project.user !== user);
         if (nextProject) {
@@ -681,8 +702,7 @@ const App = () => {
         deleteProjectsForUser(user);
       }
     } catch (error) {
-      // Handle errors
-      dispatch(setSnackbarMessage("Failed to delete user: ", error))
+      showMessage("Failed to delete user: ", "error")
     }
   };
 
@@ -698,21 +718,21 @@ const App = () => {
         (item) => item.name === uiState.basemap
       );
       await loadBasemap(currentBasemap);
-      const speciesData = await _get("getAllSpeciesData");
-      dispatch(setAllFeatures(speciesData.data));
-      setPUTabInactive();
-      setResultsPanelOpen(true);
-      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
-
-
-      // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
-      if (projState.projectData.metadata.PLANNING_UNIT_NAME) {
-        const planningGrid = `${CONSTANTS.MAPBOX_USER}.${projState.projectData.metadata.PLANNING_UNIT_NAME}`
-        console.log("planningGrid ", planningGrid);
-        await changePlanningGrid(planningGrid);
+      if (projState.projectData.metadata.pu_tilesetid) {
+        await changePlanningGrid(projState.projectData.metadata.pu_tilesetid);
         await getResults(userData.name, projState.projectData.name);
       }
-      // Set a local variable - Dont need to track state with these variables as they are not bound to anything
+
+      const speciesData = await _get("getAllSpeciesData");
+      dispatch(setAllFeatures(speciesData.data));
+
+      const activitiesData = await _get("getUploadedActivities");
+      dispatch(setUploadedActivities(activitiesData.data));
+
+      setPUTabInactive();
+      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
+      dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: true }));
+
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
         projState.projectData.metadata.OLDVERSION,
@@ -720,22 +740,20 @@ const App = () => {
         projState.projectData.feature_preprocessing,
         speciesData.data
       );
-
-
       return "Logged in";
     } catch (error) {
-      console.error("Login failed:", error);
-      // Handle error appropriately
+      showMessage(`Login failed: ${error}`, "error");
       throw error;
     }
   };
+
   //log out and reset some state
   const logout = async () => {
     dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
     setBrew(new classyBrew());
     setPassword("");
     setRunParams([]);
-    setResultsPanelOpen(false);
+    dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: false }));
     setRenderer({});
     dispatch(setUser(""));
     dispatch(setProjectFeatures([]));
@@ -785,26 +803,14 @@ const App = () => {
     const newNotifications = [];
 
     //see if there are any new notifications from the marxan-registry
-    if (registry.NOTIFICATIONS.length > 0) {
-      addNotifications(registry.NOTIFICATIONS);
-    }
-    // Check for new version of wdpa data
-    // From the Marxan Registry WDPA object - if there is then show a notification to admin users
-    if (newWDPAVersion) {
-      addNotifications([
-        {
-          id: "wdpa_update_" + registry.WDPA.latest_version,
-          html: "A new version of the WDPA is available. Go to Help | Server Details for more information.",
-          type: "Data Update",
-          showForRoles: ["Admin"],
-        },
-      ]);
+    if (uiState.registry.NOTIFICATIONS.length > 0) {
+      addNotifications(uiState.registry.NOTIFICATIONS);
     }
     //see if there is a new version of the marxan-client software
-    if (MARXAN_CLIENT_VERSION !== registry.CLIENT_VERSION) {
+    if (MARXAN_CLIENT_VERSION !== uiState.registry.CLIENT_VERSION) {
       addNotifications([
         {
-          id: "marxan_client_update_" + registry.CLIENT_VERSION,
+          id: "marxan_client_update_" + uiState.registry.CLIENT_VERSION,
           html:
             "A new version of marxan-client is available (" +
             MARXAN_CLIENT_VERSION +
@@ -815,13 +821,13 @@ const App = () => {
       ]);
     }
     //see if there is a new version of the marxan-server software
-    if (projState.bpServer.server_version !== registry.SERVER_VERSION) {
+    if (projState.bpServer.server_version !== uiState.registry.SERVER_VERSION) {
       addNotifications([
         {
-          id: "marxan_server_update_" + registry.SERVER_VERSION,
+          id: "marxan_server_update_" + uiState.registry.SERVER_VERSION,
           html:
             "A new version of marxan-server is available (" +
-            registry.SERVER_VERSION +
+            uiState.registry.SERVER_VERSION +
             "). Go to Help | Server Details for more information.",
           type: "Software Update",
           showForRoles: ["Admin"],
@@ -936,7 +942,6 @@ const App = () => {
     formData.append("user", owner);
     formData.append("proj", proj);
     appendToFormData(formData, parameters);
-    console.log("formData ", formData);
     //post to the server and return a promise
     // return await _post("updateProjectParameters", formData); - old 
     // # POST /projects?action=update
@@ -966,34 +971,37 @@ const App = () => {
     setRunParams(parameters);
   };
 
-  const loadProject = async (proj, user, ...options) => {
+  const loadProject = async () => {
+    // Okay so this has chnaged with the database and moving to slices and whatnot. 
+    // Need to check how this works - where is it being called from and what details are needed to load a project
+    // so switch project would seem to do what needs to be done for this function so can this be ditched? 
+    const proj = projState.projectData;
+
     try {
       resetResults();
-      setRenderer(projectResp.renderer);
-      setCostnames(projectResp.costnames);
-      setOwner(user);
+      setRenderer(proj.renderer);
+      setCostnames(proj.costnames);
+      setOwner(proj.user);
       dispatch(setProjectLoaded(true));
       setPlanningCostsTrigger(true);
 
-      // If PLANNING_UNIT_NAME passed then change to this planning grid and load the results if available
-      if (projectResp.metadata.PLANNING_UNIT_NAME) {
-        await changePlanningGrid(
-          `${CONSTANTS.MAPBOX_USER}.${projectResp.metadata.PLANNING_UNIT_NAME}`
-        );
-        await getResults(user, projectResp.project);
+      if (proj.metadata.pu_tilesetid) {
+        await changePlanningGrid(proj.metadata.pu_tilesetid);
+        await getResults(userData.name, proj.name);
       }
-      // Set a local variable - Dont need to track state with these variables as they are not bound to anything
+
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
-        projectResp.metadata.OLDVERSION,
-        projectResp.features,
-        projectResp.feature_preprocessing,
-        allFeaturesData
+        proj.metadata.OLDVERSION,
+        proj.features,
+        proj.feature_preprocessing,
+        speciesData.data
       );
 
       // Activate the project tab
       dispatch(setActiveTab("project"));
       setPUTabInactive();
+
       return "Project loaded";
     } catch (error) {
       console.log("error", error);
@@ -1003,7 +1011,7 @@ const App = () => {
       }
       if (error.toString().includes("does not exist")) {
         // Handle case where project does not exist
-        dispatch(setSnackbarMessage("Loading first available project"));
+        showMessage("Loading first available project", "info");
         await loadProject("", user);
         return;
       }
@@ -1021,46 +1029,51 @@ const App = () => {
     featurePrePro,
     allFeaturesData
   ) => {
+    // initialiseInterestFeatures(
+    //   projState.projectData.metadata.OLDVERSION,
+    //   projState.projectData.features,
+    //   projState.projectData.feature_preprocessing,
+    //   speciesData.data
+    // );
+
+    // What this function used to do:
+    //  - get all features (we already have all features though)
+    //  - get the id's of the project features (why? we already have all theproject features)
+    //  - Go through all of the features - check if they are in the project 
+    //  - add required attributes to the feature
+    //  - add extra info to project features 
+
     const allFeats = featureState.allFeatures.length > 0 ? featureState.allFeatures : allFeaturesData;
 
-    // Determine features based on project version
-    const features = oldVersion
-      ? projFeatures.map((feature) => ({ ...feature }))
-      : [...allFeats];
-
-    // Extract feature IDs
-    const projectFeatureIds = projFeatures.map((item) => item.id);
 
     // Process features
-    const processedFeatures = features.map((feature) => {
-      // Check if the feature is part of the current project
-      const projectFeature = projectFeatureIds.includes(feature.id)
-        ? projFeatures[projectFeatureIds.indexOf(feature.id)]
-        : null;
+    const processedFeatures = allFeats.map((feature) => {
+      // Add required attributes
+      const base = addFeatureAttributes(feature, oldVersion);
+
+      const idx = projFeatures.findIndex(f => f.id === feature.id);
+      if (idx === -1) {
+        // not in the project, so just return the defaults
+        return base;
+      }
+
+      const projF = projFeatures[idx];
       const preprocess = getArrayItem(featurePrePro, feature.id);
 
-      // Add required attributes
-      addFeatureAttributes(feature, oldVersion);
 
-      // Populate data if feature is part of the project
-      if (projectFeature) {
-        Object.assign(feature, {
-          selected: true,
-          preprocessed: !!preprocess,
-          pu_area: preprocess ? preprocess[1] : -1,
-          pu_count: preprocess ? preprocess[2] : -1,
-          spf: projectFeature.spf,
-          target_value: projectFeature.target_value,
-          occurs_in_planning_grid: preprocess && preprocess[2] > 0,
-        });
+      return {
+        ...base,
+        selected: true,
+        preprocessed: !!preprocess,
+        pu_area: preprocess ? preprocess[1] : -1,
+        pu_count: preprocess ? preprocess[2] : -1,
+        spf: projF.spf,
+        target_value: projF.target_value,
+        occurs_in_planning_grid: preprocess && preprocess[2] > 0,
       }
-      return feature;
     });
 
-    // Get the selected feature ids
     getSelectedFeatureIds();
-
-    // Update state
     dispatch(setAllFeatures(processedFeatures));
     dispatch(setProjectFeatures(processedFeatures.filter((item) => item.selected)));
   };
@@ -1090,7 +1103,7 @@ const App = () => {
   const resetResults = () => {
     setRunMarxanResponse({});
     setSolutions([]);//reset the run
-    setCostData(undefined); //reset the cost data
+    dispatch(setCostData(undefined)); //reset the cost data
     projState.projectFeatures.forEach((feature) => {
       if (feature.feature_layer_loaded) {
         toggleFeatureLayer(feature);
@@ -1138,35 +1151,6 @@ const App = () => {
     return formData;
   };
 
-  const createNewProject = async (proj) => {
-    const formData = prepareFormDataNewProject(proj, user);
-    console.log("formData ", formData);
-    // formData should be in the following format
-    // {
-    //     "user": "username",
-    //     "project": "project_name",
-    //     "description": "Project description",
-    //     "planning_grid_name": "grid_name",
-    //     "interest_features": "feature1,feature2",
-    //     "target_values": "value1,value2",
-    //     "spf_values": "spf1,spf2"
-    // }
-    // const response = await _post("createProject", formData); - old
-    const response = await _post("projects?action=create", formData);
-
-    dispatch(setSnackbarMessage(response.info));
-    dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
-
-    await loadProject(response.name, response.user);
-  };
-
-  const createNewNationalProject = async (params) =>
-    await createNewPlanningUnitGrid(
-      params.iso3,
-      params.domain,
-      params.areakm2,
-      params.shape
-    );
 
   //REST call to delete a specific project
   const deleteProject = async (user, proj, silent = false) => {
@@ -1179,26 +1163,19 @@ const App = () => {
       await getProjects();
 
       // Show a snackbar message, but allow it to be silent if specified
-      dispatch(setSnackbarMessage(response.info, silent));
+      showMessage(response.info, "info", silent);
 
       // Check if the deleted project is the current one
       if (response.project === projState.project) {
-        dispatch(
-          setSnackbarMessage(
-            "Current project deleted - loading first available"
-          )
-        );
-
-        // Find the next available project
+        showMessage("Current project deleted - loading first available", "success")
         const nextProject = projState.projects.find((p) => p.name !== projState.project);
-
         if (nextProject) {
           await loadProject(nextProject.name, user);
         }
       }
     } catch (error) {
       console.error("Error deleting project:", error);
-      // Optionally handle the error, e.g., set an error state or notify the user
+      showMessage("Error deleting project:", "error");
     }
   };
 
@@ -1217,7 +1194,7 @@ const App = () => {
     // const response = await _get(`cloneProject?user=${user}&project=${proj}`); - old 
     const response = await _get(`projects?action=clone&user=${user}&project=${proj}`);
     getProjects();
-    dispatch(setSnackbarMessage(response.info));
+    showMessage(response.info, "success");
   };
 
   //rename a specific project on the server
@@ -1228,7 +1205,7 @@ const App = () => {
       );
 
       // dispatch(setProject(newName)); // FIX THIS - UPDATE NAME OF PROJECT ONLY. 
-      dispatch(setSnackbarMessage(response.info));
+      showMessage(response.info, "success");
       return "Project renamed";
     }
   };
@@ -1242,11 +1219,7 @@ const App = () => {
 
   const getProjects = async () => {
     // const response = await _get(`getProjects?user=${user}`); - old 
-    console.log("`projects?action=list&user=${userId}` ", `projects?action=list&user=${userId}`);
-    console.log("userId ", userId);
     const response = await _get(`projects?action=list&user=${userId}`);
-    console.log("response ", response);
-
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
       (proj) =>
@@ -1428,7 +1401,7 @@ const App = () => {
 
     // Check if solutions are present
     if (response.ssoln?.length > 0) {
-      dispatch(setSnackbarMessage(response.info));
+      showMessage(response.info, "success");
       renderSolution(response.ssoln, true);
 
       // Map the solutions to the required format
@@ -1499,7 +1472,8 @@ const App = () => {
 
   // Uploads a single file to a specific folder - value is the filename
   const uploadFileToFolder = async (value, filename, destFolder) => {
-    setLoading(true);
+    console.log("uploading file with value, filename, destFolder ", value, ", ", filename, ", ", destFolder);
+    dispatch(setLoading(true));
 
     const formData = new FormData();
     formData.append("value", value); // The binary data for the file
@@ -1507,9 +1481,11 @@ const App = () => {
     formData.append("destFolder", destFolder); // The folder to upload to
 
     try {
-      return await _post("uploadFileToFolder", formData);
+      const resp = await _post("uploadFileToFolder", formData);
+      return resp
     } catch (error) {
-      throw new Error("Failed to upload file to folder");
+      console.log("error ", error);
+      throw new Error("Failed to upload file to folder: ", error);
     }
   };
 
@@ -1917,35 +1893,54 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
 
   //instantiates the mapboxgl map
+  // instantiates the mapboxgl map
   const createMap = (url) => {
-    console.log("url ", url);
-    // Initialize map only once
+    // map already exists: switch style & wait for it
     if (map.current) {
-      console.log("Map already initialized.");
-      return;
+      const targetStyle = url || map.current.getStyle()?.sprite || null; // any truthy url is fine
+      return new Promise((resolve) => {
+        if (!url) {
+          // no style change requested; just ensure current style is ready
+          if (map.current.isStyleLoaded && map.current.isStyleLoaded()) {
+            resolve("Map style loaded");
+          } else {
+            map.current.once("style.load", () => resolve("Map style loaded"));
+          }
+          return;
+        }
+        // set listener BEFORE setStyle to avoid missing the event
+        map.current.once("style.load", () => resolve("Map style loaded"));
+        map.current.setStyle(url);
+      });
+    }
+
+    // no map yet — make sure container exists
+    if (!mapContainer.current) {
+      console.warn("Map container not ready yet.");
+      // return a resolved promise so callers that await won't hang
+      return Promise.resolve("Container not ready");
     }
 
     // Create a new Mapbox map instance
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: url || "mapbox://styles/mapbox/streets-v12", // default style if no URL provided
-      center: [-13, 55], // your map's initial coordinates
-      zoom: 4, // your map's initial zoom level
+      style: url || "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
+      center: [-18, 55],
+      zoom: 4,
     });
 
-    // Event handlers
-    map.current.on("load", mapLoaded); // Triggered when the map loads
-    map.current.on("error", mapError); // Triggered on map errors
-    map.current.on("click", mapClick); // Triggered on map click events
-    map.current.on("styledata", mapStyleChanged); // Triggered when map style changes
+    // Event handlers (use .once where appropriate to avoid duplicates)
+    map.current.on("load", mapLoaded);
+    map.current.on("error", mapError);
+    map.current.on("click", mapClick);
+    map.current.on("styledata", mapStyleChanged);
 
-    // Return a promise to resolve when the map's style is fully loaded
+    // Resolve when the initial style is ready
     return new Promise((resolve) => {
-      map.current.on("style.load", () => {
-        resolve("Map style loaded");
-      });
+      map.current.once("style.load", () => resolve("Map style loaded"));
     });
   };
+
 
   const mapLoaded = (e) => {
     // map.current.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // currently full screen hides the info panel and setting position:absolute and z-index: 10000000000 doesnt work properly
@@ -1963,9 +1958,6 @@ const App = () => {
         defaultMode: "draw_polygon",
       })
     );
-    map.current.on("moveend", (evt) => {
-      if (dialogStates.clumpingDialogOpen) updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
-    });
     map.current.on("draw.create", polygonDrawn);
   };
 
@@ -1976,8 +1968,6 @@ const App = () => {
 
   //catch all event handler for map errors
   const mapError = useCallback((e) => {
-    console.log("Map error e: ", e);
-
     let message = "";
     switch (e.error.message) {
       case "Not Found":
@@ -1995,18 +1985,24 @@ const App = () => {
       message !== "http status 200 returned without content." ||
       message == ""
     ) {
-      dispatch(
-        setSnackbarMessage(
-          `MapError: ${message}, Error status: ${e.error.status}`
-        )
-      );
+      showMessage(`MapError: ${message}, Error status: ${e.error.status}`, "error");
       console.error(message);
     }
   }, []);
 
   const mapClick = async (e) => {
     //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
+    console.log("map.current.getSource(mapbox-gl-draw-cold) ", map.current.getSource("mapbox-gl-draw-cold"));
+    console.log("puState.puEditing ", puState.puEditing);
+    console.log("CONSTANTS.LAYER_TYPE_PLANNING_UNITS ", CONSTANTS.LAYER_TYPE_PLANNING_UNITS);
+    console.log("CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS ", CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS);
+    console.log("CONSTANTS.LAYER_TYPE_PROTECTED_AREAS ", CONSTANTS.LAYER_TYPE_PROTECTED_AREAS);
+    console.log("CONSTANTS.LAYER_TYPE_FEATURE_LAYER ", CONSTANTS.LAYER_TYPE_FEATURE_LAYER);
+
+
     if (!puState.puEditing && !map.current.getSource("mapbox-gl-draw-cold")) {
+
+
       //get a list of the layers that we want to query for features
       const featureLayers = getLayers([
         CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
@@ -2051,7 +2047,7 @@ const App = () => {
 
       //set the state to populate the identify popup
       setIdentifyVisible(true);
-      dispatch(setIdentifyFeatures(idFeatures));
+      dispatch(setIdentifiedFeatures(idFeatures));
       setidentifyProtectedAreas(idProtectedAreas);
     }
   };
@@ -2114,20 +2110,16 @@ const App = () => {
     try {
       dispatch(setBasemap(basemap.name));
       const style = await getValidStyle(basemap);
-      console.log("basemap style ", style);
       await createMap(style);
-      addWDPASource();
-      addWDPALayer();
 
       // Add the planning unit layers (if a project has already been loaded)
       if (tileset) {
-        addPlanningGridLayers(tileset);
-
+        console.log("tileset ", tileset);
+        addPlanningGridLayers(tileset.name);
         // Get the results, if any
         if (owner) {
           await getResults(owner, projState.project);
         }
-
         // Turn on/off layers depending on which tab is selected
         if (uiState.activeTab === "planningUnits") {
           setPUTabActive();
@@ -2197,37 +2189,39 @@ const App = () => {
     }
   };
 
-  const changePlanningGrid = async (tilesetid) => {
+  const changePlanningGrid = async (puLayerName) => {
     try {
-      // Get the tileset metadata
-      const tileset = await getMetadata(tilesetid);
-      // Remove the existing layers (e.g., results layer, planning unit layer)
+      // Fetch tile metadata from Martin tile server
+      const response = await fetch(`http://0.0.0.0:3000/${puLayerName}`);
+      if (!response.ok) throw new Error("Failed to fetch tileset metadata");
+      const data = await response.json();
+      // Remove any existing PU-related layers and sources
       removePlanningGridLayers();
-      // Add the new planning grid layers using the obtained tileset
-      addPlanningGridLayers(tileset);
-      // Zoom to the layers' extent if bounds are available
-      if (tileset.bounds) {
-        zoomToBounds(map, tileset.bounds);
+      // Add layers for the new planning unit grid
+      addPlanningGridLayers(data.name);
+      // Zoom to bounds if available
+      if (data.bounds) {
+        zoomToBounds(map, data.bounds);
       }
-      // Update the state with the new tileset information
-      setTileset(tileset);
-      return tileset;
+      // Update local state with tileset info
+      setTileset(data);
+      return data;
     } catch (error) {
-      dispatch(setSnackbarMessage(error));
+      console.error("Error loading planning grid:", error);
+      showMessage(error.message || "Error loading planning grid", "error");
       throw error;
     }
   };
+
 
   //gets all of the metadata for the tileset
   const getMetadata = async (tilesetId) => {
     try {
       const response = await fetch(
-        `https://api.mapbox.com/v4/${tilesetId}.json?secure&access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg`
+        `https://api.mapbox.com/v4/${tilesetId}.json?secure&access_token=${mapboxgl.accessToken}`
       );
 
       const data = await response.json();
-      console.log("Metadata for planningGrid ", data);
-
       if (data.message && data.message.includes("does not exist")) {
         throw new Error(
           `The tileset '${tilesetId}' was not found. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='_blank'>here</a>`
@@ -2241,26 +2235,43 @@ const App = () => {
   };
 
   //adds the results, planning unit, planning unit edit etc layers to the map
-  const addPlanningGridLayers = (tileset) => {
-    //add the source for the planning unit layers
-    map.current.addSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME, {
-      type: "vector",
-      url: "mapbox://" + tileset.id,
+  // const addPlanningGridLayers = (tileset) => {
+  const addPlanningGridLayers = (puLayerName) => {
+    console.log("puLayerName ", puLayerName);
+    if (!map.current) return;
+
+    const sourceId = `martin_src_${puLayerName}`;
+    const resultsLayerId = `martin_layer_results_${puLayerName}`;
+    const costsLayerId = `martin_layer_costs_${puLayerName}`;
+    const puLayerId = `martin_layer_pu_${puLayerName}`;
+    const statusLayerId = `martin_layer_status_${puLayerName}`;
+
+    if (!map.current.getSource(sourceId)) {
+      map.current.addSource(sourceId, {
+        type: 'vector',
+        url: `http://0.0.0.0:3000/${puLayerName}`
+      });
+    }
+
+    [resultsLayerId, costsLayerId, puLayerId, statusLayerId].forEach((layerId) => {
+      if (map.current.getLayer(layerId)) {
+        map.current.removeLayer(layerId);
+      }
     });
 
     //add the results layer
     addMapLayer({
-      id: CONSTANTS.RESULTS_LAYER_NAME,
+      id: resultsLayerId,
       metadata: {
         name: "Results",
         type: CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
       },
       type: "fill",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      source: sourceId,
       layout: {
         visibility: "visible",
       },
-      "source-layer": tileset.name,
+      "source-layer": puLayerName,
       paint: {
         "fill-color": "rgba(0, 0, 0, 0)",
         "fill-outline-color": "rgba(0, 0, 0, 0)",
@@ -2269,132 +2280,117 @@ const App = () => {
     });
     //add the planning units costs layer
     addMapLayer({
-      id: CONSTANTS.COSTS_LAYER_NAME,
+      id: costsLayerId,
       metadata: {
         name: "Planning Unit Cost",
         type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST,
       },
       type: "fill",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      source: sourceId,
       layout: {
         visibility: "none",
       },
-      "source-layer": tileset.name,
+      "source-layer": puLayerName,
       paint: {
         "fill-color": "rgba(255, 0, 0, 0)",
         "fill-outline-color": "rgba(150, 150, 150, 0)",
         "fill-opacity": CONSTANTS.PU_COSTS_LAYER_OPACITY,
       },
     });
-    //set the result layer in app state so that it can update the Legend component and its opacity control
-    setResultsLayer(map.current.getLayer(CONSTANTS.RESULTS_LAYER_NAME));
+
     //add the planning unit layer
     addMapLayer({
-      id: CONSTANTS.PU_LAYER_NAME,
+      id: puLayerId,
       metadata: {
         name: "Planning Unit",
         type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
       },
       type: "fill",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      source: sourceId,
       layout: {
-        visibility: "none",
+        visibility: "visible",
       },
-      "source-layer": tileset.name,
+      "source-layer": puLayerName,
       paint: {
         "fill-color": "rgba(0, 0, 0, 0)",
         "fill-outline-color":
-          "rgba(150, 150, 150, " + CONSTANTS.PU_LAYER_OPACITY + ")",
+          `rgba(150, 150, 150, ${CONSTANTS.PU_LAYER_OPACITY})`,
         "fill-opacity": CONSTANTS.PU_LAYER_OPACITY,
       },
     });
     //add the planning units manual edit layer - this layer shows which individual planning units have had their status changed
     addMapLayer({
-      id: CONSTANTS.STATUS_LAYER_NAME,
+      id: statusLayerId,
       metadata: {
         name: "Planning Unit Status",
         type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS,
       },
       type: "line",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      source: sourceId,
       layout: {
         visibility: "none",
       },
-      "source-layer": tileset.name,
+      "source-layer": puLayerName,
       paint: {
         "line-color": "rgba(150, 150, 150, 0)",
         "line-width": CONSTANTS.STATUS_LAYER_LINE_WIDTH,
       },
     });
+
+    //set the result layer in app state so that it can update the Legend component and its opacity control
+    setResultsLayer(map.current.getLayer(resultsLayerId));
   };
 
-  const removePlanningGridLayers = () => {
-    const sourceName = CONSTANTS.PLANNING_UNIT_SOURCE_NAME;
-    let layers = map.current.getStyle().layers;
-    // Get dynamically added layers, remove them, and then remove sources
-    const dynamicLayers = layers.filter((item) => item.source === sourceName);
-    dynamicLayers.forEach((item) => removeMapLayer(item.id));
-    if (map.current.getSource(sourceName)) {
-      map.current.removeSource(sourceName);
+  const removePlanningGridLayers = (puLayerName) => {
+    // if a puLayerName passed in remove that layer otherwise remove all layers 
+    if (!map.current || !map.current.getStyle()) return;
+
+    const style = map.current.getStyle();
+    const layers = style.layers || [];
+
+    if (puLayerName) {
+      // Targeted cleanup for a specific tileset
+      const sourceId = `martin_src_${puLayerName}`;
+      const layersToRemove = [
+        `martin_layer_results_${puLayerName}`,
+        `martin_layer_costs_${puLayerName}`,
+        `martin_layer_pu_${puLayerName}`,
+        `martin_layer_status_${puLayerName}`,
+      ];
+
+      layersToRemove.forEach((item) => removeMapLayer(item));
+      removeMapSource(sourceId);
+    } else {
+      // Get dynamically added layers, remove them, and then remove sources
+      layers.filter(l => l.id.startsWith('martin_layer_')).forEach(l => removeMapLayer(l.id));
+
+      const possibleSourceIds = new Set();
+      layers.forEach(l => {
+        if (l.source && l.source.startsWith('martin_src_')) {
+          possibleSourceIds.add(l.source);
+        }
+      });
+      // As an extra safety, try removing any source id that currently exists and matches the prefix
+      // by reading the style object (MapLibre/Mapbox keeps sources in style.sources).
+      const styleSources = (style.sources && Object.keys(style.sources)) || [];
+      styleSources
+        .filter(id => id.startsWith('martin_src_'))
+        .forEach(id => possibleSourceIds.add(id));
+
+      possibleSourceIds.forEach(removeMapSource);
     }
   };
 
-  //adds the WDPA vector tile layer source - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
-  const addWDPASource = () => {
-    //add the source for the wdpa
-    const yr = projState.bpServer.wdpa_version.substr(-4); //get the year from the wdpa_version
-    const attribution = `IUCN and UNEP-WCMC (${yr}), The World Database on Protected Areas (WDPA) ${projState.bpServer.wdpa_version}, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
-
-    const tiles = [
-      `${registry.WDPA.tilesUrl}layer=marxan:${wdpaVectorTileLayer}&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}`,
-    ];
-
-    setWdpaAttribution(attribution);
-    map.current.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
-      attribution: attribution,
-      type: "vector",
-      tiles: tiles,
-    });
-  };
-
-  //adds the WDPA vector tile layer - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
-  const addWDPALayer = () => {
-    const fills = {
-      type: "categorical",
-      property: "marine",
-      stops: [
-        ["0", "rgb(99,148,69)"],
-        ["1", "rgb(63,127,191)"],
-        ["2", "rgb(63,127,191)"],
-      ],
-    };
-
-    addMapLayer({
-      id: CONSTANTS.WDPA_LAYER_NAME,
-      metadata: {
-        name: "Protected Areas",
-        type: CONSTANTS.LAYER_TYPE_PROTECTED_AREAS,
-      },
-      type: "fill",
-      source: CONSTANTS.WDPA_SOURCE_NAME,
-      "source-layer": wdpaVectorTileLayer,
-      layout: {
-        visibility: "visible",
-      },
-      // "filter": ["==", "wdpaid", -1],
-      paint: {
-        "fill-color": fills,
-        "fill-outline-color": fills,
-        "fill-opacity": CONSTANTS.WDPA_FILL_LAYER_OPACITY,
-      },
-    });
-    //set the wdpa layer in app state so that it can update the Legend component and its opacity control
-    setWdpaLayer(map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME));
-  };
-
   const toggleLayerVisibility = (id, visibility) => {
-    if (map.current.getLayer(id))
+    if (!map.current) {
+      console.warn("Map is not ready yet.");
+      return;
+    }
+
+    if (map.current.getLayer(id)) {
       map.current.setLayoutProperty(id, "visibility", visibility);
+    }
+
   };
 
   const showLayer = (id) => toggleLayerVisibility(id, "visible");
@@ -2410,12 +2406,14 @@ const App = () => {
         .layers.filter((item) => item.type === "symbol");
       beforeLayer = symbolLayers.length ? symbolLayers[0].id : "";
     }
+
     // Add the layer to the map
     map.current.addLayer(mapLayer, beforeLayer);
   };
 
   //centralised code to remove a layer from the maps current style
   const removeMapLayer = (layerid) => map.current.removeLayer(layerid);
+  const removeMapSource = (layerid) => map.current.removeSource(layerid);
 
   const isLayerVisible = (layername) =>
     map.current &&
@@ -2453,11 +2451,17 @@ const App = () => {
 
   //gets a particular set of layers based on the layer types (layerTypes is an array of layer types)
   const getLayers = (layerTypes) => {
-    const allLayers = map.current.getStyle().layers;
+    if (!mapContainer.current) {
+      console.warn("Map container not ready yet.");
+      return;
+    } else {
+      const allLayers = map.current.getStyle().layers;
+      return allLayers.filter(
+        ({ metadata }) => metadata?.type && layerTypes.includes(metadata.type)
+      );
+    }
 
-    return allLayers.filter(
-      ({ metadata }) => metadata?.type && layerTypes.includes(metadata.type)
-    );
+
   };
 
   //shows/hides layers of a particular type (layerTypes is an array of layer types)
@@ -2490,7 +2494,7 @@ const App = () => {
     showHideLayerTypes(
       [
         CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+        CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
       ],
       false
     );
@@ -2505,7 +2509,7 @@ const App = () => {
     showHideLayerTypes(
       [
         CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+        CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
       ],
       true
     );
@@ -2570,7 +2574,7 @@ const App = () => {
     //add the planning unit manual exceptions
     if (puState.planningUnits.length > 0) {
       puState.planningUnits.forEach((item) =>
-        formData.append(`status${item[0]}`, item[1])
+        formData.append(`status${item[0]} `, item[1])
       );
     }
     //post to the server
@@ -2704,35 +2708,8 @@ const App = () => {
       })
     );
   };
-  //creates a new planning grid unit
-  const createNewPlanningUnitGrid = async (iso3, domain, areakm2, shape) => {
-    startLogging();
-    const message = await handleWebSocket(
-      `createPlanningUnitGrid?iso3=${iso3}&domain=${domain}&areakm2=${areakm2}&shape=${shape}`,
-    );
-    await newPlanningGridCreated(message);
-    setNewPlanningGridDialogOpen(false);
-  };
 
-  //creates a new planning grid unit
-  const createNewMarinePlanningUnitGrid = async (
-    filename,
-    planningGridName,
-    areakm2,
-    shape
-  ) => {
-    startLogging();
-    const message = await handleWebSocket(
-      `createMarinePlanningUnitGrid?filename=${filename}&planningGridName=${planningGridName}&areakm2=${areakm2}&shape=${shape}`,
-    );
-    await newMarinePlanningGridCreated(message);
-    dispatch(
-      togglePUD({
-        dialogName: "newMarinePlanningGridDialogOpen",
-        isOpen: false,
-      })
-    );
-  };
+
 
   //imports a zipped shapefile as a new planning grid
   const importPlanningUnitGrid = async (zipFilename, alias, description) => {
@@ -2800,16 +2777,17 @@ const App = () => {
 
   //deletes a planning grid
   const deletePlanningGrid = async (feature_class_name, silent) => {
-    const response = await useDeletePlanningUnitQuery(feature_class_name);
+    const response = await useDeletePlanningUnitGridMutation(feature_class_name);
     //update the planning unit grids
-    dispatch(setSnackbarMessage(response.info, silent));
+
+    showMessage(response.info, "info", silent);
   };
 
   //exports a planning grid to a zipped shapefile
   const exportPlanningGrid = async (featureName) => {
     try {
-      const response = await useExportPlanningUnitQuery(featureName)
-      return `${projState.bpServer.endpoint}exports/${response.filename}`;
+      const response = await useExportPlanningUnitGridQuery(featureName)
+      return `${projState.bpServer.endpoint} exports / ${response.filename} `;
     } catch (error) {
       throw new Error("Failed to export planning grid");
     }
@@ -2818,7 +2796,7 @@ const App = () => {
   //gets a list of projects that use a particular planning grid
   const getProjectsForPlanningGrid = async (feature_class_name) =>
     await _get(
-      `listProjectsForPlanningGrid?feature_class_name=${feature_class_name}`
+      `listProjectsForPlanningGrid ? feature_class_name = ${feature_class_name} `
     );
 
   const getCountries = async () => {
@@ -2826,25 +2804,11 @@ const App = () => {
     setCountries(response.records);
   };
 
-  //uploads the named feature class to mapbox on the server
-  const uploadToMapBox = async (feature_class_name, mapbox_layer_name) => {
-    try {
-      const response = _get(
-        `uploadTilesetToMapBox?feature_class_name=${feature_class_name}&mapbox_layer_name=${mapbox_layer_name}`,
-        300000
-      );
-      setLoading(true);
-      return await pollMapbox(response.uploadid);
-    } catch (error) {
-      console.error();
-      throw error;
-    }
-  };
 
   const pollStatus = async (uploadid) => {
     try {
       const response = await fetch(
-        `https://api.mapbox.com/uploads/v1/${CONSTANTS.MAPBOX_USER}/${uploadid}?access_token=${registry.MBAT}`
+        `https://api.mapbox.com/uploads/v1/${CONSTANTS.MAPBOX_USER}/${uploadid}?access_token=${uiState.registry.MBAT}`
       );
       const result = await response.json();
 
@@ -2857,7 +2821,7 @@ const App = () => {
       if (result.error) {
         const errorMsg = `Mapbox upload error: ${result.error}. See <a href='${CONSTANTS.ERRORS_PAGE}#mapbox-upload-error' target='blank'>here</a>`;
         messageLogger({ error: errorMsg, status: "UploadFailed" });
-        dispatch(setSnackbarMessage(errorMsg));
+        showMessage(errorMsg, "error");
         clearMapboxTimer(uploadid);
         throw new Error(result.error);
       }
@@ -2915,21 +2879,19 @@ const App = () => {
     setWelcomeDialogOpen(true);
   };
 
-  const openFeaturesDialog = async (showClearSelectAll) => {
+  // const openFeaturesDialog = async (showClearSelectAll) => {
+  const openFeaturesDialog = async () => {
     // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
-    if (projState.bpServer.system !== "Windows" && !metadata.OLDVERSION) {
-      await refreshFeatures();
-    }
-    dispatch(setAddingRemovingFeatures(showClearSelectAll));
+    // dispatch(setAddingRemovingFeatures(showClearSelectAll));
     dispatch(
       toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: true,
       })
     );
-    if (showClearSelectAll) {
-      getSelectedFeatureIds();
-    }
+    // if (showClearSelectAll){
+    // getSelectedFeatureIds();
+    // }
   };
 
   const openPlanningGridsDialog = async () => {
@@ -2958,31 +2920,38 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   const openAtlasLayersDialog = async () => {
-    setLoading(true);
+    dispatch(setLoading(true));
     if (atlasLayers.length < 1) {
       const data = await getAtlasLayers();
       setAtlasLayers(data);
       dispatch(
         toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true })
       );
-      setLoading(false);
+      dispatch(setLoading(false));
     } else {
       // Open the dialog if there is data already loaded
       dispatch(
         toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true })
       );
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
   const openCumulativeImpactDialog = async () => {
-    dispatch(
-      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
-    );
-    try {
-      await getImpacts();
-    } catch (e) {
-      dispatch(setSnackbarMessage("no impacts found"));
+    dispatch(setLoading(true));
+    if (uiState.allImpacts.length < 1) {
+      const response = await _get("getAllImpacts");
+      setAllImpacts(response.data);
+      dispatch(
+        toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
+      );
+      dispatch(setLoading(false));
+    } else {
+      // Open the dialog if there is data already loaded
+      dispatch(
+        toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
+      );
+      dispatch(setLoading(false));
     }
   };
 
@@ -3057,51 +3026,13 @@ const App = () => {
     }
   };
 
-  const openImportedActivitesDialog = async () => {
-    await getUploadedActivities();
-    setImportedActivitiesDialogOpen(true);
-  };
-
   const openCostsDialog = async () => {
-    if (!allImpacts?.length) {
+    if (!uiState.allImpacts?.length) {
       await getImpacts();
     }
     setCostsDialogOpen(true);
   };
 
-  const getUploadedActivities = async () => {
-    const response = await _get("getUploadedActivities");
-    setUploadedActivities(response.data);
-  };
-
-  const clearSelactedLayers = () => {
-    const layers = [...selectedLayers];
-    layers.forEach((layer) => updateSelectedLayers(layer));
-    dispatch(
-      toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: false })
-    );
-  };
-
-  const updateSelectedLayers = (layer) => {
-    // Determine the new visibility
-    const currentVisibility = map.current.getLayoutProperty(
-      layer.layer,
-      "visibility"
-    );
-    const newVisibility = currentVisibility === "visible" ? "none" : "visible";
-    // Update the layer's visibility
-    map.current.setLayoutProperty(layer.layer, "visibility", newVisibility);
-
-    // Update the selectedLayers state
-
-    setSelectedLayers((prevState) => {
-      const isLayerSelected = prevState.includes(layer);
-
-      return isLayerSelected
-        ? prevState.filter((item) => item !== layer)
-        : [...prevState, layer];
-    });
-  };
 
   //when a user clicks a impact in the ImpactsDialog
   const clickImpact = (impact, event, previousRow) => {
@@ -3128,16 +3059,14 @@ const App = () => {
   //toggles the impact layer on the map
   const toggleImpactLayer = (impact) => {
     if (impact.tilesetid === "") {
-      dispatch(
-        setSnackbarMessage(
-          `This impact does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE}#the-tileset-from-source-source-was-not-found' target='blank'>here</a>`
-        )
-      );
+      showMessage(`This feature does not seem to have a tileset.`, "error");
       return;
     }
     // this.closeImpactMenu();
     const layerName = impact.tilesetid.split(".")[1];
     const layerId = "marxan_impact_layer_" + layerName;
+    // const layerId = "martin_impact_layer_" + layerName;
+    // const tilesURL = `http://0.0.0.0:3000/${layerName}/{z}/{x}/{y}.png`;
 
     if (map.current.getLayer(layerId)) {
       removeMapLayer(layerId);
@@ -3145,30 +3074,31 @@ const App = () => {
       updateImpact(impact, { impact_layer_loaded: false });
     } else {
       //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
-      const layers = getLayers([
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
-      ]);
-      //get the before layer
-      const beforeLayer = layers.length > 0 ? layers[0].id : "";
+      const layers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER]);
+      const beforeLayer = layers.length > 0 ? layers[0].id : undefined;
+
+      map.current.addSource(layerId, {
+        type: "raster",
+        tiles: [tilesURL],
+        tileSize: 256,
+      });
+
       const rasterLayer = {
         id: layerId,
+        type: "raster",
+        source: layerId,
+        layout: {
+          visibility: "visible",
+        },
+        paint: {
+          "raster-opacity": 0.85,
+        },
         metadata: {
           name: impact.alias,
           type: "impact",
         },
-        type: "raster",
-        source: {
-          type: "raster",
-          tiles: [
-            `https://api.mapbox.com/v4/${impact.tilesetid}/{z}/{x}/{y}.png256?access_token=pk.eyJ1IjoiY3JhaWNlcmphY2siLCJhIjoiY2syeXhoMjdjMDQ0NDNnbDk3aGZocWozYiJ9.T-XaC9hz24Gjjzpzu6RCzg`,
-          ],
-        },
-        layout: {
-          visibility: "visible",
-        },
-        "source-layer": layerName,
-        paint: { "raster-opacity": 0.85 },
       };
+
       addMapLayer(rasterLayer, beforeLayer);
       updateImpact(impact, { impact_layer_loaded: true });
     }
@@ -3177,7 +3107,7 @@ const App = () => {
   //gets the ids of the selected impacts
   const getSelectedImpactIds = () => {
     // Use map and filter to get selected impact IDs in one line
-    const ids = allImpacts
+    const ids = uiState.allImpacts
       .filter((impact) => impact.selected)
       .map((impact) => impact.id);
 
@@ -3188,7 +3118,7 @@ const App = () => {
   //updates the properties of a impact and then updates the impacts state
   const updateImpact = (impact, newProps) => {
     // Create a shallow copy of the impacts array
-    const impacts = [...allImpacts];
+    const impacts = [...uiState.allImpacts];
 
     // Find the index of the impact to update
     const index = impacts.findIndex((element) => element.id === impact.id);
@@ -3206,40 +3136,42 @@ const App = () => {
   };
 
   const openHumanActivitiesDialog = async () => {
-    if (activities.length < 1) {
+    if (uiState.activities.length < 1) {
       const response = await _get("getActivities");
       const data = await JSON.parse(response.data);
-      setActivities(data);
+      dispatch(setActivities(data));
     }
-    setHumanActivitiesDialogOpen(true);
+    dispatch(
+      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: true })
+    );
   };
 
   //create new impact from the created pressures
   const importImpacts = async (filename, selectedActivity, description) => {
     //start the logging
-    setLoading(true);
+    dispatch(setLoading(true));
     startLogging();
 
     const url = `runCumumlativeImpact?filename=${filename}&activity=${selectedActivity}&description=${description}`;
     const message = await handleWebSocket(url);
     await pollMapbox(message.uploadId);
-    setLoading(false);
+    dispatch(setLoading(false));
     return "Cumulative Impact Layer uploaded";
   };
 
   const runCumulativeImpact = async (selectedUploadedActivityIds) => {
-    setLoading(true);
+    dispatch(setLoading(true));
     startLogging();
 
     await handleWebSocket(
       `runCumumlativeImpact?selectedIds=${selectedUploadedActivityIds}`,
     );
-    setLoading(false);
+    dispatch(setLoading(false));
     return "Cumulative Impact Layer uploaded";
   };
 
   const uploadRaster = async (data) => {
-    setLoading(true);
+    dispatch(setLoading(true));
     messageLogger({
       method: "uploadRaster",
       status: "In Progress",
@@ -3247,33 +3179,27 @@ const App = () => {
     });
     const formData = new FormData();
     Object.keys(data).forEach((key) => formData.append(key, data[key]));
-
     //the binary data for the file, the filename
     const response = await _post("uploadRaster", formData);
     return response;
   };
 
-  const openActivitiesDialog = async () => {
-    await getUploadedActivities();
-    setActivitiesDialogOpen(true);
-  };
-
   //create new impact from the created pressures
   const saveActivityToDb = async (filename, selectedActivity, description) => {
     //start the logging
-    setLoading(true);
+    dispatch(setLoading(true));
     startLogging();
     const url = `saveRaster?filename=${filename}&activity=${selectedActivity}&description=${description}`;
     await handleWebSocket(url);
-    setLoading(false);
+    dispatch(setLoading(false));
     return "Raster saved to db";
   };
 
   const createCostsFromImpact = async (data) => {
-    setLoading(true);
+    dispatch(setLoading(true));
     startLogging();
     await handleWebSocket(`createCostsFromImpact?user=${owner}&project=${projState.project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`);
-    setLoading(false);
+    dispatch(setLoading(false));
     addCost(data.alias);
     return "Costs created from Cumulative impact";
   };
@@ -3290,8 +3216,6 @@ const App = () => {
 
   //updates the properties of a feature and then updates the features state
   const updateFeature = (feature, newProps) => {
-    console.log("feature, newProps ", feature, newProps);
-    console.log("updateFeature........ ");
     let features = [...featureState.allFeatures];
     const index = features.findIndex((element) => element.id === feature.id);
     if (index !== -1) {
@@ -3311,11 +3235,6 @@ const App = () => {
   };
 
   //when a user clicks a feature in the FeaturesDialog
-  const clickFeature = (feature) => {
-    return [...featureState.selectedFeatureIds].includes(feature.id)
-      ? removeFeature(feature)
-      : addFeature(feature);
-  };
 
   //removes a feature from the selectedFeatureIds array
   const removeFeature = (feature) => {
@@ -3349,9 +3268,6 @@ const App = () => {
 
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
   const updateSelectedFeatures = async () => {
-    //delete the gap analysis as the features within the project have changed
-    await deleteGapAnalysis();
-
     // Get the updated features
     let updatedFeatures = featureState.allFeatures.map((feature) => {
       if (featureState.selectedFeatureIds.includes(feature.id)) {
@@ -3425,7 +3341,9 @@ const App = () => {
   //previews the feature
   const previewFeature = (featureMetadata) => {
     dispatch(setFeatureMetadata(featureMetadata));
-    setFeatureDialogOpen(true);
+    dispatch(
+      toggleFeatureD({ dialogName: "featureDialogOpen", isOpen: true })
+    );
   };
 
   //unzips a shapefile on the server
@@ -3441,30 +3359,41 @@ const App = () => {
     await _get(`getShapefileFieldnames?filename=${filename}`);
 
   //create new features from the already uploaded zipped shapefile
-  const importFeatures = async (
-    zipfile,
-    name,
-    description,
-    shapefile,
-    spiltfield
-  ) => {
-    //start the logging
+  const importFeatures = async (zipfile, name, description, shapefile, splitfield) => {
     startLogging();
+
     const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}`;
-    const url =
-      name !== ""
-        ? `${baseUrl}&name=${name}&description=${description}`
-        : `${baseUrl}&splitfield=${splitfield}`;
+    const url = name !== ""
+      ? `${baseUrl}&name=${name}&description=${description}`
+      : `${baseUrl}&splitfield=${splitfield}`;
 
-    const message = await handleWebSocket(url);
-    //get the uploadIds, get a promise array to see when all of the uploads are done
-    const promiseArray = message.uploadIds.map((uploadId) =>
-      pollMapbox(uploadId)
-    );
-
-    await Promise.all(promiseArray);
-    return "All features uploaded";
+    try {
+      const message = await handleWebSocket(url);
+      return message;
+    } catch (error) {
+      console.error("Feature import failed:", error);
+      showMessage(error.message || "Failed to import features", "error");
+      throw error; // re-throw if you want the caller to handle it too
+    }
   };
+
+
+  const zoomToLayer = (tileJSON) => {
+    fetch(`${tileJSON}`)
+      .then(res => res.json())
+      .then(tj => {
+        if (tj.bounds) {
+          map.current.fitBounds(
+            [
+              [tj.bounds[0], tj.bounds[1]],
+              [tj.bounds[2], tj.bounds[3]]
+            ],
+            { padding: 20 }
+          );
+        }
+      });
+  }
+
 
   //imports features from a web resource
   const importFeaturesFromWeb = async (
@@ -3485,13 +3414,12 @@ const App = () => {
 
   //adds a new feature to the allFeatures array
   const addNewFeature = (newFeatures) => {
-    dispatch(setAllFeatures((prevFeatures) => {
-      const featuresCopy = [...prevFeatures, ...newFeatures];
-      featuresCopy.sort((a, b) =>
-        a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
-      );
-      return featuresCopy;
-    }));
+    const featuresCopy = [...featureState.allFeatures, ...newFeatures];
+    featuresCopy.sort((a, b) =>
+      a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
+    );
+    dispatch(setAllFeatures(featuresCopy));
+    return featuresCopy;
   };
 
 
@@ -3538,60 +3466,53 @@ const App = () => {
     addNewFeature(updatedFeatures);
   };
 
-  const openFeatureMenu = (evt, feature) => {
-    dispatch(setCurrentFeature(feature));
-    setMenuAnchor(evt.currentTarget);
-    dispatch(
-      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: true })
-    );
-  };
-
 
   //toggles the feature layer on the map
   const toggleFeatureLayer = (feature) => {
     if (feature.tilesetid === "") {
-      dispatch(
-        setSnackbarMessage(
-          `This feature does not have a tileset on Mapbox. See <a href='${CONSTANTS.ERRORS_PAGE} #the-tileset-from-source-source-was-not-found' target='blank'>here</a>`
-        )
-      );
+      showMessage(`This feature does not seem to have a tileset.`, "error");
       return;
     }
-    const layerId = `marxan_feature_layer_${feature.tilesetid.split(".")[1]}`;
+    const tableName = feature.tilesetid.split(".")[1];
+    const sourceId = `martin_src_${tableName}`;
+    const layerId = `martin_layer_${tableName}`;
+    const tileJSON = `http://0.0.0.0:3000/${tableName}`
 
     if (map.current.getLayer(layerId)) {
       removeMapLayer(layerId);
-      map.current.removeSource(layerId);
+      map.current.removeSource(sourceId);
       updateFeature(feature, { feature_layer_loaded: false });
     } else {
-      // If a planning units layer for a feature is visible then we need to add the feature layer before it - first get the feature puid layer
-      const layers = getLayers([
-        CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
-      ]);
-      let beforeLayer = layers.length > 0 ? layers[0].id : "";
-      const paintProperty = getPaintProperty(feature);
-      const typeProperty = getTypeProperty(feature);
-      addMapLayer(
-        {
-          id: layerId,
-          metadata: {
-            name: feature.alias,
-            type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-          },
-          type: typeProperty,
-          source: {
-            type: "vector",
-            url: "mapbox://" + feature.tilesetid,
-          },
-          layout: {
-            visibility: "visible",
-          },
-          "source-layer": layerName,
-          paint: paintProperty,
-        },
-        beforeLayer
-      ); //add it before the layer that shows the planning unit outlines for the feature
+      // 1) make sure the vector‐tile source is added
+      if (!map.current.getSource(sourceId)) {
+        map.current.addSource(sourceId, {
+          type: "vector",
+          url: tileJSON
+        });
+      }
+
+      const beforeLayer = (() => {
+        const puLayers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER]);
+        return puLayers.length ? puLayers[0].id : undefined;
+      })();
+
+      const mapLayer = {
+        id: layerId,
+        type: getTypeProperty(feature),
+        source: sourceId,
+        "source-layer": tableName,
+        layout: { visibility: "visible" },
+        paint: getPaintProperty(feature),
+        metadata: {
+          name: feature.alias,
+          type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER
+        }
+      };
+
+      addMapLayer(mapLayer, beforeLayer);
       updateFeature(feature, { feature_layer_loaded: true });
+      // Helper function tozom to layer to see if its working 
+      // zoomToLayer(tileJSON)
     }
   };
 
@@ -3610,7 +3531,7 @@ const App = () => {
         id: layerName,
         metadata: {
           name: feature.alias,
-          type: CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER,
+          type: CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
           lineColor: feature.color,
         },
         type: "line",
@@ -3689,42 +3610,13 @@ const App = () => {
     );
   };
 
-  const openNewProjectWizardDialog = async () => {
-    await getCountries();
-    dispatch(
-      toggleProjDialog({
-        dialogName: "newPlanningGridDialogOpen",
-        isOpen: true,
-      })
-    );
-  };
 
-  const openNewPlanningGridDialog = async () => {
-    await getCountries();
-    dispatch(
-      togglePUD({
-        dialogName: "newPlanningGridDialogOpen",
-        isOpen: true,
-      })
-    );
-  };
-
-  const openUsersDialog = async () => {
-    dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: true }));
-  };
+  const openUsersDialog = async () => dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: true }));
 
   const openRunLogDialog = async () => {
     await getRunLogs();
     await startPollingRunLogs();
     setRunLogDialogOpen(true);
-  };
-
-  const openGapAnalysisDialog = async () => {
-    dispatch(
-      toggleDialog({ dialogName: "gapAnalysisDialogOpen", isOpen: true })
-    );
-    setGapAnalysis([]);
-    return await runGapAnalysis();
   };
 
   const showProjectListDialog = (listOfProjects, title, heading) => {
@@ -3763,9 +3655,6 @@ const App = () => {
   const filterWdpaByIucnCategory = (iucnCategory) => {
     //get the individual iucn categories
     const iucnCategories = getIndividualIucnCategories(iucnCategory);
-    //TODO FILTER THE WDPA CLIENT SIDE BY INTERSECTING IT WITH THE PLANNING GRID
-    //filter the vector tiles for those iucn categories - and if the planning unit name has an iso3 country code - then use that as well. e.g. pu_ton_marine_hexagon_50 (has iso3 code) or pu_a4402723a92444ff829e9411f07e7 (no iso3 code)
-    //let filterExpr = (metadata.PLANNING_UNIT_NAME.match(/_/g).length> 1) ? ['all', ['in', 'IUCN_CAT'].concat(iucnCategories), ['==', 'PARENT_ISO', metadata.PLANNING_UNIT_NAME.substr(3, 3).toUpperCase()]] : ['all', ['in', 'IUCN_CAT'].concat(iucnCategories)];
     const filterExpr = ["all", ["in", "iucn_cat", ...iucnCategories]]; // no longer filter by ISO code
     map.current.setFilter(CONSTANTS.WDPA_LAYER_NAME, filterExpr);
 
@@ -3819,11 +3708,7 @@ const App = () => {
     if (clashingPuids.length > 0) {
       //remove them from the puids
       puids = puids.filter((item) => !clashingPuids.includes(item));
-      dispatch(
-        setSnackbarMessage(
-          `Not all planning units have been added. See <a href='${CONSTANTS.ERRORS_PAGE}#not-all-planning-units-have-been-added' target='blank'>here</a>`
-        )
-      );
+      showMessage(`Not all planning units have been added.`, "error");
     }
     // Get all puids for existing iucn category - these will come from the previousPuids rather than getPuidsFromIucnCategory as there may have been some clashes and not all of the puids from getPuidsFromIucnCategory may actually be renderered
     //if the previousPuids are undefined then get them from the projects previousIucnCategory
@@ -3894,42 +3779,6 @@ const App = () => {
     );
   };
 
-  //downloads and updates the WDPA on the server
-  const updateWDPA = async () => {
-    startLogging();
-    //call the webservice
-    const message = await handleWebSocket(
-      `updateWDPA?downloadUrl=${registry.WDPA.downloadUrl}&wdpaVersion=${registry.WDPA.latest_version}`
-    );
-    // Websocket has finished - set the new version of the wdpa
-
-    setNewWDPAVersion(false);
-    setBpServer({
-      ...prev,
-      wdpa_version: registry.WDPA.latest_version,
-    });
-    await delay(1000);
-    //set the source for the WDPA layer to the new vector tiles
-    setWDPAVectorTilesLayerName(registry.WDPA.latest_version);
-    // Remove the existing WDPA layer and source
-    removeMapLayer(CONSTANTS.WDPA_LAYER_NAME);
-    if (map.current && map.current.getSource(CONSTANTS.WDPA_SOURCE_NAME)) {
-      map.current.removeSource(CONSTANTS.WDPA_SOURCE_NAME);
-    }
-    //re-add the WDPA source and layer
-    addWDPASource();
-    addWDPALayer();
-    //reset the protected area intersections on the client
-    setProtectedAreaIntersections([]);
-    //recalculate the protected area intersections and refilter the vector tiles
-    await changeIucnCategory(metadata.IUCN_CATEGORY);
-    //close the dialog
-    dispatch(
-      toggleDialog({ dialogName: "updateWDPADialogOpen", isOpen: false })
-    );
-    return message;
-  };
-
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -3965,34 +3814,6 @@ const App = () => {
       throw error; // Re-throw the error if needed
     }
   };
-
-  const showClumpingDialog = async () => {
-    // Update the map centre and zoom state which is used by the maps in the clumping dialog
-    updateMapCentreAndZoom();
-    //when the boundary lengths have been calculated
-    await preprocessBoundaryLengths();
-    // Update the spec.dat file with any that have been added or removed or changed target or spf
-    await updateSpecFile();
-    // When the species file has been updated, update the planning unit file
-    updatePuFile(); // not implemented yet
-
-    // When the planning unit file has been updated, update the PuVSpr file - this does all the preprocessing using web sockets
-    await updatePuvsprFile();
-    //show the clumping dialog
-    setClumpingDialogOpen(true);
-    setClumpingRunning(true);
-  };
-
-  const hideClumpingDialog = async () => {
-    //delete the project group
-    await deleteProjects();
-    //reset the paint properties in the clumping dialog
-    resetPaintProperties();
-    //return state to normal
-    dispatch(toggleDialog({ dialogName: "clumpingDialogOpen", isOpen: false }));
-  };
-
-
 
   //deletes the projects from the _clumping folder
   const deleteProjects = async () => {
@@ -4063,27 +3884,7 @@ const App = () => {
     await getRunLogs();
   };
 
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // GAP ANALYSIS
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
 
-  const runGapAnalysis = async () => {
-    setActiveTab("log");
-    const message = await handleWebSocket(
-      `runGapAnalysis?user=${owner}&project=${projState.project}`);
-    setGapAnalysis(message.data);
-    return message;
-  };
-
-  //deletes a stored gap analysis on the server
-  const deleteGapAnalysis = async () =>
-    await _get(`deleteGapAnalysis?user=${owner}&project=${projState.project}`);
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -4110,38 +3911,37 @@ const App = () => {
   const loadCostsLayer = async (forceReload = false) => {
     setCostsLoading(true);
     const response = await getPlanningUnitsCostData(forceReload);
-    setCostData(response);
+    dispatch(setCostData(response));
     renderPuCostLayer(response);
     setCostsLoading(false);
   };
 
   //gets the cost data either from cache (if it has already been loaded) or from the server
   const getPlanningUnitsCostData = async (forceReload) => {
+    const project_id = projState.projectData.project.id;
     if (owner === "") {
-      setOwner(user);
+      setOwner(userId);
     }
-    const url = `getPlanningUnitsCostData?user=${owner}&project=${projState.project}`;
     try {
       // If cost data is already loaded and reload is not forced
-      if (costData && !forceReload) {
-        return costData;
+      if (projState.costData && !forceReload) {
+        return projState.costData;
+      } else {
+        // Construct the URL for fetching cost data
+        const url = `getPlanningUnitsCostData?user=${userId}&project=${project_id}`;
+        // Fetch the cost data from the server
+        const response = await _get(url);
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // ****************************************************************************
+        // Fetch the cost data if not already loaded or force reload is requested
+        // const response = await _get(url);  // TRIGGERING MASSIVE RELOAD ALL THE TIME 
+        // SORT THIS OUT LATER
+        // Save the cost data to a local variable
+        dispatch(setCostData(response));
+        return response;
       }
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // ****************************************************************************
-      // Fetch the cost data if not already loaded or force reload is requested
-      // const response = await _get(url);  // TRIGGERING MASSIVE RELOAD ALL THE TIME 
-      // SORT THIS OUT LATER
-      // Save the cost data to a local variable
-      setCostData(response);
-      return response;
     } catch (error) {
       // Handle the error (this can be customized based on your requirements)
       console.error("Error loading planning units cost data:", error);
@@ -4188,6 +3988,28 @@ const App = () => {
     return await _get("cleanup?");
   };
 
+  // --- HMR cleanup: place at the bottom of the module that owns the map instance ---
+  if (import.meta && import.meta.hot) {
+    import.meta.hot.dispose(() => {
+      try {
+        if (map?.current) {
+          // remove any listeners you added
+          map.current.off("load", mapLoaded);
+          map.current.off("error", mapError);
+          map.current.off("click", mapClick);
+          map.current.off("styledata", mapStyleChanged);
+
+          // destroy the map so the next hot module has a clean slate
+          map.current.remove();
+        }
+      } catch (e) {
+        console.warn("Map cleanup error on HMR dispose:", e);
+      } finally {
+        if (map) map.current = null;
+      }
+    });
+  }
+
 
   return (
     <div>
@@ -4195,27 +4017,22 @@ const App = () => {
         <Loading />
       ) : (
         <React.Fragment>
-          <div
-            ref={mapContainer}
-            className="map-container absolute top right left bottom"
-          />
-          {loading ? <Loading /> : null}
+          <div ref={mapContainer} className="map-container absolute top right left bottom"></div>
+          {uiState.loading ? <Loading /> : null}
           {token ? null : (
             <LoginDialog
               open={!token}
-              loading={loading}
+              loading={uiState.loading}
             />
           )}
           <ResendPasswordDialog
             open={dialogStates.resendPasswordDialogOpen}
-            loading={loading}
           />
           <ToolsMenu
             menuAnchor={menuAnchor}
             openUsersDialog={openUsersDialog}
             openRunLogDialog={openRunLogDialog}
-            openGapAnalysisDialog={openGapAnalysisDialog}
-            userRole={userData.role}
+            userRole={userData}
             metadata={metadata}
             cleanup={cleanup}
           />
@@ -4227,15 +4044,18 @@ const App = () => {
           {dialogStates.helpMenuOpen ? (
             <HelpMenu menuAnchor={menuAnchor} />
           ) : null}
-          <UserSettingsDialog
-            open={dialogStates.userSettingsDialogOpen}
-            onCancel={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
-            loading={loading}
-            saveOptions={saveOptions}
-          />
+          {dialogStates.userSettingsDialogOpen ? (
+            <UserSettingsDialog
+              open={dialogStates.userSettingsDialogOpen}
+              onCancel={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
+              loading={uiState.loading}
+              saveOptions={saveOptions}
+              loadBasemap={loadBasemap}
+            />
+          ) : null}
           <UsersDialog
             open={dialogStates.usersDialogOpen}
-            loading={loading}
+            loading={uiState.loading}
             deleteUser={handleDeleteUser}
             changeRole={changeRole}
             guestUserEnabled={projState.bpServer.guestUserEnabled}
@@ -4244,7 +4064,7 @@ const App = () => {
             open={dialogStates.profileDialogOpen}
             onOk={() => setProfileDialogOpen(false)}
             onCancel={() => setProfileDialogOpen(false)}
-            loading={loading}
+            loading={uiState.loading}
             updateUser={handleUpdateUser}
           />
           <AboutDialog
@@ -4265,7 +4085,6 @@ const App = () => {
               startPuEditSession={startPuEditSession}
               stopPuEditSession={stopPuEditSession}
               clearManualEdits={clearManualEdits}
-              openFeatureMenu={openFeatureMenu}
               preprocessing={preprocessing}
               openFeaturesDialog={openFeaturesDialog}
               changeIucnCategory={changeIucnCategory}
@@ -4281,12 +4100,13 @@ const App = () => {
               costnames={costnames}
               changeCostname={changeCostname}
               loadCostsLayer={loadCostsLayer}
-              loading={loading}
+              loading={uiState.loading}
+              setMenuAnchor={setMenuAnchor}
             // protectedAreaIntersections={protectedAreaIntersections}
             />) : null}
 
           <ResultsPanel
-            open={resultsPanelOpen}
+            open={uiState.resultsPanelOpen}
             preprocessing={preprocessing}
             solutions={solutions}
             loadSolution={loadSolution}
@@ -4302,7 +4122,7 @@ const App = () => {
             messages={logMessages}
             activeResultsTab={uiState.activeResultsTab}
             setActiveTab={setActiveTab}
-            clearLog={() => setLogMessages([])}
+            clearLog={() => dispatch(clearImportLog())}
             owner={owner}
             resultsLayer={resultsLayer}
             wdpaLayer={wdpaLayer}
@@ -4313,7 +4133,6 @@ const App = () => {
             metadata={metadata}
             costsLoading={costsLoading}
           />
-
           {identifyVisible ? (
             <IdentifyPopup
               visible={identifyVisible}
@@ -4323,94 +4142,71 @@ const App = () => {
               metadata={metadata}
               reportUnits={userData.reportUnits}
             />) : null}
-          <ProjectsDialog
-            loading={loading}
-            oldVersion={metadata?.OLDVERSION}
-            deleteProject={deleteProject}
-            loadProject={loadProject}
-            exportProject={exportProject}
-            cloneProject={cloneProject}
-            unauthorisedMethods={unauthorisedMethods}
-            userRole={userData.role}
-          />
+          {projState.dialogs.projectsDialogOpen ? (
+            <ProjectsDialog
+              loading={uiState.loading}
+              oldVersion={metadata?.OLDVERSION}
+              deleteProject={deleteProject}
+              loadProject={loadProject}
+              exportProject={exportProject}
+              cloneProject={cloneProject}
+              unauthorisedMethods={unauthorisedMethods}
+              userRole={userData.role}
+            />) : null}
           <ProjectsListDialog />
           <NewProjectDialog
-            registry={registry}
-            loading={loading}
+            loading={uiState.loading}
             openFeaturesDialog={openFeaturesDialog}
             selectedCosts={selectedCosts}
-            createNewProject={createNewProject}
             previewFeature={previewFeature}
-          />
-          <NewProjectWizardDialog
-            okDisabled={true}
-            countries={countries}
-            createNewNationalProject={createNewNationalProject}
+            fileUpload={uploadFileToFolder}
+            updateSelectedFeatures={updateSelectedFeatures}
           />
           <NewPlanningGridDialog
-            loading={loading || preprocessing || uploading}
-            createNewPlanningUnitGrid={createNewPlanningUnitGrid}
-            countries={countries}
-          />
-          <NewMarinePlanningGridDialog
-            loading={loading || preprocessing || uploading}
-            createNewPlanningUnitGrid={createNewMarinePlanningUnitGrid}
+            loading={uiState.loading || preprocessing || uploading}
             fileUpload={uploadFileToFolder}
           />
           <ImportPlanningGridDialog
             importPlanningUnitGrid={importPlanningUnitGrid}
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             fileUpload={uploadFileToFolder}
           />
           <FeatureInfoDialog
-            loading={loading}
+            open={true}
             updateFeature={updateFeature}
           />
-          {featureState.dialogs.featuresDialogOpen ? (
-            <FeaturesDialog
-              onOk={updateSelectedFeatures}
-              loading={loading || uploading}
-              metadata={metadata}
-              userRole={userData.role}
-              clickFeature={clickFeature}
-              initialiseDigitising={initialiseDigitising}
-              previewFeature={previewFeature}
-              refreshFeatures={refreshFeatures}
-            />) : null}
+          <FeaturesDialog
+            onOk={updateSelectedFeatures}
+            metadata={metadata}
+            userRole={userData.role}
+            openFeaturesDialog={openFeaturesDialog}
+            initialiseDigitising={initialiseDigitising}
+            previewFeature={previewFeature}
+            refreshFeatures={refreshFeatures}
+            preview={true}
+          />
           {featureState.dialogs.featureDialogOpen ? (
-            <FeatureDialog
-              loading={loading}
-              getTilesetMetadata={getMetadata}
-            />) : null}
+            <FeatureDialog getTilesetMetadata={getMetadata} />)
+            : null}
           <NewFeatureDialog
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             newFeatureCreated={newFeatureCreated}
           />
-          <ImportFeaturesDialog
-            importFeatures={importFeatures}
-            loading={loading || preprocessing || uploading}
-            fileUpload={uploadFileToFolder}
-            unzipShapefile={unzipShapefile}
-            getShapefileFieldnames={getShapefileFieldnames}
-            deleteShapefile={deleteShapefile}
-          />
+          {featureState.dialogs.importFeaturesDialogOpen ? (
+            <ImportFeaturesDialog
+              importFeatures={importFeatures}
+              fileUpload={uploadFileToFolder}
+              unzipShapefile={unzipShapefile}
+              getShapefileFieldnames={getShapefileFieldnames}
+              deleteShapefile={deleteShapefile}
+            />) : null}
           <ImportFromWebDialog
-            open={dialogStates.importFromWebDialogOpen}
-            setImportFromWebDialogOpen={() =>
-              dispatch(
-                toggleDialog({
-                  dialogName: "importFromWebDialogOpen",
-                  isOpen: false,
-                })
-              )
-            }
-            loading={loading || preprocessing || uploading}
+            loading={uiState.loading || preprocessing || uploading}
             importFeatures={importFeaturesFromWeb}
           />
           <PlanningGridsDialog
-            loading={loading}
+            loading={uiState.loading}
             unauthorisedMethods={unauthorisedMethods}
-            openNewPlanningGridDialog={openNewPlanningGridDialog}
             exportPlanningGrid={exportPlanningGrid}
             deletePlanningGrid={deletePlanningUnitGrid}
             previewPlanningGrid={previewPlanningGrid}
@@ -4427,8 +4223,6 @@ const App = () => {
             costname={metadata?.COSTS}
             deleteCost={deleteCost}
             data={costnames}
-            allImpacts={allImpacts}
-            planningUnitName={metadata?.PLANNING_UNIT_NAME}
             createCostsFromImpact={createCostsFromImpact}
           />
           <ImportCostsDialog
@@ -4437,10 +4231,8 @@ const App = () => {
             fileUpload={uploadFileToProject}
           />
           <RunSettingsDialog
-            loading={loading || preprocessing}
             updateRunParams={updateRunParams}
             runParams={runParams}
-            showClumpingDialog={showClumpingDialog}
             userRole={userData.role}
           />
           {dialogStates.classificationDialogOpen ? (
@@ -4448,7 +4240,6 @@ const App = () => {
               open={dialogStates.classificationDialogOpen}
               onOk={() => setClassificationDialogOpen(false)}
               onCancel={() => setClassificationDialogOpen(false)}
-              loading={loading}
               renderer={renderer}
               changeColorCode={changeColorCode}
               changeRenderer={changeRenderer}
@@ -4457,22 +4248,9 @@ const App = () => {
               summaryStats={summaryStats}
               brew={brew}
               dataBreaks={dataBreaks}
-            />
-          ) : null}
-          <ClumpingDialog
-            hideClumpingDialog={hideClumpingDialog}
-            tileset={tileset}
-            setMapPaintProperties={setMapPaintProperties}
-            mapPaintProperties={mapPaintProperties}
-            mapCentre={mapCentre}
-            mapZoom={mapZoom}
-            startMarxanJob={startMarxanJob}
-            clumpingRunning={clumpingRunning}
-            updateRunParams={updateRunParams}
-          />
-          <ResetDialog onOk={resetServer} loading={loading} />
+            />) : null}
+          <ResetDialog onOk={resetServer} />
           <RunLogDialog
-            loading={loading}
             preprocessing={preprocessing}
             unauthorisedMethods={unauthorisedMethods}
             runLogs={runLogs}
@@ -4483,23 +4261,9 @@ const App = () => {
             runlogTimer={runlogTimer}
           />
           <ServerDetailsDialog
-            loading={loading}
-            newWDPAVersion={newWDPAVersion}
-            registry={registry}
-          />
-          <UpdateWDPADialog
-            newWDPAVersion={newWDPAVersion}
-            updateWDPA={updateWDPA}
-            loading={preprocessing}
-            registry={registry}
+            loading={uiState.loading}
           />
           <AlertDialog />
-          <Snackbar
-            open={uiState.snackbarOpen}
-            message={uiState.snackbarMessage}
-            onClose={() => dispatch(setSnackbarOpen(false))}
-            style={{ maxWidth: "800px !important" }}
-          />
           <FeatureMenu
             anchorEl={menuAnchor}
             removeFromProject={removeFromProject}
@@ -4513,61 +4277,46 @@ const App = () => {
             showCancelButton={true}
             updateTargetValueForFeatures={updateTargetValueForFeatures}
           />
-          <GapAnalysisDialog
-            loading={loading}
-            showCancelButton={true}
-            setGapAnalysis={setGapAnalysis}
-            gapAnalysis={gapAnalysis}
-            preprocessing={preprocessing}
-            metadata={metadata}
-          />
           <ShareableLinkDialog
             shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${userId}&project=${projState.project}`}
           />
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog
-              onCancel={clearSelactedLayers}
-              loading={loading}
+              map={map}
               atlasLayers={atlasLayers}
-              selectedLayers={selectedLayers}
-              updateSelectedLayers={updateSelectedLayers}
-            />
-          ) : null}
+            />) : null}
 
           <CumulativeImpactDialog
-            loading={loading || uploading}
-            openHumanActivitiesDialog={openHumanActivitiesDialog}
+            loading={uiState.loading || uploading}
+            _get={_get}
             metadata={metadata}
-            allImpacts={allImpacts}
+
             clickImpact={clickImpact}
             initialiseDigitising={initialiseDigitising}
             selectedImpactIds={selectedImpactIds}
-            openImportedActivitesDialog={openImportedActivitesDialog}
             userRole={userData.role}
           />
           <HumanActivitiesDialog
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             metadata={metadata}
-            activities={activities}
             initialiseDigitising={initialiseDigitising}
             userRole={userData.role}
             fileUpload={uploadRaster}
             saveActivityToDb={saveActivityToDb}
-            openImportedActivitesDialog={openImportedActivitesDialog}
+            startLogging={startLogging}
+            handleWebSocket={handleWebSocket}
           />
           <RunCumuluativeImpactDialog
-            loading={loading || uploading}
+            loading={uiState.loading || uploading}
             metadata={metadata}
-            uploadedActivities={uploadedActivities}
             userRole={userData.role}
             runCumulativeImpact={runCumulativeImpact}
           />
           <MenuBar
             open={token}
             userRole={userData.role}
-            openProjectsDialog={openProjectsDialog}
-            openActivitiesDialog={openActivitiesDialog}
             openFeaturesDialog={openFeaturesDialog}
+            openProjectsDialog={openProjectsDialog}
             openPlanningGridsDialog={openPlanningGridsDialog}
             openCumulativeImpactDialog={openCumulativeImpactDialog}
             openAtlasLayersDialog={openAtlasLayersDialog}

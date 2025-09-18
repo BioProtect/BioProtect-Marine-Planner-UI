@@ -3,16 +3,16 @@ import { useDispatch, useSelector } from "react-redux";
 
 import MarxanDialog from "./MarxanDialog";
 import React from "react";
-import { toggleDialog } from "./slices/uiSlice";
+import { toggleDialog } from "@slices/uiSlice";
 
 const ResetDialog = ({ onOk, loading }) => {
   const dispatch = useDispatch();
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const uiState = useSelector((state) => state.ui);
 
   return (
     <MarxanDialog
-      open={dialogStates.resetDialogOpen}
-      loading={loading}
+      open={uiState.dialogStates.resetDialogOpen}
+      loading={uiState.loading}
       onOk={onOk}
       onCancel={() =>
         dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: false }))
