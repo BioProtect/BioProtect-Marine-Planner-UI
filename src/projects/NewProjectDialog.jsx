@@ -28,7 +28,7 @@ import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useMemo } from "react";
 import { usePlanningGridWebSocket } from "@hooks/usePlanningGridWebSocket";
 
-const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewFeature, fileUpload }) => {
+const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, previewFeature, fileUpload }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature)
@@ -179,17 +179,6 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
       dispatch(setLoading(false)); // ensure we hide loading on immediate failure
       showMessage(`Error creating planning grid: ${error}`, "error")
     }
-  };
-
-  const updateSelectedFeatures = () => {
-    const updatedFeatures = uiState.allFeatures.map((feature) => ({
-      ...feature,
-      selected: featureState.selectedFeatureIds.includes(feature.id),
-    }));
-    dispatch(setAllFeatures(updatedFeatures));
-    dispatch(
-      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
-    );
   };
 
   const clickFeature = (feature) => {
@@ -379,6 +368,7 @@ const NewProjectDialog = ({ loading, openFeaturesDialog, selectedCosts, previewF
               metadata={{ OLDVERSION: false }}
               userRole="User"
               previewFeature={previewFeature}
+              preview={true}
             />
           </Box>
         )}

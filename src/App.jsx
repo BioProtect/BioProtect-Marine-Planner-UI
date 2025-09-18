@@ -70,14 +70,12 @@ import AboutDialog from "./AboutDialog";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import ClassificationDialog from "./ClassificationDialog";
-import ClumpingDialog from "./ClumpingDialog";
 import CostsDialog from "./CostsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
 import FeatureDialog from "@features/FeatureDialog";
 import FeatureInfoDialog from "@features/FeatureInfoDialog";
 import FeatureMenu from "@features/FeatureMenu";
 import FeaturesDialog from "@features/FeaturesDialog";
-import GapAnalysisDialog from "./GapAnalysisDialog";
 import HelpMenu from "./HelpMenu";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
@@ -116,7 +114,6 @@ import ShareableLinkDialog from "./ShareableLinkDialog";
 /*global AbortController*/
 import TargetDialog from "./TargetDialog";
 import ToolsMenu from "./ToolsMenu";
-import UpdateWDPADialog from "./UpdateWDPADialog";
 import UserMenu from "./User/UserMenu";
 import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
@@ -124,6 +121,7 @@ import classyBrew from "classybrew";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from "jsonp-promise";
+import { layer } from "@fortawesome/fontawesome-svg-core";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
 /*eslint-disable no-unused-vars*/
@@ -158,8 +156,6 @@ const App = () => {
 
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
-  const [wdpaVectorTileLayer, setWdpaVectorTileLayer] = useState("feb_2023");
-  const [newWDPAVersion, setNewWDPAVersion] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [lng, setLng] = useState(-70.9);
   const [lat, setLat] = useState(42.35);
@@ -171,12 +167,10 @@ const App = () => {
   const [pid, setPid] = useState("");
   const [allImpacts, setAllImpacts] = useState([]);
   const [atlasLayers, setAtlasLayers] = useState([]);
-  const [clumpingRunning, setClumpingRunning] = useState(false);
   const [costnames, setCostnames] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
   const [countries, setCountries] = useState([]);
   const [files, setFiles] = useState({});
-  const [gapAnalysis, setGapAnalysis] = useState([]);
   const [identifyProtectedAreas, setidentifyProtectedAreas] = useState([]);
   const [identifyVisible, setIdentifyVisible] = useState(false);
   /////////////////////////////////////////////////////////////////////////////
@@ -387,13 +381,6 @@ const App = () => {
     },
     [responseIsTimeoutOrEmpty, isServerError]
   );
-
-  const setWDPAVectorTilesLayerName = useCallback((wdpa_version) => {
-    // Get the short version of the wdpa_version, e.g., August 2019 to aug_2019
-    const version =
-      wdpa_version.toLowerCase().substr(0, 3) + "_" + wdpa_version.substr(-4);
-    setWdpaVectorTileLayer(`wdpa_${version}_polygons`);
-  }, []);
 
   const newFeatureCreated = useCallback(
     async (id) => {
@@ -727,7 +714,6 @@ const App = () => {
   //the user is validated so login
   const postLoginSetup = async () => {
     try {
-      setWDPAVectorTilesLayerName(uiState.registry.WDPA.latest_version);
       const currentBasemap = uiState.basemaps.find(
         (item) => item.name === uiState.basemap
       );
@@ -819,18 +805,6 @@ const App = () => {
     //see if there are any new notifications from the marxan-registry
     if (uiState.registry.NOTIFICATIONS.length > 0) {
       addNotifications(uiState.registry.NOTIFICATIONS);
-    }
-    // Check for new version of wdpa data
-    // From the Marxan Registry WDPA object - if there is then show a notification to admin users
-    if (newWDPAVersion) {
-      addNotifications([
-        {
-          id: "wdpa_update_" + uiState.registry.WDPA.latest_version,
-          html: "A new version of the WDPA is available. Go to Help | Server Details for more information.",
-          type: "Data Update",
-          showForRoles: ["Admin"],
-        },
-      ]);
     }
     //see if there is a new version of the marxan-client software
     if (MARXAN_CLIENT_VERSION !== uiState.registry.CLIENT_VERSION) {
@@ -1984,9 +1958,6 @@ const App = () => {
         defaultMode: "draw_polygon",
       })
     );
-    map.current.on("moveend", (evt) => {
-      if (dialogStates.clumpingDialogOpen) updateMapCentreAndZoom(); //only update the state if the clumping dialog is open
-    });
     map.current.on("draw.create", polygonDrawn);
   };
 
@@ -2141,18 +2112,10 @@ const App = () => {
       const style = await getValidStyle(basemap);
       await createMap(style);
 
-      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
-      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
-      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
-      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
-      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
-      // TURN THESE OFF UNTIL I FIND A SOLUTION BECAUSE THEY ARE POLUTING THE CONOLE
-      // addWDPASource();
-      // addWDPALayer();
-
       // Add the planning unit layers (if a project has already been loaded)
       if (tileset) {
-        addPlanningGridLayers(tileset);
+        console.log("tileset ", tileset);
+        addPlanningGridLayers(tileset.name);
         // Get the results, if any
         if (owner) {
           await getResults(owner, projState.project);
@@ -2232,13 +2195,10 @@ const App = () => {
       const response = await fetch(`http://0.0.0.0:3000/${puLayerName}`);
       if (!response.ok) throw new Error("Failed to fetch tileset metadata");
       const data = await response.json();
-
       // Remove any existing PU-related layers and sources
       removePlanningGridLayers();
-
       // Add layers for the new planning unit grid
       addPlanningGridLayers(data.name);
-
       // Zoom to bounds if available
       if (data.bounds) {
         zoomToBounds(map, data.bounds);
@@ -2246,7 +2206,6 @@ const App = () => {
       // Update local state with tileset info
       setTileset(data);
       return data;
-
     } catch (error) {
       console.error("Error loading planning grid:", error);
       showMessage(error.message || "Error loading planning grid", "error");
@@ -2278,6 +2237,7 @@ const App = () => {
   //adds the results, planning unit, planning unit edit etc layers to the map
   // const addPlanningGridLayers = (tileset) => {
   const addPlanningGridLayers = (puLayerName) => {
+    console.log("puLayerName ", puLayerName);
     if (!map.current) return;
 
     const sourceId = `martin_src_${puLayerName}`;
@@ -2285,13 +2245,6 @@ const App = () => {
     const costsLayerId = `martin_layer_costs_${puLayerName}`;
     const puLayerId = `martin_layer_pu_${puLayerName}`;
     const statusLayerId = `martin_layer_status_${puLayerName}`;
-
-    //add the source for the planning unit layers
-    // map.current.addSource(CONSTANTS.PLANNING_UNIT_SOURCE_NAME, {
-    //   type: "vector",
-    //   url: "mapbox://" + tileset.id,
-    // });
-
 
     if (!map.current.getSource(sourceId)) {
       map.current.addSource(sourceId, {
@@ -2388,84 +2341,44 @@ const App = () => {
     setResultsLayer(map.current.getLayer(resultsLayerId));
   };
 
-  const removePlanningGridLayers = () => {
-    if (!map.current) return;
+  const removePlanningGridLayers = (puLayerName) => {
+    // if a puLayerName passed in remove that layer otherwise remove all layers 
+    if (!map.current || !map.current.getStyle()) return;
 
-    const sourceName = CONSTANTS.PLANNING_UNIT_SOURCE_NAME;
-    let layers = map.current.getStyle().layers;
-    // Get dynamically added layers, remove them, and then remove sources
-    const dynamicLayers = layers.filter((item) => item.source === sourceName);
-    dynamicLayers.forEach((item) => removeMapLayer(item.id));
-    if (map.current.getSource(sourceName)) {
-      map.current.removeSource(sourceName);
+    const style = map.current.getStyle();
+    const layers = style.layers || [];
+
+    if (puLayerName) {
+      // Targeted cleanup for a specific tileset
+      const sourceId = `martin_src_${puLayerName}`;
+      const layersToRemove = [
+        `martin_layer_results_${puLayerName}`,
+        `martin_layer_costs_${puLayerName}`,
+        `martin_layer_pu_${puLayerName}`,
+        `martin_layer_status_${puLayerName}`,
+      ];
+
+      layersToRemove.forEach((item) => removeMapLayer(item));
+      removeMapSource(sourceId);
+    } else {
+      // Get dynamically added layers, remove them, and then remove sources
+      layers.filter(l => l.id.startsWith('martin_layer_')).forEach(l => removeMapLayer(l.id));
+
+      const possibleSourceIds = new Set();
+      layers.forEach(l => {
+        if (l.source && l.source.startsWith('martin_src_')) {
+          possibleSourceIds.add(l.source);
+        }
+      });
+      // As an extra safety, try removing any source id that currently exists and matches the prefix
+      // by reading the style object (MapLibre/Mapbox keeps sources in style.sources).
+      const styleSources = (style.sources && Object.keys(style.sources)) || [];
+      styleSources
+        .filter(id => id.startsWith('martin_src_'))
+        .forEach(id => possibleSourceIds.add(id));
+
+      possibleSourceIds.forEach(removeMapSource);
     }
-  };
-
-  const removeWDPA = () => {
-    // If the map already has the WDPA layer, remove it first:
-    if (map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME)) {
-      map.current.removeLayer(CONSTANTS.WDPA_LAYER_NAME);
-    }
-    // If the map already has the WDPA source, remove it:
-    if (map.current.getSource(CONSTANTS.WDPA_SOURCE_NAME)) {
-      map.current.removeSource(CONSTANTS.WDPA_SOURCE_NAME);
-    }
-  };
-
-
-  //adds the WDPA vector tile layer source - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
-  const addWDPASource = () => {
-    removeWDPA();
-
-    //add the source for the wdpa
-    const yr = projState.bpServer.wdpa_version.substr(-4); //get the year from the wdpa_version
-    const attribution = `IUCN and UNEP- WCMC(${yr}), The World Database on Protected Areas(WDPA) ${projState.bpServer.wdpa_version}, Cambridge, UK: UNEP - WCMC.Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>`;
-
-    const tiles = [
-      `${uiState.registry.WDPA.tilesUrl}layer = marxan: ${wdpaVectorTileLayer} & tilematrixset=EPSG: 900913 & Service=WMTS & Request=GetTile & Version=1.0.0 & Format=application / x - protobuf; type = mapbox - vector & TileMatrix=EPSG: 900913: { z }& TileCol={ x }& TileRow={ y } `,
-    ];
-    setWdpaAttribution(attribution);
-    map.current.addSource(CONSTANTS.WDPA_SOURCE_NAME, {
-      attribution: attribution,
-      type: "vector",
-      tiles: tiles,
-    });
-  };
-
-
-
-  //adds the WDPA vector tile layer - this is a separate function so that if the source vector tiles are updated, the layer can be re-added on its own
-  const addWDPALayer = () => {
-    const fills = {
-      type: "categorical",
-      property: "marine",
-      stops: [
-        ["0", "rgb(99,148,69)"],
-        ["1", "rgb(63,127,191)"],
-        ["2", "rgb(63,127,191)"],
-      ],
-    };
-
-    addMapLayer({
-      id: CONSTANTS.WDPA_LAYER_NAME,
-      metadata: {
-        name: "Protected Areas",
-        type: CONSTANTS.LAYER_TYPE_PROTECTED_AREAS,
-      },
-      type: "fill",
-      source: CONSTANTS.WDPA_SOURCE_NAME,
-      "source-layer": wdpaVectorTileLayer,
-      layout: {
-        visibility: "visible",
-      },
-      paint: {
-        "fill-color": fills,
-        "fill-outline-color": fills,
-        "fill-opacity": CONSTANTS.WDPA_FILL_LAYER_OPACITY,
-      },
-    });
-    //set the wdpa layer in app state so that it can update the Legend component and its opacity control
-    setWdpaLayer(map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME));
   };
 
   const toggleLayerVisibility = (id, visibility) => {
@@ -2500,6 +2413,7 @@ const App = () => {
 
   //centralised code to remove a layer from the maps current style
   const removeMapLayer = (layerid) => map.current.removeLayer(layerid);
+  const removeMapSource = (layerid) => map.current.removeSource(layerid);
 
   const isLayerVisible = (layername) =>
     map.current &&
@@ -3354,9 +3268,6 @@ const App = () => {
 
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
   const updateSelectedFeatures = async () => {
-    //delete the gap analysis as the features within the project have changed
-    await deleteGapAnalysis();
-
     // Get the updated features
     let updatedFeatures = featureState.allFeatures.map((feature) => {
       if (featureState.selectedFeatureIds.includes(feature.id)) {
@@ -3700,22 +3611,12 @@ const App = () => {
   };
 
 
-  const openUsersDialog = async () => {
-    dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: true }));
-  };
+  const openUsersDialog = async () => dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: true }));
 
   const openRunLogDialog = async () => {
     await getRunLogs();
     await startPollingRunLogs();
     setRunLogDialogOpen(true);
-  };
-
-  const openGapAnalysisDialog = async () => {
-    dispatch(
-      toggleDialog({ dialogName: "gapAnalysisDialogOpen", isOpen: true })
-    );
-    setGapAnalysis([]);
-    return await runGapAnalysis();
   };
 
   const showProjectListDialog = (listOfProjects, title, heading) => {
@@ -3754,9 +3655,6 @@ const App = () => {
   const filterWdpaByIucnCategory = (iucnCategory) => {
     //get the individual iucn categories
     const iucnCategories = getIndividualIucnCategories(iucnCategory);
-    //TODO FILTER THE WDPA CLIENT SIDE BY INTERSECTING IT WITH THE PLANNING GRID
-    //filter the vector tiles for those iucn categories - and if the planning unit name has an iso3 country code - then use that as well. e.g. pu_ton_marine_hexagon_50 (has iso3 code) or pu_a4402723a92444ff829e9411f07e7 (no iso3 code)
-    //let filterExpr = (metadata.PLANNING_UNIT_NAME.match(/_/g).length> 1) ? ['all', ['in', 'IUCN_CAT'].concat(iucnCategories), ['==', 'PARENT_ISO', metadata.PLANNING_UNIT_NAME.substr(3, 3).toUpperCase()]] : ['all', ['in', 'IUCN_CAT'].concat(iucnCategories)];
     const filterExpr = ["all", ["in", "iucn_cat", ...iucnCategories]]; // no longer filter by ISO code
     map.current.setFilter(CONSTANTS.WDPA_LAYER_NAME, filterExpr);
 
@@ -3881,42 +3779,6 @@ const App = () => {
     );
   };
 
-  //downloads and updates the WDPA on the server
-  const updateWDPA = async () => {
-    startLogging();
-    //call the webservice
-    const message = await handleWebSocket(
-      `updateWDPA?downloadUrl=${uiState.registry.WDPA.downloadUrl}&wdpaVersion=${uiState.registry.WDPA.latest_version}`
-    );
-    // Websocket has finished - set the new version of the wdpa
-
-    setNewWDPAVersion(false);
-    setBpServer({
-      ...prev,
-      wdpa_version: uiState.registry.WDPA.latest_version,
-    });
-    await delay(1000);
-    //set the source for the WDPA layer to the new vector tiles
-    setWDPAVectorTilesLayerName(uiState.registry.WDPA.latest_version);
-    // Remove the existing WDPA layer and source
-    removeMapLayer(CONSTANTS.WDPA_LAYER_NAME);
-    if (map.current && map.current.getSource(CONSTANTS.WDPA_SOURCE_NAME)) {
-      map.current.removeSource(CONSTANTS.WDPA_SOURCE_NAME);
-    }
-    //re-add the WDPA source and layer
-    addWDPASource();
-    addWDPALayer();
-    //reset the protected area intersections on the client
-    setProtectedAreaIntersections([]);
-    //recalculate the protected area intersections and refilter the vector tiles
-    await changeIucnCategory(metadata.IUCN_CATEGORY);
-    //close the dialog
-    dispatch(
-      toggleDialog({ dialogName: "updateWDPADialogOpen", isOpen: false })
-    );
-    return message;
-  };
-
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -3952,34 +3814,6 @@ const App = () => {
       throw error; // Re-throw the error if needed
     }
   };
-
-  const showClumpingDialog = async () => {
-    // Update the map centre and zoom state which is used by the maps in the clumping dialog
-    updateMapCentreAndZoom();
-    //when the boundary lengths have been calculated
-    await preprocessBoundaryLengths();
-    // Update the spec.dat file with any that have been added or removed or changed target or spf
-    await updateSpecFile();
-    // When the species file has been updated, update the planning unit file
-    updatePuFile(); // not implemented yet
-
-    // When the planning unit file has been updated, update the PuVSpr file - this does all the preprocessing using web sockets
-    await updatePuvsprFile();
-    //show the clumping dialog
-    setClumpingDialogOpen(true);
-    setClumpingRunning(true);
-  };
-
-  const hideClumpingDialog = async () => {
-    //delete the project group
-    await deleteProjects();
-    //reset the paint properties in the clumping dialog
-    resetPaintProperties();
-    //return state to normal
-    dispatch(toggleDialog({ dialogName: "clumpingDialogOpen", isOpen: false }));
-  };
-
-
 
   //deletes the projects from the _clumping folder
   const deleteProjects = async () => {
@@ -4050,27 +3884,7 @@ const App = () => {
     await getRunLogs();
   };
 
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // GAP ANALYSIS
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
-  // ----------------------------------------------------------------------------------------------- //
 
-  const runGapAnalysis = async () => {
-    setActiveTab("log");
-    const message = await handleWebSocket(
-      `runGapAnalysis?user=${owner}&project=${projState.project}`);
-    setGapAnalysis(message.data);
-    return message;
-  };
-
-  //deletes a stored gap analysis on the server
-  const deleteGapAnalysis = async () =>
-    await _get(`deleteGapAnalysis?user=${owner}&project=${projState.project}`);
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -4218,7 +4032,6 @@ const App = () => {
             menuAnchor={menuAnchor}
             openUsersDialog={openUsersDialog}
             openRunLogDialog={openRunLogDialog}
-            openGapAnalysisDialog={openGapAnalysisDialog}
             userRole={userData}
             metadata={metadata}
             cleanup={cleanup}
@@ -4347,6 +4160,7 @@ const App = () => {
             selectedCosts={selectedCosts}
             previewFeature={previewFeature}
             fileUpload={uploadFileToFolder}
+            updateSelectedFeatures={updateSelectedFeatures}
           />
           <NewPlanningGridDialog
             loading={uiState.loading || preprocessing || uploading}
@@ -4369,6 +4183,7 @@ const App = () => {
             initialiseDigitising={initialiseDigitising}
             previewFeature={previewFeature}
             refreshFeatures={refreshFeatures}
+            preview={true}
           />
           {featureState.dialogs.featureDialogOpen ? (
             <FeatureDialog getTilesetMetadata={getMetadata} />)
@@ -4418,7 +4233,6 @@ const App = () => {
           <RunSettingsDialog
             updateRunParams={updateRunParams}
             runParams={runParams}
-            showClumpingDialog={showClumpingDialog}
             userRole={userData.role}
           />
           {dialogStates.classificationDialogOpen ? (
@@ -4435,17 +4249,6 @@ const App = () => {
               brew={brew}
               dataBreaks={dataBreaks}
             />) : null}
-          <ClumpingDialog
-            hideClumpingDialog={hideClumpingDialog}
-            tileset={tileset}
-            setMapPaintProperties={setMapPaintProperties}
-            mapPaintProperties={mapPaintProperties}
-            mapCentre={mapCentre}
-            mapZoom={mapZoom}
-            startMarxanJob={startMarxanJob}
-            clumpingRunning={clumpingRunning}
-            updateRunParams={updateRunParams}
-          />
           <ResetDialog onOk={resetServer} />
           <RunLogDialog
             preprocessing={preprocessing}
@@ -4459,11 +4262,6 @@ const App = () => {
           />
           <ServerDetailsDialog
             loading={uiState.loading}
-            newWDPAVersion={newWDPAVersion}
-          />
-          <UpdateWDPADialog
-            newWDPAVersion={newWDPAVersion}
-            updateWDPA={updateWDPA}
           />
           <AlertDialog />
           <FeatureMenu
@@ -4478,13 +4276,6 @@ const App = () => {
           <TargetDialog
             showCancelButton={true}
             updateTargetValueForFeatures={updateTargetValueForFeatures}
-          />
-          <GapAnalysisDialog
-            showCancelButton={true}
-            setGapAnalysis={setGapAnalysis}
-            gapAnalysis={gapAnalysis}
-            preprocessing={preprocessing}
-            metadata={metadata}
           />
           <ShareableLinkDialog
             shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${userId}&project=${projState.project}`}

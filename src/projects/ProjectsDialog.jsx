@@ -14,6 +14,7 @@ const ProjectsDialog = ({
   const dispatch = useDispatch();
   const projState = useSelector((state) => state.project);
 
+
   const handleDeleteProject = useCallback(() => {
     deleteProject(projState.projectData.user, projState.projectData.name);
   }, [projState.projectData]);
@@ -111,6 +112,7 @@ const ProjectsDialog = ({
             searchColumns={["user", "name", "description"]}
             clickRow={handleProjectChange}
             isProject={true}
+            preview={false}
           />
         </div>
       </MarxanDialog>

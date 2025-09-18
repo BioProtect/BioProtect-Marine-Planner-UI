@@ -220,7 +220,6 @@ const switchProject = createAsyncThunk(
   "project/switchProject",
   async (projectId, { dispatch }) => {
     const data = await dispatch(getUserProject(projectId)).unwrap();
-    console.log("data in sitch project ", data);
     return data;
   }
 );

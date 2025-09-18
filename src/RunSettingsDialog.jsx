@@ -14,7 +14,6 @@ import { toggleDialog } from "@slices/uiSlice";
 const RunSettingsDialog = ({
   updateRunParams,
   runParams,
-  showClumpingDialog,
   userRole,
 }) => {
   const uiState = useSelector((state) => state.ui);
@@ -74,21 +73,10 @@ const RunSettingsDialog = ({
           >
             {data[cellInfo.index]["value"]}
           </div>
-          {data[cellInfo.index]["key"] === "BLM" && (
-            <FontAwesomeIcon
-              icon={faExternalLinkAlt}
-              onClick={showClumpingDialog}
-              title="Click to open the BLM comparison dialog"
-              style={{
-                cursor: "pointer",
-                marginLeft: "10px",
-              }}
-            />
-          )}
         </div>
       );
     },
-    [userRole, data, enableUpdate, handleBlur, showClumpingDialog]
+    [userRole, data, enableUpdate, handleBlur]
   );
 
   return (

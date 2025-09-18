@@ -187,21 +187,22 @@ const BioprotectTable = (props) => {
                       {row[column.id]}
                     </TableCell>
                   ))}
-                  <TableCell
-                    align="center"
-                    sx={{ cursor: "pointer", color: "primary.main" }}
+                  {(props.preview) && (
+                    <TableCell
+                      align="center"
+                      sx={{ cursor: "pointer", color: "primary.main" }}
 
-                  >
-                    <AppBarIcon
-                      icon={faMagnifyingGlassPlus}
-                      onClick={(e) => {
-                        e.stopPropagation();         // don’t also trigger row click
-                        props.preview?.(row);        // call the preview callback
-                      }}
-                      title="Priview this feature"
-                    />
-                    Preview
-                  </TableCell>
+                    >
+                      <AppBarIcon
+                        icon={faMagnifyingGlassPlus}
+                        onClick={(e) => {
+                          e.stopPropagation();         // don’t also trigger row click
+                          props.preview?.(row);        // call the preview callback
+                        }}
+                        title="Priview this feature"
+                      />
+                      Preview
+                    </TableCell>)}
                 </TableRow>
               );
             })}

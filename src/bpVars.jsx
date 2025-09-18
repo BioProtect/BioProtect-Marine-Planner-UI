@@ -158,7 +158,6 @@ export const CONSTANTS = {
   SHAPES: ["Hexagon", "Square"],
   AREAKM2S: [10, 20, 30, 40, 50, 100],
   //layer source names
-  PLANNING_UNIT_SOURCE_NAME: "marxan_planning_units_source",
   WDPA_SOURCE_NAME: "marxan_wdpa_source",
   //layer names
   PU_LAYER_NAME: "marxan_pu_layer", //layer showing the planning units
