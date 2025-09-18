@@ -20,14 +20,6 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Project'],
     }),
-    createImportProject: builder.mutation({
-      query: (importData) => ({
-        url: 'projects?action=',
-        method: 'POST',
-        body: { ...importData, action: 'create_import' },
-      }),
-      invalidatesTags: ['Project'],
-    }),
     createProjectGroup: builder.mutation({
       query: (groupData) => ({
         url: 'projects?action=',
@@ -98,7 +90,6 @@ export const projectApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useCreateProjectMutation,
-  useCreateImportProjectMutation,
   useCreateProjectGroupMutation,
   useUpdateProjectMutation,
   useGetProjectQuery,

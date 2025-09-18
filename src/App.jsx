@@ -1247,7 +1247,7 @@ const App = () => {
 
     try {
       //update the spec.dat file with any that have been added or removed or changed target or spf
-      await updateSpecFile();
+      await updateProjectFeatures();
       updatePuFile(); // when the species file has been updated, update the planning unit file
     } catch (error) {
       console.error(error);
@@ -1300,7 +1300,7 @@ const App = () => {
   };
 
   //updates the species file with any target values that have changed
-  const updateSpecFile = async () => {
+  const updateProjectFeatures = async () => {
     const formData = new FormData();
     formData.append("user", owner);
     formData.append("project", projState.project);
@@ -1312,7 +1312,7 @@ const App = () => {
     formData.append("interest_features", joinFeatureProperties("id"));
     formData.append("target_values", joinFeatureProperties("target_value"));
     formData.append("spf_values", joinFeatureProperties("spf"));
-    return await _post("updateSpecFile", formData);
+    return await _post("projects?action=update_features", formData);
   };
 
   //updates the planning unit file with any changes - not implemented yet
@@ -3298,7 +3298,7 @@ const App = () => {
     dispatch(setProjectFeatures(updatedFeatures.filter((item) => item.selected)));
     // Persist changes to the server if the user is not read-only
     if (userData.role !== "ReadOnly") {
-      await updateSpecFile();
+      await updateProjectFeatures();
     }
 
     // Close dialogs
@@ -3334,7 +3334,7 @@ const App = () => {
     dispatch(setProjectFeatures(features.filter((item) => item.selected)));
     // Persist the changes to the server
     if (userData.role !== "ReadOnly") {
-      await updateSpecFile();
+      await updateProjectFeatures();
     }
   };
 
