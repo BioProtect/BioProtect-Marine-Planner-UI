@@ -36,11 +36,14 @@ const ProfileDialog = ({ open, onOk, updateUser }) => {
     return isValid;
   };
 
-  const handleUpdateUser = () => {
+  const handleUpdateUser = async () => {
     if (!validateEmail()) {
       return; // Exit if email is invalid
     }
-    updateUser({ name: state.name, email: state.email });
+    const formData = new FormData();
+    formData.append("name", state.name);
+    formData.append("email", state.email);
+    await updateUser(formData).unwrap();
     handleClose();
   };
 

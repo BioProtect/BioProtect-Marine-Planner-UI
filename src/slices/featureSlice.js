@@ -43,6 +43,13 @@ export const featureApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    getSensitivities: builder.mutation({
+      query: () => ({
+        url: `features?action=get_sensitivities`,
+        method: "GET",
+      }),
+    }),
+
   }),
 })
 
@@ -53,6 +60,7 @@ export const {
   useListFeatureProjectsQuery,
   useListFeaturePUsQuery,
   useCreateFeatureFromLinestringMutation,
+  useGetSensitivitiesMutation
 } = featureApiSlice;
 
 

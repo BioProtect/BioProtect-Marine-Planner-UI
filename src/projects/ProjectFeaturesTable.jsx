@@ -20,21 +20,23 @@ import { useMemo } from "react";
 
 function ProjectFeaturesTable() {
   const dispatch = useDispatch();
-  const { allFeatures = [], selectedFeatureIds = [] } = useSelector((s) => s.feature);
+  const featureState = useSelector((state) => state.feature);
+
+  // const { allFeatures = [], selectedFeatureIds = [] } = useSelector((s) => s.feature);
 
   const selected = useMemo(
-    () => allFeatures.filter((f) => selectedFeatureIds.includes(f.id)),
-    [allFeatures, selectedFeatureIds]
+    () => featureState.allFeatures.filter((f) => featureState.selectedFeatureIds.includes(f.id)),
+    [featureState.allFeatures, featureState.selectedFeatureIds]
   );
   const toggleOne = (id) => {
-    const next = selectedFeatureIds.includes(id)
-      ? selectedFeatureIds.filter((x) => x !== id)
-      : [...selectedFeatureIds, id];
+    const next = featureState.selectedFeatureIds.includes(id)
+      ? featureState.selectedFeatureIds.filter((x) => x !== id)
+      : [...featureState.selectedFeatureIds, id];
     dispatch(setSelectedFeatureIds(next));
   };
 
   const removeOne = (id) => {
-    dispatch(setSelectedFeatureIds(selectedFeatureIds.filter((x) => x !== id)));
+    dispatch(setSelectedFeatureIds(featureState.selectedFeatureIds.filter((x) => x !== id)));
   };
 
   const clearAll = () => dispatch(setSelectedFeatureIds([]));

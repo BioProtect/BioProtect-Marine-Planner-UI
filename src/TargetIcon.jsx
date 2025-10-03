@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import { Box, InputBase, Tooltip } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
 
 import { blue } from "@mui/material/colors";
 import { selectCurrentUser } from "@slices/authSlice";
@@ -8,7 +9,7 @@ const TargetIcon = ({
   target_value,
   targetStatus,
   visible,
-  interestFeature,
+  feature,
   updateTargetValue,
 }) => {
   const [editing, setEditing] = useState(false);
@@ -26,6 +27,7 @@ const TargetIcon = ({
   const isNumber = (str) => /^\d+$/.test(str);
 
   const handleChange = (event) => {
+    console.log("event ", event);
     let newValue = event.target.value;
     if (newValue > 100) {
       return;
@@ -36,17 +38,24 @@ const TargetIcon = ({
   };
 
   const handleKeyDown = (event) => {
+    console.log("event ", event);
     if (event.key === "Enter") {
-      setEditing(false); // This will trigger onBlur
+      setEditing(false);
+      handleBlur(event);
     }
   };
 
   const handleBlur = () => {
+    console.log("handling blur......")
     setEditing(false);
-    updateTargetValue(interestFeature, localTargetValue);
+    console.log("localTargetValue ", localTargetValue);
+    console.log("feature ", feature);
+    updateTargetValue(feature, localTargetValue);
+
   };
 
-  const handleClick = (event) => {
+  const handleClick = () => {
+    if (editing) return; // don’t re-trigger while already editing
     if (userData.role !== "ReadOnly") {
       setEditing(true);
       setLocalTargetValue(target_value);
@@ -54,95 +63,75 @@ const TargetIcon = ({
   };
 
   const getStyles = () => {
-    let backgroundColor;
-    let fontColor;
-
     switch (targetStatus) {
       case "Does not occur in planning area":
-        backgroundColor = "lightgray";
-        fontColor = "white";
-        break;
+        return { backgroundColor: "lightgray", fontColor: "white" };
       case "Unknown":
-        backgroundColor = "white";
-        fontColor = blue[300];
-        break;
       case "Target achieved":
-        backgroundColor = "white";
-        fontColor = blue[300];
-        break;
+        return { backgroundColor: "white", fontColor: blue[300] };
       default:
-        backgroundColor = "rgb(255, 64, 129)";
-        fontColor = "white";
-        break;
+        return { backgroundColor: "rgb(255, 64, 129)", fontColor: "white" };
     }
-
-    return { backgroundColor, fontColor };
   };
 
   const { backgroundColor, fontColor } = getStyles();
 
   return (
-    <div
-      onClick={(evt) => handleClick(evt)}
-      style={{
-        position: "absolute",
-        left: "0px",
-        top: "8px",
-        display: visible ? "block" : "none",
-      }}
-    >
+    <Box onClick={handleClick}>
       {editing ? (
-        <div
-          style={{
-            display: "inline-flex",
-            backgroundColor: "#2F6AE4",
-            userSelect: "none",
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            borderRadius: "50%",
+            bgcolor: "#2F6AE4",
+            display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            borderRadius: "50%",
-            height: "27px",
-            width: "27px",
           }}
         >
-          <input
-            id={`input_${interestFeature.id}`}
-            ref={inputRef}
+          <InputBase
+            id={`input_${feature.id}`}
+            inputRef={inputRef}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             onChange={handleChange}
-            style={{
-              backgroundColor: "transparent",
-              border: "none",
-              height: "27px",
-              width: "27px",
-              fontSize: "13px",
-              textAlign: "center",
-              color: blue[300],
-            }}
             value={localTargetValue}
+            onClick={(e) => e.stopPropagation()} // ⬅️ prevent parent Box click
+            inputProps={{
+              sx: {
+                width: 44,
+                height: 44,
+                textAlign: "center",
+                fontSize: "0.8rem",
+                color: blue[300],
+                p: 0,
+              },
+            }}
           />
-        </div>
+        </Box>
       ) : (
-        <div
-          title={targetStatus}
-          style={{
-            display: "inline-flex",
-            backgroundColor,
-            color: fontColor,
-            userSelect: "none",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "10px",
-            borderRadius: "50%",
-            height: "27px",
-            width: "27px",
-            border: "1px lightgray solid",
-          }}
-        >
-          {target_value}%
-        </div>
+        <Tooltip title={targetStatus} arrow>
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              bgcolor: backgroundColor,
+              color: fontColor,
+              fontSize: "0.75rem",
+              border: "3px solid black",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              userSelect: "none",
+            }}
+          >
+            {target_value}%
+          </Box>
+        </Tooltip>
       )}
-    </div>
+    </Box>
   );
 };
 

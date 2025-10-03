@@ -108,7 +108,6 @@ const initialState = {
 
     alertDialogOpen: false,
     atlasLayersDialogOpen: false,
-    changePasswordDialogOpen: false,
     classificationDialogOpen: false,
     costsDialogOpen: false,
     importCostsDialogOpen: false,
@@ -119,6 +118,8 @@ const initialState = {
     profileDialogOpen: false,
     registerDialogOpen: false,
     resendPasswordDialogOpen: false,
+    changePasswordDialogOpen: false,
+
     resetDialogOpen: false,
     resultsPanelOpen: false,
     runLogDialogOpen: false,
@@ -152,9 +153,6 @@ const uiSlice = createSlice({
     },
     setActiveResultsTab(state, action) {
       state.activeResultsTab = action.payload;
-    },
-    setSelectedFeatureIds(state, action) {
-      state.selectedFeatureIds = action.payload;
     },
     toggleDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
@@ -202,7 +200,6 @@ export const {
   setBasemaps,
   setActiveTab,
   setActiveResultsTab,
-  setSelectedFeatureIds,
   toggleProjectDialog,
   toggleDialog,
   setActivities,

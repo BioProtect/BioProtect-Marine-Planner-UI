@@ -23,10 +23,10 @@ export const userApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     updateUser: builder.mutation({
-      query: ({ id, user }) => ({
+      query: (formData) => ({
         url: `users?action=update`,
         method: "POST",
-        body: { id, ...user },
+        body: formData,   // can now accept FormData
       }),
     }),
     deleteUser: builder.mutation({

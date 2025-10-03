@@ -47,7 +47,7 @@ const MenuBar = ({
   const userData = useSelector(selectCurrentUser);
   //opens the features dialog without the ability to add/remove features (i.e. different from the dialog that is opened from a project)
 
-  const hanldeMenuOpen = (e, val) => {
+  const handleMenuOpen = (e, val) => {
     e.preventDefault();
     setMenuAnchor(e.currentTarget);
     dispatch(toggleDialog({ dialogName: val, isOpen: true }));
@@ -136,12 +136,12 @@ const MenuBar = ({
             <AppBarIcon
               icon={faWrench}
               title={"Tools and analysis"}
-              onClick={(e) => hanldeMenuOpen(e, "toolsMenuOpen")}
+              onClick={(e) => handleMenuOpen(e, "toolsMenuOpen")}
             />
             <AppBarIcon
               icon={faQuestionCircle}
               title={"Help and support"}
-              onClick={(e) => hanldeMenuOpen(e, "helpMenuOpen")}
+              onClick={(e) => handleMenuOpen(e, "helpMenuOpen")}
             />
           </Typography>
           <Button
@@ -156,7 +156,7 @@ const MenuBar = ({
             color="inherit"
             className={"username"}
             title={"Click to open the User menu"}
-            onClick={(e) => hanldeMenuOpen(e, "userMenuOpen")}
+            onClick={(e) => handleMenuOpen(e, "userMenuOpen")}
           >
             {userData.username}
           </Button>

@@ -69,6 +69,7 @@ import { useDispatch, useSelector } from "react-redux";
 import AboutDialog from "./AboutDialog";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
+import ChangPasswordDialog from "./User/ChangePasswordDialog"
 import ClassificationDialog from "./ClassificationDialog";
 import CostsDialog from "./CostsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
@@ -100,7 +101,7 @@ import PlanningGridsDialog from "@planningGrids/PlanningGridsDialog";
 import ProfileDialog from "./User/ProfileDialog";
 import ProjectsDialog from "@projects/ProjectsDialog";
 import ProjectsListDialog from "@projects/ProjectsListDialog";
-import ResendPasswordDialog from "./ResendPasswordDialog";
+import ResendPasswordDialog from "./User/ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./RightInfoPanel/ResultsPanel";
 //@mui/material components and icons
@@ -725,6 +726,7 @@ const App = () => {
 
       const speciesData = await _get("getAllSpeciesData");
       dispatch(setAllFeatures(speciesData.data));
+      console.log("fuck   ", projState.projectData.features)
 
       const activitiesData = await _get("getUploadedActivities");
       dispatch(setUploadedActivities(activitiesData.data));
@@ -971,30 +973,29 @@ const App = () => {
     setRunParams(parameters);
   };
 
-  const loadProject = async () => {
+  const loadProject = async (project, user) => {
     // Okay so this has chnaged with the database and moving to slices and whatnot. 
     // Need to check how this works - where is it being called from and what details are needed to load a project
     // so switch project would seem to do what needs to be done for this function so can this be ditched? 
-    const proj = projState.projectData;
 
     try {
       resetResults();
-      setRenderer(proj.renderer);
-      setCostnames(proj.costnames);
-      setOwner(proj.user);
+      setRenderer(project.renderer);
+      setCostnames(project.costnames);
+      setOwner(project.user);
       dispatch(setProjectLoaded(true));
       setPlanningCostsTrigger(true);
 
-      if (proj.metadata.pu_tilesetid) {
-        await changePlanningGrid(proj.metadata.pu_tilesetid);
-        await getResults(userData.name, proj.name);
+      if (project.metadata.pu_tilesetid) {
+        await changePlanningGrid(project.metadata.pu_tilesetid);
+        await getResults(userData.name, project.name);
       }
 
       // Initialize interest features and preload costs data
       initialiseInterestFeatures(
-        proj.metadata.OLDVERSION,
-        proj.features,
-        proj.feature_preprocessing,
+        project.metadata.OLDVERSION,
+        project.features,
+        project.feature_preprocessing,
         speciesData.data
       );
 
@@ -1045,7 +1046,6 @@ const App = () => {
 
     const allFeats = featureState.allFeatures.length > 0 ? featureState.allFeatures : allFeaturesData;
 
-
     // Process features
     const processedFeatures = allFeats.map((feature) => {
       // Add required attributes
@@ -1056,11 +1056,8 @@ const App = () => {
         // not in the project, so just return the defaults
         return base;
       }
-
       const projF = projFeatures[idx];
       const preprocess = getArrayItem(featurePrePro, feature.id);
-
-
       return {
         ...base,
         selected: true,
@@ -1072,10 +1069,10 @@ const App = () => {
         occurs_in_planning_grid: preprocess && preprocess[2] > 0,
       }
     });
-
     getSelectedFeatureIds();
     dispatch(setAllFeatures(processedFeatures));
     dispatch(setProjectFeatures(processedFeatures.filter((item) => item.selected)));
+    dispatch(setSelectedFeatureIds(projFeatures.map((feature) => feature.id)));
   };
 
   //adds the required attributes for the features to work in the marxan web app - these are the default values
@@ -1299,19 +1296,17 @@ const App = () => {
     dispatch(setAllFeatures(updatedFeatures));
   };
 
-  //updates the species file with any target values that have changed
-  const updateProjectFeatures = async () => {
-    const formData = new FormData();
-    formData.append("user", owner);
-    formData.append("project", projState.project);
-    // Helper function to join feature properties
-    const joinFeatureProperties = (property) =>
-      projState.projectFeatures.map((item) => item[property]).join(",");
+  //updates the project features with target values that have changed
+  const updateProjectFeatures = async (features = projState.projectFeatures) => {
+    const joinFeatureProperties = (property) => features.map((item) => item[property]).join(",");
 
-    // Append dynamic values
+    const formData = new FormData();
+    formData.append("user", projState.projectData.user);
+    formData.append("project_id", projState.projectData.project.id);
     formData.append("interest_features", joinFeatureProperties("id"));
     formData.append("target_values", joinFeatureProperties("target_value"));
     formData.append("spf_values", joinFeatureProperties("spf"));
+
     return await _post("projects?action=update_features", formData);
   };
 
@@ -1324,7 +1319,6 @@ const App = () => {
       // Done on demand when the project is run because the user may add/remove Conservation features dynamically
       await preprocessAllFeatures();
     } catch (error) {
-      console.error("Error updating PuVSpr file:", error);
       throw error; // Rethrow the error to be handled by the caller if necessary
     }
   };
@@ -3215,13 +3209,15 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
 
   //updates the properties of a feature and then updates the features state
-  const updateFeature = (feature, newProps) => {
+  const updateFeature = async (feature, newProps) => {
     let features = [...featureState.allFeatures];
     const index = features.findIndex((element) => element.id === feature.id);
     if (index !== -1) {
       features[index] = { ...features[index], ...newProps };
+      const updateFeatures = features.filter((item) => item.selected)
       dispatch(setAllFeatures(features));
-      dispatch(setProjectFeatures(features.filter((item) => item.selected)));
+      dispatch(setProjectFeatures(updateFeatures));
+      await updateProjectFeatures(features = updateFeatures);
     }
   };
 
@@ -3271,13 +3267,14 @@ const App = () => {
     // Get the updated features
     let updatedFeatures = featureState.allFeatures.map((feature) => {
       if (featureState.selectedFeatureIds.includes(feature.id)) {
-        // Feature is selected
         return { ...feature, selected: true };
       } else {
         if (feature.feature_layer_loaded) {
+          console.log("toggling feature in updateSelectedFeatures line 3279....")
           toggleFeatureLayer(feature);
         }
         if (feature.feature_puid_layer_loaded) {
+          console.log("toggling feature_puid_layer? in updateSelectedFeatures line 3283....")
           toggleFeaturePUIDLayer(feature);
         }// Feature is not selected
         return {
@@ -3294,13 +3291,16 @@ const App = () => {
     });
 
     // Apply updates to state
+    // because state calls are asynchronous pass in the selected featires directly to ensure they are there 
+    const selected = updatedFeatures.filter((item) => item.selected);
+
     dispatch(setAllFeatures(updatedFeatures));
-    dispatch(setProjectFeatures(updatedFeatures.filter((item) => item.selected)));
+    dispatch(setProjectFeatures(selected));
+
     // Persist changes to the server if the user is not read-only
     if (userData.role !== "ReadOnly") {
-      await updateProjectFeatures();
+      await updateProjectFeatures(selected);
     }
-
     // Close dialogs
     dispatch(
       toggleFeatureD({
@@ -4047,26 +4047,39 @@ const App = () => {
           {dialogStates.userSettingsDialogOpen ? (
             <UserSettingsDialog
               open={dialogStates.userSettingsDialogOpen}
-              onCancel={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
+              onCancel={() => dispatch(toggleDialog({
+                dialogName: "userSettingsDialogOpen", isOpen: false
+              }))}
               loading={uiState.loading}
               saveOptions={saveOptions}
               loadBasemap={loadBasemap}
             />
           ) : null}
-          <UsersDialog
-            open={dialogStates.usersDialogOpen}
-            loading={uiState.loading}
-            deleteUser={handleDeleteUser}
-            changeRole={changeRole}
-            guestUserEnabled={projState.bpServer.guestUserEnabled}
-          />
-          <ProfileDialog
-            open={dialogStates.profileDialogOpen}
-            onOk={() => setProfileDialogOpen(false)}
-            onCancel={() => setProfileDialogOpen(false)}
-            loading={uiState.loading}
-            updateUser={handleUpdateUser}
-          />
+          {dialogStates.usersDialogOpen ? (
+            <UsersDialog
+              open={dialogStates.usersDialogOpen}
+              loading={uiState.loading}
+              deleteUser={handleDeleteUser}
+              changeRole={changeRole}
+              guestUserEnabled={projState.bpServer.guestUserEnabled}
+            />) : null}
+          {dialogStates.profileDialogOpen ? (
+            <ProfileDialog
+              open={dialogStates.profileDialogOpen}
+              onOk={() => dispatch(toggleDialog({
+                dialogName: "profileDialogOpen", isOpen: false
+              }))}
+              onCancel={() => dispatch(toggleDialog({
+                dialogName: "profileDialogOpen", isOpen: false
+              }))}
+              loading={uiState.loading}
+              updateUser={handleUpdateUser}
+            />) : null}
+          {dialogStates.changePasswordDialogOpen ? (
+            <ChangPasswordDialog
+              open={dialogStates.changePasswordDialogOpen}
+            />) : null}
+
           <AboutDialog
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
             wdpaAttribution={wdpaAttribution}
@@ -4218,13 +4231,14 @@ const App = () => {
             getTilesetMetadata={getMetadata}
             getProjectList={getProjectList}
           />
-          <CostsDialog
-            unauthorisedMethods={unauthorisedMethods}
-            costname={metadata?.COSTS}
-            deleteCost={deleteCost}
-            data={costnames}
-            createCostsFromImpact={createCostsFromImpact}
-          />
+          {dialogStates.costsDialogOpen ? (
+            <CostsDialog
+              unauthorisedMethods={unauthorisedMethods}
+              costname={metadata?.COSTS}
+              deleteCost={deleteCost}
+              data={costnames}
+              createCostsFromImpact={createCostsFromImpact}
+            />) : null}
           <ImportCostsDialog
             addCost={addCost}
             deleteCostFileThenClose={deleteCostFileThenClose}

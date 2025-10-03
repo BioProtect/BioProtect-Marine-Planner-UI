@@ -8,6 +8,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { INITIAL_VARS } from "../bpVars";
 import { apiSlice } from "./apiSlice";
 import { setActiveTab } from "./uiSlice";
+import { setSelectedFeatureIds } from "./featureSlice"
 
 export const projectApiSlice = apiSlice.injectEndpoints({
   tagTypes: ['Project'],
@@ -158,14 +159,7 @@ export const getUserProject = createAsyncThunk(
   "projects/getUserProject",
   async (projectId, { getState, dispatch, rejectWithValue, extra }) => {
     const { enqueueSnackbar } = extra || {};
-
     try {
-
-      if (!projectId) {
-        const project = getState().auth.userData.project.id;
-        projectId = project?.id;
-      }
-
       if (!projectId) {
         const allProjects = await dispatch(
           projectApiSlice.endpoints.listProjects.initiate()
@@ -178,7 +172,6 @@ export const getUserProject = createAsyncThunk(
           enqueueSnackbar?.("No projects found for user", { variant: "warning" })
           return rejectWithValue("No projects found for user");
         }
-
         projectId = firstProject.id;
       }
 
@@ -189,6 +182,7 @@ export const getUserProject = createAsyncThunk(
       const response = JSON.parse(data);
       console.log("🔥 Project Data:", response);
 
+      // update store
       dispatch(setProjectData(response));
       dispatch(setRenderer(response.renderer));  // Add missing renderer update
       dispatch(setProjectCosts(response.costnames));
@@ -211,6 +205,7 @@ const switchProject = createAsyncThunk(
   "project/switchProject",
   async (projectId, { dispatch }) => {
     const data = await dispatch(getUserProject(projectId)).unwrap();
+    console.log("data in switch project - ", data);
     return data;
   }
 );

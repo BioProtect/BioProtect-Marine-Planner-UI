@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { setActiveTab, toggleDialog } from "@slices/uiSlice";
-import { switchProject, toggleProjDialog } from "@slices/projectSlice";
+import { setProjectLoaded, switchProject, toggleProjDialog } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -13,18 +13,22 @@ const ProjectsDialog = ({
 }) => {
   const dispatch = useDispatch();
   const projState = useSelector((state) => state.project);
+  const [selectedProjectId, setSelectedProjectId] = useState(projState.projectData.project)
 
 
   const handleDeleteProject = useCallback(() => {
     deleteProject(projState.projectData.user, projState.projectData.name);
   }, [projState.projectData]);
 
-  const loadAndClose = useCallback(() => {
-    loadProject();
+  const loadAndClose = useCallback(async () => {
     dispatch(
       toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
     );
-  }, [projState.projectData]);
+    dispatch(setProjectLoaded(false));
+    const projectResponse = await dispatch(switchProject(selectedProjectId)).unwrap();
+    await loadProject(projectResponse);
+
+  }, [projState.projectData, selectedProjectId]);
 
   const handleCloneProject = useCallback(() => {
     cloneProject(projState.projectData.user, projState.projectData.name);
@@ -42,11 +46,12 @@ const ProjectsDialog = ({
 
   const handleProjectChange = (event, row) => {
     const projectId = row?.id;
+    console.log("projectId in handleProjectChange  ", projectId);
     if (!projectId) {
       console.warn("Invalid project selected");
       return;
     }
-    dispatch(switchProject(projectId));
+    setSelectedProjectId(projectId)
   };
 
   const sortDate = useCallback((a, b, desc) => {
@@ -106,7 +111,7 @@ const ProjectsDialog = ({
             title="Projects"
             data={projState.projects}
             tableColumns={columns}
-            selected={[projState.projectData.project]}
+            selected={[selectedProjectId]}
             ableToSelectAll={false}
             showSearchBox={true}
             searchColumns={["user", "name", "description"]}

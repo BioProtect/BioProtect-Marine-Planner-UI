@@ -120,17 +120,19 @@ const FeaturesDialog = ({ onOk, metadata, userRole, initialiseDigitising, previe
   };
 
   const clickRow = (event, row) => {
+    console.log("event, row ", event, row);
     if (!row || row.index === undefined) return;
+
+    addOrRemoveFeature(row);
 
     if (featureState.addingRemovingFeatures) {
       if (event.shiftKey && previousRow) {
         const nextIds = getFeaturesBetweenRows(previousRow, row);
         dispatch(setSelectedFeatureIds(nextIds));
-      } else {
-        addOrRemoveFeature(row);
       }
       setPreviousRow(row);
     } else {
+      // Also track which feature is "active" for detail view
       dispatch(setSelectedFeature(row));
     }
   };
