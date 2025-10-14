@@ -29,6 +29,7 @@ const FeaturesList = ({
 
   const userData = useSelector(selectCurrentUser);
   const projState = useSelector((state) => state.project);
+  console.log("projState ", projState.projectFeatures);
   const dispatch = useDispatch();
 
 
@@ -70,7 +71,7 @@ const FeaturesList = ({
   const handleTargetChange = (feature, newValue) => updateFeature(feature, { target_value: newValue });
 
   return (
-    <List>
+    <List sx={{ maxHeight: 600, overflowY: "auto", px: 1, mb: 4 }}  >
       {projState.projectFeatures.map((item) => {
         const { pu_area, protected_area, target_value, color } = item;
         let protectedPercent;
@@ -84,7 +85,7 @@ const FeaturesList = ({
 
         return (
           <ListItem
-            key={item}
+            key={item.id}
             secondaryAction={
               <IconButton
                 edge="end"

@@ -94,6 +94,8 @@ const initialState = {
   uploadedActivities: [],
   selectedActivity: "",
 
+  owner: "",
+
   fileUploadResponse: null,
 
   dialogStates: {
@@ -167,6 +169,10 @@ const uiSlice = createSlice({
     setLoading(state, action) {
       state.loading = action.payload;
     },
+    setOwner(state, action) {
+      state.owner = action.payload;
+    },
+
     setSelectedActivity(state, action) {
       state.selectedActivity = action.payload;
     },
@@ -211,5 +217,6 @@ export const {
   addToImportLog,
   removeImportLogMessage,
   clearImportLog,
+  setOwner,
 } = uiSlice.actions;
 export default uiSlice.reducer;

@@ -9,7 +9,7 @@ import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
 
 const ProjectsDialog = ({
-  loading, oldVersion, deleteProject, loadProject, cloneProject, exportProject, userRole, unauthorisedMethods
+  loading, oldVersion, deleteProject, loadProject, cloneProject, exportProject, userRole, unauthorisedMethods, loadProjectAndSetup
 }) => {
   const dispatch = useDispatch();
   const projState = useSelector((state) => state.project);
@@ -21,14 +21,13 @@ const ProjectsDialog = ({
   }, [projState.projectData]);
 
   const loadAndClose = useCallback(async () => {
-    dispatch(
-      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
-    );
-    dispatch(setProjectLoaded(false));
-    const projectResponse = await dispatch(switchProject(selectedProjectId)).unwrap();
-    await loadProject(projectResponse);
-
-  }, [projState.projectData, selectedProjectId]);
+    try {
+      dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
+      await loadProjectAndSetup(selectedProjectId);
+    } catch (error) {
+      showMessage("Failed to load project", "error");
+    }
+  }, [dispatch, selectedProjectId]);
 
   const handleCloneProject = useCallback(() => {
     cloneProject(projState.projectData.user, projState.projectData.name);

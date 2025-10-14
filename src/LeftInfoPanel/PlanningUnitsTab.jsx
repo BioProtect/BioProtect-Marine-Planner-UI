@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { faEraser, faLock, faSave } from "@fortawesome/free-solid-svg-icons";
 
+import Button from "@mui/material/Button";
 import CONSTANTS from "../constants"; // Ensure this path is correct
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -18,6 +19,8 @@ const PlanningUnitsTab = (props) => {
   const puState = useSelector((state) => state.planningUnit)
   const projState = useSelector((state) => state.project)
   const metadata = projState.projectData.metadata;
+  const handlePUEditingClick = () => props.startStopPuEditSession();
+
   return (
     <div>
       <Card sx={{ minWidth: 275 }}>
@@ -31,14 +34,15 @@ const PlanningUnitsTab = (props) => {
 
             <Typography variant="h5" component="div">Statuses</Typography>
 
-            <Stack direction="row" spacing={4}>
+            <Stack direction="row" spacing={4} >
 
-              <Typography variant="body1" color="text.secondary">
-                <FontAwesomeIcon
-                  icon={puState.puEditing ? faSave : faLock}
-                  onClick={props.startStopPuEditSession}
-                  title={puState.puEditing ? "Save" : "Manually edit"}
-                />
+              <Typography variant="body1" color="text.secondary" >
+                <Button variant="outlined" onClick={handlePUEditingClick}>
+                  <FontAwesomeIcon
+                    icon={puState.puEditing ? faSave : faLock}
+                    title={puState.puEditing ? "Save" : "Manually edit"}
+                  />
+                </Button>
               </Typography>
 
               <Typography variant="body1" color="text.secondary">
@@ -48,21 +52,17 @@ const PlanningUnitsTab = (props) => {
               </Typography>
 
               <Typography variant="body1" color="text.secondary">
-                <span
+                <Button
+                  variant="outlined"
+                  onClick={(e) => props.clearManualEdits(e)}
                   style={{
                     display: puState.puEditing ? "inline-block" : "none",
-                  }}
-                  className="puManualEditClear">
+                  }}>
                   <FontAwesomeIcon
                     icon={faEraser}
-                    onClick={(e) => props.clearManualEdits(e)}
                     title={"Clear all manual edits"}
-                    style={{
-                      cursor: "pointer",
-                      color: "rgba(255, 64, 129, 0.7)",
-                    }}
                   />
-                </span>
+                </Button>
               </Typography>
 
             </Stack>

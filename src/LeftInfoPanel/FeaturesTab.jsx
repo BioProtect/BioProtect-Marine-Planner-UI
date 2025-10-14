@@ -19,6 +19,7 @@ const FeaturesTab = (props) => {
   const dispatch = useDispatch();
   const userData = useSelector(selectCurrentUser);
   const featureState = useSelector((state) => state.feature);
+  console.log("featureState ", featureState);
 
 
   const handleOpenFeaturesDialog = () => {
@@ -33,7 +34,7 @@ const FeaturesTab = (props) => {
 
   return (
     <React.Fragment>
-      <div className="newPUDialogPane">
+      <div style={{ padding: "8px" }} >
         <FeaturesList
           setMenuAnchor={props.setMenuAnchor}
           simple={props.simple}

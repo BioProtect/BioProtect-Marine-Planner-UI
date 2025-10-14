@@ -4,10 +4,10 @@ import {
   getServerCapabilities,
 } from "../Server/serverFunctions";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { setActiveTab, setOwner } from "./uiSlice";
 
 import { INITIAL_VARS } from "../bpVars";
 import { apiSlice } from "./apiSlice";
-import { setActiveTab } from "./uiSlice";
 import { setSelectedFeatureIds } from "./featureSlice"
 
 export const projectApiSlice = apiSlice.injectEndpoints({
@@ -114,6 +114,7 @@ const initialState = {
   error: null,
 
   costData: null,
+  renderer: {},
 
   projectData: {},
   projects: [],
@@ -121,10 +122,12 @@ const initialState = {
   projectListDialogHeading: "",
   projectListDialogTitle: "",
   projectLoaded: false,
+  projectChanged: false,
   projectImpacts: [],
   projectFeatures: [],
   projectPlanningUnits: {},
-  projectCosts: {},
+  projectCosts: [],
+  planningCostsTrigger: false,
 
   dialogs: {
     projectsListDialogOpen: false,
@@ -157,8 +160,7 @@ export const initialiseServers = createAsyncThunk(
 // Thunk to fetch the user's project only if not already in state
 export const getUserProject = createAsyncThunk(
   "projects/getUserProject",
-  async (projectId, { getState, dispatch, rejectWithValue, extra }) => {
-    const { enqueueSnackbar } = extra || {};
+  async (projectId, { dispatch, rejectWithValue }) => {
     try {
       if (!projectId) {
         const allProjects = await dispatch(
@@ -187,14 +189,12 @@ export const getUserProject = createAsyncThunk(
       dispatch(setRenderer(response.renderer));  // Add missing renderer update
       dispatch(setProjectCosts(response.costnames));
       dispatch(setProjectFeatures(response.features));
-
-      // Activate the project tab
+      dispatch(setOwner(response.project.user));
       dispatch(setActiveTab("project"));
-      dispatch(setProjectLoaded(true));
+      dispatch(setPlanningCostsTrigger(true));
       return response; // Assuming response has { project: { id, name, ... } }
     } catch (error) {
       console.error("Failed to fetch project:", error);
-      enqueueSnackbar?.(`Failed to fetch project: ${error}`, { variant: "error" });
       return rejectWithValue(error.message);
     }
   }
@@ -205,7 +205,7 @@ const switchProject = createAsyncThunk(
   "project/switchProject",
   async (projectId, { dispatch }) => {
     const data = await dispatch(getUserProject(projectId)).unwrap();
-    console.log("data in switch project - ", data);
+    dispatch(setProjectLoaded(true));
     return data;
   }
 );
@@ -279,6 +279,9 @@ const projectSlice = createSlice({
     setProjectCosts: (state, action) => {
       state.projectCosts = action.payload;
     },
+    setPlanningCostsTrigger: (state, action) => {
+      state.planningCostsTrigger = action.payload;
+    },
     toggleProjDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
@@ -330,6 +333,7 @@ export const {
   setRenderer,
   setProjectPlanningUnits,
   setProjectCosts,
+  setPlanningCostsTrigger,
   toggleProjDialog,
 } = projectSlice.actions;
 export { switchProject };

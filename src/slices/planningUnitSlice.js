@@ -44,6 +44,7 @@ const initialState = {
     importPlanningGridDialogOpen: false,
     planningGridDialogOpen: false,
     planningGridsDialogOpen: false,
+    hexInfoDialogOpen: false,
   }
 }
 
@@ -62,7 +63,7 @@ const planningUnitSlice = createSlice({
       state.planningUnits = action.payload;
     },
     setPuEditing(state, action) {
-      state.featureMetadata = action.payload;
+      state.puEditing = action.payload;
     },
     togglePUD(state, action) {
       const { dialogName, isOpen } = action.payload;
@@ -70,7 +71,7 @@ const planningUnitSlice = createSlice({
     },
     setCurrentPUGrid(state, action) {
       state.currentPUGrid = action.payload;
-    },
+    }
   }
 });
 

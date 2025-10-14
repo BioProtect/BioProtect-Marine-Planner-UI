@@ -11,6 +11,7 @@ import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
 import { setAddToProject } from "@slices/projectSlice";
+import { toggleFeatureD } from "@slices/featureSlice";
 import { useCreateFeatureFromLinestringMutation } from "@slices/featureSlice";
 
 // Functional component version using React 18 and MUI 5

@@ -10,10 +10,10 @@ import { useState } from "react";
 
 const ProjectTabContent = ({
   toggleProjectPrivacy,
-  owner,
   updateDetails
 }) => {
   const userData = useSelector(selectCurrentUser);
+  const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
   const metadata = projState.projectData.metadata
   const project = projState.projectData.project
@@ -60,12 +60,12 @@ const ProjectTabContent = ({
               <span className="createDate">  {new Date(metadata.createdate.split(".")[0] + "Z").toLocaleString()}</span>
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {userData.username !== owner && (
+              {userData.username !== uiState.owner && (
                 <span className="tabTitle tabTitleTopMargin">Created by</span>
               )}
               <br />
-              {userData.username !== owner && (
-                <span className="createDate">{owner || userData.username}</span>
+              {userData.username !== uiState.owner && (
+                <span className="createDate">{uiState.owner || userData.username}</span>
               )}
             </Typography>
           </Box>

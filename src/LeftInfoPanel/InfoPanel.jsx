@@ -16,6 +16,7 @@ import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { selectCurrentUser } from "@slices/authSlice";
+import { setProjectCosts } from "../slices/projectSlice";
 
 const activeTabArr = ["project", "features", "planning_units"];
 
@@ -128,11 +129,17 @@ const InfoPanel = (props) => {
       : props.renameDescription(e.target.value);
   };
 
-  const startStopPuEditSession = () =>
-    puState.puEditing ? stopPuEditSession() : startPuEditSession();
+  const startStopPuEditSession = () => {
+    if (puState.puEditing) {
+      stopPuEditSession();
+    } else {
+      startPuEditSession();
+    }
+  };
 
   const startPuEditSession = () => {
     setShowPlanningGrid(true);
+    // this function should come from App where the map ref lives
     props.startPuEditSession();
   };
 
@@ -198,7 +205,7 @@ const InfoPanel = (props) => {
     }
   };
 
-  let costnames = props.costnames ? [...props.costnames, "Custom.."] : [];
+  let costnames = projState.projectCosts ? [...projState.projectCosts, "Custom.."] : [];
   const displayStyle = {
     display: dialogStates.infoPanelOpen ? "block" : "none",
   };
@@ -248,7 +255,6 @@ const InfoPanel = (props) => {
           {currentTabIndex === 0 && (
             <ProjectTabContent
               toggleProjectPrivacy={toggleProjectPrivacy}
-              owner={props.owner}
               updateDetails={handleChange}
             />
           )}

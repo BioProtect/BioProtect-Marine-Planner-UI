@@ -74,7 +74,7 @@ const ResultsPanel = (props) => {
   };
 
   const loadSolution = (solution) => {
-    props.loadSolution(solution, props.owner);
+    props.loadSolution(solution, uiState.owner);
   };
 
   const resetSolution = () => {
