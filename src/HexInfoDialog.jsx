@@ -1,77 +1,55 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Tab, Table, TableBody, TableCell, TableRow, Tabs } from "@mui/material";
 import {
-  setIdentifyPlanningUnits,
-  togglePUD,
-} from "@slices/planningUnitSlice";
+  Box,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  Tabs,
+  Typography,
+} from "@mui/material";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { setIdentifyPlanningUnits, togglePUD } from "@slices/planningUnitSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "./constants";
 import Swatch from "./Swatch";
-import SyncIcon from "@mui/icons-material/Sync";
 import { getArea } from "./Helpers";
-import { useDispatch } from "react-redux";
-import { useSelector } from "react-redux";
+import { selectCurrentUser } from "@slices/authSlice";
 
 const TAB_STYLE = {
   fontWeight: "normal",
   textTransform: "none",
-  height: "34px",
   fontSize: "15px",
+  minWidth: "140px",
 };
 
-const HexInfoDialog = ({
-  xy,
-  metadata,
-}) => {
+const HexInfoDialog = ({ xy, metadata }) => {
   const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const puState = useSelector((state) => state.planningUnit)
+  const puState = useSelector((state) => state.planningUnit);
+  const featureState = useSelector((state) => state.feature);
   const userData = useSelector(selectCurrentUser);
 
-  const hexInfoDialogOpen = puState.dialogs.hexInfoDialogOpen;
-  const featureState = useSelector((state) => state.feature);
-  const [selectedTab, setSelectedTab] = useState("pu");
-  const [timer, setTimer] = useState(null);
+  const { hexInfoDialogOpen } = puState.dialogs;
+  const puInfo = puState.identifyPlanningUnits?.puData;
+  const puFeatures = puState.identifyPlanningUnits?.features || [];
+  const identifiedFeatures = featureState.identifiedFeatures || [];
 
-  const clearTimer = useCallback(() => {
-    if (timer) {
-      clearTimeout(timer);
-      setTimer(null);
-    }
-  }, [timer]);
-
-  const startTimer = useCallback(() => {
-    clearTimer(); // Ensure previous timer is cleared before setting a new one
-    setTimer(setTimeout(() => {
-      closeDialog();
-      setSelectedTab("pu");
-    }, 4000));
-  }, [clearTimer, closeDialog]);
-
+  // Automatically decide which tab should be shown first
+  const [selectedTab, setSelectedTab] = useState(puInfo ? "pu" : "features");
   useEffect(() => {
-    if (hexInfoDialogOpen) {
-      startTimer();
-    }
-    return () => clearTimer(); // Cleanup on unmount
-  }, [hexInfoDialogOpen]);
+    if (!puInfo && identifiedFeatures.length > 0) setSelectedTab("features");
+    if (puInfo && puFeatures.length > 0) setSelectedTab("pu");
+  }, [puInfo, puFeatures, identifiedFeatures]);
 
-  useEffect(() => {
-    if (hexInfoDialogOpen) {
-      startTimer();
-    }
-  }, [xy]);
-
-  //hides the identify popup
-  const closeDialog = (e) => {
-    dispatch(togglePUD({ dialogName: "hexInfoDialogOpen", "isOpen": false }));
+  const closeDialog = useCallback(() => {
+    dispatch(togglePUD({ dialogName: "hexInfoDialogOpen", isOpen: false }));
     dispatch(setIdentifyPlanningUnits({}));
-  };
+  }, [dispatch]);
 
-  const getItemStatus = () => {
-    if (!puState.identifyPlanningUnits?.puData) {
-      return CONSTANTS.PU_STATUS_DEFAULT;
-    }
-    switch (puState.identifyPlanningUnits.puData.status) {
+  const puStatus = useMemo(() => {
+    if (!puInfo) return CONSTANTS.PU_STATUS_DEFAULT;
+    switch (puInfo.status) {
       case 1:
         return CONSTANTS.PU_STATUS_LOCKED_IN;
       case 2:
@@ -79,89 +57,231 @@ const HexInfoDialog = ({
       default:
         return CONSTANTS.PU_STATUS_DEFAULT;
     }
+  }, [puInfo]);
 
+  const renderArea = useCallback(
+    (amount) =>
+      amount == null ? (
+        <Typography color="text.secondary" variant="caption">
+          Not processed yet
+        </Typography>
+      ) : (
+        <Typography
+          variant="body2"
+          title={getArea(amount, userData.reportUnits)}
+          sx={{ whiteSpace: "wrap" }}
+        >
+          {getArea(amount, userData.reportUnits, true)}
+        </Typography>
+      ),
+    [userData]
+  );
+
+  const renderTable = (rows, columns) => {
+    return (
+      <Table
+        size="small"
+        stickyHeader
+        sx={{
+          width: "100%",
+          tableLayout: "auto", // 👈 allows natural column sizing and wrapping
+          borderCollapse: "collapse",
+          "& td, & th": {
+            verticalAlign: "top",
+            borderBottom: "1px solid #f0f0f0",
+            padding: "4px 8px",
+          },
+        }}
+      >
+        <TableBody>
+          {rows.map((row, idx) => (
+            <TableRow key={idx} hover>
+              {columns.map((col, i) => (
+                <TableCell
+                  key={i}
+                  sx={{
+                    "&:first-of-type": {
+                      whiteSpace: "normal",   // 👈 wrapping allowed
+                      wordBreak: "break-word", // 👈 long words break properly
+                      maxWidth: "260px",       // 👈 constrain width so it wraps, not stretches table
+                    },
+                    "&:not(:first-of-type)": {
+                      whiteSpace: "nowrap",    // 👈 keep area column compact
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                      maxWidth: "100px",
+                      textAlign: "right",
+                    },
+                  }}
+                >
+                  {col.render(row)}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
   };
 
-  const renderArea = (amount, source) =>
-    source !== "Imported shapefile (points)" ? (
-      <div title={getArea(amount, userData.reportUnits)}>{getArea(amount, userData.reportUnits, true)}</div>
+
+
+  /** TAB: Planning Unit */
+  const PlanningUnitTab =
+    puInfo ? (
+      <Box sx={{ p: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.2,
+            border: "1px solid #eee",
+            borderRadius: 2,
+            p: 1.5,
+          }}
+        >
+          {/* Row 1: Hex ID */}
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            <Typography variant="body2" color="text.secondary">
+              Hex ID
+            </Typography>
+            <Typography variant="body2" fontWeight={500}>
+              {puInfo.h3_index || puInfo.id}
+            </Typography>
+          </Box>
+
+          {/* Row 2: Cost */}
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            <Typography variant="body2" color="text.secondary">
+              Cost
+            </Typography>
+            <Typography variant="body2" fontWeight={500}>
+              {puInfo.cost?.toFixed(3)}
+            </Typography>
+          </Box>
+
+          {/* Row 3: Locked Out */}
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            <Typography variant="body2" fontWeight={500}>
+              {puStatus.label}
+            </Typography>
+            <Swatch
+              item={puStatus}
+              shape={
+                metadata?.PLANNING_UNIT_NAME?.includes("hexagon")
+                  ? "hexagon"
+                  : "square"
+              }
+            />
+
+          </Box>
+        </Box>
+      </Box>
     ) : (
-      <div title={amount}>{amount}</div>
+      <Box sx={{ p: 2, textAlign: "center" }}>
+        <Typography color="text.secondary">
+          No planning unit data available.
+        </Typography>
+      </Box>
     );
 
-  const renderTabContent = (data, columns) => (
-    <Table>
-      <TableBody>
-        {data.map((row, index) => (
-          <TableRow key={index}>
-            {columns.map((col, colIndex) => (
-              <TableCell key={colIndex}>{col.render(row)}</TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
 
-  const planningUnitTab = puState.identifyPlanningUnits?.puData && (
-    <div>
-      <div className="identifyPlanningUnitsHeader">
-        <span>
-          <Swatch
-            item={getItemStatus()}
-            shape={metadata?.PLANNING_UNIT_NAME?.includes("hexagon") ? "hexagon" : "square"}
-          />
-          <span style={{ paddingLeft: "5px" }} />
-          {getItemStatus().label}
-        </span>
-        <span>Cost: {Number(puState.identifyPlanningUnits.puData.cost)}</span>
-        <span>
-          H3: {puState.identifyPlanningUnits.puData.h3_index || puState.identifyPlanningUnits.puData.id}
-        </span>
-      </div>
-      {puState.identifyPlanningUnits.features?.length > 0 ? (
-        renderTabContent(puState.identifyPlanningUnits.features, [{
-          render: (row) => <div title={row.alias}>{row.alias}</div>,
-        }, {
-          render: (row) => renderArea(row.amount, row.source),
-        }])
-      ) : (
-        <div className="featureList">No features occur in this planning unit</div>
-      )}
-    </div>
-  );
+  /** TAB: Features */
+  const FeaturesTab =
+    puFeatures.length > 0 ? (
+      <Box sx={{ p: 2 }}>
+        <Box
+          sx={{
+            maxHeight: 240,
+            overflowY: "auto",
+            overflowX: "hidden",
+            border: "1px solid #eee",
+            borderRadius: 1,
+            width: "100%",
+          }}
+        >
+          {renderTable(puFeatures, [
+            {
+              render: (row) => (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    whiteSpace: "normal", // 👈 ensure wrapping inside Typography too
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {row.feature_name}
+                </Typography>
+              ),
+            },
+            { render: (row) => renderArea(row.amount) },
+          ])}
+        </Box>
 
-  const featuresTab = featureState.identifiedFeatures?.length > 0 && (
-    renderTabContent(featureState.identifiedFeatures, [
-      { render: (row) => <div title={row.alias}>{row.alias}</div> },
-      { render: (row) => <div title={row.description}>{row.description}</div> },
-    ])
-  );
+      </Box>
+    ) : (
+      <Box sx={{ p: 2, textAlign: "center" }}>
+        <Typography color="text.secondary">
+          No nearby features identified.
+        </Typography>
+      </Box>
+    );
+
+  if (!hexInfoDialogOpen) return null;
 
   return (
-    <div
-      style={{
-        display: hexInfoDialogOpen && (planningUnitTab || featuresTab) ? "block" : "none",
-        left: `${xy.x + 25}px`,
-        top: `${xy.y - 25}px`,
-      }}
+    <Box
       id="popup"
-      onMouseEnter={clearTimer}
-      onMouseLeave={startTimer}
+      sx={{
+        position: "absolute",
+        left: `${xy?.x + 25 || 0}px`,
+        top: `${xy?.y - 25 || 0}px`,
+        backgroundColor: "white",
+        border: "1px solid #ccc",
+        borderRadius: 2,
+        boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+        zIndex: 1000,
+        maxWidth: 500,
+        maxHeight: 420,
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
+      {/* Tabs Header */}
       <Tabs
-        value={planningUnitTab ? selectedTab : "pas"}
-        onChange={(_, newValue) => setSelectedTab(newValue)}
-        aria-label="Identify Popup Tabs"
+        value={selectedTab}
+        onChange={(_, val) => setSelectedTab(val)}
+        variant="fullWidth"
+        textColor="primary"
+        indicatorColor="primary"
+        sx={{ minHeight: 34, borderBottom: "1px solid #eee" }}
       >
-        {planningUnitTab && <Tab label="Planning Units" value="pu" style={TAB_STYLE} />}
-        {featuresTab && <Tab label="Features" value="features" style={TAB_STYLE} />}
+        <Tab label="Planning Unit" value="pu" sx={TAB_STYLE} />
+        <Tab label="Features" value="features" sx={TAB_STYLE} />
       </Tabs>
-      <div>
-        {selectedTab === "pu" && planningUnitTab}
-        {selectedTab === "features" && featuresTab}
-      </div>
-    </div>
+
+      {/* Tab content */}
+      <Box sx={{ flexGrow: 1, overflow: "auto" }}>
+        {selectedTab === "pu" && PlanningUnitTab}
+        {selectedTab === "features" && FeaturesTab}
+      </Box>
+
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{
+          mt: 0.5,
+          textAlign: "right",
+          cursor: "pointer",
+          userSelect: "none",
+          px: 1.5,
+          pb: 0.5,
+        }}
+        onClick={closeDialog}
+      >
+        ✕ Close
+      </Typography>
+    </Box>
   );
 };
 

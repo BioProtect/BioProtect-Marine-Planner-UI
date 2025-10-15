@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { setActiveTab, toggleDialog } from "@slices/uiSlice";
-import { setProjectLoaded, switchProject, toggleProjDialog } from "@slices/projectSlice";
+import { switchProject, toggleProjDialog } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";

@@ -71,7 +71,7 @@ const FeaturesList = ({
   const handleTargetChange = (feature, newValue) => updateFeature(feature, { target_value: newValue });
 
   return (
-    <List sx={{ maxHeight: 600, overflowY: "auto", px: 1, mb: 4 }}  >
+    <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}  >
       {projState.projectFeatures.map((item) => {
         const { pu_area, protected_area, target_value, color } = item;
         let protectedPercent;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import CONSTANTS from "../constants";
+import CONSTANTS from "../bpVars";
 import LayerLegend from "./LayerLegend";
 import { getMaxNumberOfClasses } from "../Helpers";
 
@@ -92,6 +92,7 @@ const MapLegend = (props) => {
       //get a unique key
       //create the legend for non-feature layers
       //get the summed solutions legend
+
       let key = "legend_" + layer.id;
       if (layer.metadata.type !== CONSTANTS.LAYER_TYPE_FEATURE_LAYER) {
         switch (layer.metadata.type) {

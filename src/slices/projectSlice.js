@@ -121,7 +121,6 @@ const initialState = {
   projectList: [],
   projectListDialogHeading: "",
   projectListDialogTitle: "",
-  projectLoaded: false,
   projectChanged: false,
   projectImpacts: [],
   projectFeatures: [],
@@ -192,6 +191,8 @@ export const getUserProject = createAsyncThunk(
       dispatch(setOwner(response.project.user));
       dispatch(setActiveTab("project"));
       dispatch(setPlanningCostsTrigger(true));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
       return response; // Assuming response has { project: { id, name, ... } }
     } catch (error) {
       console.error("Failed to fetch project:", error);
@@ -205,7 +206,6 @@ const switchProject = createAsyncThunk(
   "project/switchProject",
   async (projectId, { dispatch }) => {
     const data = await dispatch(getUserProject(projectId)).unwrap();
-    dispatch(setProjectLoaded(true));
     return data;
   }
 );
@@ -254,9 +254,6 @@ const projectSlice = createSlice({
     },
     setProjectImpacts(state, action) {
       state.projectImpacts = action.payload;
-    },
-    setProjectLoaded(state, action) {
-      state.projectLoaded = action.payload;
     },
     setProjectListDialogHeading(state, action) {
       state.projectListDialogHeading = action.payload;
@@ -325,7 +322,6 @@ export const {
   setProjectData,
   setProjectFeatures,
   setProjectImpacts,
-  setProjectLoaded,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjectList,

@@ -29,7 +29,6 @@ import {
   setProjectList,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
-  setProjectLoaded,
   setProjects,
   setRenderer,
   toggleProjDialog
@@ -151,7 +150,11 @@ const App = () => {
 
   const authState = useSelector((state) => state.auth);
   const uiState = useSelector((state) => state.ui);
+
   const projState = useSelector((state) => state.project);
+  const projStateRef = useRef(projState);
+  useEffect(() => { projStateRef.current = projState; }, [projState]);
+
   const userState = useSelector((state) => state.user)
   const puState = useSelector((state) => state.planningUnit)
   const featureState = useSelector((state) => state.feature)
@@ -222,7 +225,9 @@ const App = () => {
   const [runlogTimer, setRunlogTimer] = useState(0);
 
   const mapContainer = useRef(null);
-  const map = useRef(null);
+  // const map = useRef(null);
+  const map = useRef(import.meta.hot ? window._mapInstance : null);
+
   const puLayerIdsRef = useRef({
     sourceId: null,
     resultsLayerId: null,
@@ -236,7 +241,6 @@ const App = () => {
 
   const userId = useSelector(selectCurrentUserId);
   const userData = useSelector(selectCurrentUser);
-  const projData = useSelector((state) => state.project)
   const project = useSelector((state) => state.project.projectData);
   const isLoggedIn = useSelector(selectIsUserLoggedIn);
 
@@ -252,13 +256,16 @@ const App = () => {
   const onClickRef = useRef(null);
   const onContextMenuRef = useRef(null);
 
-
-
   // ✅ Fetch planning unit data **ONLY when required values exist**
   const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
     { owner: uiState.owner, project: project, featureId: featureState.selectedFeature?.id },
     { skip: !uiState.owner || !project || !featureState.selectedFeature?.id }
   );
+
+
+
+
+
 
   useEffect(() => {
     if (featurePUData) {
@@ -319,7 +326,6 @@ const App = () => {
   useEffect(() => {
     if (
       projState.planningCostsTrigger &&
-      projState.projectLoaded &&
       uiState.owner !== "" &&
       userId !== ""
     ) {
@@ -328,7 +334,7 @@ const App = () => {
         dispatch(setPlanningCostsTrigger(false));
       })();
     }
-  }, [projState.planningCostsTrigger, projState.projectLoaded, uiState.owner, userId]);
+  }, [projState.planningCostsTrigger, uiState.owner, userId]);
 
 
 
@@ -448,30 +454,6 @@ const App = () => {
   // ---------------------------------------- //
   // ---------------------------------------- //
   // ---------------------------------------- //
-  //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
-  // const _get = useCallback(
-  //   (params, timeout = CONSTANTS.TIMEOUT) => {
-  //     dispatch(setLoading(true));
-  //     return new Promise((resolve, reject) => {
-  //       jsonp(projState.bpServer.endpoint + params, { timeout })
-  //         .promise.then((response) => {
-  //           dispatch(setLoading(false));
-  //           checkForErrors(response)
-  //             ? reject(response.error) : resolve(response);
-  //         })
-  //         .catch((err) => {
-  //           console.log("err ", err);
-  //           dispatch(setLoading(false));
-  //           setSnackBar(
-  //             `Request timeout - See <a href='${CONSTANTS.ERRORS_PAGE}#request-timeout' target='blank'>here</a>`
-  //           );
-  //           reject(err);
-  //         });
-  //     });
-  //   },
-  //   [checkForErrors, setSnackBar]
-  // );
-
   const _get = useCallback(async (path, { timeout = CONSTANTS.TIMEOUT } = {}) => {
     const base = projState?.bpServer?.endpoint;
     const url = new URL(path, base).toString();
@@ -750,6 +732,8 @@ const App = () => {
       const projectResponse = await dispatch(switchProject(projectId)).unwrap();
 
       // 2️⃣ Run post-load setup
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
       await postLoginSetup(projectResponse);
 
       return projectResponse;
@@ -761,20 +745,16 @@ const App = () => {
 
   //the user is validated so login
   const postLoginSetup = async (projectData) => {
-    console.log("projectData fuck ", projectData);
     try {
       const currentBasemap = uiState.basemaps.find(
         (item) => item.name === uiState.basemap
       );
-      console.log("currentBasemap ", currentBasemap);
       await loadBasemap(currentBasemap);
 
       const tilesetId = projectData.metadata.pu_tilesetid;
       if (tilesetId) {
-        console.log("🧩 Setting planning grid:", tilesetId);
         await changePlanningGrid(tilesetId);
         addPlanningGridLayers(tilesetId);
-        console.log("projState.costData ", projState.costData);
 
         if (projState.costData) renderPuCostLayer(projState.costData);
         await getResults(userData.name, projectData.project);
@@ -1027,38 +1007,6 @@ const App = () => {
     await updateProjectParams(projState.project, parameters);
     setRunParams(parameters);
   };
-
-  // const loadProject = async (project) => {
-  //   try {
-  //     if (project.metadata.pu_tilesetid) {
-  //       await changePlanningGrid(project.metadata.pu_tilesetid);
-  //       addPlanningGridLayers(project.metadata.pu_tilesetid);
-  //       if (projState.costData) {
-  //         renderPuCostLayer(projState.costData);
-  //       }
-  //       await getResults(userData.name, project.name);
-  //     }
-
-  //     // Initialize interest features and preload costs data
-  //     initialiseInterestFeatures(
-  //       project.metadata.OLDVERSION,
-  //       project.features,
-  //       project.feature_preprocessing,
-  //       speciesData.data
-  //     );
-
-  //     // Activate the project tab
-  //     dispatch(setActiveTab("project"));
-  //     setPUTabInactive();
-  //     return "Project loaded";
-  //   } catch (error) {
-  //     console.log("error", error);
-  //     if (error.toString().includes("Logged on as read-only guest user")) {
-  //       return "No project loaded - logged on as read-only guest user";
-  //     }
-  //     throw error; // Re-throw the error to handle it outside if needed
-  //   }
-  // };
 
   //matches and returns an item in an object array with the passed id - this assumes the first item in the object is the id identifier
   const getArrayItem = (arr, id) => arr.find(([itemId]) => itemId === id);
@@ -1997,12 +1945,15 @@ const App = () => {
       center: [-18, 55],
       zoom: 4,
     });
+    // save globally for hot reloading
+    if (import.meta.hot) window._mapInstance = map.current;
 
     // Event handlers (use .once where appropriate to avoid duplicates)
     map.current.on("load", mapLoaded);
     map.current.on("error", mapError);
     map.current.on("click", mapClick);
     map.current.on("styledata", mapStyleChanged);
+    map.current.on("sourcedata", mapStyleChanged);
 
     // Resolve when the initial style is ready
     return new Promise((resolve) => {
@@ -2089,89 +2040,113 @@ const App = () => {
     }
   }, []);
 
-  const mapClick = async (e) => {
+  const mapClick = useCallback(async (e) => {
     //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
-    if (!puState.puEditing && !map.current.getSource("mapbox-gl-draw-cold")) {
-      // console.log("Clicked point:", e.lngLat);
-      // const features = map.current.queryRenderedFeatures(e.point);
-      // console.log("Features under click:", features.map(f => f.layer.id));
+    try {
+      if (!puState.puEditing && !map.current.getSource("mapbox-gl-draw-cold")) {
+        const featureLayers = getLayers([
+          CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
+          CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
+          CONSTANTS.LAYER_TYPE_PROTECTED_AREAS,
+          CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
+        ]);
+        // Get the feature layer ids, get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
+        // Set the popup point, get any planning unit features under the mouse
+        const featureLayerIds = featureLayers.map((item) => item.id);
+        const clickedFeatures = getRenderedFeatures(e.point, featureLayerIds);
 
-      //get a list of the layers that we want to query for features
-      const featureLayers = getLayers([
-        CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
-        CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
-        CONSTANTS.LAYER_TYPE_PROTECTED_AREAS,
-        CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-      ]);
-      // Get the feature layer ids, get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
-      // Set the popup point, get any planning unit features under the mouse
-      const featureLayerIds = featureLayers.map((item) => item.id);
-      console.log("featureLayerIds ", featureLayerIds);
-      const clickedFeatures = getRenderedFeatures(e.point, featureLayerIds);
-      console.log("clickedFeatures ", clickedFeatures);
+        // ############################################################################################
+        // ############################################################################################
+        // need to have a look at this logic again 
+        // ############################################################################################
+        // ############################################################################################
+        const puFeatures = getFeaturesByLayerStartsWith(
+          clickedFeatures,
+          "martin_layer_pu_"
+        );
+        if (puFeatures.length) {
+          // ✅ use the correct property name
+          const puid =
+            puFeatures[0].properties.h3_index ||
+            puFeatures[0].properties.puid ||
+            puFeatures[0].properties.id;
 
-      // ############################################################################################
-      // ############################################################################################
-      // need to have a look at this logic again 
-      // ############################################################################################
-      // ############################################################################################
-      const puFeatures = getFeaturesByLayerStartsWith(
-        clickedFeatures,
-        "martin_layer_pu_"
-      );
-      if (puFeatures.length) {
-        // ✅ use the correct property name
-        const puid =
-          puFeatures[0].properties.h3_index ||
-          puFeatures[0].properties.puid ||
-          puFeatures[0].properties.id;
-
-        if (puid) {
-          console.log("Planning unit clicked:", puid);
-          await getPUData(puid); // fetch PU details
-        } else {
-          console.warn("No PU identifier found in feature:", puFeatures[0].properties);
+          if (puid) {
+            console.log("Planning unit clicked:", puid);
+            await getPUData(puid); // fetch PU details
+          } else {
+            console.warn("No PU identifier found in feature:", puFeatures[0].properties);
+          }
         }
+        setPopupPoint(e.point);
+        // Get any conservation features under the mouse
+        // Might be dupliate conservation features (e.g. with GBIF data) so get a unique list of sourceLayers
+        // Get the full features data from the state.projectFeatures array
+
+        let idFeatures = getFeaturesByLayerStartsWith(
+          clickedFeatures,
+          "martin_layer_f_"
+        );
+        const uniqueSourceLayers = Array.from(
+          new Set(idFeatures.map((item) => item.sourceLayer))
+        );
+        idFeatures = uniqueSourceLayers.map((sourceLayer) =>
+          projState.projectFeatures.find(
+            (feature) => feature.feature_class_name === sourceLayer
+          )
+        );
+
+        //set the state to populate the identify popup
+        dispatch(togglePUD({ dialogName: "hexInfoDialogOpen", "isOpen": true }));
+        dispatch(setIdentifiedFeatures(idFeatures));
       }
-      setPopupPoint(e.point);
-      // Get any conservation features under the mouse
-      // Might be dupliate conservation features (e.g. with GBIF data) so get a unique list of sourceLayers
-      // Get the full features data from the state.projectFeatures array
-
-      let idFeatures = getFeaturesByLayerStartsWith(
-        clickedFeatures,
-        "martin_layer_f_"
-      );
-      const uniqueSourceLayers = Array.from(
-        new Set(idFeatures.map((item) => item.sourceLayer))
-      );
-      idFeatures = uniqueSourceLayers.map((sourceLayer) =>
-        projState.projectFeatures.find(
-          (feature) => feature.feature_class_name === sourceLayer
-        )
-      );
-
-      //set the state to populate the identify popup
-      dispatch(togglePUD({ dialogName: "hexInfoDialogOpen", "isOpen": true }));
-      dispatch(setIdentifiedFeatures(idFeatures));
+    } catch (error) {
+      console.error("Error handling map click:", error);
     }
-  };
+  }, [projState]);
 
   //called when layers are added/removed or shown/hidden
   const mapStyleChanged = (e) => updateLegend();
 
   //after a layer has been added/removed/shown/hidden update the legend items
   const updateLegend = () => {
-    // Get the visible Marxan layers
+    if (!map.current) return;
+
+    // Get visible Marxan layers
     const visibleLayers = map.current
       .getStyle()
       .layers.filter(
         (layer) =>
-          layer.id.startsWith("marxan_") &&
-          layer.layout.visibility === "visible"
-      );
+          layer.id.includes("bioprotect_") || layer.id.includes("martin_")
+          &&
+          layer.layout?.visibility === "visible"
+      )
+      // ✅ Enrich each with inferred metadata
+      .map((layer) => {
+        const id = layer.id.toLowerCase();
+        let inferredType;
+        if (id.includes("results")) inferredType = CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS;
+        else if (id.includes("cost")) inferredType = CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST;
+        else if (id.includes("status")) inferredType = CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS;
+        else if (id.includes("pu")) inferredType = CONSTANTS.LAYER_TYPE_PLANNING_UNITS;
+        else if (id.includes("feature_pu")) inferredType = CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER;
+        else if (id.includes("feature")) inferredType = CONSTANTS.LAYER_TYPE_FEATURE_LAYER;
+        else if (id.includes("wdpa")) inferredType = CONSTANTS.LAYER_TYPE_PROTECTED_AREAS;
+
+        return {
+          ...layer,
+          metadata: {
+            ...(layer.metadata || {}),
+            type: layer.metadata?.type || inferredType,
+            name: layer.metadata?.name || layer.id, // optional fallback
+          },
+        };
+      });
+
     setVisibleLayers(visibleLayers);
   };
+
+
 
   //gets a set of features that have a layerid that starts with the passed text
   const getFeaturesByLayerStartsWith = (features, startsWith) =>
@@ -2179,13 +2154,15 @@ const App = () => {
 
   //gets a list of features for the planning unit
   const getPUData = async (h3_index) => {
-    const projectId = projState.projectData.project.id
-    console.log("Getting data for h3_index ", projState);
+    const projectState = projStateRef.current;
+    const projectId = projectState.projectData.project.id
+    const user = projectState.projectData.user
+
     const response = await _get(
-      `planning-units?action=data&user=${uiState.owner}&project_id=${projectId}&h3_index=${h3_index}`);
+      `planning-units?action=data&user=${user}&project_id=${projectId}&h3_index=${h3_index}`);
     if (response.data.features.length) {
       //if there are some features for the planning unit join the ids onto the full feature data from the state.projectFeatures array
-      joinArrays(response.data.features, projState.projectFeatures, "species", "id");
+      joinArrays(response.data.features, projectState.projectFeatures, "species", "id");
     }
     //set the state to update the identify popup
     dispatch(setIdentifyPlanningUnits({
@@ -2251,7 +2228,7 @@ const App = () => {
           ? TileJSON + metadata.tiles[0]
           : TileJSON + "/" + metadata.tiles[0];
 
-        // Update the style with the fetched metadata
+        // Update the style with the fetched 
         style.sources.esri = {
           type: "vector",
           scheme: "xyz",
@@ -2339,7 +2316,6 @@ const App = () => {
   //adds the results, planning unit, planning unit edit etc layers to the map
   // const addPlanningGridLayers = (tileset) => {
   const addPlanningGridLayers = (puLayerName) => {
-    console.log("puLayerName ", puLayerName);
     if (!map.current) return;
 
     const sourceId = `martin_src_${puLayerName}`;
@@ -2722,10 +2698,7 @@ const App = () => {
   const updateProjectPus = async () => {
     let formData = new FormData();
     formData.append("user", uiState.owner);
-    console.log("owner ", uiState.owner);
     formData.append("project", projState.project);
-    console.log("projState.project ", projState.project);
-    console.log("puState.planningUnits ", puState.planningUnits);
 
     if (puState.planningUnits.length > 0) {
       puState.planningUnits.forEach((item) =>
@@ -3457,11 +3430,9 @@ const App = () => {
         return { ...feature, selected: true };
       } else {
         if (feature.feature_layer_loaded) {
-          console.log("toggling feature in updateSelectedFeatures line 3279....")
           toggleFeatureLayer(feature);
         }
         if (feature.feature_puid_layer_loaded) {
-          console.log("toggling feature_puid_layer? in updateSelectedFeatures line 3283....")
           toggleFeaturePUIDLayer(feature);
         }// Feature is not selected
         return {
@@ -3656,8 +3627,6 @@ const App = () => {
 
   //toggles the feature layer on the map
   const toggleFeatureLayer = (feature) => {
-    console.log("feature ", feature);
-
     const tableName = (feature.tilesetid) ? feature.tilesetid.split(".")[1] : feature.feature_class_name;
     const sourceId = `martin_src_${tableName}`;
     const layerId = `martin_layer_${tableName}`;
@@ -4197,27 +4166,35 @@ const App = () => {
   };
 
   // --- HMR cleanup: place at the bottom of the module that owns the map instance ---
-  if (import.meta && import.meta.hot) {
-    import.meta.hot.dispose(() => {
-      try {
-        if (map?.current) {
-          // remove any listeners you added
-          map.current.off("load", mapLoaded);
-          map.current.off("error", mapError);
-          map.current.off("click", mapClick);
-          map.current.off("styledata", mapStyleChanged);
+  // if (import.meta?.hot) {
+  //   if (!window._mapInstance) window._mapInstance = null;
 
-          // destroy the map so the next hot module has a clean slate
-          map.current.remove();
-        }
-      } catch (e) {
-        console.warn("Map cleanup error on HMR dispose:", e);
-      } finally {
-        if (map) map.current = null;
-      }
+  //   import.meta.hot.dispose(() => {
+  //     try {
+  //       if (map?.current) {
+  //         // remove any listeners you added
+  //         map.current.off("load", mapLoaded);
+  //         map.current.off("error", mapError);
+  //         map.current.off("click", mapClick);
+  //         map.current.off("styledata", mapStyleChanged);
+
+  //         // destroy the map so the next hot module has a clean slate
+  //         map.current.remove();
+  //       }
+  //     } catch (e) {
+  //       console.warn("Map cleanup error on HMR dispose:", e);
+  //     } finally {
+  //       if (map) map.current = null;
+  //     }
+  //   });
+  // }
+  // --- HMR safe cleanup ---
+  if (import.meta?.hot) {
+    import.meta.hot.dispose(() => {
+      // ✅ Do nothing: keep map instance alive between reloads
+      console.log("♻️ HMR reload — keeping existing map");
     });
   }
-
 
   return (
     <div>
@@ -4293,7 +4270,7 @@ const App = () => {
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
             wdpaAttribution={wdpaAttribution}
           />
-          {projState.projectLoaded ? (
+          {projState.projectData.project ? (
             <InfoPanel
               metadata={metadata}
               runMarxan={runMarxan}

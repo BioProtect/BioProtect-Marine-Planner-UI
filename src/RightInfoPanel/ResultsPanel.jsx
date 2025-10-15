@@ -24,9 +24,9 @@ const ResultsPanel = (props) => {
   const [selectedSolution, setSelectedSolution] = useState(undefined);
   const [runtimeStr, setRuntimeStr] = useState("00:00s");
   const [timer, setTimer] = useState(null);
-  const [currentTabIndex, setCurrentTabIndex] = useState(
-    activeTabArr.indexOf(props.activeResultsTab) || 0
-  );
+  const [currentTabIndex, setCurrentTabIndex] = useState(0)
+  //   activeTabArr.indexOf(props.activeResultsTab) || 0
+  // );
 
 
   const prevProps = useRef();
@@ -146,12 +146,12 @@ const ResultsPanel = (props) => {
             <Tab
               label="Legend"
               value={0}
-              disabled={props.puEditing ? true : false}
+            // disabled={props.puEditing ? true : false}
             />
             <Tab
               label="Solutions"
               value={1}
-              disabled={props.puEditing ? true : false}
+            // disabled={props.puEditing ? true : false}
             />
             <Tab label="Log" value={2} />
           </Tabs>

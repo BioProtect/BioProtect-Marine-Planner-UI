@@ -53,11 +53,8 @@ const LayerLegend = (props) => {
     //if the legend is showing a range in values then put in a horizontal separator between the items
     return props.items.map((item, index) => {
       let key = `legend_${props.layer.id}_item_${index}`;
-      let separator =
-        props.range && index === 1 ? <div className="separator">-</div> : null;
       return (
         <div key={key} style={{ display: props.range ? "inline" : "block" }}>
-          {separator}
           <Swatch item={item} key={key} shape={props.shape} />
           <div
             style={{

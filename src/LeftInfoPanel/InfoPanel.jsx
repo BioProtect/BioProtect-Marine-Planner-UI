@@ -107,7 +107,7 @@ const InfoPanel = (props) => {
     () => ({
       top: "60px",
       width: "300px",
-      height: "400px",
+      height: "300px",
     }),
     []
   );
@@ -231,7 +231,7 @@ const InfoPanel = (props) => {
                 className="projectNameEditBox"
                 title="Click to rename the project"
               >
-                {projState.projectData.project.name || "Untitled project"}
+                {projState.projectData?.project?.name || "Untitled project"}
               </span>
             )}
             {userData.role !== "ReadOnly" && (
