@@ -31,7 +31,6 @@ const InfoPanel = (props) => {
   const [editingProjectName, setEditingProjectName] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
 
-  const [showPlanningGrid, setShowPlanningGrid] = useState(true);
   const [showProtectedAreas, setShowProtectedAreas] = useState(false);
   const [showCosts, setShowCosts] = useState(false);
   const [showStatuses, setShowStatuses] = useState(true);
@@ -62,6 +61,44 @@ const InfoPanel = (props) => {
       setCurrentTabIndex(activeTabArr.indexOf(uiState.activeTab));
     }
   }, []);
+
+  //preprocess synchronously, i.e. one after another
+  const preprocessAllFeatures = async () => {
+    // for (const feature of projState.projectFeatures) {
+    //   if (!feature.preprocessed) {
+    //     await preprocessFeature(feature);
+    //   }
+    // }
+    await preprocessFeature(projState.projectFeatures[1]);
+  };
+
+  const preprocessFeature = async (feature) => {
+    const project_id = projState.projectData.project.id;
+    const pu_id = projState.projectData.project.planning_unit_id;
+    const planning_grid_name = props.metadata;
+    try {
+      // Switch to the log tab
+      setActiveTab("log");
+
+      // Call the WebSocket
+      const url = `preprocessFeature?project_id=${project_id}&feature_id=${feature.id}&planning_grid_id=${pu_id}&feature_class_name=${feature.feature_class_name}`
+
+      const message = await props.handleWebSocket(url);
+
+      // Update feature with new data
+      updateFeature(feature, {
+        preprocessed: true,
+        pu_count: Number(message.pu_count),
+        pu_area: Number(message.pu_area),
+        occurs_in_planning_grid: Number(message.pu_count) > 0,
+      });
+
+      return message;
+    } catch (error) {
+      console.error("Error preprocessing feature:", error);
+      throw error; // Re-throw the error to handle it further up the call stack if needed
+    }
+  };
 
   const handleKeyPress = (e) => {
     if (e.nativeEvent.keyCode === 13 || e.nativeEvent.keyCode === 27) {
@@ -129,25 +166,6 @@ const InfoPanel = (props) => {
       : props.renameDescription(e.target.value);
   };
 
-  const startStopPuEditSession = () => {
-    if (puState.puEditing) {
-      stopPuEditSession();
-    } else {
-      startPuEditSession();
-    }
-  };
-
-  const startPuEditSession = () => {
-    setShowPlanningGrid(true);
-    // this function should come from App where the map ref lives
-    props.startPuEditSession();
-  };
-
-  const stopPuEditSession = () => {
-    setShowPlanningGrid(false);
-    props.stopPuEditSession();
-  };
-
   const changeIucnCategory = (event) => {
     props.changeIucnCategory(CONSTANTS.IUCN_CATEGORIES[event.target.value]);
   };
@@ -171,10 +189,10 @@ const InfoPanel = (props) => {
 
   const stopProcess = () => props.stopProcess(props.pid);
 
-  const togglePlanningUnits = (event, isInputChecked) => {
-    setShowPlanningGrid(!showPlanningGrid);
-    props.togglePULayer(isInputChecked);
-  };
+  // const togglePlanningUnits = (event, isInputChecked) => {
+  //   setShowPlanningGrid(!showPlanningGrid);
+  //   props.togglePULayer(isInputChecked);
+  // };
 
   const toggleProtectedAreas = (event, isInputChecked) => {
     setShowProtectedAreas(!showProtectedAreas);
@@ -264,14 +282,15 @@ const InfoPanel = (props) => {
               leftmargin="10px"
               maxheight="409px"
               simple={false}
-              showTargetButton />
+              showTargetButton
+              preprocessAllFeatures={preprocessAllFeatures}
+              preprocessFeature={preprocessFeature}
+            />
           )}
           {currentTabIndex === 2 && (
             <PlanningUnitsTab
               {...props}
               userRole={userData.role}
-              startStopPuEditSession={startStopPuEditSession}
-
             />
           )}
 

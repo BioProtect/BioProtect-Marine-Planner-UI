@@ -27,9 +27,7 @@ const FeaturesList = ({
   setMenuAnchor
 }) => {
 
-  const userData = useSelector(selectCurrentUser);
   const projState = useSelector((state) => state.project);
-  console.log("projState ", projState.projectFeatures);
   const dispatch = useDispatch();
 
 

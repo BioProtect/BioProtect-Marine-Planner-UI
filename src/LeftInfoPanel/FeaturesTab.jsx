@@ -13,13 +13,13 @@ import FeaturesList from "./FeaturesList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Stack from "@mui/material/Stack";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
+import { faGears } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "@slices/uiSlice";
 
 const FeaturesTab = (props) => {
   const dispatch = useDispatch();
   const userData = useSelector(selectCurrentUser);
   const featureState = useSelector((state) => state.feature);
-  console.log("featureState ", featureState);
 
 
   const handleOpenFeaturesDialog = () => {
@@ -31,6 +31,10 @@ const FeaturesTab = (props) => {
       })
     );
   };
+
+  const handlePreprocessAllFeatures = () => {
+    props.preprocessAllFeatures();
+  }
 
   return (
     <React.Fragment>
@@ -49,6 +53,7 @@ const FeaturesTab = (props) => {
           spacing={1}
           justifyContent="center"
           alignItems="center"
+          mb={2}
         >
           {userData.role !== "ReadOnly" && props.showTargetButton ? (
             <Button
@@ -61,7 +66,7 @@ const FeaturesTab = (props) => {
               )}
               startIcon={<FontAwesomeIcon icon={faCrosshairs} />}
             >
-              Set a target for all features
+              Set target all features
             </Button>
           ) : null}
           {(props.metadata && props.metadata.OLDVERSION) ||
@@ -73,6 +78,24 @@ const FeaturesTab = (props) => {
               title="Add/remove features from the project"
             >
               +/-
+            </Button>
+          )}
+        </Stack>
+        <Stack
+          direction="row"
+          spacing={1}
+          justifyContent="center"
+          alignItems="center"
+        >
+          {(props.metadata && props.metadata.OLDVERSION) ||
+            userData.role === "ReadOnly" ? null : (
+            <Button
+              variant="contained"
+              onClick={() => handlePreprocessAllFeatures()}
+              title="preprocess all features"
+              startIcon={<FontAwesomeIcon icon={faGears} />}
+            >
+              Preprocess all features
             </Button>
           )}
         </Stack>

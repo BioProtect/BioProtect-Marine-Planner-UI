@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { faEraser, faLock, faSave } from "@fortawesome/free-solid-svg-icons";
+import { setPuEditing, setShowPlanningGrid } from "@slices/planningUnitSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import CONSTANTS from "../constants"; // Ensure this path is correct
@@ -13,13 +15,54 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { useSelector } from "react-redux";
 
-const PlanningUnitsTab = (props) => {
+const PlanningUnitsTab = ({
+  preprocessing, userRole, changeIucnCategory, changeCostname, updateProjectPus, clearManualEdits, map, onClickRef, onContextMenuRef
+}) => {
+  const dispatch = useDispatch();
   const puState = useSelector((state) => state.planningUnit)
   const projState = useSelector((state) => state.project)
   const metadata = projState.projectData.metadata;
-  const handlePUEditingClick = () => props.startStopPuEditSession();
+
+  const startPuEditSession = () => {
+    dispatch(setShowPlanningGrid(true));
+    dispatch(setPuEditing(true));
+    map.current.getCanvas().style.cursor = "crosshair";
+
+    // assign handlers
+    onClickRef.current = moveStatusUp;
+    onContextMenuRef.current = resetStatus;
+    map.current.on("click", CONSTANTS.PU_LAYER_NAME, onClickRef.current);
+    map.current.on("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenuRef.current);
+  };
+
+  const stopPuEditSession = () => {
+    dispatch(setShowPlanningGrid(false));
+    dispatch(setPuEditing(false));
+    map.current.getCanvas().style.cursor = "pointer";
+
+    if (onClickRef.current) {
+      map.current.off("click", CONSTANTS.PU_LAYER_NAME, onClickRef.current);
+      onClickRef.current = null;
+    }
+    if (onContextMenuRef.current) {
+      map.current.off("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenuRef.current);
+      onContextMenuRef.current = null;
+    }
+    updateProjectPus();
+  };
+
+
+  const handlePUEditingClick = () => {
+    if (puState.puEditing) {
+      stopPuEditSession();
+    } else {
+      startPuEditSession();
+    }
+  };
+
+
+
 
   return (
     <div>
@@ -54,7 +97,7 @@ const PlanningUnitsTab = (props) => {
               <Typography variant="body1" color="text.secondary">
                 <Button
                   variant="outlined"
-                  onClick={(e) => props.clearManualEdits(e)}
+                  onClick={(e) => clearManualEdits(e)}
                   style={{
                     display: puState.puEditing ? "inline-block" : "none",
                   }}>
@@ -76,9 +119,9 @@ const PlanningUnitsTab = (props) => {
                     ? metadata.IUCN_CATEGORY
                     : CONSTANTS.IUCN_CATEGORIES[0] ?? ''
                 }
-                disabled={props.preprocessing || props.userRole === "ReadOnly"}
+                disabled={preprocessing || userRole === "ReadOnly"}
                 label="Lock in protected areas"
-                onChange={(event) => props.changeIucnCategory(event)}
+                onChange={(event) => changeIucnCategory(event)}
               >
                 {CONSTANTS.IUCN_CATEGORIES.map((item) => {
                   return (
@@ -108,9 +151,9 @@ const PlanningUnitsTab = (props) => {
                     ? current
                     : names[0] ?? '';  // if names[0] is undefined, fall back to empty string
                 })()}
-                disabled={props.preprocessing || props.userRole === "ReadOnly"}
+                disabled={preprocessing || userRole === "ReadOnly"}
                 label="Use cost surface"
-                onChange={(event) => props.changeCostname(event)}
+                onChange={(event) => changeCostname(event)}
               >
                 {projState.projectData.costnames.map((item) => {
                   return (

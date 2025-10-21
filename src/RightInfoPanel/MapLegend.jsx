@@ -172,7 +172,7 @@ const MapLegend = (props) => {
                 topMargin={"15px"}
                 changeOpacity={props.changeOpacity}
                 layer={layer}
-                subLayers={[puLayer, puStatusLayer]}
+                subLayers={[puLayer, puStatusLayer].filter(Boolean)}
                 items={[
                   CONSTANTS.PU_STATUS_DEFAULT,
                   CONSTANTS.PU_STATUS_LOCKED_IN,

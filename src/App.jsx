@@ -29,6 +29,7 @@ import {
   setProjectList,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
+  setProjectPlanningUnits,
   setProjects,
   setRenderer,
   toggleProjDialog
@@ -51,8 +52,6 @@ import {
 } from "@slices/featureSlice";
 import {
   setIdentifyPlanningUnits,
-  setPlanningUnitGrids,
-  setPlanningUnits,
   setPuEditing,
   togglePUD,
   useDeletePlanningUnitGridMutation,
@@ -330,7 +329,7 @@ const App = () => {
       userId !== ""
     ) {
       (async () => {
-        await getPuCostsLayer();   // 👈 use the new function
+        await getPuCostsLayer();
         dispatch(setPlanningCostsTrigger(false));
       })();
     }
@@ -730,6 +729,7 @@ const App = () => {
     try {
       // 1️⃣ Load project (either first available or by ID)
       const projectResponse = await dispatch(switchProject(projectId)).unwrap();
+      console.log("projectResponse ", projectResponse);
 
       // 2️⃣ Run post-load setup
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -1236,7 +1236,6 @@ const App = () => {
     try {
       await updatePuvsprFile(); // update the PuVSpr file - preprocessing using websockets
     } catch (error) {
-      //updatePuvsprFile error
       console.error(error);
     }
 
@@ -1762,14 +1761,14 @@ const App = () => {
 
   const getColorForStatus = (val) => {
     switch (val) {
-      case 1: //The PU will be included in the initial reserve system but may or may not be in the final solution.
-        return "rgba(63, 191, 63, 1)";
-      case 2: // Locked in
-        return "rgba(63, 63, 191, 1)";
-      case 3: // Locked out
-        return "rgba(191, 63, 63, 1)";
+      case 0: // Available (can be freely selected)
+        return "rgba(150, 150, 150, 0)"; // transparent grey outline
+      case 1: // Locked in (fixed in reserve)
+        return "rgba(63, 63, 191, 1)"; // blue
+      case 2: // Locked out (excluded)
+        return "rgba(191, 63, 63, 1)"; // red
       default:
-        return "rgba(150, 150, 150, 0)"; // Default color
+        return "rgba(150, 150, 150, 0)"; // fallback
     }
   };
 
@@ -1792,7 +1791,11 @@ const App = () => {
 
   //renders the planning units edit layer according to the type of layer and pu status
   const renderPuEditLayer = () => {
+    console.log("projState ", projState);
+
+    console.log("render map ---- ", map.current)
     const propId = puLayerIdsRef.current?.propId || "h3_index";
+    console.log("propId ", propId);
     const statusLayerId = puLayerIdsRef.current?.statusLayerId;
 
     if (!map.current || !statusLayerId || !map.current.getLayer(statusLayerId)) {
@@ -1801,58 +1804,24 @@ const App = () => {
     }
 
     const buildExpression = (units) => {
-      if (units.length === 0) {
-        return "rgba(150, 150, 150, 0)"; // Default color when no data
-      }
-
+      if (!units?.length) return "rgba(150,150,150,0)";
       const expression = ["match", ["get", propId]];
-      // units.forEach((row, index) =>
-      //   expression.push(row[1], getColorForStatus(row[0]))
-      // );
-      units.forEach(([status, ids]) => expression.push(ids, getColorForStatus(status)));
-
-      // Default color for planning units not explicitly mentioned
-      expression.push("rgba(150, 150, 150, 0)");
+      for (const [status, ids] of units) {
+        const color = getColorForStatus(status);
+        ids.forEach((id) => expression.push(id, color));
+      }
+      expression.push("rgba(150,150,150,0)"); // default
       return expression;
     };
 
-    const expression = buildExpression(puState.planningUnits);
+    const expression = buildExpression(projState.projectPlanningUnits);
 
     //set the render paint property
     map.current.setPaintProperty(statusLayerId, "line-color", expression);
     map.current.setPaintProperty(statusLayerId, "line-width", CONSTANTS.STATUS_LAYER_LINE_WIDTH);
   };
 
-  //renders the planning units cost layer according to the cost for each planning unit
-  // const renderPuCostLayer = (cost_data) => {
-  //   const buildExpression = (data) => {
-  //     if (data.length === 0) {
-  //       return "rgba(150, 150, 150, 0.7)"; // Default color if no cost data
-  //     }
 
-  //     const expression = ["match", ["get", "puid"]];
-  //     data.forEach((row, index) => {
-  //       if (row[1].length > 0) {
-  //         expression.push(row[1], CONSTANTS.COST_COLORS[index]);
-  //       }
-  //     });
-  //     expression.push("rgba(150, 150, 150, 0)"); // Default color for missing data
-  //     return expression;
-  //   };
-
-  //   const expression = buildExpression(cost_data.data);
-  //   map.current.setPaintProperty(
-  //     CONSTANTS.COSTS_LAYER_NAME,
-  //     "fill-color",
-  //     expression
-  //   );
-  //   setLayerMetadata(CONSTANTS.COSTS_LAYER_NAME, {
-  //     min: cost_data.min,
-  //     max: cost_data.max,
-  //   });
-  //   showLayer(CONSTANTS.COSTS_LAYER_NAME);
-  //   return "Costs rendered";
-  // };
   const renderPuCostLayer = (cost_data) => {
     const propId = puLayerIdsRef.current?.propId || "h3_index"; // single truth
     const costsLayerId = puLayerIdsRef.current?.costsLayerId;
@@ -1875,12 +1844,8 @@ const App = () => {
       expression.push("rgba(150, 150, 150, 0)"); // fallback
       return expression;
     };
-
     const expression = buildExpression(cost_data.data);
-    console.log("CONSTANTS.COSTS_LAYER_NAME ", CONSTANTS.COSTS_LAYER_NAME);
-
     map.current.setPaintProperty(costsLayerId, "fill-color", expression);
-
     setLayerMetadata(costsLayerId, {
       min: cost_data.min,
       max: cost_data.max,
@@ -2041,7 +2006,11 @@ const App = () => {
   }, []);
 
   const mapClick = useCallback(async (e) => {
-    //if the user is not editing planning units or creating a new feature then show the identify features for the clicked point
+    //if the user is not editing planning units or creating a new feature 
+    // then show the identify features for the clicked point
+    console.log("puState.puEditing ", puState.puEditing);
+    console.log("(!puState.puEditing && !map.current.getSource))", (!puState.puEditing && !map.current.getSource("mapbox-gl-draw-cold")));
+
     try {
       if (!puState.puEditing && !map.current.getSource("mapbox-gl-draw-cold")) {
         const featureLayers = getLayers([
@@ -2117,7 +2086,7 @@ const App = () => {
       .getStyle()
       .layers.filter(
         (layer) =>
-          layer.id.includes("bioprotect_") || layer.id.includes("martin_")
+          layer.id.includes("martin_")
           &&
           layer.layout?.visibility === "visible"
       )
@@ -2393,6 +2362,8 @@ const App = () => {
         name: "Planning Unit",
         type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
       },
+      minzoom: 0,
+      maxzoom: 24,
       type: "fill",
       source: sourceId,
       layout: {
@@ -2420,7 +2391,7 @@ const App = () => {
       },
       "source-layer": puLayerName,
       paint: {
-        "line-color": "rgba(150, 150, 150, 0)",
+        "line-color": "rgba(244, 9, 9, 0)",
         "line-width": CONSTANTS.STATUS_LAYER_LINE_WIDTH,
       },
     });
@@ -2488,10 +2459,7 @@ const App = () => {
   //centralised code to add a layer to the maps current style
   const addMapLayer = (mapLayer, beforeLayer) => {
     if (!map.current) return;
-
-    // if exists, skip
     if (map.current.getLayer(mapLayer.id)) return;
-
     // If a beforeLayer is not passed get the first symbol layer (i.e. label layer)
     if (!beforeLayer) {
       const style = map.current.getStyle();
@@ -2580,6 +2548,7 @@ const App = () => {
 
   //fired when the planning unit tab is selected
   const setPUTabActive = async () => {
+
     dispatch(setActiveTab("planningUnits"));
     //show the planning units layer, status layer, and costs layer
     showLayer(CONSTANTS.PU_LAYER_NAME);
@@ -2600,19 +2569,25 @@ const App = () => {
 
   //fired whenever another tab is selected
   const setPUTabInactive = () => {
-    //show the results layer, eature layer, and feature puid layers
     showLayer(CONSTANTS.RESULTS_LAYER_NAME);
-    showHideLayerTypes(
-      [
-        CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
-      ],
-      true
-    );
-    //hide the planning units layer, edit layer, and cost layer
+    showHideLayerTypes([CONSTANTS.LAYER_TYPE_FEATURE_LAYER, CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER], true);
     hideLayer(CONSTANTS.PU_LAYER_NAME);
     hideLayer(CONSTANTS.STATUS_LAYER_NAME);
     hideLayer(CONSTANTS.COSTS_LAYER_NAME);
+    //show the results layer, eature layer, and feature puid layers
+    // showLayer(CONSTANTS.RESULTS_LAYER_NAME);
+    // showHideLayerTypes(
+    //   [
+    //     CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
+    //     CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
+    //   ],
+    //   true
+    // );
+    //hide the planning units layer, edit layer, and cost layer
+    // hideLayer(CONSTANTS.PU_LAYER_NAME);
+    // // hideLayer(CONSTANTS.STATUS_LAYER_NAME);
+    // hideLayer(puLayerIdsRef.current.statusLayerId);
+    // hideLayer(CONSTANTS.COSTS_LAYER_NAME);
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -2625,64 +2600,12 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
 
-  // const startPuEditSession = () => {
-  //   //set the state
-  //   dispatch(setPuEditing(true));
-  //   //set the cursor to a crosshair
-  //   map.current.getCanvas().style.cursor = "crosshair";
-  //   //add the left mouse click event to the planning unit layer
-  //   this.onClickRef = moveStatusUp; //using bind creates a new function instance so we need to get a reference to that to be able to remove it later
-  //   map.current.on("click", CONSTANTS.PU_LAYER_NAME, this.onClickRef);
-  //   //add the mouse right click event to the planning unit layer
-  //   this.onContextMenu = resetStatus; //using bind creates a new function instance so we need to get a reference to that to be able to remove it later
-  //   map.current.on("contextmenu", CONSTANTS.PU_LAYER_NAME, this.onContextMenu);
-  // };
 
-  // const stopPuEditSession = () => {
-  //   //set the state
-  //   dispatch(setPuEditing(false));
-  //   //reset the cursor
-  //   map.current.getCanvas().style.cursor = "pointer";
-  //   //remove the mouse left click event
-  //   map.current.off("click", CONSTANTS.PU_LAYER_NAME, onClickRef);
-  //   //remove the mouse right click event
-  //   map.current.off("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenu);
-  //   //update the pu.dat file
-  //   updateProjectPus();
-  // };
-
-  const startPuEditSession = () => {
-    dispatch(setPuEditing(true));
-    map.current.getCanvas().style.cursor = "crosshair";
-
-    // assign handlers
-    onClickRef.current = moveStatusUp;
-    onContextMenuRef.current = resetStatus;
-
-    map.current.on("click", CONSTANTS.PU_LAYER_NAME, onClickRef.current);
-    map.current.on("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenuRef.current);
-  };
-
-  const stopPuEditSession = () => {
-    dispatch(setPuEditing(false));
-    map.current.getCanvas().style.cursor = "pointer";
-
-    if (onClickRef.current) {
-      map.current.off("click", CONSTANTS.PU_LAYER_NAME, onClickRef.current);
-      onClickRef.current = null;
-    }
-    if (onContextMenuRef.current) {
-      map.current.off("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenuRef.current);
-      onContextMenuRef.current = null;
-    }
-
-    updateProjectPus();
-  };
 
   // //clears all of the manual edits from the pu edit layer (except the protected area units)
   // const clearManualEdits = () => {
   //   // Clear all the planning unit statuses
-  //   dispatch(setPlanningUnits([]));
+  //   dispatch(setProjectPlanningUnits([]));
   //   // Get the puids for the current IUCN category
   //   const puids = getPuidsFromIucnCategory(metadata.IUCN_CATEGORY);
   //   // Update the planning units
@@ -2690,7 +2613,7 @@ const App = () => {
   // };
 
   const clearManualEdits = () => {
-    dispatch(setPlanningUnits([]));
+    dispatch(setProjectPlanningUnits([]));
     const puids = getPuidsFromIucnCategory(metadata.IUCN_CATEGORY);
     updatePlanningUnits([], puids);
   };
@@ -2700,8 +2623,8 @@ const App = () => {
     formData.append("user", uiState.owner);
     formData.append("project", projState.project);
 
-    if (puState.planningUnits.length > 0) {
-      puState.planningUnits.forEach((item) =>
+    if (projectState.projectPlanningUnits.length > 0) {
+      projectState.projectPlanningUnits.forEach((item) =>
         formData.append(`status${item[0]}`, item[1])
       );
     }
@@ -2725,13 +2648,13 @@ const App = () => {
   //     const status = getStatusLevel(puid);
   //     const next_status = getNextStatusLevel(status, direction);
   //     //copy the current planning unit statuses
-  //     const statuses = [...puState.planningUnits];
+  //     const statuses = [...projectState.projectPlanningUnits];
   //     // If planning unit is not level 0 (in which case it will not be in the planningUnits state) - remove it from the puids array for that status
   //     if (status !== 0) removePuidFromArray(statuses, status, puid);
   //     //add it to the new status array
   //     if (next_status !== 0) addPuidToArray(statuses, next_status, puid);
   //     //set the state
-  //     dispatch(setPlanningUnits(statuses));
+  //     dispatch(setProjectPlanningUnits(statuses));
   //     //re-render the planning unit edit layer
   //     renderPuEditLayer();
   //   }
@@ -2755,11 +2678,11 @@ const App = () => {
       const status = getStatusLevel(puid);
       const next_status = getNextStatusLevel(status, direction);
 
-      const statuses = [...puState.planningUnits];
+      const statuses = [...projectState.projectPlanningUnits];
       if (status !== 0) removePuidFromArray(statuses, status, puid);
       if (next_status !== 0) addPuidToArray(statuses, next_status, puid);
 
-      dispatch(setPlanningUnits(statuses));
+      dispatch(setProjectPlanningUnits(statuses));
       renderPuEditLayer();
     }
   };
@@ -2774,14 +2697,14 @@ const App = () => {
 
   //gets the array index position for the passed status in the planningUnits state
   const getStatusPosition = (status) =>
-    puState.planningUnits.findIndex((item) => item[0] === status);
+    projectState.projectPlanningUnits.findIndex((item) => item[0] === status);
 
   //returns the planning units with a particular status, e.g. 1,2,3
   const getPlanningUnitsByStatus = (status) => {
     //get the position of the status items in the planningUnits
     let position = getStatusPosition(status);
     //get the array of planning units
-    return position > -1 ? puState.planningUnits[position][1] : [];
+    return position > -1 ? projectState.projectPlanningUnits[position][1] : [];
   };
 
   //returns the next status level for a planning unit depending on the direction
@@ -3881,7 +3804,7 @@ const App = () => {
   //updates the planning units by reconciling the passed arrays of puids
   const updatePlanningUnits = async (previousPuids, puids) => {
     //copy the current planning units state
-    const statuses = [...puState.planningUnits];
+    const statuses = [...projectState.projectPlanningUnits];
     //get the new puids that need to be added
     const newPuids = getNewPuids(previousPuids, puids);
     if (newPuids.length === 0) {
@@ -3893,7 +3816,7 @@ const App = () => {
       appPuidsToPlanningUnits(statuses, 2, newPuids);
     }
     //update the state
-    dispatch(setPlanningUnits(statuses));
+    dispatch(setProjectPlanningUnits(statuses));
     //re-render the layer
     renderPuEditLayer();
     //update the pu.dat file
@@ -4066,6 +3989,12 @@ const App = () => {
       setCostsLoading(true);
       // fetch from server (or cache)
       const response = await getPuCostsLayer(forceReload);
+      const statusLayerId = puLayerIdsRef.current?.statusLayerId;
+      if (map.current && statusLayerId && map.current.getLayer(statusLayerId)) {
+        map.current.setLayoutProperty(statusLayerId, "visibility", "visible");
+        map.current.setLayerZoomRange(statusLayerId, 0, 24);
+        console.log("✅ Status layer shown with Planning Units tab");
+      }
       // cache in Redux
       dispatch(setCostData(response));
       // render the Mapbox layer
@@ -4165,30 +4094,6 @@ const App = () => {
     return await _get("cleanup?");
   };
 
-  // --- HMR cleanup: place at the bottom of the module that owns the map instance ---
-  // if (import.meta?.hot) {
-  //   if (!window._mapInstance) window._mapInstance = null;
-
-  //   import.meta.hot.dispose(() => {
-  //     try {
-  //       if (map?.current) {
-  //         // remove any listeners you added
-  //         map.current.off("load", mapLoaded);
-  //         map.current.off("error", mapError);
-  //         map.current.off("click", mapClick);
-  //         map.current.off("styledata", mapStyleChanged);
-
-  //         // destroy the map so the next hot module has a clean slate
-  //         map.current.remove();
-  //       }
-  //     } catch (e) {
-  //       console.warn("Map cleanup error on HMR dispose:", e);
-  //     } finally {
-  //       if (map) map.current = null;
-  //     }
-  //   });
-  // }
-  // --- HMR safe cleanup ---
   if (import.meta?.hot) {
     import.meta.hot.dispose(() => {
       // ✅ Do nothing: keep map instance alive between reloads
@@ -4272,13 +4177,14 @@ const App = () => {
           />
           {projState.projectData.project ? (
             <InfoPanel
+              map={map}
+              onClickRef={onClickRef}
+              onContextMenuRef={onContextMenuRef}
               metadata={metadata}
               runMarxan={runMarxan}
               stopProcess={stopProcess}
               pid={pid}
-
-              startPuEditSession={startPuEditSession}
-              stopPuEditSession={stopPuEditSession}
+              updateProjectPus={updateProjectPus}
               clearManualEdits={clearManualEdits}
               changeIucnCategory={changeIucnCategory}
               changeCostname={changeCostname}
@@ -4301,6 +4207,7 @@ const App = () => {
               loadCostsLayer={loadCostsLayer}
               loading={uiState.loading}
               setMenuAnchor={setMenuAnchor}
+              handleWebSocket={handleWebSocket}
             // protectedAreaIntersections={protectedAreaIntersections}
             />) : null}
 

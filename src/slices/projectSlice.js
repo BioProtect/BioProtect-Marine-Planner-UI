@@ -124,7 +124,7 @@ const initialState = {
   projectChanged: false,
   projectImpacts: [],
   projectFeatures: [],
-  projectPlanningUnits: {},
+  projectPlanningUnits: [],
   projectCosts: [],
   planningCostsTrigger: false,
 
@@ -189,6 +189,7 @@ export const getUserProject = createAsyncThunk(
       dispatch(setProjectCosts(response.costnames));
       dispatch(setProjectFeatures(response.features));
       dispatch(setOwner(response.project.user));
+      dispatch(setProjectPlanningUnits(response.planning_units))
       dispatch(setActiveTab("project"));
       dispatch(setPlanningCostsTrigger(true));
       await new Promise((resolve) => setTimeout(resolve, 0));

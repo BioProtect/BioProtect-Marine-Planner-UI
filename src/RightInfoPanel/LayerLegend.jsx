@@ -20,13 +20,15 @@ const LayerLegend = (props) => {
 
   useEffect(() => {
     let layer = props.subLayers ? props.subLayers[0] : props.layer;
+    if (!layer) return;
+
     let initialOpacity = 0;
     switch (layer.type) {
       case "fill":
-        initialOpacity = layer.paint["fill-opacity"];
+        initialOpacity = layer.paint?.["fill-opacity"] ?? 0;
         break;
       case "line":
-        initialOpacity = layer.paint["line-opacity"];
+        initialOpacity = layer.paint?.["line-opacity"] ?? 0;
         break;
       default:
         break;
@@ -34,16 +36,19 @@ const LayerLegend = (props) => {
     setOpacity(initialOpacity);
   }, [props.layer, props.subLayers]);
 
+
   const changeOpacity = (newOpacity) => {
     //the layer legend may in fact represent many separate layers (e.g. for features) - these are passed in as subLayers and each needs to have the opacity set
     setOpacity(newOpacity);
-    if (props.subLayers) {
+    if (props.subLayers && props.subLayers.length) {
       props.subLayers.forEach((layer) => {
+        if (!layer) return; // guard
         props.changeOpacity(layer.id, newOpacity);
       });
-    } else {
-      //call the change opacity method on a single layer - this actually changes the opacity of the layer
+    } else if (props.layer) {
       props.changeOpacity(props.layer.id, newOpacity);
+    } else {
+      console.warn("LayerLegend changeOpacity: no layer(s) provided");
     }
   };
 
@@ -95,8 +100,7 @@ const LayerLegend = (props) => {
     <React.Fragment>
       <Stack
         direction="row"
-        spacing={1}
-        p={2}
+        pl={1}
         justifyContent="left"
         alignItems="center"
       >
@@ -106,7 +110,7 @@ const LayerLegend = (props) => {
         {setSymbologyBtn}
         <TransparencyControl changeOpacity={changeOpacity} opacity={opacity} />
       </Stack>
-      <Stack spacing={1} p={2}>
+      <Stack spacing={1} p={1}>
         {items}
       </Stack>
     </React.Fragment>

@@ -8,7 +8,7 @@ import {
   Tabs,
   Typography,
 } from "@mui/material";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { setIdentifyPlanningUnits, togglePUD } from "@slices/planningUnitSlice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -16,13 +16,6 @@ import CONSTANTS from "./constants";
 import Swatch from "./Swatch";
 import { getArea } from "./Helpers";
 import { selectCurrentUser } from "@slices/authSlice";
-
-const TAB_STYLE = {
-  fontWeight: "normal",
-  textTransform: "none",
-  fontSize: "15px",
-  minWidth: "140px",
-};
 
 const HexInfoDialog = ({ xy, metadata }) => {
   const dispatch = useDispatch();
@@ -34,6 +27,34 @@ const HexInfoDialog = ({ xy, metadata }) => {
   const puInfo = puState.identifyPlanningUnits?.puData;
   const puFeatures = puState.identifyPlanningUnits?.features || [];
   const identifiedFeatures = featureState.identifiedFeatures || [];
+
+  const [popupPos, setPopupPos] = useState(xy);
+
+  useLayoutEffect(() => {
+    if (!xy) return;
+
+    const PADDING = 20; // space between popup and window edges
+    const popupWidth = 500;
+    const popupHeight = 420;
+
+    let left = xy.x + 25;
+    let top = xy.y - 25;
+
+    // Adjust if it overflows right edge
+    if (left + popupWidth + PADDING > window.innerWidth) {
+      left = Math.max(PADDING, window.innerWidth - popupWidth - PADDING);
+    }
+
+    // Adjust if it overflows bottom edge
+    if (top + popupHeight + PADDING > window.innerHeight) {
+      top = Math.max(PADDING, window.innerHeight - popupHeight - PADDING);
+    }
+
+    // Prevent going off top edge
+    if (top < PADDING) top = PADDING;
+
+    setPopupPos({ left, top });
+  }, [xy]);
 
   // Automatically decide which tab should be shown first
   const [selectedTab, setSelectedTab] = useState(puInfo ? "pu" : "features");
@@ -84,7 +105,7 @@ const HexInfoDialog = ({ xy, metadata }) => {
         stickyHeader
         sx={{
           width: "100%",
-          tableLayout: "auto", // 👈 allows natural column sizing and wrapping
+          tableLayout: "auto",
           borderCollapse: "collapse",
           "& td, & th": {
             verticalAlign: "top",
@@ -192,7 +213,7 @@ const HexInfoDialog = ({ xy, metadata }) => {
       <Box sx={{ p: 2 }}>
         <Box
           sx={{
-            maxHeight: 240,
+            maxHeight: 300,
             overflowY: "auto",
             overflowX: "hidden",
             border: "1px solid #eee",
@@ -234,8 +255,8 @@ const HexInfoDialog = ({ xy, metadata }) => {
       id="popup"
       sx={{
         position: "absolute",
-        left: `${xy?.x + 25 || 0}px`,
-        top: `${xy?.y - 25 || 0}px`,
+        left: popupPos.left,
+        top: popupPos.top,
         backgroundColor: "white",
         border: "1px solid #ccc",
         borderRadius: 2,
@@ -245,6 +266,7 @@ const HexInfoDialog = ({ xy, metadata }) => {
         maxHeight: 420,
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden", // keeps content contained
       }}
     >
       {/* Tabs Header */}
@@ -256,8 +278,8 @@ const HexInfoDialog = ({ xy, metadata }) => {
         indicatorColor="primary"
         sx={{ minHeight: 34, borderBottom: "1px solid #eee" }}
       >
-        <Tab label="Planning Unit" value="pu" sx={TAB_STYLE} />
-        <Tab label="Features" value="features" sx={TAB_STYLE} />
+        <Tab label="Planning Unit" value="pu" />
+        <Tab label="Features" value="features" />
       </Tabs>
 
       {/* Tab content */}

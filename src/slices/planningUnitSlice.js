@@ -39,6 +39,8 @@ const initialState = {
   planningUnits: [],
   puEditing: false,
   currentPUGrid: "",
+  showPlanningGrid: true,
+
   dialogs: {
     newPlanningGridDialogOpen: false,
     importPlanningGridDialogOpen: false,
@@ -65,6 +67,9 @@ const planningUnitSlice = createSlice({
     setPuEditing(state, action) {
       state.puEditing = action.payload;
     },
+    setShowPlanningGrid(state, action) {
+      state.showPlanningGrid = action.payload;
+    },
     togglePUD(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
@@ -81,6 +86,7 @@ export const {
   setPlanningUnits,
   setPuEditing,
   setCurrentPUGrid,
+  setShowPlanningGrid,
   togglePUD,
 } = planningUnitSlice.actions;
 export default planningUnitSlice.reducer;
