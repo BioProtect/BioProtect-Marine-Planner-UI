@@ -37,7 +37,6 @@ const initialState = {
   identifyPlanningUnits: {},
   planningUnitGrids: [],
   planningUnits: [],
-  puEditing: false,
   currentPUGrid: "",
   showPlanningGrid: true,
 
@@ -64,9 +63,6 @@ const planningUnitSlice = createSlice({
     setPlanningUnits(state, action) {
       state.planningUnits = action.payload;
     },
-    setPuEditing(state, action) {
-      state.puEditing = action.payload;
-    },
     setShowPlanningGrid(state, action) {
       state.showPlanningGrid = action.payload;
     },
@@ -84,7 +80,6 @@ export const {
   setIdentifyPlanningUnits,
   setPlanningUnitGrids,
   setPlanningUnits,
-  setPuEditing,
   setCurrentPUGrid,
   setShowPlanningGrid,
   togglePUD,

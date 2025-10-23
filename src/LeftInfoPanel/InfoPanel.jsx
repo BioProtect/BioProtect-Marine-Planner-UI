@@ -166,9 +166,6 @@ const InfoPanel = (props) => {
       : props.renameDescription(e.target.value);
   };
 
-  const changeIucnCategory = (event) => {
-    props.changeIucnCategory(CONSTANTS.IUCN_CATEGORIES[event.target.value]);
-  };
   const changeCostname = (event) => {
     const costname = event.target.value;
     if (costname === "Custom..") {
