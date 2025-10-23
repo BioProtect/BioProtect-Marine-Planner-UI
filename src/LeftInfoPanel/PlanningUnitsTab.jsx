@@ -1,7 +1,6 @@
-import React, { useState } from "react";
 import { faEraser, faLock, faSave } from "@fortawesome/free-solid-svg-icons";
-import { setPuEditing, setShowPlanningGrid } from "@slices/planningUnitSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { useMemo, useState } from "react";
 
 import Button from "@mui/material/Button";
 import CONSTANTS from "../constants"; // Ensure this path is correct
@@ -9,36 +8,56 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FormControl from "@mui/material/FormControl";
-import FormHelperText from "@mui/material/FormHelperText";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { setShowPlanningGrid } from "@slices/planningUnitSlice";
 
 const PlanningUnitsTab = ({
-  preprocessing, userRole, changeIucnCategory, changeCostname, updateProjectPus, clearManualEdits, map, onClickRef, onContextMenuRef
+  preprocessing,
+  userRole,
+  changeCostname,
+  map,
+  onClickRef,
+  onContextMenuRef,
+  puLayerIdsRef,
+  _post,
+  puEditing,
+  setPuEditing,
 }) => {
   const dispatch = useDispatch();
   const puState = useSelector((state) => state.planningUnit)
   const projState = useSelector((state) => state.project)
+  const uiState = useSelector((state) => state.ui);
   const metadata = projState.projectData.metadata;
 
-  const startPuEditSession = () => {
-    dispatch(setShowPlanningGrid(true));
-    dispatch(setPuEditing(true));
-    map.current.getCanvas().style.cursor = "crosshair";
+  // Build a quick lookup of puid → status, recomputed whenever the planningUnits array changes
+  const planningUnitStatusMap = useMemo(() => {
+    const map = {};
+    for (const [status, ids] of Object.entries(projState.projectPlanningUnits)) {
+      ids.forEach((id) => {
+        map[id] = Number(status);
+      });
+    }
+    return map;
+  }, [projState.projectPlanningUnits]);
 
+  const startPuEditSession = (e) => {
+    dispatch(setShowPlanningGrid(true));
+    console.log("---- ", puEditing)
+    map.current.getCanvas().style.cursor = "crosshair";
     // assign handlers
-    onClickRef.current = moveStatusUp;
-    onContextMenuRef.current = resetStatus;
+    onClickRef.current = (e) => updatePlanningUnitStatus(e, "cycle");
+    onContextMenuRef.current = (e) => updatePlanningUnitStatus(e, "reset");
     map.current.on("click", CONSTANTS.PU_LAYER_NAME, onClickRef.current);
     map.current.on("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenuRef.current);
   };
 
-  const stopPuEditSession = () => {
+  const stopPuEditSession = (e) => {
     dispatch(setShowPlanningGrid(false));
-    dispatch(setPuEditing(false));
+    setPuEditing(false);
     map.current.getCanvas().style.cursor = "pointer";
 
     if (onClickRef.current) {
@@ -52,17 +71,84 @@ const PlanningUnitsTab = ({
     updateProjectPus();
   };
 
-
-  const handlePUEditingClick = () => {
-    if (puState.puEditing) {
-      stopPuEditSession();
+  const handlePUEditingClick = (e) => {
+    console.log("puEditing ", puEditing);
+    if (puEditing) {
+      setPuEditing(false);
+      stopPuEditSession(e)
     } else {
-      startPuEditSession();
+      setPuEditing(true);
+      console.log("start the session....")
+      startPuEditSession(e)
     }
+  }
+
+  const clearManualEdits = () => {
+    dispatch(setProjectPlanningUnits({}));
   };
 
+  const updateProjectPus = async () => {
+    const formData = new FormData();
+    formData.append("user", uiState.owner);
+    formData.append("project", projState.project);
 
+    for (const [status, ids] of Object.entries(projState.projectPlanningUnits)) {
+      formData.append(`status${status}`, ids);
+    }
 
+    await _post("planning_units?action=update", formData);
+  };
+
+  function appPuidsToPlanningUnits(statuses, status, puids) {
+    const newStatuses = { ...statuses };
+    //  Get the current list for this status or start with an empty array
+    const currentList = newStatuses[status] || [];
+    //  Combine old and new PU IDs and Remove duplicates
+    const uniqueIds = Array.from(new Set([...currentList, ...puids]));
+    newStatuses[status] = uniqueIds;
+    return newStatuses;
+  }
+
+  const removePuidsFromArray = (statuses, status, puids) => {
+    const newStatuses = { ...statuses };
+    const currentList = newStatuses[status] || [];
+    // remove matching IDs
+    const remaining = currentList.filter((id) => !puids.includes(id));
+    if (remaining.length > 0) {
+      newStatuses[status] = remaining;
+    } else {
+      delete newStatuses[status];
+    }
+    return newStatuses;
+  }
+
+  const updatePlanningUnitStatus = (e, mode = "change") => {
+    console.log("e, mode ", e, mode);
+    const puLayerId = CONSTANTS.PU_LAYER_NAME;
+    console.log("puLayerId ", puLayerId);
+    if (!map.current?.getLayer(puLayerId)) return;
+
+    // find clicked feature
+    const features = map.current.queryRenderedFeatures(e.point, { layers: [puLayerId] });
+    if (!features.length) return;
+
+    const puid = features[0].properties.h3_index || features[0].properties.puid;
+
+    // get current and next statsu
+    const currentStatus = planningUnitStatusMap[puid] ?? 0;
+    const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
+
+    let updated = removePuidsFromArray(projState.projectPlanningUnits, currentStatus, [puid]);
+    updated = appPuidsToPlanningUnits(updated, nextStatus, [puid]);
+    dispatch(setProjectPlanningUnits(updated));
+
+    const featureRef = {
+      source: puLayerIdsRef.current.sourceId,
+      sourceLayer: puLayerIdsRef.current.sourceLayerName,
+      id: puid,  // h3_index value
+    };
+    map.current.setFeatureState(featureRef, { status: nextStatus });
+  };
 
   return (
     <div>
@@ -80,16 +166,16 @@ const PlanningUnitsTab = ({
             <Stack direction="row" spacing={4} >
 
               <Typography variant="body1" color="text.secondary" >
-                <Button variant="outlined" onClick={handlePUEditingClick}>
+                <Button variant="outlined" onClick={(e) => handlePUEditingClick(e)}>
                   <FontAwesomeIcon
-                    icon={puState.puEditing ? faSave : faLock}
-                    title={puState.puEditing ? "Save" : "Manually edit"}
+                    icon={puEditing ? faSave : faLock}
+                    title={puEditing ? "Save" : "Manually edit"}
                   />
                 </Button>
               </Typography>
 
               <Typography variant="body1" color="text.secondary">
-                {puState.puEditing
+                {puEditing
                   ? "Click on the map to change the status"
                   : "Manually edit"}
               </Typography>
@@ -109,30 +195,6 @@ const PlanningUnitsTab = ({
               </Typography>
 
             </Stack>
-            <FormControl sx={{ m: 1, minWidth: 120 }} >
-              <InputLabel id="protected-areas-label">Lock in Protected Areas</InputLabel>
-              <Select
-                labelId="protected-areas-label"
-                id="protected-areas"
-                value={
-                  CONSTANTS.IUCN_CATEGORIES.includes(metadata.IUCN_CATEGORY)
-                    ? metadata.IUCN_CATEGORY
-                    : CONSTANTS.IUCN_CATEGORIES[0] ?? ''
-                }
-                disabled={preprocessing || userRole === "ReadOnly"}
-                label="Lock in protected areas"
-                onChange={(event) => changeIucnCategory(event)}
-              >
-                {CONSTANTS.IUCN_CATEGORIES.map((item) => {
-                  return (
-                    <MenuItem value={item} key={item}>
-                      {item}
-                    </MenuItem>
-                  );
-                })}
-              </Select>
-            </FormControl>
-
 
             <Typography variant="h5" component="div">
               Costs

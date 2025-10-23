@@ -125,7 +125,7 @@ const ResultsPanel = (props) => {
   const panelStyle = useMemo(() => ({
     top: "60px",
     width: "300px",
-    height: "400px",
+    height: "600px",
     position: "absolute",
     right: "140px",
   }), [])
@@ -140,7 +140,7 @@ const ResultsPanel = (props) => {
   return (
     <React.Fragment>
       <div className="resultsPanel" style={combinedDisplayStyles}>
-        <Paper elevation={2} className="ResultsPanelPaper" mb={4}>
+        <Paper elevation={2} className="ResultsPanelPaper" mb={4} sx={{ maxHeight: "80vh" }}>
           <div className="resultsTitle">Results</div>
           <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
             <Tab
@@ -282,7 +282,7 @@ const ResultsPanel = (props) => {
           </div>
         </Paper>
       </div>
-    </React.Fragment>
+    </React.Fragment >
   );
 };
 

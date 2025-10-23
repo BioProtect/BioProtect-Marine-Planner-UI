@@ -92,7 +92,6 @@ const MapLegend = (props) => {
       //get a unique key
       //create the legend for non-feature layers
       //get the summed solutions legend
-
       let key = "legend_" + layer.id;
       if (layer.metadata.type !== CONSTANTS.LAYER_TYPE_FEATURE_LAYER) {
         switch (layer.metadata.type) {
@@ -104,7 +103,7 @@ const MapLegend = (props) => {
             return (
               <LayerLegend
                 key={key}
-                topMargin={"15px"}
+                // topMargin={"15px"}
                 changeOpacity={props.changeOpacity}
                 layer={layer}
                 items={items}
@@ -121,7 +120,7 @@ const MapLegend = (props) => {
                 <LayerLegend
                   key={key}
                   loading={props.costsLoading}
-                  topMargin={"15px"}
+                  // topMargin={"15px"}
                   changeOpacity={props.changeOpacity}
                   layer={layer}
                   items={[
@@ -139,7 +138,7 @@ const MapLegend = (props) => {
                 <LayerLegend
                   key={key}
                   loading={props.costsLoading}
-                  topMargin={"15px"}
+                  // topMargin={"15px"}
                   changeOpacity={props.changeOpacity}
                   layer={layer}
                   items={[
@@ -169,7 +168,7 @@ const MapLegend = (props) => {
             return (
               <LayerLegend
                 key={key}
-                topMargin={"15px"}
+                // topMargin={"15px"}
                 changeOpacity={props.changeOpacity}
                 layer={layer}
                 subLayers={[puLayer, puStatusLayer].filter(Boolean)}
@@ -225,7 +224,7 @@ const MapLegend = (props) => {
     );
     return items.length > 0 ? (
       <LayerLegend
-        topMargin={"15px"}
+        // topMargin={"15px"}
         changeOpacity={props.changeOpacity}
         layer={{ metadata: { name: "Features" } }}
         subLayers={featureLayers}
@@ -247,7 +246,7 @@ const MapLegend = (props) => {
     }));
     return items.length > 0 ? (
       <LayerLegend
-        topMargin={"15px"}
+        // topMargin={"15px"}
         changeOpacity={props.changeOpacity}
         layer={{ metadata: { name: "Planning units for features" } }}
         subLayers={featurePUIDLayers}

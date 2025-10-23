@@ -124,7 +124,7 @@ const initialState = {
   projectChanged: false,
   projectImpacts: [],
   projectFeatures: [],
-  projectPlanningUnits: [],
+  projectPlanningUnits: {},
   projectCosts: [],
   planningCostsTrigger: false,
 

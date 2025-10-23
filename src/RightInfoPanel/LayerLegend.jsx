@@ -97,7 +97,7 @@ const LayerLegend = (props) => {
   ) : null;
 
   return (
-    <React.Fragment>
+    <React.Fragment >
       <Stack
         direction="row"
         pl={1}
@@ -110,7 +110,9 @@ const LayerLegend = (props) => {
         {setSymbologyBtn}
         <TransparencyControl changeOpacity={changeOpacity} opacity={opacity} />
       </Stack>
-      <Stack spacing={1} p={1}>
+      <Stack spacing={1} p={1}
+        sx={{ maxHeight: "100vh", overflowY: "auto", }}
+      >
         {items}
       </Stack>
     </React.Fragment>
