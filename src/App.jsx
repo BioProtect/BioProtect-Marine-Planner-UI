@@ -331,21 +331,29 @@ const App = () => {
     };
   }, [dispatch]);
 
-  useEffect(() => {
-    if (!map.current) return;
-    if (!puLayerIdsRef.current?.sourceId) return;
-    if (!projState.projectPlanningUnits || Object.keys(projState.projectPlanningUnits).length === 0) return;
-    const { sourceId, sourceLayerName } = puLayerIdsRef.current;
-    for (const [status, ids] of Object.entries(projState.projectPlanningUnits)) {
-      ids.forEach((id) => {
-        map.current.setFeatureState(
-          { source: sourceId, sourceLayer: sourceLayerName, id: String(id) },
-          { status: Number(status) }
-        );
-      });
-    }
-    map.current.triggerRepaint();
-  }, [projState.projectPlanningUnits, puLayerIdsRef.current?.sourceId, map.current]);
+  // useEffect(() => {
+  //   if (!map.current || !puLayerIdsRef.current?.sourceId || !puLayerIdsRef.current?.sourceLayerName) return;
+  //   if (!projState.projectPlanningUnits || Object.keys(projState.projectPlanningUnits).length === 0) return;
+
+  //   const { sourceId, sourceLayerName } = puLayerIdsRef.current;
+  //   // map.current.removeFeatureState({ source: sourceId });
+
+
+  //   for (const [status, ids] of Object.entries(projState.projectPlanningUnits)) {
+  //     ids.forEach((id) => {
+  //       try {
+  //         map.current.setFeatureState(
+  //           { source: sourceId, sourceLayer: sourceLayerName, id: String(id) },
+  //           { status: Number(status) }
+  //         );
+  //       } catch (err) {
+  //         console.warn("⚠️ setFeatureState failed for", id, err.message);
+  //       }
+  //     });
+  //   }
+  //   // map.current.triggerRepaint();
+  // }, [projState.projectPlanningUnits]);
+  // // }, [projState.projectPlanningUnits, puLayerIdsRef.current?.sourceId, map.current]);
 
 
 
@@ -1744,19 +1752,6 @@ const App = () => {
     };
   };
 
-  const getColorForStatus = (val) => {
-    switch (val) {
-      case 0: // Available (can be freely selected)
-        return "rgba(150, 150, 150, 0)"; // transparent grey outline
-      case 1: // Locked in (fixed in reserve)
-        return "rgba(63, 63, 191, 1)"; // blue
-      case 2: // Locked out (excluded)
-        return "rgba(191, 63, 63, 1)"; // red
-      default:
-        return "rgba(150, 150, 150, 0)"; // fallback
-    }
-  };
-
   //renders the solution - data is the REST response and sum is a flag to indicate if the data is the summed solution (true) or an individual solution (false)
   const renderSolution = (data, sum) => {
     if (!data) return;
@@ -1774,33 +1769,48 @@ const App = () => {
     );
   };
 
-  // renders the planning units edit layer according to the type of layer and pu status
-  // const renderPuEditLayer = () => {
-  //   const propId = puLayerIdsRef.current?.propId || "h3_index";
-  //   const statusLayerId = puLayerIdsRef.current?.statusLayerId;
+  const renderPuEditLayer = () => {
+    console.log("renderPuEditLayer......... ");
+    const propId = puLayerIdsRef.current?.propId || "h3_index";
+    const statusLayerId = puLayerIdsRef.current?.statusLayerId;
+    console.log("statusLayerId ", statusLayerId);
 
-  //   if (!map.current || !statusLayerId || !map.current.getLayer(statusLayerId)) {
-  //     console.warn("Status layer not ready yet.");
-  //     return;
-  //   }
+    if (!map.current || !statusLayerId || !map.current.getLayer(statusLayerId)) {
+      console.warn("Status layer not ready yet.");
+      return;
+    }
+    const planningUnits = projState.projectPlanningUnits;
+    let expression;
 
-  //   const buildExpression = (units) => {
-  //     if (!units?.length) return "rgba(150,150,150,0)";
-  //     const expression = ["match", ["get", propId]];
-  //     for (const [status, ids] of Object.entries(units)) {
-  //       const color = getColorForStatus(Number(status));
-  //       ids.forEach((id) => expression.push(id, color));
-  //     }
-  //     expression.push("rgba(150,150,150,0)");
-  //     map.current.setPaintProperty(statusLayerId, "line-color", expression);
-  //     return expression;
+    if (planningUnits && Object.keys(planningUnits).length > 0) {
+      expression = ["match", ["get", propId]];
 
-  //   };
-  //   const expression = buildExpression(projState.projectPlanningUnits);
-  //   //set the render paint property
-  //   map.current.setPaintProperty(statusLayerId, "line-color", expression);
-  //   map.current.setPaintProperty(statusLayerId, "line-width", CONSTANTS.STATUS_LAYER_LINE_WIDTH);
-  // };
+      for (const [status, ids] of Object.entries(planningUnits)) {
+        let color;
+        switch (Number(status)) {
+          case 1:
+            color = "rgba(63, 63, 191, 1)"; // locked in
+            break;
+          case 2:
+            color = "rgba(191, 63, 63, 1)"; // locked out
+            break;
+          default:
+            color = "rgba(150, 150, 150, 0)";
+        }
+        ids.forEach((id) => expression.push(id, color));
+      }
+
+      expression.push("rgba(150, 150, 150, 0)");
+    } else {
+      expression = "rgba(150, 150, 150, 0)";
+    }
+    try {
+      map.current.setPaintProperty(statusLayerId, "line-color", expression);
+      map.current.setPaintProperty(statusLayerId, "line-width", CONSTANTS.STATUS_LAYER_LINE_WIDTH);
+    } catch (err) {
+      console.warn("Failed to apply paint properties:", err);
+    }
+  };
 
   const renderPuCostLayer = (cost_data) => {
     const propId = puLayerIdsRef.current?.propId || "h3_index"; // single truth
@@ -2365,19 +2375,13 @@ const App = () => {
       layout: { visibility: "none" },
       "source-layer": puLayerName,
       paint: {
-        "line-color": [
-          "match",
-          ["feature-state", "status"],
-          0, "rgba(150,150,150,0)",     // available
-          1, "rgba(63,63,191,1)",       // locked-in
-          2, "rgba(191,63,63,1)",       // locked-out
-          "rgba(20, 245, 8, 0)"         // default
-        ],
+        "line-color": "rgba(150, 150, 150, 0)",
         "line-width": CONSTANTS.STATUS_LAYER_LINE_WIDTH,
       },
     });
     //set the result layer in app state so that it can update the Legend component and its opacity control
     setResultsLayer(map.current.getLayer(resultsLayerId));
+    renderPuEditLayer();
   };
 
   const removePlanningGridLayers = (puLayerName) => {
@@ -2544,7 +2548,7 @@ const App = () => {
       false
     );
     //render the planning units status layer_edit layer
-    // renderPuEditLayer(CONSTANTS.STATUS_LAYER_NAME);
+    renderPuEditLayer();
   };
 
   //fired whenever another tab is selected
@@ -3844,8 +3848,9 @@ const App = () => {
               changeCostname={changeCostname}
               puLayerIdsRef={puLayerIdsRef}
               _post={_post}
-              puEditing={puEditingRef.current}
+              puEditing={puEditingRef}
               setPuEditing={setPuEditing}
+              renderPuEditLayer={renderPuEditLayer}
 
               renameProject={renameProject}
               renameDescription={renameDescription}

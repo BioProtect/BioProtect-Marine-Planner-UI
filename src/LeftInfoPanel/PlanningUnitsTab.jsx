@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useMemo, useState } from "react";
 
 import Button from "@mui/material/Button";
-import CONSTANTS from "../constants"; // Ensure this path is correct
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,6 +12,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { setProjectPlanningUnits } from "@slices/projectSlice";
 import { setShowPlanningGrid } from "@slices/planningUnitSlice";
 
 const PlanningUnitsTab = ({
@@ -26,6 +26,7 @@ const PlanningUnitsTab = ({
   _post,
   puEditing,
   setPuEditing,
+  renderPuEditLayer,
 }) => {
   const dispatch = useDispatch();
   const puState = useSelector((state) => state.planningUnit)
@@ -57,7 +58,7 @@ const PlanningUnitsTab = ({
     }
     map.current.on("click", puLayerId, onClickRef.current);
     map.current.on("contextmenu", puLayerId, onContextMenuRef.current);
-
+    renderPuEditLayer();
   };
 
   const stopPuEditSession = (e) => {
@@ -82,7 +83,7 @@ const PlanningUnitsTab = ({
   };
 
   const handlePUEditingClick = (e) => {
-    if (puEditing) {
+    if (puEditing.current) {
       setPuEditing(false);
       stopPuEditSession(e)
     } else {
@@ -96,15 +97,16 @@ const PlanningUnitsTab = ({
   };
 
   const updateProjectPus = async () => {
+    const project = projState.projectData.project;
+    console.log("project ", project);
     const formData = new FormData();
-    formData.append("user", uiState.owner);
-    formData.append("project", projState.project);
-
+    formData.append("project_id", project.id);
     for (const [status, ids] of Object.entries(projState.projectPlanningUnits)) {
-      formData.append(`status${status}`, ids);
+      const joined = (ids || []).join(",");
+      formData.append(`status${status}`, joined);
     }
 
-    await _post("planning_units?action=update", formData);
+    await _post("planning-units?action=update", formData);
   };
 
   function appPuidsToPlanningUnits(statuses, status, puids) {
@@ -131,7 +133,7 @@ const PlanningUnitsTab = ({
   }
 
   const updatePlanningUnitStatus = (e, mode = "change") => {
-    const puLayerId = CONSTANTS.PU_LAYER_NAME;
+    const puLayerId = puLayerIdsRef.current?.puLayerId;
     if (!map.current?.getLayer(puLayerId)) return;
 
     // find clicked feature
@@ -139,21 +141,16 @@ const PlanningUnitsTab = ({
     if (!features.length) return;
 
     const puid = features[0].properties.h3_index || features[0].properties.puid;
-
-    // get current and next statsu
     const currentStatus = planningUnitStatusMap[puid] ?? 0;
     const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
 
+    // ✅ Update Redux state
     let updated = removePuidsFromArray(projState.projectPlanningUnits, currentStatus, [puid]);
     updated = appPuidsToPlanningUnits(updated, nextStatus, [puid]);
     dispatch(setProjectPlanningUnits(updated));
 
-    const featureRef = {
-      source: puLayerIdsRef.current.sourceId,
-      sourceLayer: puLayerIdsRef.current.sourceLayerName,
-      id: puid,  // h3_index value
-    };
-    map.current.setFeatureState(featureRef, { status: nextStatus });
+    // ✅ Immediately re-render the layer to apply the new color
+    renderPuEditLayer();
   };
 
   return (
@@ -174,14 +171,15 @@ const PlanningUnitsTab = ({
               <Typography variant="body1" color="text.secondary" >
                 <Button variant="outlined" onClick={(e) => handlePUEditingClick(e)}>
                   <FontAwesomeIcon
-                    icon={puEditing ? faSave : faLock}
-                    title={puEditing ? "Save" : "Manually edit"}
+                    icon={puEditing.current ? faSave : faLock}
+                    title={puEditing.current ? "Save" : "Manually edit"}
                   />
+                  {puEditing.current ? "Save" : "Manually edit"}
                 </Button>
               </Typography>
 
               <Typography variant="body1" color="text.secondary">
-                {puEditing
+                {puEditing.current
                   ? "Click on the map to change the status"
                   : "Manually edit"}
               </Typography>
@@ -191,7 +189,7 @@ const PlanningUnitsTab = ({
                   variant="outlined"
                   onClick={(e) => clearManualEdits(e)}
                   style={{
-                    display: puState.puEditing ? "inline-block" : "none",
+                    display: puEditing.current ? "inline-block" : "none",
                   }}>
                   <FontAwesomeIcon
                     icon={faEraser}
