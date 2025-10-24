@@ -20,7 +20,6 @@ import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
   initialiseServers,
   selectServer,
-  setBpServer,
   setCostData,
   setPlanningCostsTrigger,
   setProjectCosts,
@@ -29,9 +28,7 @@ import {
   setProjectList,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
-  setProjectPlanningUnits,
   setProjects,
-  setRenderer,
   toggleProjDialog
 } from "@slices/projectSlice";
 import {
@@ -70,7 +67,7 @@ import { useDispatch, useSelector } from "react-redux";
 import AboutDialog from "./AboutDialog";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
-import ChangPasswordDialog from "./User/ChangePasswordDialog"
+import ChangPasswordDialog from "./User/ChangePasswordDialog";
 import ClassificationDialog from "./ClassificationDialog";
 import CostsDialog from "./CostsDialog";
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
@@ -111,19 +108,18 @@ import RunLogDialog from "./RunLogDialog";
 import RunSettingsDialog from "./RunSettingsDialog";
 import ServerDetailsDialog from "./User/ServerDetails/ServerDetailsDialog";
 import ShareableLinkDialog from "./ShareableLinkDialog";
-/*global fetch*/
-/*global URLSearchParams*/
-/*global AbortController*/
 import TargetDialog from "./TargetDialog";
 import ToolsMenu from "./ToolsMenu";
 import UserMenu from "./User/UserMenu";
 import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
+/*global fetch*/
+/*global URLSearchParams*/
+/*global AbortController*/
 import classyBrew from "classybrew";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from "jsonp-promise";
-import { layer } from "@fortawesome/fontawesome-svg-core";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
 import { switchProject } from "./slices/projectSlice";
@@ -143,8 +139,6 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN
 
 const App = () => {
   const dispatch = useDispatch();
-
-  const authState = useSelector((state) => state.auth);
   const uiState = useSelector((state) => state.ui);
 
   // CREATING REFS FOR MAPCLICK OTHERWISE STATE IN MAP CLICK IS STALE. 
@@ -167,19 +161,14 @@ const App = () => {
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [lng, setLng] = useState(-70.9);
-  const [lat, setLat] = useState(42.35);
-  const [zoom, setZoom] = useState(9);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [runMarxanResponse, setRunMarxanResponse] = useState({});
-  const [previousIucnCategory, setPreviousIucnCategory] = useState(null);
   const [pid, setPid] = useState("");
   const [allImpacts, setAllImpacts] = useState([]);
   const [atlasLayers, setAtlasLayers] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
   const [countries, setCountries] = useState([]);
   const [files, setFiles] = useState({});
-  const [identifyProtectedAreas, setidentifyProtectedAreas] = useState([]);
   /////////////////////////////////////////////////////////////////////////////
   const [logMessages, setLogMessages] = useState([]);
   const [mapPaintProperties, setMapPaintProperties] = useState({
@@ -341,6 +330,24 @@ const App = () => {
       }
     };
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!map.current) return;
+    if (!puLayerIdsRef.current?.sourceId) return;
+    if (!projState.projectPlanningUnits || Object.keys(projState.projectPlanningUnits).length === 0) return;
+    const { sourceId, sourceLayerName } = puLayerIdsRef.current;
+    for (const [status, ids] of Object.entries(projState.projectPlanningUnits)) {
+      ids.forEach((id) => {
+        map.current.setFeatureState(
+          { source: sourceId, sourceLayer: sourceLayerName, id: String(id) },
+          { status: Number(status) }
+        );
+      });
+    }
+    map.current.triggerRepaint();
+  }, [projState.projectPlanningUnits, puLayerIdsRef.current?.sourceId, map.current]);
+
+
 
   const setSnackBar = (message, silent = false) => {
     if (!silent) {
@@ -1969,7 +1976,6 @@ const App = () => {
 
   const mapClick = useCallback(async (e) => {
     const currentEditing = puEditingRef.current;
-    console.log("puEditing... ", puEditing);
     //if the user is not editing planning units or creating a new feature 
     // then show the identify features for the clicked point
 
@@ -2344,8 +2350,8 @@ const App = () => {
         "fill-opacity": CONSTANTS.PU_LAYER_OPACITY,
       },
     });
+
     //add the planning units manual edit layer - this layer shows which individual planning units have had their status changed
-    console.log(map.current.getSource(sourceId))
     addMapLayer({
       id: statusLayerId,
       metadata: {
@@ -2356,7 +2362,7 @@ const App = () => {
       maxzoom: 24,
       type: "line",
       source: sourceId,
-      layout: { visibility: "visible" },
+      layout: { visibility: "none" },
       "source-layer": puLayerName,
       paint: {
         "line-color": [
@@ -2370,10 +2376,6 @@ const App = () => {
         "line-width": CONSTANTS.STATUS_LAYER_LINE_WIDTH,
       },
     });
-    console.log(map.current.getLayer('martin_layer_status_v_h3_celtic_seas_res7'))
-    console.log(map.current.getLayoutProperty('martin_layer_status_v_h3_celtic_seas_res7', 'visibility'))
-    console.log(map.current.queryRenderedFeatures({ layers: ['martin_layer_status_v_h3_celtic_seas_res7'] }))
-
     //set the result layer in app state so that it can update the Legend component and its opacity control
     setResultsLayer(map.current.getLayer(resultsLayerId));
   };
@@ -3842,7 +3844,7 @@ const App = () => {
               changeCostname={changeCostname}
               puLayerIdsRef={puLayerIdsRef}
               _post={_post}
-              puEditing={puEditing}
+              puEditing={puEditingRef.current}
               setPuEditing={setPuEditing}
 
               renameProject={renameProject}

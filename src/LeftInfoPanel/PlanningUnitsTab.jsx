@@ -45,40 +45,48 @@ const PlanningUnitsTab = ({
   }, [projState.projectPlanningUnits]);
 
   const startPuEditSession = (e) => {
-    dispatch(setShowPlanningGrid(true));
-    console.log("---- ", puEditing)
+    dispatch(setShowPlanningGrid(true))
     map.current.getCanvas().style.cursor = "crosshair";
     // assign handlers
     onClickRef.current = (e) => updatePlanningUnitStatus(e, "cycle");
     onContextMenuRef.current = (e) => updatePlanningUnitStatus(e, "reset");
-    map.current.on("click", CONSTANTS.PU_LAYER_NAME, onClickRef.current);
-    map.current.on("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenuRef.current);
+    const puLayerId = puLayerIdsRef.current?.puLayerId;
+    if (!puLayerId) {
+      console.warn("No PU layer ID available yet");
+      return;
+    }
+    map.current.on("click", puLayerId, onClickRef.current);
+    map.current.on("contextmenu", puLayerId, onContextMenuRef.current);
+
   };
 
   const stopPuEditSession = (e) => {
+    const puLayerId = puLayerIdsRef.current?.puLayerId;
+    if (!puLayerId) {
+      console.warn("No PU layer ID available yet");
+      return;
+    }
     dispatch(setShowPlanningGrid(false));
     setPuEditing(false);
     map.current.getCanvas().style.cursor = "pointer";
 
     if (onClickRef.current) {
-      map.current.off("click", CONSTANTS.PU_LAYER_NAME, onClickRef.current);
+      map.current.off("click", puLayerId, onClickRef.current);
       onClickRef.current = null;
     }
     if (onContextMenuRef.current) {
-      map.current.off("contextmenu", CONSTANTS.PU_LAYER_NAME, onContextMenuRef.current);
+      map.current.off("contextmenu", puLayerId, onContextMenuRef.current);
       onContextMenuRef.current = null;
     }
     updateProjectPus();
   };
 
   const handlePUEditingClick = (e) => {
-    console.log("puEditing ", puEditing);
     if (puEditing) {
       setPuEditing(false);
       stopPuEditSession(e)
     } else {
       setPuEditing(true);
-      console.log("start the session....")
       startPuEditSession(e)
     }
   }
@@ -123,9 +131,7 @@ const PlanningUnitsTab = ({
   }
 
   const updatePlanningUnitStatus = (e, mode = "change") => {
-    console.log("e, mode ", e, mode);
     const puLayerId = CONSTANTS.PU_LAYER_NAME;
-    console.log("puLayerId ", puLayerId);
     if (!map.current?.getLayer(puLayerId)) return;
 
     // find clicked feature
