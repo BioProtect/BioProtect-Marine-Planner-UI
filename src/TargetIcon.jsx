@@ -56,10 +56,8 @@ const TargetIcon = ({
 
   const handleClick = () => {
     if (editing) return; // don’t re-trigger while already editing
-    if (userData.role !== "ReadOnly") {
-      setEditing(true);
-      setLocalTargetValue(target_value);
-    }
+    setEditing(true);
+    setLocalTargetValue(target_value);
   };
 
   const getStyles = () => {

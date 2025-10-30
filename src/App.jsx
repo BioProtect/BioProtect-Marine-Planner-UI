@@ -1191,9 +1191,8 @@ const App = () => {
     console.log("getProjects response ", response);
     console.log("getProjects userData ", userData);
     //filter the projects so that private ones arent shown
-    const projects = response.projects.filter(
-      (proj) =>
-        !(proj.private && proj.user !== userId && userData.role !== "Admin")
+    const projects = response.projects.filter((proj) =>
+      !(proj.private && proj.user !== userId)
     );
     dispatch(setProjects(projects));
   };

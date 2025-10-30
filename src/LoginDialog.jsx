@@ -30,7 +30,6 @@ import { useSnackbar } from "notistack";
 const LoginDialog = ({ open, loadProjectAndSetup }) => {
   const [selectOpen, setSelectOpen] = useState(false);
   const projectState = useSelector((state) => state.project);
-  console.log("projectState ", projectState);
   const userRef = useRef(null);
   const [user, setUser] = useState("");
   const [pwd, setPwd] = useState("");
