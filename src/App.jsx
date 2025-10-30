@@ -672,7 +672,7 @@ const App = () => {
       }
       const formData = new FormData();
       formData.append("id", userId)
-      formData.append("user", userData?.name);
+      formData.append("user", userData.name);
       appendToFormData(formData, filteredParameters);
 
       await updateUser(formData);
@@ -751,7 +751,7 @@ const App = () => {
         addPlanningGridLayers(tilesetId);
 
         if (projState.costData) renderPuCostLayer(projState.costData);
-        await getResults(userData?.name, projectData.project);
+        await getResults(userData.name, projectData.project);
       }
 
       const speciesData = await _get("getAllSpeciesData");
@@ -1351,7 +1351,7 @@ const App = () => {
   //gets the results for a project
   const getResults = async (user, proj) => {
     try {
-      const response = await _get(`getResults?user=${userData?.username}&project=${proj.name}`);
+      const response = await _get(`getResults?user=${userData.username}&project=${proj.name}`);
       runCompleted(response);
       return "Results retrieved";
     } catch (error) {

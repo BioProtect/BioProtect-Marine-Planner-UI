@@ -125,7 +125,7 @@ const InfoPanel = (props) => {
   };
 
   const startEditingDescription = () => {
-    if (projState.projectData && userData?.role !== "ReadOnly") {
+    if (projState.projectData) {
       setEditingDescription(true);
     }
   };
