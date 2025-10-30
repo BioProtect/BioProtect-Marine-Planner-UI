@@ -18,7 +18,10 @@ import { toggleDialog } from "@slices/uiSlice";
 
 const FeaturesTab = (props) => {
   const dispatch = useDispatch();
+  console.log("features tab useSelector(selectCurrentUser) ", useSelector(selectCurrentUser));
+
   const userData = useSelector(selectCurrentUser);
+  console.log("userData ", userData);
   const featureState = useSelector((state) => state.feature);
 
 

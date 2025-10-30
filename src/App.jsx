@@ -899,7 +899,7 @@ const App = () => {
     const currentNotifications = [...notifications];
     // Process and filter notifications based on role, dismissal, and expiry
     const processedNotifications = newNotifications.map((item) => {
-      // const allowedForRole = item.showForRoles.includes(userData.role);
+      // const allowedForRole = item.showForRoles.includes(userData?.role);
       const notDismissed = !dismissedNotifications.includes(String(item.id));
       let notExpired = true;
       // Check if the notification has an expiry date and if it is still valid
@@ -1614,7 +1614,7 @@ const App = () => {
   //called when the renderer state has been updated - renders the solution and saves the renderer back to the server
   const rendererStateUpdated = async (parameter, value) => {
     renderSolution(runMarxanResponse.ssoln, true);
-    if (userData.role !== "ReadOnly")
+    if (userData?.role !== "ReadOnly")
       await updateProjectParameter(parameter, value);
   };
 
@@ -3186,7 +3186,7 @@ const App = () => {
     dispatch(setProjectFeatures(selected));
 
     // Persist changes to the server if the user is not read-only
-    if (userData.role !== "ReadOnly") {
+    if (userData?.role !== "ReadOnly") {
       await updateProjectFeatures(selected);
     }
     // Close dialogs
@@ -3221,7 +3221,7 @@ const App = () => {
     dispatch(setAllFeatures(features));
     dispatch(setProjectFeatures(features.filter((item) => item.selected)));
     // Persist the changes to the server
-    if (userData.role !== "ReadOnly") {
+    if (userData?.role !== "ReadOnly") {
       await updateProjectFeatures();
     }
   };
@@ -3788,7 +3788,7 @@ const App = () => {
           />
           <UserMenu
             menuAnchor={menuAnchor}
-            userRole={userData.role}
+            userRole={userData?.role}
             logout={logout}
           />
           {dialogStates.helpMenuOpen ? (
@@ -3893,7 +3893,7 @@ const App = () => {
             wdpaLayer={wdpaLayer}
             paLayerVisible={paLayerVisible}
             changeOpacity={changeOpacity}
-            userRole={userData.role}
+            userRole={userData?.role}
             visibleLayers={visibleLayers}
             metadata={metadata}
             costsLoading={costsLoading}
@@ -3910,7 +3910,7 @@ const App = () => {
               exportProject={exportProject}
               cloneProject={cloneProject}
               unauthorisedMethods={unauthorisedMethods}
-              userRole={userData.role}
+              userRole={userData?.role}
               loadProjectAndSetup={loadProjectAndSetup}
             />) : null}
           <ProjectsListDialog />
@@ -3938,7 +3938,7 @@ const App = () => {
           <FeaturesDialog
             onOk={updateSelectedFeatures}
             metadata={metadata}
-            userRole={userData.role}
+            userRole={userData?.role}
             openFeaturesDialog={openFeaturesDialog}
             initialiseDigitising={initialiseDigitising}
             previewFeature={previewFeature}
@@ -3993,7 +3993,7 @@ const App = () => {
           <RunSettingsDialog
             updateRunParams={updateRunParams}
             runParams={runParams}
-            userRole={userData.role}
+            userRole={userData?.role}
           />
           {dialogStates.classificationDialogOpen ? (
             <ClassificationDialog
@@ -4017,7 +4017,7 @@ const App = () => {
             getRunLogs={getRunLogs}
             clearRunLogs={clearRunLogs}
             stopMarxan={stopProcess}
-            userRole={userData.role}
+            userRole={userData?.role}
             runlogTimer={runlogTimer}
           />
           <ServerDetailsDialog
@@ -4054,13 +4054,13 @@ const App = () => {
             clickImpact={clickImpact}
             initialiseDigitising={initialiseDigitising}
             selectedImpactIds={selectedImpactIds}
-            userRole={userData.role}
+            userRole={userData?.role}
           />
           <HumanActivitiesDialog
             loading={uiState.loading || uploading}
             metadata={metadata}
             initialiseDigitising={initialiseDigitising}
-            userRole={userData.role}
+            userRole={userData?.role}
             fileUpload={uploadRaster}
             saveActivityToDb={saveActivityToDb}
             startLogging={startLogging}
@@ -4069,12 +4069,12 @@ const App = () => {
           <RunCumuluativeImpactDialog
             loading={uiState.loading || uploading}
             metadata={metadata}
-            userRole={userData.role}
+            userRole={userData?.role}
             runCumulativeImpact={runCumulativeImpact}
           />
           <MenuBar
             open={token}
-            userRole={userData.role}
+            userRole={userData?.role}
             openFeaturesDialog={openFeaturesDialog}
             openProjectsDialog={openProjectsDialog}
             openPlanningGridsDialog={openPlanningGridsDialog}
