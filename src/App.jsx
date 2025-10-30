@@ -899,7 +899,7 @@ const App = () => {
     const currentNotifications = [...notifications];
     // Process and filter notifications based on role, dismissal, and expiry
     const processedNotifications = newNotifications.map((item) => {
-      const allowedForRole = item.showForRoles.includes(userData.role);
+      // const allowedForRole = item.showForRoles.includes(userData.role);
       const notDismissed = !dismissedNotifications.includes(String(item.id));
       let notExpired = true;
       // Check if the notification has an expiry date and if it is still valid
@@ -1188,6 +1188,8 @@ const App = () => {
   const getProjects = async () => {
     // const response = await _get(`getProjects?user=${user}`); - old 
     const response = await _get(`projects?action=list&user=${userId}`);
+    console.log("getProjects response ", response);
+    console.log("getProjects userData ", userData);
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
       (proj) =>
