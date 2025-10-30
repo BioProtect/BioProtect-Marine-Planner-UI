@@ -140,6 +140,7 @@ const initialState = {
 export const initialiseServers = createAsyncThunk(
   "project/initialiseServers",
   async (servers, { dispatch, rejectWithValue }) => {
+    console.log("Initialising servers.... ", servers);
     try {
       const updatedServers = addLocalServer(servers);
       // Fetch capabilities for each server
