@@ -55,7 +55,7 @@ const FeatureMenu = ({
         leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
         style={{
           display:
-            featureState.currentFeature?.old_version || userData.role === "ReadOnly"
+            featureState.currentFeature?.old_version || userData?.role === "ReadOnly"
               ? "none"
               : "block",
         }}
@@ -113,7 +113,7 @@ const FeatureMenu = ({
         leftIcon={<Preprocess style={{ margin: "1px" }} />}
         style={{
           display:
-            featureState.currentFeature?.old_version || userData.role === "ReadOnly"
+            featureState.currentFeature?.old_version || userData?.role === "ReadOnly"
               ? "none"
               : "block",
         }}

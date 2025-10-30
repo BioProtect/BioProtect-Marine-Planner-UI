@@ -50,7 +50,7 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
   // Determine unit type and value
   const isShapefile = featureState.featureMetadata.source === "Imported shapefile";
   const amount = isShapefile
-    ? getArea(featureState.featureMetadata.area, userData.report_units, true)
+    ? getArea(featureState.featureMetadata.area, userData?.report_units, true)
     : featureState.featureMetadata.area;
   const unit = isShapefile ? "Area" : "Amount";
 

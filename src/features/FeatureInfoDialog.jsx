@@ -69,10 +69,10 @@ const FeatureInfoDialog = ({ updateFeature }) => {
 
     return (
       <div
-        title={getArea(value, userData.report_units, false, 6)}
+        title={getArea(value, userData?.report_units, false, 6)}
         style={{ color }}
       >
-        {getArea(value, userData.report_units, true)}
+        {getArea(value, userData?.report_units, true)}
       </div>
     );
   };
@@ -109,7 +109,7 @@ const FeatureInfoDialog = ({ updateFeature }) => {
 
       case "Target percent":
       case "Species Penalty Factor":
-        return userData.role === "ReadOnly" ? (
+        return userData?.role === "ReadOnly" ? (
           <Typography>{row.value}</Typography>
         ) : (
           <div

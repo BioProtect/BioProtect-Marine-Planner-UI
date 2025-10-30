@@ -125,7 +125,7 @@ const InfoPanel = (props) => {
   };
 
   const startEditingDescription = () => {
-    if (projState.projectData && userData.role !== "ReadOnly") {
+    if (projState.projectData && userData?.role !== "ReadOnly") {
       setEditingDescription(true);
     }
   };
@@ -278,7 +278,7 @@ const InfoPanel = (props) => {
           {currentTabIndex === 2 && (
             <PlanningUnitsTab
               {...props}
-              userRole={userData.role}
+              userRole={userData?.role}
             />
           )}
 

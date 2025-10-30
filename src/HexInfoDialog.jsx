@@ -89,10 +89,10 @@ const HexInfoDialog = ({ xy, metadata }) => {
       ) : (
         <Typography
           variant="body2"
-          title={getArea(amount, userData.reportUnits)}
+          title={getArea(amount, userData?.reportUnits)}
           sx={{ whiteSpace: "wrap" }}
         >
-          {getArea(amount, userData.reportUnits, true)}
+          {getArea(amount, userData?.reportUnits, true)}
         </Typography>
       ),
     [userData]

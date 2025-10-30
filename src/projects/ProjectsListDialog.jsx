@@ -21,7 +21,7 @@ const ProjectsListDialog = () => {
   const projState = useSelector((state) => state.project);
   // Determine the columns based on the user role
   const tableColumns = [
-    ...(userData.userRole === "Admin"
+    ...(userData?.userRole === "Admin"
       ? [{ Header: "User", accessor: "user", width: 90 }]
       : []),
     { Header: "Name", accessor: "name", width: 200 },

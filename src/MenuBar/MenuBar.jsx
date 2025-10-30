@@ -158,7 +158,7 @@ const MenuBar = ({
             title={"Click to open the User menu"}
             onClick={(e) => handleMenuOpen(e, "userMenuOpen")}
           >
-            {userData.username}
+            {userData?.username}
           </Button>
         </Toolbar>
       </AppBar>

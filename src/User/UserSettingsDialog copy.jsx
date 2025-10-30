@@ -80,7 +80,7 @@ class UserSettingsDialog extends React.Component {
               <div className={"userSetting"}>Area units</div>
               <RadioGroup
                 name="reportUnitType"
-                defaultSelected={this.props.userData.REPORTUNITS}
+                defaultSelected={this.props.userData?.REPORTUNITS}
                 onChange={this.setReportUnit.bind(this)}
               >
                 <Radio
@@ -109,8 +109,8 @@ class UserSettingsDialog extends React.Component {
                 />
               </RadioGroup>
             </div>
-            {/*	<Checkbox label="Use feature colours" style={{fontSize:'12px'}} checked={this.props.userData.USEFEATURECOLORS} onCheck={this.toggleUseFeatureColors.bind(this)} />
-						<Checkbox label="Show welcome screen at startup" style={{fontSize:'12px'}} checked={this.props.userData.SHOWWELCOMESCREEN} onCheck={this.toggleShowWelcomeScreen.bind(this)} />*/}
+            {/*	<Checkbox label="Use feature colours" style={{fontSize:'12px'}} checked={this.props.userData?.USEFEATURECOLORS} onCheck={this.toggleUseFeatureColors.bind(this)} />
+						<Checkbox label="Show welcome screen at startup" style={{fontSize:'12px'}} checked={this.props.userData?.SHOWWELCOMESCREEN} onCheck={this.toggleShowWelcomeScreen.bind(this)} />*/}
           </div>
         }
       </MarxanDialog>

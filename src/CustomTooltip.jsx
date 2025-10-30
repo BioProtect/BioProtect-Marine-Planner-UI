@@ -15,13 +15,13 @@ const CustomTooltip = ({ active, payload }) => {
     <div className="custom-tooltip">
       <div className="tooltip">{data._alias}</div>
       <div className="tooltip">
-        Total area: {getArea(data.total_area, userData.report_units, true)}
+        Total area: {getArea(data.total_area, userData?.report_units, true)}
       </div>
       <div className="tooltip">
-        Country area: {getArea(data.country_area, userData.report_units, true)}
+        Country area: {getArea(data.country_area, userData?.report_units, true)}
       </div>
       <div className="tooltip">
-        Protected area: {getArea(data.current_protected_area, userData.report_units, true)}
+        Protected area: {getArea(data.current_protected_area, userData?.report_units, true)}
       </div>
     </div>
   );

@@ -92,7 +92,7 @@ const UserSettingsDialog = (props) => {
           <FormLabel id="reportUnitType-label">Area Units</FormLabel>
           <RadioGroup
             aria-labelledby="reportUnitType-label"
-            value={userData.report_units}
+            value={userData?.report_units}
             name="reportUnitType"
             onChange={setReportUnit}
           >
@@ -107,7 +107,7 @@ const UserSettingsDialog = (props) => {
           <FormControlLabel
             control={
               <Checkbox
-                checked={userData.use_feature_colors}
+                checked={userData?.use_feature_colors}
                 onChange={toggleUseFeatureColors}
               />
             }

@@ -58,7 +58,7 @@ const FeaturesTab = (props) => {
           alignItems="center"
           mb={2}
         >
-          {userData.role !== "ReadOnly" && props.showTargetButton ? (
+          {userData?.role !== "ReadOnly" && props.showTargetButton ? (
             <Button
               variant="contained"
               onClick={() => dispatch(
@@ -73,7 +73,7 @@ const FeaturesTab = (props) => {
             </Button>
           ) : null}
           {(props.metadata && props.metadata.OLDVERSION) ||
-            userData.role === "ReadOnly" ? null : (
+            userData?.role === "ReadOnly" ? null : (
             <Button
               variant="contained"
               label="+/-"
@@ -91,7 +91,7 @@ const FeaturesTab = (props) => {
           alignItems="center"
         >
           {(props.metadata && props.metadata.OLDVERSION) ||
-            userData.role === "ReadOnly" ? null : (
+            userData?.role === "ReadOnly" ? null : (
             <Button
               variant="contained"
               onClick={() => handlePreprocessAllFeatures()}
