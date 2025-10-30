@@ -1,6 +1,7 @@
 import { CONSTANTS, INITIAL_VARS } from "../bpVars";
 
 const getServerCapabilities = async (server) => {
+  console.log("getServerCapabilities server ", server);
   // Construct the endpoints
   const endpoint = `${server.protocol}//${server.host}:${server.port}${CONSTANTS.TORNADO_PATH}`;
   const websocketEndpoint =
@@ -17,8 +18,10 @@ const getServerCapabilities = async (server) => {
     guestUserEnabled: true,
     corsEnabled: false,
   };
+  console.log("server ", server);
 
   // Poll the server
+  console.log("Poll the server ");
   try {
     const controller = new AbortController();
     const signal = controller.signal;
@@ -27,6 +30,8 @@ const getServerCapabilities = async (server) => {
       credentials: "include",
       signal,
     });
+    console.log("response ", response);
+
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -42,6 +47,8 @@ const getServerCapabilities = async (server) => {
       const corsEnabled =
         json.serverData.PERMITTED_DOMAINS.includes(window.location.hostname) ||
         server.host === window.location.hostname;
+      console.log("server.host ", server.host);
+      console.log("window.location.hostname ", window.location.hostname);
 
       server = {
         ...server,
@@ -77,6 +84,7 @@ const getServerCapabilities = async (server) => {
 
 // function to add the local server
 const addLocalServer = (servers) => {
+  console.log("addLocalServer servers ", servers);
   const newServer = {
     name: window.location.hostname,
     protocol: window.location.protocol,
@@ -90,6 +98,7 @@ const addLocalServer = (servers) => {
 
 // function to filter and sort the servers
 const filterAndSortServers = (servers) => {
+  console.log("filterAndSortServers servers ", servers);
   const hosts = servers.map((server) => server.host);
 
   return servers

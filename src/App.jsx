@@ -283,6 +283,7 @@ const App = () => {
     }
 
     const fetchGlobalVariables = async () => {
+      console.log("fetchGlobalVariables.... ");
       try {
         initialiseServers(INITIAL_VARS.BP_SERVERS);
         setBrew(new classyBrew());
