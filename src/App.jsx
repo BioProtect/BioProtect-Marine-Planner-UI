@@ -369,12 +369,9 @@ const App = () => {
 
   // Initial paint setup (run once when planning units first load)
   useEffect(() => {
-    if (!map.current || !puLayerIdsRef.current?.statusLayerId) return;
-    const statusLayerId = puLayerIdsRef.current.statusLayerId;
-    if (!map.current.getLayer(statusLayerId)) return;
-
     renderPuEditLayer(projState.projectPlanningUnits);
-  }, [map.current && puLayerIdsRef.current?.statusLayerId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
 
@@ -1862,20 +1859,47 @@ const App = () => {
   // };
 
   function renderPuEditLayer(planningUnits) {
-    console.log("render pu edit layer new.....")
-    const statusLayerId = puLayerIdsRef.current?.statusLayerId;
-    if (!map.current || !statusLayerId || !map.current.getLayer(statusLayerId)) return;
+    const mapObj = map.current;
+    const { sourceId, statusLayerId, propId } = puLayerIdsRef.current;
+    if (!mapObj || !sourceId) return;
 
-    const expression = buildStatusExpression(planningUnits, puLayerIdsRef.current?.propId || "h3_index");
+    // If layer is gone (style reload), rebuild it
+    if (!mapObj.getSource(sourceId)) {
+      console.warn("Planning Unit source missing, recreating...");
+      mapObj.addSource(sourceId, {
+        type: "vector",
+        url: projState.projectData.metadata.pu_tilesetid, // or however your tileset is defined
+      });
+    }
 
-    // Prevent thrashing: only set paint if it actually changed
+    if (!mapObj.getLayer(statusLayerId)) {
+      console.warn("Planning Unit layer missing, recreating...");
+      mapObj.addLayer({
+        id: statusLayerId,
+        type: "fill",
+        source: sourceId,
+        "source-layer": puLayerIdsRef.current.sourceLayerName,
+        paint: {
+          "fill-opacity": 0.7,
+          "fill-color": [
+            "case",
+            ["==", ["feature-state", "status"], 1], "#3f3fbf",
+            ["==", ["feature-state", "status"], 2], "#bf3f3f",
+            "#999999"
+          ],
+        },
+      });
+    }
+
+    // now safely apply colors
+    const expression = buildStatusExpression(planningUnits, propId || "h3_index");
     const nextSig = JSON.stringify(expression);
     if (lastStatusExprRef.current === nextSig) return;
     lastStatusExprRef.current = nextSig;
 
-    map.current.setPaintProperty(statusLayerId, "line-color", expression);
-    map.current.setPaintProperty(statusLayerId, "line-width", CONSTANTS.STATUS_LAYER_LINE_WIDTH);
+    mapObj.setPaintProperty(statusLayerId, "fill-color", expression);
   }
+
 
 
   const renderPuCostLayer = (cost_data) => {
@@ -1967,6 +1991,12 @@ const App = () => {
     map.current.on("click", mapClick);
     map.current.on("styledata", mapStyleChanged);
     map.current.on("sourcedata", mapStyleChanged);
+
+    map.current.on("style.load", () => {
+      console.log("🔁 Map style reloaded — reapplying PU states");
+      renderPuEditLayer(projStateRef.current.projectPlanningUnits);
+    });
+
 
     // Resolve when the initial style is ready
     return new Promise((resolve) => {
@@ -2066,8 +2096,8 @@ const App = () => {
         // Get the feature layer ids, get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
         // Set the popup point, get any planning unit features under the mouse
         const featureLayerIds = featureLayers.map((item) => item.id);
-        const clickedFeatures = featureLayerIds.length && map.current?.getLayer(featureLayerIds[0])
-          ? map.current.queryRenderedFeatures(e.point, { featureLayerIds })
+        const clickedFeatures = (featureLayerIds.length && map.current?.getLayer(featureLayerIds[0]))
+          ? map.current.queryRenderedFeatures(e.point, { layers: featureLayerIds })
           : [];
 
         // ############################################################################################
@@ -2330,6 +2360,33 @@ const App = () => {
     }
   };
 
+  const initializePlanningUnitFeatureStates = () => {
+    if (!map.current || !puLayerIdsRef.current) return;
+
+    const { sourceId, sourceLayerName } = puLayerIdsRef.current;
+    const planningUnits = projState.projectPlanningUnits;
+
+    // Defensive checks — only if valid data
+    if (!planningUnits || Object.keys(planningUnits).length === 0) return;
+
+    console.log("🗺️ Initializing feature-states for planning units...");
+
+    // Loop through all statuses
+    for (const [status, ids] of Object.entries(planningUnits)) {
+      ids.forEach((puid) => {
+        map.current.setFeatureState(
+          {
+            source: sourceId,
+            sourceLayer: sourceLayerName,
+            id: String(puid),
+          },
+          { status: Number(status) }
+        );
+      });
+    }
+  };
+
+
   //adds the results, planning unit, planning unit edit etc layers to the map
   // const addPlanningGridLayers = (tileset) => {
   const addPlanningGridLayers = (puLayerName) => {
@@ -2428,34 +2485,76 @@ const App = () => {
     });
 
     //add the planning units manual edit layer - this layer shows which individual planning units have had their status changed
+    // addMapLayer({
+    //   id: statusLayerId,
+    //   metadata: {
+    //     name: "Planning Unit Status",
+    //     type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS,
+    //   },
+    //   minzoom: 0,
+    //   maxzoom: 24,
+    //   type: "line",
+    //   source: sourceId,
+    //   layout: { visibility: "none" },
+    //   "source-layer": puLayerName,
+
+    //   paint: {
+    //     "line-color": [
+    //       "match",
+    //       ["feature-state", "status"],
+    //       0, "rgba(150,150,150,0)",
+    //       1, "rgba(63,63,191,1)",
+    //       2, "rgba(191,63,63,1)",
+    //       "rgba(150,150,150,0)"
+    //     ],
+    //     "line-width": 5,
+    //   },
+    // });
     addMapLayer({
       id: statusLayerId,
       metadata: {
         name: "Planning Unit Status",
         type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS,
       },
-      minzoom: 0,
-      maxzoom: 24,
-      type: "line",
+      type: 'fill',
       source: sourceId,
-      layout: { visibility: "none" },
       "source-layer": puLayerName,
+      layout: { visibility: "visible" }, // <-- ensure visible
 
       paint: {
-        "line-color": [
-          "match",
-          ["feature-state", "status"],
-          0, "rgba(150,150,150,0)",
-          1, "rgba(63,63,191,1)",
-          2, "rgba(191,63,63,1)",
-          "rgba(150,150,150,0)"
+        'fill-color': [
+          'case',
+          ['==', ['feature-state', 'status'], 0], 'rgba(150,150,150,0)',
+          ['==', ['feature-state', 'status'], 1], 'rgba(63,63,191,1)',
+          ['==', ['feature-state', 'status'], 2], 'rgba(191, 63, 63, 1)',
+          'rgba(150,150,150,0)' // default
         ],
-        "line-width": 5,
-      },
+        'fill-opacity': 0.8
+      }
+    });
+    addMapLayer({
+      id: 'hexes-outline',
+      type: 'line',
+      source: sourceId,
+      "source-layer": puLayerName,
+      layout: { visibility: "visible" },
+      paint: {
+        'line-color': '#333',
+        'line-width': [
+          'case',
+          ['boolean', ['feature-state', 'clicked'], false],
+          2,
+          0.5
+        ]
+      }
     });
     //set the result layer in app state so that it can update the Legend component and its opacity control
+
     setResultsLayer(map.current.getLayer(resultsLayerId));
+
     renderPuEditLayer();
+    initializePlanningUnitFeatureStates();
+
   };
 
   const removePlanningGridLayers = (puLayerName) => {
@@ -2605,48 +2704,92 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
 
   //fired when the planning unit tab is selected
-  const setPUTabActive = async () => {
+  // const setPUTabActive = async () => {
 
+  //   dispatch(setActiveTab("planningUnits"));
+  //   //show the planning units layer, status layer, and costs layer
+  //   showLayer(CONSTANTS.PU_LAYER_NAME);
+  //   showLayer(CONSTANTS.STATUS_LAYER_NAME);
+  //   await loadCostsLayer();
+  //   //hide the results layer, feature layer, and feature puid layers
+  //   // hideLayer(CONSTANTS.RESULTS_LAYER_NAME);
+  //   // showHideLayerTypes(
+  //   //   [
+  //   //     CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
+  //   //     CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
+  //   //   ],
+  //   //   false
+  //   // );
+  //   //render the planning units status layer_edit layer
+  //   renderPuEditLayer();
+  // };
+  const setPUTabActive = async () => {
     dispatch(setActiveTab("planningUnits"));
-    //show the planning units layer, status layer, and costs layer
-    showLayer(CONSTANTS.PU_LAYER_NAME);
-    showLayer(CONSTANTS.STATUS_LAYER_NAME);
-    await loadCostsLayer();
-    //hide the results layer, feature layer, and feature puid layers
-    hideLayer(CONSTANTS.RESULTS_LAYER_NAME);
-    showHideLayerTypes(
-      [
-        CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-        CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
-      ],
-      false
-    );
-    //render the planning units status layer_edit layer
+
+    const layers = puLayerIdsRef.current;
+    if (!layers) return;
+
+    const { puLayerId, statusLayerId, costsLayerId, resultsLayerId } = layers;
+
+    if (puLayerId && map.current.getLayer(puLayerId)) {
+      map.current.setLayoutProperty(puLayerId, "visibility", "visible");
+    }
+    if (statusLayerId && map.current.getLayer(statusLayerId)) {
+      map.current.setLayoutProperty(statusLayerId, "visibility", "visible");
+    }
+    if (costsLayerId && map.current.getLayer(costsLayerId)) {
+      map.current.setLayoutProperty(costsLayerId, "visibility", "visible");
+    }
+    if (resultsLayerId && map.current.getLayer(resultsLayerId)) {
+      map.current.setLayoutProperty(resultsLayerId, "visibility", "none");
+    }
+
     renderPuEditLayer();
   };
 
+
   //fired whenever another tab is selected
+  // const setPUTabInactive = () => {
+  //   showLayer(CONSTANTS.RESULTS_LAYER_NAME);
+  //   showHideLayerTypes([CONSTANTS.LAYER_TYPE_FEATURE_LAYER, CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER], true);
+  //   hideLayer(CONSTANTS.PU_LAYER_NAME);
+  //   hideLayer(CONSTANTS.STATUS_LAYER_NAME);
+  //   hideLayer(CONSTANTS.COSTS_LAYER_NAME);
+  //   //show the results layer, eature layer, and feature puid layers
+  //   // showLayer(CONSTANTS.RESULTS_LAYER_NAME);
+  //   // showHideLayerTypes(
+  //   //   [
+  //   //     CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
+  //   //     CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
+  //   //   ],
+  //   //   true
+  //   // );
+  //   //hide the planning units layer, edit layer, and cost layer
+  //   // hideLayer(CONSTANTS.PU_LAYER_NAME);
+  //   // // hideLayer(CONSTANTS.STATUS_LAYER_NAME);
+  //   // hideLayer(puLayerIdsRef.current.statusLayerId);
+  //   // hideLayer(CONSTANTS.COSTS_LAYER_NAME);
+  // };
   const setPUTabInactive = () => {
-    showLayer(CONSTANTS.RESULTS_LAYER_NAME);
-    showHideLayerTypes([CONSTANTS.LAYER_TYPE_FEATURE_LAYER, CONSTANTS.LAYER_TYPE_FEATURE_PLANNING_UNIT_LAYER], true);
-    hideLayer(CONSTANTS.PU_LAYER_NAME);
-    hideLayer(CONSTANTS.STATUS_LAYER_NAME);
-    hideLayer(CONSTANTS.COSTS_LAYER_NAME);
-    //show the results layer, eature layer, and feature puid layers
-    // showLayer(CONSTANTS.RESULTS_LAYER_NAME);
-    // showHideLayerTypes(
-    //   [
-    //     CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-    //     CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
-    //   ],
-    //   true
-    // );
-    //hide the planning units layer, edit layer, and cost layer
-    // hideLayer(CONSTANTS.PU_LAYER_NAME);
-    // // hideLayer(CONSTANTS.STATUS_LAYER_NAME);
-    // hideLayer(puLayerIdsRef.current.statusLayerId);
-    // hideLayer(CONSTANTS.COSTS_LAYER_NAME);
+    const layers = puLayerIdsRef.current;
+    if (!layers) return;
+
+    const { puLayerId, statusLayerId, costsLayerId, resultsLayerId } = layers;
+
+    if (puLayerId && map.current.getLayer(puLayerId)) {
+      map.current.setLayoutProperty(puLayerId, "visibility", "none");
+    }
+    if (statusLayerId && map.current.getLayer(statusLayerId)) {
+      map.current.setLayoutProperty(statusLayerId, "visibility", "none");
+    }
+    if (costsLayerId && map.current.getLayer(costsLayerId)) {
+      map.current.setLayoutProperty(costsLayerId, "visibility", "none");
+    }
+    if (resultsLayerId && map.current.getLayer(resultsLayerId)) {
+      map.current.setLayoutProperty(resultsLayerId, "visibility", "visible");
+    }
   };
+
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //

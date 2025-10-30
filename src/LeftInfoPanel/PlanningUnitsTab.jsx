@@ -1,6 +1,6 @@
 import { faEraser, faLock, faSave } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -45,7 +45,6 @@ const PlanningUnitsTab = ({
 
   // 🔹 Track live edits locally (not Redux)
   const localEditsRef = useRef({}); // { h3_index: status }
-
 
   const startPuEditSession = () => {
     dispatch(setShowPlanningGrid(true));
@@ -105,53 +104,86 @@ const PlanningUnitsTab = ({
     localEditsRef.current = {};
   };
 
-
+  // const updatePlanningUnitStatus = useEffect((e, mode = "change") => {
   const updatePlanningUnitStatus = (e, mode = "change") => {
+    console.log("updatePlanningUnitStatus ");
     const puLayerId = puLayerIdsRef.current?.puLayerId;
     if (!map.current?.getLayer(puLayerId)) return;
 
-    // find clicked feature
     const features = map.current.queryRenderedFeatures(e.point, { layers: [puLayerId] });
     if (!features.length) return;
 
-    const puid = features[0].properties.h3_index || features[0].properties.puid;
+    const feature = features[0];
+    const puid = feature.properties.h3_index || feature.properties.puid || feature.id;
+    if (!puid) return;
+    console.log("planningUnitStatusMap[puid] ", planningUnitStatusMap[puid]);
 
-    // determine current and next status
-    const currentStatus = planningUnitStatusMap[puid] ?? 0;
+    // Determine current & next status
+    const featureRef = {
+      source: puLayerIdsRef.current.sourceId,
+      sourceLayer: puLayerIdsRef.current.sourceLayerName,
+      id: String(puid),
+    };
+    const currentState = map.current.getFeatureState(featureRef);
+    const currentStatus = currentState?.status ?? 0;
+
+    // const currentStatus = planningUnitStatusMap[puid] ?? 0;
     const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
-    if (currentStatus === nextStatus) return; // no change needed
+    if (currentStatus === nextStatus) return;
 
-    // ✅ Always preserve 0/1/2 arrays — ensure they exist
-    let updated = { ...projState.projectPlanningUnits };
-    updated[0] = Array.isArray(updated[0]) ? [...updated[0]] : [];
-    updated[1] = Array.isArray(updated[1]) ? [...updated[1]] : [];
-    updated[2] = Array.isArray(updated[2]) ? [...updated[2]] : [];
+    // Update feature state for instant visual feedback
+    map.current.setFeatureState(featureRef, { status: nextStatus });
 
-    // ✅ Remove the puid from *all* status buckets (enforces exclusivity)
-    updated[0] = updated[0].filter((id) => id !== puid);
-    updated[1] = updated[1].filter((id) => id !== puid);
-    updated[2] = updated[2].filter((id) => id !== puid);
-
-    // ✅ Add to the correct next bucket
-    if (!updated[nextStatus].includes(puid)) {
-      updated[nextStatus].push(puid);
-    }
-
-    // ✅ Dispatch — keeps all buckets intact
-    dispatch(setProjectPlanningUnits(updated));
-
-    // ✅ Update feature-state instantly for visual feedback
-    try {
-      const featureRef = {
-        source: puLayerIdsRef.current.sourceId,
-        sourceLayer: puLayerIdsRef.current.sourceLayerName,
-        id: String(puid),
-      };
-      map.current.setFeatureState(featureRef, { status: nextStatus });
-    } catch (err) {
-      console.warn("⚠️ setFeatureState failed for", puid, err.message);
-    }
+    // Track locally
+    localEditsRef.current[puid] = nextStatus;
   };
+
+  // const updatePlanningUnitStatus = (e, mode = "change") => {
+  //   const puLayerId = puLayerIdsRef.current?.puLayerId;
+  //   if (!map.current?.getLayer(puLayerId)) return;
+
+  //   // find clicked feature
+  //   const features = map.current.queryRenderedFeatures(e.point, { layers: [puLayerId] });
+  //   if (!features.length) return;
+
+  //   const puid = features[0].properties.h3_index || features[0].properties.puid;
+
+  //   // determine current and next status
+  //   const currentStatus = planningUnitStatusMap[puid] ?? 0;
+  //   const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
+  //   if (currentStatus === nextStatus) return; // no change needed
+
+  //   // ✅ Always preserve 0/1/2 arrays — ensure they exist
+  //   let updated = { ...projState.projectPlanningUnits };
+  //   updated[0] = Array.isArray(updated[0]) ? [...updated[0]] : [];
+  //   updated[1] = Array.isArray(updated[1]) ? [...updated[1]] : [];
+  //   updated[2] = Array.isArray(updated[2]) ? [...updated[2]] : [];
+
+  //   // ✅ Remove the puid from *all* status buckets (enforces exclusivity)
+  //   updated[0] = updated[0].filter((id) => id !== puid);
+  //   updated[1] = updated[1].filter((id) => id !== puid);
+  //   updated[2] = updated[2].filter((id) => id !== puid);
+
+  //   // ✅ Add to the correct next bucket
+  //   if (!updated[nextStatus].includes(puid)) {
+  //     updated[nextStatus].push(puid);
+  //   }
+
+  //   // ✅ Dispatch — keeps all buckets intact
+  //   dispatch(setProjectPlanningUnits(updated));
+
+  //   // ✅ Update feature-state instantly for visual feedback
+  //   try {
+  //     const featureRef = {
+  //       source: puLayerIdsRef.current.sourceId,
+  //       sourceLayer: puLayerIdsRef.current.sourceLayerName,
+  //       id: String(puid),
+  //     };
+  //     map.current.setFeatureState(featureRef, { status: nextStatus });
+  //   } catch (err) {
+  //     console.warn("⚠️ setFeatureState failed for", puid, err.message);
+  //   }
+  // };
 
 
 
@@ -164,6 +196,7 @@ const PlanningUnitsTab = ({
       grouped[status].push(puid);
     }
 
+    // Merge with existing
     for (const [status, ids] of Object.entries(grouped)) {
       if (!ids.length) continue;
       merged[status] = Array.from(new Set([...(merged[status] || []), ...ids]));

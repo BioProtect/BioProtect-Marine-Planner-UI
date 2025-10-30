@@ -63,7 +63,7 @@ const useWebSocketHandler = (
           logMessage({
             ...message,
             status: message.status,
-            info: "error" || "WebSocketError", info: "error"
+            info: "error" || "WebSocketError",
           });
           setPreprocessing(false);
           reject(new Error(message.error || "WebSocket error occurred"));
