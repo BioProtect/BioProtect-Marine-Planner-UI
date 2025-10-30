@@ -105,9 +105,7 @@ const filterAndSortServers = (servers) => {
     .filter(
       (server) =>
         server.type === "remote" ||
-        (server.type === "local" &&
-          !server.offline &&
-          hosts.indexOf(server.host) === -1) ||
+        (server.type === "local" && !server.offline) ||
         server.host === "localhost"
     )
     .sort((a, b) => {
