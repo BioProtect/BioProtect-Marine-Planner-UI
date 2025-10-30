@@ -9,22 +9,25 @@ import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
 
 const ProjectsDialog = ({
-  loading, oldVersion, deleteProject, loadProject, cloneProject, exportProject, userRole, unauthorisedMethods
+  loading, oldVersion, deleteProject, loadProject, cloneProject, exportProject, userRole, unauthorisedMethods, loadProjectAndSetup
 }) => {
   const dispatch = useDispatch();
   const projState = useSelector((state) => state.project);
+  const [selectedProjectId, setSelectedProjectId] = useState(projState.projectData.project)
 
 
   const handleDeleteProject = useCallback(() => {
     deleteProject(projState.projectData.user, projState.projectData.name);
   }, [projState.projectData]);
 
-  const loadAndClose = useCallback(() => {
-    loadProject();
-    dispatch(
-      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
-    );
-  }, [projState.projectData]);
+  const loadAndClose = useCallback(async () => {
+    try {
+      dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
+      await loadProjectAndSetup(selectedProjectId);
+    } catch (error) {
+      showMessage("Failed to load project", "error");
+    }
+  }, [dispatch, selectedProjectId]);
 
   const handleCloneProject = useCallback(() => {
     cloneProject(projState.projectData.user, projState.projectData.name);
@@ -42,11 +45,12 @@ const ProjectsDialog = ({
 
   const handleProjectChange = (event, row) => {
     const projectId = row?.id;
+    console.log("projectId in handleProjectChange  ", projectId);
     if (!projectId) {
       console.warn("Invalid project selected");
       return;
     }
-    dispatch(switchProject(projectId));
+    setSelectedProjectId(projectId)
   };
 
   const sortDate = useCallback((a, b, desc) => {
@@ -106,7 +110,7 @@ const ProjectsDialog = ({
             title="Projects"
             data={projState.projects}
             tableColumns={columns}
-            selected={[projState.projectData.project]}
+            selected={[selectedProjectId]}
             ableToSelectAll={false}
             showSearchBox={true}
             searchColumns={["user", "name", "description"]}

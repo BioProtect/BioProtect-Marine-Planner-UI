@@ -22,6 +22,7 @@ export const getMaxNumberOfClasses = (brew, colorCode) => {
 };
 
 export const getArea = (value, units, asHtml, sf = 3, addCommas = true) => {
+  console.log("value, units, asHtml, sf = 3, addCommas = true ", value, units, asHtml, sf = 3, addCommas = true);
   // Define the scale based on units
   const scales = {
     m2: 1,

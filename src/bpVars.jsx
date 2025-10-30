@@ -85,7 +85,7 @@ export const INITIAL_VARS = {
       type: "remote",
       project: "geeImageServer",
       zone: "europe-west6-a",
-      instanceName: "marxan-test-server",
+      instanceName: "bioprotect-test-server",
     },
   ],
   WDPA: {
@@ -158,13 +158,13 @@ export const CONSTANTS = {
   SHAPES: ["Hexagon", "Square"],
   AREAKM2S: [10, 20, 30, 40, 50, 100],
   //layer source names
-  WDPA_SOURCE_NAME: "marxan_wdpa_source",
+  WDPA_SOURCE_NAME: "bioprotect_wdpa_source",
   //layer names
-  PU_LAYER_NAME: "marxan_pu_layer", //layer showing the planning units
-  STATUS_LAYER_NAME: "marxan_pu_status_layer", //layer showing the status of planning units
-  COSTS_LAYER_NAME: "marxan_pu_costs_layer", //layer showing the cost of planning units
-  RESULTS_LAYER_NAME: "marxan_pu_results_layer", //layer for either the sum of solutions or the individual solutions
-  WDPA_LAYER_NAME: "marxan_wdpa_polygon_layer", //layer showing the protected areas from the WDPA
+  PU_LAYER_NAME: "bioprotect_pu_layer", //layer showing the planning units
+  STATUS_LAYER_NAME: "bioprotect_pu_status_layer", //layer showing the status of planning units
+  COSTS_LAYER_NAME: "bioprotect_pu_costs_layer", //layer showing the cost of planning units
+  RESULTS_LAYER_NAME: "bioprotect_pu_results_layer", //layer for either the sum of solutions or the individual solutions
+  WDPA_LAYER_NAME: "bioprotect_wdpa_polygon_layer", //layer showing the protected areas from the WDPA
   LAYER_TYPE_SUMMED_SOLUTIONS: "summed_solutions",
   LAYER_TYPE_PLANNING_UNITS: "pus",
   LAYER_TYPE_PLANNING_UNITS_COST: "cost",
@@ -190,7 +190,7 @@ export const CONSTANTS = {
   },
   //layer default styles
   PU_LAYER_OPACITY: 0.6,
-  PU_COSTS_LAYER_OPACITY: 0.1,
+  PU_COSTS_LAYER_OPACITY: 0.3,
   STATUS_LAYER_LINE_WIDTH: 1.5,
   WDPA_FILL_LAYER_OPACITY: 0.2,
   FEATURE_LAYER_OPACITY: 0.9,
@@ -208,7 +208,7 @@ export const CONSTANTS = {
     "rgba(128,0,38,0.8)",
   ],
   UNIFORM_COST_NAME: "Equal area",
-  //an array of feature property information that is used in the Feature Information dialog box - showForOld sets whether that property is shown for old versions of marxan
+  //an array of feature property information that is used in the Feature Information dialog box - showForOld sets whether that property is shown for old versions of bioprotect
   FEATURE_PROPERTIES_POLYGONS: FEATURE_PROPERTIES_CORE.concat([
     {
       name: "area",

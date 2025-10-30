@@ -13,16 +13,11 @@ import ToolbarButton from "./ToolbarButton";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "@slices/uiSlice";
 
-const CostsDialog = (props) => {
-  const {
-    unauthorisedMethods,
-    costname,
-    deleteCost,
-    data,
-    createCostsFromImpact,
-  } = props
+const CostsDialog = ({ unauthorisedMethods, costname, deleteCost, createCostsFromImpact }) => {
+
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const projState = useSelector((state) => state.project);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
 
   const [selectedCost, setSelectedCost] = useState(undefined);
@@ -47,7 +42,7 @@ const CostsDialog = (props) => {
     );
   };
 
-  const _data = data.map((item) => ({ name: item }));
+  const _data = projState.projectCosts.map((item) => ({ name: item }));
 
   return (
     <MarxanDialog

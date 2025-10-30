@@ -1,5 +1,5 @@
 import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
-import { getUserProject, selectServer } from "@slices/projectSlice";
+import { selectServer, switchProject } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -27,7 +27,7 @@ import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useLoginMutation } from "@slices/authApiSlice";
 import { useSnackbar } from "notistack";
 
-const LoginDialog = ({ open, postLoginSetup }) => {
+const LoginDialog = ({ open, loadProjectAndSetup }) => {
   const [selectOpen, setSelectOpen] = useState(false);
   const projectState = useSelector((state) => state.project);
   const userRef = useRef(null);
@@ -57,7 +57,6 @@ const LoginDialog = ({ open, postLoginSetup }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const response = await login({ user, pwd }).unwrap();
       dispatch(setCredentials({
@@ -65,7 +64,8 @@ const LoginDialog = ({ open, postLoginSetup }) => {
         accessToken: response.accessToken,
         userData: response.userData
       }));
-      dispatch(getUserProject(response.project.id, { enqueueSnackbar }));
+      await loadProjectAndSetup(response.project.id);
+
       setUser("");
       setPwd("");
     } catch (err) {

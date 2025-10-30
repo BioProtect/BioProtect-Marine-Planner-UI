@@ -24,9 +24,9 @@ const ResultsPanel = (props) => {
   const [selectedSolution, setSelectedSolution] = useState(undefined);
   const [runtimeStr, setRuntimeStr] = useState("00:00s");
   const [timer, setTimer] = useState(null);
-  const [currentTabIndex, setCurrentTabIndex] = useState(
-    activeTabArr.indexOf(props.activeResultsTab) || 0
-  );
+  const [currentTabIndex, setCurrentTabIndex] = useState(0)
+  //   activeTabArr.indexOf(props.activeResultsTab) || 0
+  // );
 
 
   const prevProps = useRef();
@@ -74,7 +74,7 @@ const ResultsPanel = (props) => {
   };
 
   const loadSolution = (solution) => {
-    props.loadSolution(solution, props.owner);
+    props.loadSolution(solution, uiState.owner);
   };
 
   const resetSolution = () => {
@@ -125,7 +125,7 @@ const ResultsPanel = (props) => {
   const panelStyle = useMemo(() => ({
     top: "60px",
     width: "300px",
-    height: "400px",
+    height: "600px",
     position: "absolute",
     right: "140px",
   }), [])
@@ -140,18 +140,18 @@ const ResultsPanel = (props) => {
   return (
     <React.Fragment>
       <div className="resultsPanel" style={combinedDisplayStyles}>
-        <Paper elevation={2} className="ResultsPanelPaper" mb={4}>
+        <Paper elevation={2} className="ResultsPanelPaper" mb={4} sx={{ maxHeight: "80vh" }}>
           <div className="resultsTitle">Results</div>
           <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
             <Tab
               label="Legend"
               value={0}
-              disabled={props.puEditing ? true : false}
+            // disabled={props.puEditing ? true : false}
             />
             <Tab
               label="Solutions"
               value={1}
-              disabled={props.puEditing ? true : false}
+            // disabled={props.puEditing ? true : false}
             />
             <Tab label="Log" value={2} />
           </Tabs>
@@ -282,7 +282,7 @@ const ResultsPanel = (props) => {
           </div>
         </Paper>
       </div>
-    </React.Fragment>
+    </React.Fragment >
   );
 };
 

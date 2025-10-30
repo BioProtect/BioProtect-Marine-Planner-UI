@@ -37,13 +37,15 @@ const initialState = {
   identifyPlanningUnits: {},
   planningUnitGrids: [],
   planningUnits: [],
-  puEditing: false,
   currentPUGrid: "",
+  showPlanningGrid: true,
+
   dialogs: {
     newPlanningGridDialogOpen: false,
     importPlanningGridDialogOpen: false,
     planningGridDialogOpen: false,
     planningGridsDialogOpen: false,
+    hexInfoDialogOpen: false,
   }
 }
 
@@ -61,8 +63,8 @@ const planningUnitSlice = createSlice({
     setPlanningUnits(state, action) {
       state.planningUnits = action.payload;
     },
-    setPuEditing(state, action) {
-      state.featureMetadata = action.payload;
+    setShowPlanningGrid(state, action) {
+      state.showPlanningGrid = action.payload;
     },
     togglePUD(state, action) {
       const { dialogName, isOpen } = action.payload;
@@ -70,7 +72,7 @@ const planningUnitSlice = createSlice({
     },
     setCurrentPUGrid(state, action) {
       state.currentPUGrid = action.payload;
-    },
+    }
   }
 });
 
@@ -78,8 +80,8 @@ export const {
   setIdentifyPlanningUnits,
   setPlanningUnitGrids,
   setPlanningUnits,
-  setPuEditing,
   setCurrentPUGrid,
+  setShowPlanningGrid,
   togglePUD,
 } = planningUnitSlice.actions;
 export default planningUnitSlice.reducer;

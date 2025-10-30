@@ -59,8 +59,9 @@ const UserSettingsDialog = (props) => {
       {...props}
       maxWidth="md"
       showCancelButton={false}
-      onOk={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
-      helpLink={"user.html#user-settings"}
+      onOk={() => dispatch(toggleDialog({
+        dialogName: "userSettingsDialogOpen", isOpen: false
+      }))}
       title="Settings"
     >
       <div key="k14">

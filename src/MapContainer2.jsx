@@ -19,11 +19,13 @@ const MapContainer2 = ({
 }) => {
   const mapEl = useRef(null);
 
-  console.log("planningGridMetadata ", planningGridMetadata);
-
   useEffect(() => {
+    console.log("planningGridMetadata ", planningGridMetadata);
+
     const tilesetid = planningGridMetadata?.tilesetid;
-    const tableName = getTableName(tilesetid);
+    console.log("tilesetid ", tilesetid);
+    const tableName = (tilesetid) ? getTableName(tilesetid) : planningGridMetadata?.feature_class_name;
+    console.log("tableName ", !tableName);
     if (!tableName) return;
 
     const map = new mapboxgl.Map({

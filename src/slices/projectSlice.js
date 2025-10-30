@@ -4,10 +4,11 @@ import {
   getServerCapabilities,
 } from "../Server/serverFunctions";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { setActiveTab, setOwner } from "./uiSlice";
 
 import { INITIAL_VARS } from "../bpVars";
 import { apiSlice } from "./apiSlice";
-import { setActiveTab } from "./uiSlice";
+import { setSelectedFeatureIds } from "./featureSlice"
 
 export const projectApiSlice = apiSlice.injectEndpoints({
   tagTypes: ['Project'],
@@ -17,14 +18,6 @@ export const projectApiSlice = apiSlice.injectEndpoints({
         url: 'projects?action=',
         method: 'POST',
         body: { ...projectData, action: 'create' },
-      }),
-      invalidatesTags: ['Project'],
-    }),
-    createImportProject: builder.mutation({
-      query: (importData) => ({
-        url: 'projects?action=',
-        method: 'POST',
-        body: { ...importData, action: 'create_import' },
       }),
       invalidatesTags: ['Project'],
     }),
@@ -98,7 +91,6 @@ export const projectApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useCreateProjectMutation,
-  useCreateImportProjectMutation,
   useCreateProjectGroupMutation,
   useUpdateProjectMutation,
   useGetProjectQuery,
@@ -122,17 +114,19 @@ const initialState = {
   error: null,
 
   costData: null,
+  renderer: {},
 
   projectData: {},
   projects: [],
   projectList: [],
   projectListDialogHeading: "",
   projectListDialogTitle: "",
-  projectLoaded: false,
+  projectChanged: false,
   projectImpacts: [],
   projectFeatures: [],
   projectPlanningUnits: {},
-  projectCosts: {},
+  projectCosts: [],
+  planningCostsTrigger: false,
 
   dialogs: {
     projectsListDialogOpen: false,
@@ -165,16 +159,8 @@ export const initialiseServers = createAsyncThunk(
 // Thunk to fetch the user's project only if not already in state
 export const getUserProject = createAsyncThunk(
   "projects/getUserProject",
-  async (projectId, { getState, dispatch, rejectWithValue, extra }) => {
-    const { enqueueSnackbar } = extra || {};
-
+  async (projectId, { dispatch, rejectWithValue }) => {
     try {
-
-      if (!projectId) {
-        const project = getState().auth.userData.project.id;
-        projectId = project?.id;
-      }
-
       if (!projectId) {
         const allProjects = await dispatch(
           projectApiSlice.endpoints.listProjects.initiate()
@@ -187,7 +173,6 @@ export const getUserProject = createAsyncThunk(
           enqueueSnackbar?.("No projects found for user", { variant: "warning" })
           return rejectWithValue("No projects found for user");
         }
-
         projectId = firstProject.id;
       }
 
@@ -198,18 +183,20 @@ export const getUserProject = createAsyncThunk(
       const response = JSON.parse(data);
       console.log("🔥 Project Data:", response);
 
+      // update store
       dispatch(setProjectData(response));
       dispatch(setRenderer(response.renderer));  // Add missing renderer update
       dispatch(setProjectCosts(response.costnames));
       dispatch(setProjectFeatures(response.features));
-
-      // Activate the project tab
+      dispatch(setOwner(response.project.user));
+      dispatch(setProjectPlanningUnits(response.planning_units))
       dispatch(setActiveTab("project"));
-      dispatch(setProjectLoaded(true));
+      dispatch(setPlanningCostsTrigger(true));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
       return response; // Assuming response has { project: { id, name, ... } }
     } catch (error) {
       console.error("Failed to fetch project:", error);
-      enqueueSnackbar?.(`Failed to fetch project: ${error}`, { variant: "error" });
       return rejectWithValue(error.message);
     }
   }
@@ -269,9 +256,6 @@ const projectSlice = createSlice({
     setProjectImpacts(state, action) {
       state.projectImpacts = action.payload;
     },
-    setProjectLoaded(state, action) {
-      state.projectLoaded = action.payload;
-    },
     setProjectListDialogHeading(state, action) {
       state.projectListDialogHeading = action.payload;
     },
@@ -292,6 +276,9 @@ const projectSlice = createSlice({
     },
     setProjectCosts: (state, action) => {
       state.projectCosts = action.payload;
+    },
+    setPlanningCostsTrigger: (state, action) => {
+      state.planningCostsTrigger = action.payload;
     },
     toggleProjDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
@@ -336,7 +323,6 @@ export const {
   setProjectData,
   setProjectFeatures,
   setProjectImpacts,
-  setProjectLoaded,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjectList,
@@ -344,6 +330,7 @@ export const {
   setRenderer,
   setProjectPlanningUnits,
   setProjectCosts,
+  setPlanningCostsTrigger,
   toggleProjDialog,
 } = projectSlice.actions;
 export { switchProject };

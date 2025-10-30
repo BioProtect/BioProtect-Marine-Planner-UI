@@ -94,6 +94,8 @@ const initialState = {
   uploadedActivities: [],
   selectedActivity: "",
 
+  owner: "",
+
   fileUploadResponse: null,
 
   dialogStates: {
@@ -108,7 +110,6 @@ const initialState = {
 
     alertDialogOpen: false,
     atlasLayersDialogOpen: false,
-    changePasswordDialogOpen: false,
     classificationDialogOpen: false,
     costsDialogOpen: false,
     importCostsDialogOpen: false,
@@ -119,6 +120,8 @@ const initialState = {
     profileDialogOpen: false,
     registerDialogOpen: false,
     resendPasswordDialogOpen: false,
+    changePasswordDialogOpen: false,
+
     resetDialogOpen: false,
     resultsPanelOpen: false,
     runLogDialogOpen: false,
@@ -153,9 +156,6 @@ const uiSlice = createSlice({
     setActiveResultsTab(state, action) {
       state.activeResultsTab = action.payload;
     },
-    setSelectedFeatureIds(state, action) {
-      state.selectedFeatureIds = action.payload;
-    },
     toggleDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogStates[dialogName] = isOpen;
@@ -169,6 +169,10 @@ const uiSlice = createSlice({
     setLoading(state, action) {
       state.loading = action.payload;
     },
+    setOwner(state, action) {
+      state.owner = action.payload;
+    },
+
     setSelectedActivity(state, action) {
       state.selectedActivity = action.payload;
     },
@@ -202,7 +206,6 @@ export const {
   setBasemaps,
   setActiveTab,
   setActiveResultsTab,
-  setSelectedFeatureIds,
   toggleProjectDialog,
   toggleDialog,
   setActivities,
@@ -214,5 +217,6 @@ export const {
   addToImportLog,
   removeImportLogMessage,
   clearImportLog,
+  setOwner,
 } = uiSlice.actions;
 export default uiSlice.reducer;
