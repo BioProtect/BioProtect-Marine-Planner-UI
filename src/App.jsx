@@ -255,11 +255,11 @@ const App = () => {
 
 
   useEffect(() => {
-    dispatch(initialiseServers(INITIAL_VARS.MARXAN_SERVERS))
+    dispatch(initialiseServers(INITIAL_VARS.BP_SERVERS))
       .unwrap()
       .then((message) => console.log(message))
       .catch((error) => console.error("Error:", error));
-  }, [dispatch, INITIAL_VARS.MARXAN_SERVERS]);
+  }, [dispatch, INITIAL_VARS.BP_SERVERS]);
 
   const selectServerByName = useCallback(
     (servername) => {
@@ -284,7 +284,7 @@ const App = () => {
 
     const fetchGlobalVariables = async () => {
       try {
-        initialiseServers(INITIAL_VARS.MARXAN_SERVERS);
+        initialiseServers(INITIAL_VARS.BP_SERVERS);
         setBrew(new classyBrew());
         dispatch(setRegistry(INITIAL_VARS));
         setInitialLoading(false);

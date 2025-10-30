@@ -243,7 +243,7 @@ class App extends React.Component {
           //initialise the basemaps
           this.setState({ basemaps: registryData.MAPBOX_BASEMAPS });
           //get all the information for the marxan servers by polling them
-          this.initialiseServers(registryData.MARXAN_SERVERS).then(
+          this.initialiseServers(registryData.BP_SERVERS).then(
             (response) => {
               resolve(response);
             }

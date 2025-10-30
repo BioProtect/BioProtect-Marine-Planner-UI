@@ -74,7 +74,7 @@ export const FEATURE_PROPERTIES_CORE = [
 export const INITIAL_VARS = {
   CLIENT_VERSION: "v1.0.8",
   SERVER_VERSION: "v1.0.8",
-  MARXAN_SERVERS: [
+  BP_SERVERS: [
     {
       name: "Beta test",
       port: 443,
