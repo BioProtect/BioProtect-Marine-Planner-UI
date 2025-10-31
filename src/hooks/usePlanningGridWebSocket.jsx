@@ -19,7 +19,7 @@ export const usePlanningGridWebSocket = () => {
     // so todo 
     // sort out Server/serverFunctions and loading the websocket endpoint
     // just gonna hardcode it for the minute
-    const socket = new WebSocket("ws://localhost:5000/server/createPlanningUnitGrid"); // Adjust if needed
+    const socket = new WebSocket("ws://0.0.0.0:8080/server/createPlanningUnitGrid"); // Adjust if needed
     socketRef.current = socket;
 
     socket.onopen = () => {

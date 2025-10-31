@@ -81,7 +81,7 @@ const addLocalServer = (servers) => {
     name: window.location.hostname,
     protocol: window.location.protocol,
     host: window.location.hostname,
-    port: 5000,
+    port: 8080,
     description: "Local machine",
     type: "local",
   };

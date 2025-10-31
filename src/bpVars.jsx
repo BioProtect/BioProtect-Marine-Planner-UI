@@ -91,7 +91,7 @@ export const INITIAL_VARS = {
     //   name: "Bioprotect",
     //   protocol: "http",
     //   host: "vmudai1.datascienceinstitute.ie",
-    //   port: 5000,
+    //   port: 8080,
     //   description: "Local server",
     //   type: "local",
     // }
