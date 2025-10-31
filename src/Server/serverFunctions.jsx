@@ -1,6 +1,7 @@
 import { CONSTANTS, INITIAL_VARS } from "../bpVars";
 
 const getServerCapabilities = async (server) => {
+  console.log("server ", server);
   // Construct the endpoints
   const endpoint = `${server.protocol}//${server.host}:${server.port}/server/`;
   const websocketEndpoint =
