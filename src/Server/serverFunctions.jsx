@@ -2,11 +2,11 @@ import { CONSTANTS, INITIAL_VARS } from "../bpVars";
 
 const getServerCapabilities = async (server) => {
   // Construct the endpoints
-  const endpoint = `${server.protocol}//${server.host}:${server.port}${CONSTANTS.TORNADO_PATH}`;
+  const endpoint = `${server.protocol}//${server.host}:${server.port}/server/`;
   const websocketEndpoint =
     server.protocol === "http:"
-      ? `ws://${server.host}:${server.port}${CONSTANTS.TORNADO_PATH}`
-      : `wss://${server.host}:${server.port}${CONSTANTS.TORNADO_PATH}`;
+      ? `ws://${server.host}:${server.port}/server/`
+      : `wss://${server.host}:${server.port}/server/`;
 
   // Initialize server properties
   server = {
