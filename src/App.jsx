@@ -145,6 +145,7 @@ const App = () => {
   const projState = useSelector((state) => state.project);
   const projStateRef = useRef(projState);
   useEffect(() => { projStateRef.current = projState; }, [projState]);
+
   const [puEditing, setPuEditing] = useState(false)
   const puEditingRef = useRef(puEditing);
   useEffect(() => { puEditingRef.current = puEditing; }, [puEditing]);
@@ -154,7 +155,6 @@ const App = () => {
   const featureState = useSelector((state) => state.feature)
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const token = useSelector(selectCurrentToken);
-
 
 
   const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
@@ -178,8 +178,6 @@ const App = () => {
     mapPP3: [],
     mapPP4: [],
   });
-  const [mapCentre, setMapCentre] = useState({ lng: 0, lat: 0 });
-  const [mapZoom, setMapZoom] = useState(12);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [metadata, setMetadata] = useState({});
   const [notifications, setNotifications] = useState([]);
@@ -188,8 +186,6 @@ const App = () => {
   const [renderer, setRenderer] = useState({});
   const [runLogs, setRunLogs] = useState([]);
   const [runParams, setRunParams] = useState([]);
-  const [runningImpactMessage, setRunningImpactMessage] =
-    useState("Import Activity");
   const [selectedCosts, setSelectedCosts] = useState([]);
   const [selectedImpactIds, setSelectedImpactIds] = useState([]);
   const [shareableLink, setShareableLink] = useState(false);
@@ -448,7 +444,10 @@ const App = () => {
   // ---------------------------------------- //
   // ---------------------------------------- //
   const _get = useCallback(async (path, { timeout = CONSTANTS.TIMEOUT } = {}) => {
-    const base = projState?.bpServer?.endpoint;
+    console.log("path ", path);
+    const base = projState?.bpServer?.endpoint || projState?.bpServers[0].endpoint
+    console.log("projState ", projState);
+    console.log("base ", base);
     const url = new URL(path, base).toString();
     dispatch(setLoading(true));
 
@@ -1776,34 +1775,6 @@ const App = () => {
     );
   };
 
-  // renders the planning units edit layer according to the type of layer and pu status
-  // const renderPuEditLayer = () => {
-  //   const propId = puLayerIdsRef.current?.propId || "h3_index";
-  //   const statusLayerId = puLayerIdsRef.current?.statusLayerId;
-
-  //   if (!map.current || !statusLayerId || !map.current.getLayer(statusLayerId)) {
-  //     console.warn("Status layer not ready yet.");
-  //     return;
-  //   }
-
-  //   const buildExpression = (units) => {
-  //     if (!units?.length) return "rgba(150,150,150,0)";
-  //     const expression = ["match", ["get", propId]];
-  //     for (const [status, ids] of Object.entries(units)) {
-  //       const color = getColorForStatus(Number(status));
-  //       ids.forEach((id) => expression.push(id, color));
-  //     }
-  //     expression.push("rgba(150,150,150,0)");
-  //     map.current.setPaintProperty(statusLayerId, "line-color", expression);
-  //     return expression;
-
-  //   };
-  //   const expression = buildExpression(projState.projectPlanningUnits);
-  //   //set the render paint property
-  //   map.current.setPaintProperty(statusLayerId, "line-color", expression);
-  //   map.current.setPaintProperty(statusLayerId, "line-width", CONSTANTS.STATUS_LAYER_LINE_WIDTH);
-  // };
-
   const renderPuCostLayer = (cost_data) => {
     const propId = puLayerIdsRef.current?.propId || "h3_index"; // single truth
     const costsLayerId = puLayerIdsRef.current?.costsLayerId;
@@ -1945,11 +1916,6 @@ const App = () => {
         },
       });
     }
-  };
-
-  const updateMapCentreAndZoom = () => {
-    setMapCentre(map.current.getCenter());
-    setMapZoom(map.current.getZoom());
   };
 
   //catch all event handler for map errors
@@ -2362,21 +2328,20 @@ const App = () => {
       },
       minzoom: 0,
       maxzoom: 24,
-      type: "line",
+      type: "fill",
       source: sourceId,
       layout: { visibility: "none" },
       "source-layer": puLayerName,
       paint: {
-        "line-color": [
-          "match",
-          ["feature-state", "status"],
-          0, "rgba(150,150,150,0)",     // available
-          1, "rgba(63,63,191,1)",       // locked-in
-          2, "rgba(191,63,63,1)",       // locked-out
-          "rgba(20, 245, 8, 0)"         // default
+        'fill-color': [
+          'case',
+          ['==', ['feature-state', 'status'], 0], 'rgba(150,150,150,0)',
+          ['==', ['feature-state', 'status'], 1], 'rgba(63,63,191,1)',
+          ['==', ['feature-state', 'status'], 2], 'rgba(191, 63, 63, 1)',
+          'rgba(150,150,150,0)' // default
         ],
-        "line-width": CONSTANTS.STATUS_LAYER_LINE_WIDTH,
-      },
+        'fill-opacity': 0.8
+      }
     });
     //set the result layer in app state so that it can update the Legend component and its opacity control
     setResultsLayer(map.current.getLayer(resultsLayerId));
@@ -3848,6 +3813,7 @@ const App = () => {
               _post={_post}
               puEditing={puEditingRef.current}
               setPuEditing={setPuEditing}
+              // renderPuEditLayer={renderPuEditLayer}
 
               renameProject={renameProject}
               renameDescription={renameDescription}
