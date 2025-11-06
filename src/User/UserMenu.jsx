@@ -11,7 +11,7 @@ import MenuBarListItem from "../MenuBarListItem";
 import React from "react";
 import { toggleDialog } from "@slices/uiSlice";
 
-const UserMenu = (props) => {
+const UserMenu = ({ menuAnchor, logout }) => {
   const dispatch = useDispatch();
   const projectState = useSelector((state) => state.project);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
@@ -43,7 +43,7 @@ const UserMenu = (props) => {
   return (
     <Menu
       open={dialogStates.userMenuOpen}
-      anchorEl={props.menuAnchor}
+      anchorEl={menuAnchor}
       onClose={closeDialog}
       PaperProps={{
         elevation: 0,
@@ -92,7 +92,7 @@ const UserMenu = (props) => {
         text="Change password"
       />
       <MenuBarListItem
-        handleClick={props.logout}
+        handleClick={logout}
         title="Log out"
         icon={faSignOut}
         text="Log out"

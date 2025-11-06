@@ -32,6 +32,7 @@ import {
   toggleProjDialog
 } from "@slices/projectSlice";
 import {
+  logOut,
   selectCurrentToken,
   selectCurrentUser,
   selectCurrentUserId,
@@ -59,7 +60,7 @@ import {
   useCreateUserMutation,
   useDeleteUserMutation,
   useLogoutUserMutation,
-  useUpdateUserMutation
+  useUpdateUserMutation,
 } from "@slices/userSlice";
 // SERVICES
 import { useDispatch, useSelector } from "react-redux";
@@ -107,7 +108,6 @@ import RunCumuluativeImpactDialog from "./Impacts/RunCumuluativeImpactDialog";
 import RunLogDialog from "./RunLogDialog";
 import RunSettingsDialog from "./RunSettingsDialog";
 import ServerDetailsDialog from "./User/ServerDetails/ServerDetailsDialog";
-import ShareableLinkDialog from "./ShareableLinkDialog";
 import TargetDialog from "./TargetDialog";
 import ToolsMenu from "./ToolsMenu";
 import UserMenu from "./User/UserMenu";
@@ -157,7 +157,6 @@ const App = () => {
   const token = useSelector(selectCurrentToken);
 
 
-  const [featurePreprocessing, setFeaturePreprocessing] = useState(null);
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -188,14 +187,12 @@ const App = () => {
   const [runParams, setRunParams] = useState([]);
   const [selectedCosts, setSelectedCosts] = useState([]);
   const [selectedImpactIds, setSelectedImpactIds] = useState([]);
-  const [shareableLink, setShareableLink] = useState(false);
   const [smallLinearGauge, setSmallLinearGauge] = useState(true);
   const [tileset, setTileset] = useState(null);
   const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [visibleLayers, setVisibleLayers] = useState([]);
   const [wdpaAttribution, setWdpaAttribution] = useState("");
-  const [password, setPassword] = useState("");
   const [popupPoint, setPopupPoint] = useState({ x: 0, y: 0 });
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
   const [solutions, setSolutions] = useState([]);
@@ -225,13 +222,14 @@ const App = () => {
   const project = useSelector((state) => state.project.projectData);
   const isLoggedIn = useSelector(selectIsUserLoggedIn);
 
-  const [logoutUser] = useLogoutUserMutation();
   const [updateUser] = useUpdateUserMutation();
 
   const { showMessage } = useAppSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
   const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
+  const [logoutUser] = useLogoutUserMutation();
+
 
   // store handler references for cleanup
   const onClickRef = useRef(null);
@@ -273,11 +271,6 @@ const App = () => {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has("project")) {
-      setShareableLink(true);
-      // setLoggedIn(true);
-    }
-
     const fetchGlobalVariables = async () => {
       console.log("fetchGlobalVariables.... ");
       try {
@@ -286,9 +279,6 @@ const App = () => {
         dispatch(setRegistry(INITIAL_VARS));
         setInitialLoading(false);
 
-        if (searchParams.has("project")) {
-          openShareableLink(searchParams);
-        }
         if (searchParams.has("server")) {
           selectServerByName(searchParams.get("server"));
         }
@@ -652,8 +642,6 @@ const App = () => {
       dispatch(
         toggleDialog({ dialogName: "registerDialogOpen", isOpen: false })
       );
-      setPassword("");
-      dispatch(setUser(user));
     } catch (error) {
       console.error("Error creating user:", error);
     }
@@ -680,7 +668,15 @@ const App = () => {
         // Update local user data
         const newUserData = { ...userData, ...filteredParameters };
         // Update state
-        setUserData(newUserData);
+        // this needs to be changed to credentials or something. 
+        /////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////
+        ///////////////////////// TDODO
+        /////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////
+        // setUserData(newUserData);
         return newUserData; // Optionally return response if needed elsewhere
       }
     } catch (error) {
@@ -778,27 +774,55 @@ const App = () => {
   };
 
   //log out and reset some state
-  const logout = async () => {
-    dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
-    setBrew(new classyBrew());
-    setPassword("");
-    setRunParams([]);
-    dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: false }));
-    dispatch(setRenderer({}));
-    dispatch(setUser(""));
-    dispatch(setProjectFeatures([]));
-    // dispatch(setProject("")); // NEED TO SORT THIS OUT
-    dispatch(setPlanningUnits([]));
-    dispatch(setOwner(""));
-    setNotifications([]);
-    setMetadata({});
-    setFiles({});
-    resetResults();
-    //clear the currently set cookies
-    await logoutUser();
-    dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
-  };
+  const handleLogOut = async () => {
+    console.log("🔴 Logging out...");
 
+
+    try {
+      // Close all open dialogs
+      dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
+      dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: false }));
+      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
+
+      // Reset local React state
+      setBrew(new classyBrew());
+      setRunParams([]);
+      setRenderer({});
+      setOwner("");
+      setNotifications([]);
+      setMetadata({});
+      setFiles({});
+      setSolutions([]);
+      resetResults();
+
+      // Reset Redux slices
+      dispatch(setProjectFeatures([]));
+      dispatch(setAllFeatures([]));
+      dispatch(setUsers([]));
+      dispatch(setProjects([]));
+
+      // Clear authentication data
+      dispatch(logOut()); // from authSlice
+      await logoutUser().unwrap(); // RTK Query mutation → clears cookie/session on server
+
+      // Clear cookies manually if needed
+      document.cookie
+        .split(";")
+        .forEach(
+          (c) =>
+          (document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"))
+        );
+
+      // 6️⃣ Reset UI
+      showMessage("Successfully logged out", "success");
+
+    } catch (err) {
+      console.error("Logout error:", err);
+      showMessage("Logout failed", "error");
+    }
+  };
 
   const changeRole = async (user, role) => {
     await handleUpdateUser({ role: role }, user);
@@ -3753,8 +3777,7 @@ const App = () => {
           />
           <UserMenu
             menuAnchor={menuAnchor}
-            userRole={userData?.role}
-            logout={logout}
+            logout={handleLogOut}
           />
           {dialogStates.helpMenuOpen ? (
             <HelpMenu menuAnchor={menuAnchor} />
@@ -3823,7 +3846,6 @@ const App = () => {
               openFeaturesDialog={openFeaturesDialog}
               updateFeature={updateFeature}
               toggleProjectPrivacy={toggleProjectPrivacy}
-              getShareableLink={() => setShareableLinkDialogOpen(true)}
               toggleFeatureLayer={toggleFeatureLayer}
               toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
               useFeatureColors={userData?.USEFEATURECOLORS}
@@ -4002,9 +4024,6 @@ const App = () => {
           <TargetDialog
             showCancelButton={true}
             updateTargetValueForFeatures={updateTargetValueForFeatures}
-          />
-          <ShareableLinkDialog
-            shareableLinkUrl={`${window.location}?server=${projState.bpServer.name}&user=${userId}&project=${projState.project}`}
           />
           {dialogStates.atlasLayersDialogOpen ? (
             <AtlasLayersDialog

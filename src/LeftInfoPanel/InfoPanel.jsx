@@ -326,7 +326,6 @@ const InfoPanel = (props) => {
                   Run
                 </Button>
               </>
-              )
             </Stack>
           </Paper>
         </Paper>
