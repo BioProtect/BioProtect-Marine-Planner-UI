@@ -8,7 +8,13 @@ import {
   Tabs,
   Typography,
 } from "@mui/material";
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { setIdentifyPlanningUnits, togglePUD } from "@slices/planningUnitSlice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -22,6 +28,7 @@ const HexInfoDialog = ({ xy, metadata }) => {
   const puState = useSelector((state) => state.planningUnit);
   const featureState = useSelector((state) => state.feature);
   const userData = useSelector(selectCurrentUser);
+  console.log("userData ", userData);
 
   const { hexInfoDialogOpen } = puState.dialogs;
   const puInfo = puState.identifyPlanningUnits?.puData;
@@ -80,23 +87,20 @@ const HexInfoDialog = ({ xy, metadata }) => {
     }
   }, [puInfo]);
 
-  const renderArea = useCallback(
-    (amount) =>
-      amount == null ? (
-        <Typography color="text.secondary" variant="caption">
-          Not processed yet
-        </Typography>
-      ) : (
-        <Typography
-          variant="body2"
-          title={getArea(amount, userData?.reportUnits)}
-          sx={{ whiteSpace: "wrap" }}
-        >
-          {getArea(amount, userData?.reportUnits, true)}
-        </Typography>
-      ),
-    [userData]
-  );
+  const renderArea = (amount) => {
+    return amount == null ? (
+      <Typography color="text.secondary" variant="caption">
+        Not processed yet
+      </Typography>
+    ) : (
+      <Typography
+        variant="body2"
+        title={getArea(amount, userData?.report_units)}
+      >
+        {getArea(amount, userData?.report_units, true)}
+      </Typography>
+    );
+  };
 
   const renderTable = (rows, columns) => {
     return (
@@ -122,12 +126,12 @@ const HexInfoDialog = ({ xy, metadata }) => {
                   key={i}
                   sx={{
                     "&:first-of-type": {
-                      whiteSpace: "normal",   // 👈 wrapping allowed
+                      whiteSpace: "normal", // 👈 wrapping allowed
                       wordBreak: "break-word", // 👈 long words break properly
-                      maxWidth: "260px",       // 👈 constrain width so it wraps, not stretches table
+                      maxWidth: "260px", // 👈 constrain width so it wraps, not stretches table
                     },
                     "&:not(:first-of-type)": {
-                      whiteSpace: "nowrap",    // 👈 keep area column compact
+                      whiteSpace: "nowrap", // 👈 keep area column compact
                       textOverflow: "ellipsis",
                       overflow: "hidden",
                       maxWidth: "100px",
@@ -145,67 +149,62 @@ const HexInfoDialog = ({ xy, metadata }) => {
     );
   };
 
-
-
   /** TAB: Planning Unit */
-  const PlanningUnitTab =
-    puInfo ? (
-      <Box sx={{ p: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 1.2,
-            border: "1px solid #eee",
-            borderRadius: 2,
-            p: 1.5,
-          }}
-        >
-          {/* Row 1: Hex ID */}
-          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography variant="body2" color="text.secondary">
-              Hex ID
-            </Typography>
-            <Typography variant="body2" fontWeight={500}>
-              {puInfo.h3_index || puInfo.id}
-            </Typography>
-          </Box>
+  const PlanningUnitTab = puInfo ? (
+    <Box sx={{ p: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.2,
+          border: "1px solid #eee",
+          borderRadius: 2,
+          p: 1.5,
+        }}
+      >
+        {/* Row 1: Hex ID */}
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography variant="body2" color="text.secondary">
+            Hex ID
+          </Typography>
+          <Typography variant="body2" fontWeight={500}>
+            {puInfo.h3_index || puInfo.id}
+          </Typography>
+        </Box>
 
-          {/* Row 2: Cost */}
-          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography variant="body2" color="text.secondary">
-              Cost
-            </Typography>
-            <Typography variant="body2" fontWeight={500}>
-              {puInfo.cost?.toFixed(3)}
-            </Typography>
-          </Box>
+        {/* Row 2: Cost */}
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography variant="body2" color="text.secondary">
+            Cost
+          </Typography>
+          <Typography variant="body2" fontWeight={500}>
+            {puInfo.cost?.toFixed(3)}
+          </Typography>
+        </Box>
 
-          {/* Row 3: Locked Out */}
-          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography variant="body2" fontWeight={500}>
-              {puStatus.label}
-            </Typography>
-            <Swatch
-              item={puStatus}
-              shape={
-                metadata?.PLANNING_UNIT_NAME?.includes("hexagon")
-                  ? "hexagon"
-                  : "square"
-              }
-            />
-
-          </Box>
+        {/* Row 3: Locked Out */}
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography variant="body2" fontWeight={500}>
+            {puStatus.label}
+          </Typography>
+          <Swatch
+            item={puStatus}
+            shape={
+              metadata?.PLANNING_UNIT_NAME?.includes("hexagon")
+                ? "hexagon"
+                : "square"
+            }
+          />
         </Box>
       </Box>
-    ) : (
-      <Box sx={{ p: 2, textAlign: "center" }}>
-        <Typography color="text.secondary">
-          No planning unit data available.
-        </Typography>
-      </Box>
-    );
-
+    </Box>
+  ) : (
+    <Box sx={{ p: 2, textAlign: "center" }}>
+      <Typography color="text.secondary">
+        No planning unit data available.
+      </Typography>
+    </Box>
+  );
 
   /** TAB: Features */
   const FeaturesTab =
@@ -238,7 +237,6 @@ const HexInfoDialog = ({ xy, metadata }) => {
             { render: (row) => renderArea(row.amount) },
           ])}
         </Box>
-
       </Box>
     ) : (
       <Box sx={{ p: 2, textAlign: "center" }}>

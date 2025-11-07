@@ -2,9 +2,9 @@ import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import AddToMap from "@mui/icons-material/Visibility";
-import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
-import MenuItem from '@mui/material/MenuItem';
+import MenuItem from "@mui/material/MenuItem";
 import Preprocess from "@mui/icons-material/Autorenew";
 import Properties from "@mui/icons-material/ErrorOutline";
 import RemoveFromMap from "@mui/icons-material/VisibilityOff";
@@ -35,9 +35,7 @@ const FeatureMenu = ({
   };
 
   const closeDialog = () =>
-    dispatch(
-      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
-    );
+    dispatch(toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false }));
   return (
     <Menu
       open={featureState.dialogs.featureMenuOpen}
@@ -72,7 +70,9 @@ const FeatureMenu = ({
           : "Add to Map"}
       </MenuItem>
 
-      <MenuItem onClick={() => toggleFeaturePUIDLayer(featureState.currentFeature)}>
+      <MenuItem
+        onClick={() => toggleFeaturePUIDLayer(featureState.currentFeature)}
+      >
         <ListItemIcon>
           {featureState.currentFeature?.feature_puid_layer_loaded ? (
             <RemoveFromMap />
@@ -94,7 +94,8 @@ const FeatureMenu = ({
 
       <MenuItem
         onClick={() => preprocessSingleFeature(featureState.currentFeature)}
-        disabled={featureState.currentFeature?.preprocessed || preprocessing}>
+        // {/*disabled={featureState.currentFeature?.preprocessed || preprocessing}*/}
+      >
         <ListItemIcon>
           <Preprocess />
         </ListItemIcon>

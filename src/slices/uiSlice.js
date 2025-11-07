@@ -82,7 +82,7 @@ const mapboxBasemaps = [
 ];
 
 const initialState = {
-  loading: false,
+  loading: true,
   activeTab: "project",
   activeResultsTab: "legend",
   basemap: "BioProtect",
