@@ -87,14 +87,15 @@ export const INITIAL_VARS = {
     //   zone: "europe-west6-a",
     //   instanceName: "bioprotect-test-server",
     // },
-    // {
-    //   name: "Bioprotect",
-    //   protocol: "http",
-    //   host: "vmudai1.datascienceinstitute.ie",
-    //   port: 8080,
-    //   description: "Local server",
-    //   type: "local",
-    // }
+    {
+      name: "Bioprotect",
+      protocol: "http",
+      host: "vmudai1.datascienceinstitute.ie",
+      port: 8080,
+      description: "Biprotect test server",
+      type: "remote",
+      instanceName: "bioprotect-test-server",
+    },
   ],
   WDPA: {
     latest_version: "February 2023",
