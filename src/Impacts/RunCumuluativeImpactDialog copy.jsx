@@ -171,7 +171,7 @@ class ImportedActivitiesDialog extends React.Component {
     ];
     return (
       <MarxanDialog
-        open={importedActivitiesDialogOpen}
+        open={uploadedActivitiesDialogOpen}
         {...this.props}
         autoDetectWindowHeight={false}
         title={this.title(

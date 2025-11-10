@@ -120,10 +120,12 @@ import ToolsMenu from "./ToolsMenu";
 import UserMenu from "./User/UserMenu";
 import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
+import { addFeatureAttributes } from "@features/featureUtils";
 /*global fetch*/
 /*global URLSearchParams*/
 /*global AbortController*/
 import classyBrew from "classybrew";
+import { featureApiSlice } from "@slices/featureSlice";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from "jsonp-promise";
@@ -228,7 +230,6 @@ const App = () => {
   const userId = useSelector(selectCurrentUserId);
   const userData = useSelector(selectCurrentUser);
   const project = useSelector((state) => state.project.projectData);
-  const isLoggedIn = useSelector(selectIsUserLoggedIn);
 
   const [updateUser] = useUpdateUserMutation();
 
@@ -253,6 +254,14 @@ const App = () => {
   );
 
   const { data, isFetching, isError } = useGetAllFeaturesQuery();
+
+  // Initialize map once after mount (prevents container=null errors)
+  useEffect(() => {
+    if (mapContainer.current && !map.current) {
+      console.log("🗺️ Creating initial Mapbox map...");
+      createMap(); // no style argument = default
+    }
+  }, [mapContainer.current]);
 
   useEffect(() => {
     if (featurePUData) {
@@ -760,12 +769,9 @@ const App = () => {
       // 1️⃣ Load project (either first available or by ID)
       const projectResponse = await dispatch(switchProject(projectId)).unwrap();
       console.log("projectResponse ", projectResponse);
-
       // 2️⃣ Run post-load setup
       await new Promise((resolve) => setTimeout(resolve, 0));
-
       await postLoginSetup(projectResponse);
-
       return projectResponse;
     } catch (error) {
       console.error("❌ Failed to load project:", error);
@@ -790,8 +796,11 @@ const App = () => {
         await getResults(userData.name, projectData.project);
       }
 
-      const speciesData = await _get("features?action=get-all");
-      dispatch(setAllFeatures(speciesData.data));
+      const { data: allFeaturesResponse } = await dispatch(
+        featureApiSlice.endpoints.getAllFeatures.initiate()
+      );
+      const allFeatures = allFeaturesResponse?.data || [];
+      dispatch(setAllFeatures(allFeatures));
 
       const activitiesData = await _get("getUploadedActivities");
       dispatch(setUploadedActivities(activitiesData.data));
@@ -801,11 +810,12 @@ const App = () => {
       dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: true }));
 
       // Initialize interest features and preload costs data
-      initialiseInterestFeatures(
-        projectData.metadata.OLDVERSION,
+      console.log("configureProjectFeatures start, map.current =", map.current);
+
+      configureProjectFeatures(
         projectData.features,
         projectData.feature_preprocessing,
-        speciesData.data
+        allFeatures
       );
       return "Logged in";
     } catch (error) {
@@ -1070,80 +1080,51 @@ const App = () => {
     setRunParams(parameters);
   };
 
-  //matches and returns an item in an object array with the passed id - this assumes the first item in the object is the id identifier
-  const getArrayItem = (arr, id) => arr.find(([itemId]) => itemId === id);
-
   //initialises the interest features based on the currently loading project
-  const initialiseInterestFeatures = (
-    oldVersion,
-    projFeatures,
-    featurePrePro,
-    allFeaturesData
+  const configureProjectFeatures = (
+    projectFeatures,
+    preprocessingData,
+    allFeatures
   ) => {
-    // initialiseInterestFeatures(
-    //   projState.projectData.metadata.OLDVERSION,
-    //   projState.projectData.features,
-    //   projState.projectData.feature_preprocessing,
-    //   speciesData.data
-    // );
-
-    // What this function used to do:
-    //  - get all features (we already have all features though)
-    //  - get the id's of the project features (why? we already have all theproject features)
-    //  - Go through all of the features - check if they are in the project
-    //  - add required attributes to the feature
-    //  - add extra info to project features
-
-    const allFeats =
-      featureState.allFeatures.length > 0
-        ? featureState.allFeatures
-        : allFeaturesData;
-    const processedFeatures = allFeats.map((feature) => {
-      const base = addFeatureAttributes(feature, oldVersion);
-      const idx = projFeatures.findIndex((f) => f.id === feature.id);
-      if (idx === -1) {
-        return base;
-      }
-      const projF = projFeatures[idx];
-      const preprocess = getArrayItem(featurePrePro, feature.id);
-      return {
-        ...base,
-        selected: true,
-        preprocessed: !!preprocess,
-        pu_area: preprocess ? preprocess[1] : -1,
-        pu_count: preprocess ? preprocess[2] : -1,
-        spf: projF.spf,
-        target_value: projF.target_value,
-        occurs_in_planning_grid: preprocess && preprocess[2] > 0,
-      };
-    });
-    getSelectedFeatureIds();
-    dispatch(setAllFeatures(processedFeatures));
-    dispatch(
-      setProjectFeatures(processedFeatures.filter((item) => item.selected))
+    // fast lookup maps
+    const projectFeatureMap = Object.fromEntries(
+      projectFeatures.map((f) => [f.id, f])
     );
-    dispatch(setSelectedFeatureIds(projFeatures.map((feature) => feature.id)));
-  };
 
-  //adds the required attributes for the features to work in the marxan web app - these are the default values
-  const addFeatureAttributes = (item, oldVersion) => {
-    const defaultAttributes = {
-      selected: false, // if the feature is currently selected (i.e. in the current project)
-      preprocessed: false, // has the feature already been intersected with the planning grid to populate the puvspr.dat file
-      pu_area: -1, // the area of the feature within the planning grid
-      pu_count: -1, // the number of planning units that the feature intersects with
-      spf: 40, // species penalty factor
-      target_value: 17, // the target value for the feature to protect as a percentage
-      target_area: -1, // the area of the feature that must be protected to meet the targets percentage
-      protected_area: -1, // the area of the feature that is protected
-      feature_layer_loaded: false, // is the feature's distribution currently visible on the map
-      feature_puid_layer_loaded: false, // are the planning units that intersect the feature currently visible on the map
-      old_version: oldVersion, // true if the current project is a project imported from Marxan for DOS
-      occurs_in_planning_grid: false, // does the feature occur in the planning grid
-      color: window.colors[item.id % window.colors.length], // color for the map layer and analysis outputs
-      in_filter: true, // true if the feature is currently visible in the features dialog
-    };
-    return { ...item, ...defaultAttributes };
+    const preprocessMap = Object.fromEntries(
+      (preprocessingData || []).map(([id, area, count]) => [
+        id,
+        { pu_area: area, pu_count: count },
+      ])
+    );
+
+    const processedFeatures = allFeatures.map((feature) => {
+      const base = addFeatureAttributes(feature);
+      const proj = projectFeatureMap[feature.id];
+      const pre = preprocessMap[feature.id];
+
+      const updated = { ...base };
+      // override with preprocessing if available
+      if (pre) {
+        updated.preprocessed = true;
+        updated.pu_area = pre.pu_area;
+        updated.pu_count = pre.pu_count;
+        updated.occurs_in_planning_grid = pre.pu_count > 0;
+      }
+
+      // override with project feature settings if selected
+      if (proj) {
+        updated.selected = true;
+        updated.spf = proj.spf ?? base.spf;
+        updated.target_value = proj.target_value ?? base.target_value;
+      }
+      return updated;
+    });
+
+    const selected = processedFeatures.filter((f) => f.selected);
+    dispatch(setAllFeatures(processedFeatures));
+    dispatch(setProjectFeatures(selected));
+    dispatch(setSelectedFeatureIds(selected.map((f) => f.id)));
   };
 
   //resets various variables and state in between users
@@ -2226,7 +2207,13 @@ const App = () => {
     try {
       dispatch(setBasemap(basemap.name));
       const style = await getValidStyle(basemap);
-      await createMap(style);
+      // await createMap(style);
+      if (map.current) {
+        map.current.setStyle(style);
+      } else {
+        console.warn("Map not ready yet; skipping style load");
+      }
+
       // Add the planning unit layers (if a project has already been loaded)
       if (tileset) {
         addPlanningGridLayers(tileset.name);
@@ -2868,9 +2855,6 @@ const App = () => {
         isOpen: true,
       })
     );
-    // if (showClearSelectAll){
-    // getSelectedFeatureIds();
-    // }
   };
 
   const openPlanningGridsDialog = async () => {
@@ -2903,17 +2887,11 @@ const App = () => {
     if (atlasLayers.length < 1) {
       const data = await getAtlasLayers();
       setAtlasLayers(data);
-      dispatch(
-        toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true })
-      );
-      dispatch(setLoading(false));
-    } else {
-      // Open the dialog if there is data already loaded
-      dispatch(
-        toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true })
-      );
-      dispatch(setLoading(false));
     }
+    dispatch(
+      toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true })
+    );
+    dispatch(setLoading(false));
   };
 
   const openCumulativeImpactDialog = async () => {
@@ -2921,17 +2899,11 @@ const App = () => {
     if (uiState.allImpacts.length < 1) {
       const response = await _get("getAllImpacts");
       setAllImpacts(response.data);
-      dispatch(
-        toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
-      );
-      dispatch(setLoading(false));
-    } else {
-      // Open the dialog if there is data already loaded
-      dispatch(
-        toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
-      );
-      dispatch(setLoading(false));
     }
+    dispatch(
+      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
+    );
+    dispatch(setLoading(false));
   };
 
   //makes a call to get the impacts from the server and returns them
@@ -3113,30 +3085,6 @@ const App = () => {
     }
   };
 
-  const openHumanActivitiesDialog = async () => {
-    if (uiState.activities.length < 1) {
-      const response = await _get("getActivities");
-      const data = await JSON.parse(response.data);
-      dispatch(setActivities(data));
-    }
-    dispatch(
-      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: true })
-    );
-  };
-
-  //create new impact from the created pressures
-  const importImpacts = async (filename, selectedActivity, description) => {
-    //start the logging
-    dispatch(setLoading(true));
-    startLogging();
-
-    const url = `runCumumlativeImpact?filename=${filename}&activity=${selectedActivity}&description=${description}`;
-    const message = await handleWebSocket(url);
-    await pollMapbox(message.uploadId);
-    dispatch(setLoading(false));
-    return "Cumulative Impact Layer uploaded";
-  };
-
   const runCumulativeImpact = async (selectedUploadedActivityIds) => {
     dispatch(setLoading(true));
     startLogging();
@@ -3206,17 +3154,6 @@ const App = () => {
       await updateProjectFeatures((features = updateFeatures));
     }
   };
-
-  //gets the ids of the selected features
-  const getSelectedFeatureIds = () => {
-    const updatedFeatureIds = featureState.allFeatures
-      .filter((feature) => feature.selected)
-      .map((feature) => feature.id);
-
-    dispatch(setSelectedFeatureIds(updatedFeatureIds));
-  };
-
-  //when a user clicks a feature in the FeaturesDialog
 
   //removes a feature from the selectedFeatureIds array
   const removeFeature = (feature) => {
@@ -4154,25 +4091,31 @@ const App = () => {
             <AtlasLayersDialog map={map} atlasLayers={atlasLayers} />
           ) : null}
 
-          <CumulativeImpactDialog
-            loading={uiState.loading || uploading}
-            _get={_get}
-            metadata={metadata}
-            clickImpact={clickImpact}
-            initialiseDigitising={initialiseDigitising}
-            selectedImpactIds={selectedImpactIds}
-            userRole={userData?.role}
-          />
-          <HumanActivitiesDialog
-            loading={uiState.loading || uploading}
-            metadata={metadata}
-            initialiseDigitising={initialiseDigitising}
-            userRole={userData?.role}
-            fileUpload={uploadRaster}
-            saveActivityToDb={saveActivityToDb}
-            startLogging={startLogging}
-            handleWebSocket={handleWebSocket}
-          />
+          {dialogStates.cumulativeImpactDialogOpen ? (
+            <CumulativeImpactDialog
+              loading={uiState.loading || uploading}
+              _get={_get}
+              metadata={metadata}
+              clickImpact={clickImpact}
+              initialiseDigitising={initialiseDigitising}
+              selectedImpactIds={selectedImpactIds}
+              userRole={userData?.role}
+            />
+          ) : null}
+
+          {dialogStates.humanActivitiesDialogOpen ? (
+            <HumanActivitiesDialog
+              loading={uiState.loading || uploading}
+              metadata={metadata}
+              initialiseDigitising={initialiseDigitising}
+              userRole={userData?.role}
+              fileUpload={uploadRaster}
+              saveActivityToDb={saveActivityToDb}
+              startLogging={startLogging}
+              handleWebSocket={handleWebSocket}
+            />
+          ) : null}
+
           <RunCumuluativeImpactDialog
             loading={uiState.loading || uploading}
             metadata={metadata}
@@ -4181,7 +4124,6 @@ const App = () => {
           />
           <MenuBar
             open={token}
-            userRole={userData?.role}
             openFeaturesDialog={openFeaturesDialog}
             openProjectsDialog={openProjectsDialog}
             openPlanningGridsDialog={openPlanningGridsDialog}

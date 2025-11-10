@@ -31,9 +31,15 @@ const HumanActivitiesDialog = (props) => {
   const [searchText, setSearchText] = useState("");
   const { showMessage } = useAppSnackbar();
 
+  console.log("[uiState.selectedActivity ", [uiState.selectedActivity]);
+
   const handleNext = () => {
     if (stepIndex === INITIAL_STATE.steps.length - 1) {
-      handleSaveActivity(filename, uiState.selectedActivity.activity, description);
+      handleSaveActivity(
+        filename,
+        uiState.selectedActivity.activity,
+        description
+      );
     } else {
       setStepIndex(stepIndex + 1);
     }
@@ -43,12 +49,16 @@ const HumanActivitiesDialog = (props) => {
     setStepIndex(stepIndex - 1);
   };
 
-  const handleSaveActivity = async (filename, selectedActivity, description) => {
+  const handleSaveActivity = async (
+    filename,
+    selectedActivity,
+    description
+  ) => {
     console.log("selectedActivity ", selectedActivity);
     dispatch(setLoading(true));
     props.startLogging();
     const url = `saveRaster?filename=${filename}&activity=${selectedActivity}&description=${description}`;
-    const response = await props.handleWebSocket(url).catch(err => {
+    const response = await props.handleWebSocket(url).catch((err) => {
       console.error("WebSocket failed:", err);
       return { error: `WebSocket error occurred - ${err.message}` };
     });
@@ -57,15 +67,18 @@ const HumanActivitiesDialog = (props) => {
     showMessage(message, response?.error ? "error" : "success");
     dispatch(setLoading(false));
     closeDialog();
-    dispatch(toggleDialog({
-      dialogName: "importedActivitiesDialogOpen",
-      isOpen: true
-    }))
+    dispatch(
+      toggleDialog({
+        dialogName: "uploadedActivitiesDialogOpen",
+        isOpen: true,
+      })
+    );
   };
 
   const clickRow = (evt, rowInfo) => {
+    console.log("rowInfo ", rowInfo);
     dispatch(setSelectedActivity(rowInfo));
-  }
+  };
 
   const closeDialog = () => {
     setStepIndex(0);
@@ -93,8 +106,8 @@ const HumanActivitiesDialog = (props) => {
     return false;
   };
 
-  const actions =
-    <ButtonGroup aria-label="Basic button group" >
+  const actions = (
+    <ButtonGroup aria-label="Basic button group">
       {stepIndex !== 1 && (
         <>
           <Button
@@ -117,9 +130,8 @@ const HumanActivitiesDialog = (props) => {
           </Button>
         </>
       )}
-    </ButtonGroup>;
-
-
+    </ButtonGroup>
+  );
 
   return (
     <MarxanDialog
@@ -130,7 +142,6 @@ const HumanActivitiesDialog = (props) => {
       okLabel={"Cancel"}
       title={INITIAL_STATE.title[stepIndex]}
       actions={actions}
-      helpLink={"user.html#importing-from-a-shapefile"}
       fullWidth={true}
     >
       {stepIndex === 0 && (
@@ -149,7 +160,7 @@ const HumanActivitiesDialog = (props) => {
         </div>
       )}
       {stepIndex === 1 && (
-        <div>
+        <ButtonGroup aria-label="Basic button group" fullWidth>
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="Import"
@@ -160,13 +171,21 @@ const HumanActivitiesDialog = (props) => {
           </Button>
           <Button
             startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+            title="Import"
+            disabled={uiState.loading}
+            onClick={handleNext}
+          >
+            Import from Shapefile
+          </Button>
+          <Button
+            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
             title="Draw on screen"
             disabled={true}
             onClick={props.initialiseDigitising}
           >
             Draw on screen
           </Button>
-        </div>
+        </ButtonGroup>
       )}
       {stepIndex === 2 && (
         <div>
@@ -193,6 +212,6 @@ const HumanActivitiesDialog = (props) => {
       )}
     </MarxanDialog>
   );
-}
+};
 
 export default HumanActivitiesDialog;

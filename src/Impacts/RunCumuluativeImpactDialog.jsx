@@ -80,14 +80,14 @@ const ImportedActivitiesDialog = ({
   const closeDialog = () =>
     dispatch(
       toggleDialog({
-        dialogName: "importedActivitiesDialogOpen",
+        dialogName: "uploadedActivitiesDialogOpen",
         isOpen: false,
       })
     );
 
   return (
     <MarxanDialog
-      open={dialogStates.importedActivitiesDialogOpen}
+      open={dialogStates.uploadedActivitiesDialogOpen}
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}
       autoDetectWindowHeight={false}

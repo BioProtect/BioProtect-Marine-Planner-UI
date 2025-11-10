@@ -13,7 +13,7 @@ import {
   faShip,
   faStar,
   faThLarge,
-  faWrench
+  faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -31,14 +31,12 @@ import { toggleFeatureD } from "@slices/featureSlice";
 
 const MenuBar = ({
   open,
-  userRole,
   openProjectsDialog,
-  openActivitiesDialog,
   openFeaturesDialog,
   openPlanningGridsDialog,
   openCumulativeImpactDialog,
   openAtlasLayersDialog,
-  setMenuAnchor
+  setMenuAnchor,
 }) => {
   const dispatch = useDispatch();
   const dialogStates = useSelector((state) => state.ui.dialogStates);

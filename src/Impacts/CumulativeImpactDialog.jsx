@@ -13,7 +13,7 @@ const CumulativeImpactDialog = ({
   clickImpact,
   initialiseDigitising,
   selectedImpactIds,
-  userRole
+  userRole,
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
@@ -40,7 +40,6 @@ const CumulativeImpactDialog = ({
       toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: true })
     );
   };
-
 
   const handleOpenHumanActivitiesDialog = useCallback(() => {
     // closeDialog();
@@ -116,8 +115,6 @@ const CumulativeImpactDialog = ({
     },
     [filteredRows, toggleSelectionState]
   );
-
-
 
   // const preview = useCallback(
   //   (impact_metadata) => {
@@ -197,14 +194,13 @@ const CumulativeImpactDialog = ({
               dataFiltered={dataFiltered}
               selected={selectedImpactIds}
               clickImpact={handleClickImpact}
-            // preview={preview}
+              // preview={preview}
             />
           ) : (
             <Loading />
           )}
         </div>
         <CumulativeImpactsToolbar
-          metadataOV={metadata.OLDVERSION}
           userRole={userRole}
           openHumanActivitiesDialog={handleOpenHumanActivitiesDialog}
           // deleteImpact={handleDeleteImpact}

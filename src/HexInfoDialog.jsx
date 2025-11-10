@@ -28,7 +28,6 @@ const HexInfoDialog = ({ xy, metadata }) => {
   const puState = useSelector((state) => state.planningUnit);
   const featureState = useSelector((state) => state.feature);
   const userData = useSelector(selectCurrentUser);
-  console.log("userData ", userData);
 
   const { hexInfoDialogOpen } = puState.dialogs;
   const puInfo = puState.identifyPlanningUnits?.puData;

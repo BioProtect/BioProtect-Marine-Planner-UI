@@ -1,7 +1,4 @@
-import {
-  faCircle,
-  faPlusCircle
-} from "@fortawesome/free-solid-svg-icons";
+import { faCircle, faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -18,34 +15,30 @@ const CumulativeImpactsToolbar = ({
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
+  const openCumulativeImpactStepper = () =>
+    dispatch(
+      toggleDialog({ dialogName: "uploadedActivitiesDialogOpen", isOpen: true })
+    );
+
   return (
     <div>
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
-        {userRole !== "ReadOnly" ? (
-          <Button
-            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-            title="New CI function"
-            onClick={openHumanActivitiesDialog}
-          >
-            Add Activity
-          </Button>
-        ) : null}
+        <Button
+          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+          title="New CI function"
+          onClick={openHumanActivitiesDialog}
+        >
+          Add Activity
+        </Button>
 
-        {userRole !== "ReadOnly" ? (
-          <Button
-            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-            title="View uploaded activities"
-            onClick={() => dispatch(
-              toggleDialog({
-                dialogName: "importedActivitiesDialogOpen",
-                isOpen: true
-              })
-            )}
-            disabled={uiState.loading}
-          >
-            Run Cumulative Impact
-          </Button>
-        ) : null}
+        <Button
+          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+          title="View uploaded activities"
+          onClick={() => openCumulativeImpactStepper()}
+          disabled={uiState.loading}
+        >
+          Run Cumulative Impact
+        </Button>
 
         {/* <Button
           startIcon={
@@ -72,7 +65,7 @@ const CumulativeImpactsToolbar = ({
           Clear all
         </Button>
       </ButtonGroup>
-    </div >
+    </div>
   );
 };
 

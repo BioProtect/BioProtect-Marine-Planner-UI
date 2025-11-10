@@ -103,8 +103,7 @@ const initialState = {
 
     activitiesDialogOpen: false,
     cumulativeImpactDialogOpen: false,
-    humanActivitiesDialogOpen: false,
-    importedActivitiesDialogOpen: false,
+    uploadedActivitiesDialogOpen: false,
     openImportImpactsDialog: false,
 
 

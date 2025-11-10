@@ -1,11 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  descendingComparator,
-  getComparator,
-  objInArray,
-  stableSort,
-} from "../Helpers";
-import { useDispatch, useSelector } from "react-redux";
+import { getComparator, stableSort } from "../Helpers";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import AppBarIcon from "../MenuBar/AppBarIcon";
 import BPTableHeadWithSort from "./BPTableHeadWithSort";
@@ -67,11 +61,6 @@ const BioprotectTable = (props) => {
     return stableSort(filteredResult, getComparator(order, orderBy));
   }, [searchQuery, props.data, order, orderBy]);
 
-  // Let parent know what rows are visible (useful for shift-select logic)
-  // useEffect(() => {
-  //   props.dataFiltered && props.dataFiltered(filteredData);
-  // }, [filteredData, props.dataFiltered]);
-
   const lastSent = useRef([]);
   useEffect(() => {
     if (!props.dataFiltered) return;
@@ -105,26 +94,7 @@ const BioprotectTable = (props) => {
     props.updateSelectionIds && props.updateSelectionIds([]);
   };
 
-  // should really be item in Object because were checking an obj. poor naming by me.
-  // const isSelected = (objToCheck) => {
-  //   if (!props.selected || props.selected.length === 0) return false;
-
-  //   if (props.isProject) {
-  //     return objToCheck.id === props.selected[0]?.id;
-  //   }
-  //   return objInArray(objToCheck, props.selected);
-  // };
-  // Unified selected check (IDs set)
   const isSelected = (row) => selectedIdSet.has(row.id);
-
-  // const visibleRows = useMemo(
-  //   () => stableSort(filteredData, getComparator(order, orderBy)),
-  //   [props.data, order, orderBy]
-  // );
-  // const visibleRows = useMemo(
-  //   () => stableSort(filteredData, getComparator(order, orderBy)),
-  //   [filteredData, order, orderBy]
-  // );
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -187,22 +157,22 @@ const BioprotectTable = (props) => {
                       {row[column.id]}
                     </TableCell>
                   ))}
-                  {(props.preview) && (
+                  {props.preview && (
                     <TableCell
                       align="center"
                       sx={{ cursor: "pointer", color: "primary.main" }}
-
                     >
                       <AppBarIcon
                         icon={faMagnifyingGlassPlus}
                         onClick={(e) => {
-                          e.stopPropagation();         // don’t also trigger row click
-                          props.preview?.(row);        // call the preview callback
+                          e.stopPropagation(); // don’t also trigger row click
+                          props.preview?.(row); // call the preview callback
                         }}
                         title="Priview this feature"
                       />
                       Preview
-                    </TableCell>)}
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}
