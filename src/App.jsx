@@ -2291,7 +2291,7 @@ const App = () => {
   const changePlanningGrid = async (puLayerName) => {
     try {
       // Fetch tile metadata from Martin tile server
-      const response = await fetch(`http://0.0.0.0:3000/${puLayerName}`);
+      const response = await fetch(`/tiles/${puLayerName}`);
       if (!response.ok) throw new Error("Failed to fetch tileset metadata");
       const data = await response.json();
       // Remove any existing PU-related layers and sources
@@ -2356,7 +2356,7 @@ const App = () => {
     if (!map.current.getSource(sourceId)) {
       map.current.addSource(sourceId, {
         type: "vector",
-        url: `http://0.0.0.0:3000/${puLayerName}`,
+        url: `/tiles/${puLayerName}`,
         promoteId: "h3_index", // treat each hex id as its unique feature id - helps with rendering
       });
     }
@@ -3016,7 +3016,7 @@ const App = () => {
     const layerName = impact.tilesetid.split(".")[1];
     const layerId = "marxan_impact_layer_" + layerName;
     // const layerId = "martin_impact_layer_" + layerName;
-    // const tilesURL = `http://0.0.0.0:3000/${layerName}/{z}/{x}/{y}.png`;
+    // const tilesURL = `/tiles/${layerName}/{z}/{x}/{y}.png`;
 
     if (map.current.getLayer(layerId)) {
       removeMapLayer(layerId);
@@ -3398,7 +3398,7 @@ const App = () => {
       : feature.feature_class_name;
     const sourceId = `martin_src_${tableName}`;
     const layerId = `martin_layer_${tableName}`;
-    const tileJSON = `http://0.0.0.0:3000/${tableName}`;
+    const tileJSON = `/tiles/${tableName}`;
 
     if (map.current.getLayer(layerId)) {
       removeMapLayer(layerId);

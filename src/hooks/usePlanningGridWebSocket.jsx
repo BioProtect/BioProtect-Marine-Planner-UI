@@ -20,9 +20,9 @@ export const usePlanningGridWebSocket = () => {
       // sort out Server/serverFunctions and loading the websocket endpoint
       // just gonna hardcode it for the minute
       // const socket = new WebSocket("ws://0.0.0.0:8080/server/createPlanningUnitGrid"); // Adjust if needed
-      const socket = new WebSocket(
-        "ws://" + window.location.host + "/server/createPlanningUnitGrid"
-      );
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${wsProtocol}//${window.location.host}/server/createPlanningUnitGrid`;
+      const socket = new WebSocket(wsUrl);
 
       socketRef.current = socket;
 

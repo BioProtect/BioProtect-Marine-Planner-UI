@@ -50,7 +50,6 @@ const SelectMapboxLayer = ({
     }
   }, [selectedLayer, map, items]);
 
-
   const getLatLngLikeFromWKT = (wkt) => {
     try {
       const geometry = wellknown.parse(wkt);
@@ -85,7 +84,6 @@ const SelectMapboxLayer = ({
     changeItem(value);
   };
 
-
   const addLayerToMap = async (tilesetid) => {
     const sourceId = `martin_src_${tilesetid}`;
     const layerId = `martin_layer_pu_${tilesetid}`;
@@ -112,8 +110,8 @@ const SelectMapboxLayer = ({
 
     // Add vector tile source from Martin
     map.addSource(sourceId, {
-      type: 'vector',
-      url: `http://0.0.0.0:3000/${tilesetid}`
+      type: "vector",
+      url: `/tiles/${tilesetid}`,
     });
 
     map.addLayer({
@@ -128,7 +126,6 @@ const SelectMapboxLayer = ({
       },
     });
   };
-
 
   return (
     <Select
