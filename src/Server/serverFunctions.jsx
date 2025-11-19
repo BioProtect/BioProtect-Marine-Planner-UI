@@ -4,8 +4,8 @@ const getServerCapabilities = async (server) => {
   console.log("server ", server);
   // Construct the endpoints
   const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${wsProtocol}//${window.location.host}/server/`;
-  const websocketEndpoint = new WebSocket(wsUrl);
+  const endpoint = `${wsProtocol}//${window.location.host}/server/createPlanningUnitGrid`;
+  const websocketEndpoint = new WebSocket(endpoint);
 
   // Initialize server properties
   server = {
