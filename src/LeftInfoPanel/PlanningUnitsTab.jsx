@@ -1,6 +1,6 @@
 import { faEraser, faLock, faSave } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import Button from "@mui/material/Button";
 import CONSTANTS from "../constants"; // Ensure this path is correct
@@ -44,20 +44,33 @@ const PlanningUnitsTab = ({
     return map;
   }, [projState.projectPlanningUnits]);
 
+  // track edits locally not in state to help with rendering. save in state on save. 
+  const localEditsRef = useRef({}); // { h3_index: status }
+
   const startPuEditSession = (e) => {
     dispatch(setShowPlanningGrid(true))
     map.current.getCanvas().style.cursor = "crosshair";
-    // assign handlers
-    onClickRef.current = (e) => updatePlanningUnitStatus(e, "cycle");
-    onContextMenuRef.current = (e) => updatePlanningUnitStatus(e, "reset");
     const puLayerId = puLayerIdsRef.current?.puLayerId;
     if (!puLayerId) {
       console.warn("No PU layer ID available yet");
       return;
     }
+    // assign handlers
+    // onClickRef.current = (e) => updatePlanningUnitStatus(e, "cycle");
+    // onContextMenuRef.current = (e) => updatePlanningUnitStatus(e, "reset");
+    // const puLayerId = puLayerIdsRef.current?.puLayerId;
+    // if (!puLayerId) {
+    //   console.warn("No PU layer ID available yet");
+    //   return;
+    // }
+    // map.current.on("click", puLayerId, onClickRef.current);
+    // map.current.on("contextmenu", puLayerId, onContextMenuRef.current);
+    onClickRef.current = (e) => updatePlanningUnitStatus(e, "change");
+    onContextMenuRef.current = (e) => updatePlanningUnitStatus(e, "reset");
+
     map.current.on("click", puLayerId, onClickRef.current);
     map.current.on("contextmenu", puLayerId, onContextMenuRef.current);
-
+    // renderPuEditLayer();
   };
 
   const stopPuEditSession = (e) => {
@@ -92,7 +105,14 @@ const PlanningUnitsTab = ({
   }
 
   const clearManualEdits = () => {
-    dispatch(setProjectPlanningUnits({}));
+    const { sourceId, sourceLayerName } = puLayerIdsRef.current;
+    for (const [id, status] of Object.entries(planningUnitStatusMap)) {
+      map.current.setFeatureState(
+        { source: sourceId, sourceLayer: sourceLayerName, id: String(id) },
+        { status }
+      );
+    }
+    localEditsRef.current = {};
   };
 
   const updateProjectPus = async () => {
@@ -130,30 +150,62 @@ const PlanningUnitsTab = ({
     return newStatuses;
   }
 
+  // const updatePlanningUnitStatus = (e, mode = "change") => {
+  //   const puLayerId = CONSTANTS.PU_LAYER_NAME;
+  //   if (!map.current?.getLayer(puLayerId)) return;
+
+  //   // find clicked feature
+  //   const features = map.current.queryRenderedFeatures(e.point, { layers: [puLayerId] });
+  //   if (!features.length) return;
+
+  //   const puid = features[0].properties.h3_index || features[0].properties.puid;
+
+  //   // get current and next statsu
+  //   const currentStatus = planningUnitStatusMap[puid] ?? 0;
+  //   const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
+
+  //   let updated = removePuidsFromArray(projState.projectPlanningUnits, currentStatus, [puid]);
+  //   updated = appPuidsToPlanningUnits(updated, nextStatus, [puid]);
+  //   dispatch(setProjectPlanningUnits(updated));
+
+  //   const featureRef = {
+  //     source: puLayerIdsRef.current.sourceId,
+  //     sourceLayer: puLayerIdsRef.current.sourceLayerName,
+  //     id: puid,  // h3_index value
+  //   };
+  //   map.current.setFeatureState(featureRef, { status: nextStatus });
+  // };
   const updatePlanningUnitStatus = (e, mode = "change") => {
-    const puLayerId = CONSTANTS.PU_LAYER_NAME;
+    console.log("updatePlanningUnitStatus ");
+    const puLayerId = puLayerIdsRef.current?.puLayerId;
     if (!map.current?.getLayer(puLayerId)) return;
 
-    // find clicked feature
     const features = map.current.queryRenderedFeatures(e.point, { layers: [puLayerId] });
     if (!features.length) return;
 
-    const puid = features[0].properties.h3_index || features[0].properties.puid;
+    const feature = features[0];
+    const puid = feature.properties.h3_index || feature.properties.puid || feature.id;
+    if (!puid) return;
+    console.log("planningUnitStatusMap[puid] ", planningUnitStatusMap[puid]);
 
-    // get current and next statsu
-    const currentStatus = planningUnitStatusMap[puid] ?? 0;
-    const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
-
-    let updated = removePuidsFromArray(projState.projectPlanningUnits, currentStatus, [puid]);
-    updated = appPuidsToPlanningUnits(updated, nextStatus, [puid]);
-    dispatch(setProjectPlanningUnits(updated));
-
+    // Determine current & next status
     const featureRef = {
       source: puLayerIdsRef.current.sourceId,
       sourceLayer: puLayerIdsRef.current.sourceLayerName,
-      id: puid,  // h3_index value
+      id: String(puid),
     };
+    const currentState = map.current.getFeatureState(featureRef);
+    const currentStatus = currentState?.status ?? 0;
+
+    // const currentStatus = planningUnitStatusMap[puid] ?? 0;
+    const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
+    if (currentStatus === nextStatus) return;
+
+    // Update feature state for instant visual feedback
     map.current.setFeatureState(featureRef, { status: nextStatus });
+
+    // Track locally
+    localEditsRef.current[puid] = nextStatus;
   };
 
   return (

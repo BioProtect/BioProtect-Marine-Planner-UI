@@ -1,10 +1,12 @@
 import { apiSlice } from "./apiSlice";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+console.log("API_BASE ", API_BASE);
 
 export const authApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (credentials) => ({
-        url: "http://localhost:5000/server/auth",
+        url: `${API_BASE}/server/auth`,
         method: "POST",
         body: { ...credentials },
       }),

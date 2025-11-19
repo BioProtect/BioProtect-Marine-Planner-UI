@@ -1,12 +1,11 @@
 import { CONSTANTS, INITIAL_VARS } from "../bpVars";
 
 const getServerCapabilities = async (server) => {
+  console.log("server ", server);
   // Construct the endpoints
-  const endpoint = `${server.protocol}//${server.host}:${server.port}${CONSTANTS.TORNADO_PATH}`;
-  const websocketEndpoint =
-    server.protocol === "http:"
-      ? `ws://${server.host}:${server.port}${CONSTANTS.TORNADO_PATH}`
-      : `wss://${server.host}:${server.port}${CONSTANTS.TORNADO_PATH}`;
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${wsProtocol}//${window.location.host}/server/`;
+  const websocketEndpoint = new WebSocket(wsUrl);
 
   // Initialize server properties
   server = {
@@ -27,6 +26,7 @@ const getServerCapabilities = async (server) => {
       credentials: "include",
       signal,
     });
+
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -36,7 +36,6 @@ const getServerCapabilities = async (server) => {
     }
 
     const json = await response.json();
-    console.log("SERVER DATA in serverFunctiosn json ", json);
     if (json.info) {
       // Update server properties based on the response
       const corsEnabled =
@@ -69,9 +68,7 @@ const getServerCapabilities = async (server) => {
         description: json.serverData.SERVER_DESCRIPTION || server.description,
       };
     }
-  } catch (error) {
-    // console.error(`Fetch failed with: ${error}`);
-  }
+  } catch (error) {}
   return server;
 };
 
@@ -81,7 +78,7 @@ const addLocalServer = (servers) => {
     name: window.location.hostname,
     protocol: window.location.protocol,
     host: window.location.hostname,
-    port: 5000,
+    port: "",
     description: "Local machine",
     type: "local",
   };
@@ -96,9 +93,7 @@ const filterAndSortServers = (servers) => {
     .filter(
       (server) =>
         server.type === "remote" ||
-        (server.type === "local" &&
-          !server.offline &&
-          hosts.indexOf(server.host) === -1) ||
+        (server.type === "local" && !server.offline) ||
         server.host === "localhost"
     )
     .sort((a, b) => {

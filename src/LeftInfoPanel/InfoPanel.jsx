@@ -125,7 +125,7 @@ const InfoPanel = (props) => {
   };
 
   const startEditingDescription = () => {
-    if (projState.projectData && userData.role !== "ReadOnly") {
+    if (projState.projectData) {
       setEditingDescription(true);
     }
   };
@@ -235,30 +235,21 @@ const InfoPanel = (props) => {
         <Paper elevation={2} className="InfoPanelPaper" mb={4}>
 
           <Paper elevation={2} className="titleBar">
-            {userData.role === "ReadOnly" ? (
-              <span className="projectNameEditBox" title={`${projState.projectData.project.name} (Read-only)`}>
-                <FontAwesomeIcon style={iconStyle} icon={faLock} />
-                {projState.projectData.project.name}
-              </span>
-            ) : (
-              <span
-                onClick={startEditingProjectName}
-                className="projectNameEditBox"
-                title="Click to rename the project"
-              >
-                {projState.projectData?.project?.name || "Untitled project"}
-              </span>
-            )}
-            {userData.role !== "ReadOnly" && (
-              <input
-                id="projectName"
-                ref={projectNameRef}
-                style={combinedDisplayStyle}
-                className="projectNameEditBox"
-                onKeyDown={handleKeyPress}
-                onBlur={handleBlur}
-              />
-            )}
+            <span
+              onClick={startEditingProjectName}
+              className="projectNameEditBox"
+              title="Click to rename the project"
+            >
+              {projState.projectData?.project?.name || "Untitled project"}
+            </span>
+            <input
+              id="projectName"
+              ref={projectNameRef}
+              style={combinedDisplayStyle}
+              className="projectNameEditBox"
+              onKeyDown={handleKeyPress}
+              onBlur={handleBlur}
+            />
           </Paper>
 
           <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
@@ -287,7 +278,7 @@ const InfoPanel = (props) => {
           {currentTabIndex === 2 && (
             <PlanningUnitsTab
               {...props}
-              userRole={userData.role}
+              userRole={userData?.role}
             />
           )}
 
@@ -315,28 +306,26 @@ const InfoPanel = (props) => {
                 Settings
               </Button>
 
-              {userData.role !== "ReadOnly" && (
-                <>
-                  <Button
-                    variant="contained"
-                    title="Click to stop the current run"
-                    onClick={props.stopProcess}
-                    disabled={props.pid === 0}
-                    key="stopRunButton"
-                  >
-                    Stop
-                  </Button>
-                  <Button
-                    variant="contained"
-                    title="Click to run this project"
-                    onClick={props.runMarxan}
-                    disabled={props.preprocessing || projState.projectFeatures.length === 0 || puState.puEditing}
-                    key="runButton"
-                  >
-                    Run
-                  </Button>
-                </>
-              )}
+              <>
+                <Button
+                  variant="contained"
+                  title="Click to stop the current run"
+                  onClick={props.stopProcess}
+                  disabled={props.pid === 0}
+                  key="stopRunButton"
+                >
+                  Stop
+                </Button>
+                <Button
+                  variant="contained"
+                  title="Click to run this project"
+                  onClick={props.runMarxan}
+                  disabled={props.preprocessing || projState.projectFeatures.length === 0 || puState.puEditing}
+                  key="runButton"
+                >
+                  Run
+                </Button>
+              </>
             </Stack>
           </Paper>
         </Paper>

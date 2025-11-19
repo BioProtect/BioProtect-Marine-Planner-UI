@@ -140,13 +140,16 @@ const initialState = {
 export const initialiseServers = createAsyncThunk(
   "project/initialiseServers",
   async (servers, { dispatch, rejectWithValue }) => {
+    console.log("Initialising servers.... ", servers);
     try {
       const updatedServers = addLocalServer(servers);
+      console.log("updatedServers ", updatedServers);
       // Fetch capabilities for each server
       const allCapabilities = await Promise.all(
         updatedServers.map((server) => getServerCapabilities(server))
       );
       const filteredAndSortedServers = filterAndSortServers(allCapabilities);
+      console.log("filteredAndSortedServers ", filteredAndSortedServers);
       dispatch(setBpServers(filteredAndSortedServers)); // Dispatch the updated servers to the store
       return "ServerData retrieved";
     } catch (error) {

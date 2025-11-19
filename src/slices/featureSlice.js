@@ -10,6 +10,12 @@ export const featureApiSlice = apiSlice.injectEndpoints({
         method: "GET",
       }),
     }),
+    getAllFeatures: builder.query({
+      query: () => ({
+        url: `features?action=get-all`,
+        method: "GET",
+      }),
+    }),
     deleteFeature: builder.mutation({
       query: (featureName) => ({
         url: `features?action=delete&feature_name=${featureName}`,
@@ -24,13 +30,13 @@ export const featureApiSlice = apiSlice.injectEndpoints({
     }),
     listFeatureProjects: builder.query({
       query: (featureId) => ({
-        url: `features?action=list_projects&feature_class_id=${featureId}`,
+        url: `features?action=list-projects&feature_class_id=${featureId}`,
         method: "GET",
       }),
     }),
     listFeaturePUs: builder.query({
       query: (user, project, featureId) => ({
-        url: `features?action=planning_units&user=${user}&project=${project}&unique_id=${featureId}`,
+        url: `features?action=planning-units&user=${user}&project=${project}&unique_id=${featureId}`,
         method: "GET",
       }),
     }),
@@ -45,7 +51,7 @@ export const featureApiSlice = apiSlice.injectEndpoints({
 
     getSensitivities: builder.mutation({
       query: () => ({
-        url: `features?action=get_sensitivities`,
+        url: `features?action=get-sensitivities`,
         method: "GET",
       }),
     }),
@@ -55,6 +61,7 @@ export const featureApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetFeatureQuery,
+  useGetAllFeaturesQuery,
   useDeleteFeatureMutation,
   useExportFeatureQuery,
   useListFeatureProjectsQuery,

@@ -82,7 +82,7 @@ const mapboxBasemaps = [
 ];
 
 const initialState = {
-  loading: false,
+  loading: true,
   activeTab: "project",
   activeResultsTab: "legend",
   basemap: "BioProtect",
@@ -103,8 +103,7 @@ const initialState = {
 
     activitiesDialogOpen: false,
     cumulativeImpactDialogOpen: false,
-    humanActivitiesDialogOpen: false,
-    importedActivitiesDialogOpen: false,
+    uploadedActivitiesDialogOpen: false,
     openImportImpactsDialog: false,
 
 

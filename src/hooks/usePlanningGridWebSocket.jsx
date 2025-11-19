@@ -10,71 +10,78 @@ export const usePlanningGridWebSocket = () => {
   const projState = useSelector((state) => state.project);
   const { showMessage } = useAppSnackbar();
 
-  const createPlanningGridViaWebSocket = useCallback(({
-    shapefile_path, alias, description, resolution
-  }, {
-    onUpdate, onSuccess, onError
-  }) => {
-    // SOME AWFUL SHITE GOING ON HERE WITH SERVERS 
-    // so todo 
-    // sort out Server/serverFunctions and loading the websocket endpoint
-    // just gonna hardcode it for the minute
-    const socket = new WebSocket("ws://localhost:5000/server/createPlanningUnitGrid"); // Adjust if needed
-    socketRef.current = socket;
+  const createPlanningGridViaWebSocket = useCallback(
+    (
+      { shapefile_path, alias, description, resolution },
+      { onUpdate, onSuccess, onError }
+    ) => {
+      // SOME AWFUL SHITE GOING ON HERE WITH SERVERS
+      // so todo
+      // sort out Server/serverFunctions and loading the websocket endpoint
+      // just gonna hardcode it for the minute
+      // const socket = new WebSocket("ws://0.0.0.0:8080/server/createPlanningUnitGrid"); // Adjust if needed
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${wsProtocol}//${window.location.host}/server/createPlanningUnitGrid`;
+      const socket = new WebSocket(wsUrl);
 
-    socket.onopen = () => {
-      socket.send(JSON.stringify({ shapefile_path, alias, description, resolution }));
-      showMessage("🟢 Upload started...", "info");
-      onUpdate?.("🟢 Upload started...");
-    };
-    socket.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
+      socketRef.current = socket;
 
-        if (msg.error) {
-          showMessage(msg.error, "error");
-          onError?.(msg.error);
+      socket.onopen = () => {
+        socket.send(
+          JSON.stringify({ shapefile_path, alias, description, resolution })
+        );
+        showMessage("🟢 Upload started...", "info");
+        onUpdate?.("🟢 Upload started...");
+      };
+      socket.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+
+          if (msg.error) {
+            showMessage(msg.error, "error");
+            onError?.(msg.error);
+            socket.close();
+            return;
+          }
+
+          if (msg.success === true) {
+            // ✅ close only when success is explicitly true
+            if (msg.info) showMessage(msg.info, "success");
+            onUpdate?.(msg.info ?? "✅ Done");
+            onSuccess?.(msg);
+            socket.close();
+            return;
+          }
+
+          // progress/info updates
+          if (msg.info) {
+            onUpdate?.(msg.info);
+            showMessage(msg.info);
+            return;
+          }
+
+          // fallback for any other message shape
+          onUpdate?.(JSON.stringify(msg));
+        } catch (e) {
+          const errMsg = "⚠️ Malformed message from server";
+          showMessage(errMsg, "error");
+          onError?.(errMsg);
           socket.close();
-          return;
         }
+      };
 
-        if (msg.success === true) {        // ✅ close only when success is explicitly true
-          if (msg.info) showMessage(msg.info, "success");
-          onUpdate?.(msg.info ?? "✅ Done");
-          onSuccess?.(msg);
-          socket.close();
-          return;
-        }
-
-        // progress/info updates
-        if (msg.info) {
-          onUpdate?.(msg.info);
-          showMessage(msg.info);
-          return;
-        }
-
-        // fallback for any other message shape
-        onUpdate?.(JSON.stringify(msg));
-      } catch (e) {
-        const errMsg = "⚠️ Malformed message from server";
+      socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        const errMsg = "🚨 WebSocket connection failed";
         showMessage(errMsg, "error");
         onError?.(errMsg);
-        socket.close();
-      }
-    };
+      };
 
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      const errMsg = "🚨 WebSocket connection failed";
-      showMessage(errMsg, "error");
-      onError?.(errMsg);
-    };
-
-    socket.onclose = () => {
-      showMessage("🧹 WebSocket closed");
-      console.log("🧹 WebSocket closed");
-    };
-  },
+      socket.onclose = () => {
+        showMessage("🧹 WebSocket closed");
+        console.log("🧹 WebSocket closed");
+      };
+    },
     []
   );
 

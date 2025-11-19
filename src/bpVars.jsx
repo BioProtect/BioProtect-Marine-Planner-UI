@@ -74,17 +74,26 @@ export const FEATURE_PROPERTIES_CORE = [
 export const INITIAL_VARS = {
   CLIENT_VERSION: "v1.0.8",
   SERVER_VERSION: "v1.0.8",
-  MARXAN_SERVERS: [
+  BP_SERVERS: [
+    // {
+    //   name: "Beta test",
+    //   port: 443,
+    //   host: "andrewcottam.com",
+    //   protocol: "https:",
+    //   description:
+    //     "Playground for trying features and analyses. All projects will be deleted at the end.",
+    //   type: "remote",
+    //   project: "geeImageServer",
+    //   zone: "europe-west6-a",
+    //   instanceName: "bioprotect-test-server",
+    // },
     {
-      name: "Beta test",
-      port: 443,
-      host: "andrewcottam.com",
-      protocol: "https:",
-      description:
-        "Playground for trying features and analyses. All projects will be deleted at the end.",
+      name: "Bioprotect",
+      protocol: window.location.protocol,
+      host: window.location.hostname,
+      port: "",
+      description: "Biprotect test server",
       type: "remote",
-      project: "geeImageServer",
-      zone: "europe-west6-a",
       instanceName: "bioprotect-test-server",
     },
   ],

@@ -18,7 +18,6 @@ import { selectCurrentUser } from "@slices/authSlice";
 import { setProjectFeatures } from "@slices/projectSlice";
 
 const FeaturesList = ({
-  simple,
   updateFeature,
   toggleFeatureLayer,
   toggleFeaturePUIDLayer,
@@ -41,8 +40,6 @@ const FeaturesList = ({
   };
 
   const handleItemClick = (evt, feature) => {
-    if (simple) return;
-
     const key = evt.altKey
       ? "feature_puid_layer_loaded"
       : "feature_layer_loaded";
@@ -120,18 +117,16 @@ const FeaturesList = ({
               sx={{ flex: 1 }}
               secondaryTypographyProps={{ component: "div" }}
               secondary={
-                !simple && (
-                  <LinearGauge
-                    scaledWidth={220}
-                    target_value={target_value}
-                    protected_percent={protectedPercent}
-                    visible={item.pu_area !== 0}
-                    color={color}
-                    useFeatureColors={useFeatureColors}
-                    sx={{ mt: 0.5, height: smallLinearGauge ? 3 : "auto" }}
-                    smallLinearGauge={smallLinearGauge}
-                  />
-                )
+                <LinearGauge
+                  scaledWidth={220}
+                  target_value={target_value}
+                  protected_percent={protectedPercent}
+                  visible={item.pu_area !== 0}
+                  color={color}
+                  useFeatureColors={useFeatureColors}
+                  sx={{ mt: 0.5, height: smallLinearGauge ? 3 : "auto" }}
+                  smallLinearGauge={smallLinearGauge}
+                />
               }
             />
           </ListItem>

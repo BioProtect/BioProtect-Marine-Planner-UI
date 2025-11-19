@@ -60,12 +60,12 @@ const ProjectTabContent = ({
               <span className="createDate">  {new Date(metadata.createdate.split(".")[0] + "Z").toLocaleString()}</span>
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {userData.username !== uiState.owner && (
+              {userData?.username !== uiState.owner && (
                 <span className="tabTitle tabTitleTopMargin">Created by</span>
               )}
               <br />
-              {userData.username !== uiState.owner && (
-                <span className="createDate">{uiState.owner || userData.username}</span>
+              {userData?.username !== uiState.owner && (
+                <span className="createDate">{uiState.owner || userData?.username}</span>
               )}
             </Typography>
           </Box>

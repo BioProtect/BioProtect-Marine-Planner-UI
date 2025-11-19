@@ -131,7 +131,8 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
             label="BioProtect Server"
           >
             {projectState.bpServers.map((item) => {
-              //if the server is offline - just put that otherwise: if CORS is enabled for this domain then it is read/write otherwise: if the guest user is enabled then put the domain and read only otherwise: put the domain and guest user disabled
+              // if the server is offline - just put that otherwise: if CORS is enabled for this domain then it is read/write otherwise: 
+              // if the guest user is enabled then put the domain and read only otherwise: put the domain and guest user disabled
               let text =
                 item.offline || item.corsEnabled || item.guestUserEnabled
                   ? item.name
