@@ -89,9 +89,9 @@ export const INITIAL_VARS = {
     // },
     {
       name: "Bioprotect",
-      protocol: "http",
-      host: "vmudai1.datascienceinstitute.ie",
-      port: 8080,
+      protocol: window.location.protocol,
+      host: window.location.hostname,
+      port: "",
       description: "Biprotect test server",
       type: "remote",
       instanceName: "bioprotect-test-server",

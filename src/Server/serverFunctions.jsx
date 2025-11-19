@@ -70,8 +70,7 @@ const getServerCapabilities = async (server) => {
         description: json.serverData.SERVER_DESCRIPTION || server.description,
       };
     }
-  } catch (error) {
-  }
+  } catch (error) {}
   return server;
 };
 
@@ -81,7 +80,7 @@ const addLocalServer = (servers) => {
     name: window.location.hostname,
     protocol: window.location.protocol,
     host: window.location.hostname,
-    port: 8080,
+    port: "",
     description: "Local machine",
     type: "local",
   };
