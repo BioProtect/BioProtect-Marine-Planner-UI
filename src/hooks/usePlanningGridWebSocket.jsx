@@ -1,13 +1,11 @@
 import { useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { toggleDialog } from "../slices/uiSlice";
+import { getWsBaseUrl } from "@config/api";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 
 export const usePlanningGridWebSocket = () => {
   const socketRef = useRef(null);
-  const dispatch = useDispatch();
-  const projState = useSelector((state) => state.project);
   const { showMessage } = useAppSnackbar();
 
   const createPlanningGridViaWebSocket = useCallback(
@@ -20,10 +18,7 @@ export const usePlanningGridWebSocket = () => {
       // sort out Server/serverFunctions and loading the websocket endpoint
       // just gonna hardcode it for the minute
       // const socket = new WebSocket("ws://0.0.0.0:8080/server/createPlanningUnitGrid"); // Adjust if needed
-      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${wsProtocol}//${window.location.host}/server/createPlanningUnitGrid`;
-      const socket = new WebSocket(wsUrl);
-
+      const socket = new WebSocket(getWsBaseUrl() + "createPlanningUnitGrid");
       socketRef.current = socket;
 
       socket.onopen = () => {

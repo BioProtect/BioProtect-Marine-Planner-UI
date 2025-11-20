@@ -16,6 +16,7 @@ export default defineConfig({
       "@navbars": path.resolve(__dirname, "./src/navbars"),
       "@images": path.resolve(__dirname, "./src/images"),
       "@hooks": path.resolve(__dirname, "./src/hooks"),
+      "@config": path.resolve(__dirname, "./src/config"),
       // You can add more aliases as needed
     },
   },
