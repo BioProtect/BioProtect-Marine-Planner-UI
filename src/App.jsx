@@ -795,7 +795,7 @@ const App = () => {
         addPlanningGridLayers(tilesetId);
 
         if (projState.costData) renderPuCostLayer(projState.costData);
-        await getResults(userData.name, projectData.project);
+        await getResults(projectData.user, projectData.project);
       }
 
       const { data: allFeaturesResponse } = await dispatch(
@@ -1417,9 +1417,10 @@ const App = () => {
 
   //gets the results for a project
   const getResults = async (user, proj) => {
+    user = user || userData.username;
     try {
       const response = await _get(
-        `getResults?user=${userData.username}&project=${proj.name}`
+        `getResults?user=${user}&project=${proj.name}`
       );
       runCompleted(response);
       return "Results retrieved";
