@@ -1,27 +1,25 @@
-import { CONSTANTS, INITIAL_VARS } from "../bpVars";
+import { getApiBaseUrl, getWsBaseUrl } from "@config/api";
 
 const getServerCapabilities = async (server) => {
-  console.log("server ", server);
-  // Construct the endpoints
-  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const endpoint = `${wsProtocol}//${window.location.host}/server/`;
-  const websocketEndpoint = new WebSocket(endpoint);
+  const endpoint = getApiBaseUrl();
+  const websocketEndpoint = getWsBaseUrl();
 
   // Initialize server properties
-  server = {
+  let serverInfo = {
     ...server,
     endpoint,
     websocketEndpoint,
     offline: true,
     guestUserEnabled: true,
-    corsEnabled: false,
+    corsEnabled: true,
   };
 
   // Poll the server
   try {
     const controller = new AbortController();
-    const signal = controller.signal;
     const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const signal = controller.signal;
+
     const response = await fetch(`${endpoint}getServerData`, {
       credentials: "include",
       signal,
@@ -30,22 +28,15 @@ const getServerCapabilities = async (server) => {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(
-        `Fetch returned a ${response.status} error: ${response.statusText}`
-      );
+      throw new Error(`Server responded ${response.status}`);
     }
 
     const json = await response.json();
-    if (json.info) {
-      // Update server properties based on the response
-      const corsEnabled =
-        json.serverData.PERMITTED_DOMAINS.includes(window.location.hostname) ||
-        server.host === window.location.hostname;
 
-      server = {
-        ...server,
+    if (json?.info) {
+      serverInfo = {
+        ...serverInfo,
         guestUserEnabled: json.serverData.ENABLE_GUEST_USER,
-        corsEnabled,
         offline: false,
         machine: json.serverData.MACHINE,
         client_version: json.serverData.MARXAN_CLIENT_VERSION,
@@ -69,39 +60,30 @@ const getServerCapabilities = async (server) => {
       };
     }
   } catch (error) {}
-  return server;
+  return serverInfo;
 };
 
-// function to add the local server
 const addLocalServer = (servers) => {
-  const newServer = {
-    name: window.location.hostname,
-    protocol: window.location.protocol,
-    host: window.location.hostname,
-    port: "",
-    description: "Local machine",
-    type: "local",
-  };
-  return [...servers, newServer];
+  return [
+    ...servers,
+    {
+      name: window.location.hostname,
+      host: window.location.hostname,
+      description: "Local machine",
+      type: "local",
+    },
+  ];
 };
 
 // function to filter and sort the servers
-const filterAndSortServers = (servers) => {
-  const hosts = servers.map((server) => server.host);
-
-  return servers
+const filterAndSortServers = (servers) =>
+  servers
     .filter(
       (server) =>
         server.type === "remote" ||
         (server.type === "local" && !server.offline) ||
         server.host === "localhost"
     )
-    .sort((a, b) => {
-      if (a.type === "local" || a.name.toLowerCase() < b.name.toLowerCase())
-        return -1;
-      if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
-      return 0;
-    });
-};
+    .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
 export { addLocalServer, getServerCapabilities, filterAndSortServers };

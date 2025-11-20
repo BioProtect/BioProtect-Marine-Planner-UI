@@ -126,6 +126,7 @@ import { addFeatureAttributes } from "@features/featureUtils";
 /*global AbortController*/
 import classyBrew from "classybrew";
 import { featureApiSlice } from "@slices/featureSlice";
+import { getTilesBaseUrl } from "@config/api";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from "jsonp-promise";
@@ -214,6 +215,7 @@ const App = () => {
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
   const [runlogTimer, setRunlogTimer] = useState(0);
 
+  const tilesUrl = getTilesBaseUrl();
   const mapContainer = useRef(null);
   const map = useRef(import.meta.hot ? window._mapInstance : null);
 
@@ -2291,7 +2293,7 @@ const App = () => {
   const changePlanningGrid = async (puLayerName) => {
     try {
       // Fetch tile metadata from Martin tile server
-      const response = await fetch(`/tiles/${puLayerName}`);
+      const response = await fetch(`${tilesUrl}${puLayerName}`);
       if (!response.ok) throw new Error("Failed to fetch tileset metadata");
       const data = await response.json();
       // Remove any existing PU-related layers and sources
@@ -2356,7 +2358,7 @@ const App = () => {
     if (!map.current.getSource(sourceId)) {
       map.current.addSource(sourceId, {
         type: "vector",
-        url: `/tiles/${puLayerName}`,
+        url: `${tilesUrl}${puLayerName}`,
         promoteId: "h3_index", // treat each hex id as its unique feature id - helps with rendering
       });
     }
@@ -3398,7 +3400,7 @@ const App = () => {
       : feature.feature_class_name;
     const sourceId = `martin_src_${tableName}`;
     const layerId = `martin_layer_${tableName}`;
-    const tileJSON = `/tiles/${tableName}`;
+    const tileJSON = `${tilesUrl}${tableName}`;
 
     if (map.current.getLayer(layerId)) {
       removeMapLayer(layerId);

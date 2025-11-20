@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import axios from "axios";
-import wellknown from "wellknown"; // Make sure to install wellknown library
+import { getTilesBaseUrl } from "@config/api";
+import wellknown from "wellknown";
 
 const SelectMapboxLayer = ({
   map,
@@ -87,7 +87,7 @@ const SelectMapboxLayer = ({
   const addLayerToMap = async (tilesetid) => {
     const sourceId = `martin_src_${tilesetid}`;
     const layerId = `martin_layer_pu_${tilesetid}`;
-    const tileUrl = `http://localhost:3000/${tilesetid}`; // Replace with your actual Martin endpoint
+    const tileUrl = `${getTilesBaseUrl()}${tilesetid}`; // Replace with your actual Martin endpoint
 
     // Remove existing layer if it exists
     // Remove previous layers
@@ -111,7 +111,7 @@ const SelectMapboxLayer = ({
     // Add vector tile source from Martin
     map.addSource(sourceId, {
       type: "vector",
-      url: `/tiles/${tilesetid}`,
+      url: `/${tilesetid}`,
     });
 
     map.addLayer({

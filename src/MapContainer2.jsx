@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 
 import { Box } from "@mui/material";
+import { getTilesBaseUrl } from "@config/api";
 import mapboxgl from "mapbox-gl";
 import { zoomToBounds } from "./Helpers";
 
@@ -12,10 +13,10 @@ const getTableName = (tilesetid) => {
 };
 
 const MapContainer2 = ({
-  planningGridMetadata,              // expects { tilesetid: "bioprotect.f_0539..." } or "f_0539..."
+  planningGridMetadata, // expects { tilesetid: "bioprotect.f_0539..." } or "f_0539..."
   color = "rgba(255, 0, 0, 0.4)",
   outlineColor = "rgba(255, 0, 0, 0.5)",
-  martinBase = "http://localhost:3000/",
+  martinBase = getTilesBaseUrl(),
 }) => {
   const mapEl = useRef(null);
 
@@ -24,7 +25,9 @@ const MapContainer2 = ({
 
     const tilesetid = planningGridMetadata?.tilesetid;
     console.log("tilesetid ", tilesetid);
-    const tableName = (tilesetid) ? getTableName(tilesetid) : planningGridMetadata?.feature_class_name;
+    const tableName = tilesetid
+      ? getTableName(tilesetid)
+      : planningGridMetadata?.feature_class_name;
     console.log("tableName ", !tableName);
     if (!tableName) return;
 
@@ -88,7 +91,7 @@ const MapContainer2 = ({
     };
 
     if (map.loaded()) {
-      onLoad()
+      onLoad();
     } else {
       map.on("load", onLoad);
     }
@@ -97,14 +100,20 @@ const MapContainer2 = ({
       try {
         map.off("load", onLoad);
         map.remove();
-      } catch { }
+      } catch {}
     };
   }, [planningGridMetadata?.tilesetid, color, outlineColor, martinBase]);
 
   return (
     <Box
       ref={mapEl}
-      sx={{ width: 500, height: 300, mt: "50px", ml: "24px", position: "relative" }}
+      sx={{
+        width: 500,
+        height: 300,
+        mt: "50px",
+        ml: "24px",
+        position: "relative",
+      }}
     />
   );
 };
