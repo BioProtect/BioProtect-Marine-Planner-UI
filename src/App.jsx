@@ -3715,43 +3715,10 @@ const App = () => {
       return projState.costData;
     }
     // else hit the backend
-    const url = `planning-units?action=get_cost_layer&user=${userId}&project_id=${project_id}`;
+    const url = `planning-units?action=get-cost-layer&user=${userId}&project_id=${project_id}`;
     const response = await _get(url);
     dispatch(setCostData(response));
     return response;
-  };
-
-  //gets the cost data either from cache (if it has already been loaded) or from the server
-  const getPlanningUnitsCostData = async (forceReload) => {
-    const project_id = projState.projectData.project.id;
-    if (uiState.owner === "") {
-      dispatch(setOwner(userId));
-    }
-    try {
-      // If cost data is already loaded and reload is not forced
-      if (projState.costData && !forceReload) {
-        return projState.costData;
-      } else {
-        // Construct the URL for fetching cost data
-        const url = `getPlanningUnitsCostData?user=${userId}&project=${project_id}`;
-        // Fetch the cost data from the server
-        const response = await _get(url);
-        // ****************************************************************************
-        // ****************************************************************************
-        // ****************************************************************************
-        // ****************************************************************************
-        // Fetch the cost data if not already loaded or force reload is requested
-        // const response = await _get(url);  // TRIGGERING MASSIVE RELOAD ALL THE TIME
-        // SORT THIS OUT LATER
-        // Save the cost data to a local variable
-        dispatch(setCostData(response));
-        return response;
-      }
-    } catch (error) {
-      // Handle the error (this can be customized based on your requirements)
-      console.error("Error loading planning units cost data:", error);
-      throw error; // Re-throw the error if further handling is needed
-    }
   };
 
   //after clicking cancel in the ImportCostsDialog
