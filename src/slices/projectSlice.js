@@ -21,6 +21,7 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Project'],
     }),
+
     createProjectGroup: builder.mutation({
       query: (groupData) => ({
         url: 'projects?action=',
@@ -29,6 +30,7 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Project'],
     }),
+
     updateProject: builder.mutation({
       query: (updateData) => ({
         url: 'projects?action=',
@@ -37,6 +39,7 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Project'],
     }),
+
     getProject: builder.query({
       query: (projectId) => ({
         url: `projects?action=get&projectId=${projectId}`,
@@ -44,6 +47,7 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       }),
       providesTags: ['Project'],
     }),
+
     listProjects: builder.query({
       query: () => ({
         url: '?action=list',
@@ -51,6 +55,7 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       }),
       providesTags: ['Project'],
     }),
+
     listProjectsWithGrids: builder.query({
       query: () => ({
         url: 'projects?action=list_with_grids',

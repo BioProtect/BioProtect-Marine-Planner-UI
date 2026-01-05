@@ -1,4 +1,3 @@
-import ImportFromWebDialog from "../ImportComponents/ImportFromWebDialog";
 import { apiSlice } from "./apiSlice";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -72,18 +71,20 @@ export const {
 
 
 const initialState = {
+  // client-only workflow + UI state
   digitisedFeatures: [],
   addingRemovingFeatures: false,
-  allFeatures: [], //all of the interest features in the metadata_interest_features table
-  currentFeature: {},
-  featureMetadata: {},
-  identifiedFeatures: [],
-  selectedFeature: {},
+
+  // selection should be ids, not whole objects
+  selectedFeatureId: null,
   selectedFeatureIds: [],
+
+  // uploads / UI
   featureFilename: "",
-  featureProjects: [],
-  featurePlanningUnits: [],
   createdFeatureInfo: {},
+
+  featurePlanningUnits: [],
+
   dialogs: {
     newFeatureDialogOpen: false,
     featureDialogOpen: false,
@@ -106,29 +107,14 @@ const featureSlice = createSlice({
     setAddingRemovingFeatures(state, action) {
       state.addingRemovingFeatures = action.payload;
     },
-    setAllFeatures(state, action) {
-      state.allFeatures = action.payload;
-    },
-    setCurrentFeature(state, action) {
-      state.currentFeature = action.payload;
-    },
-    setFeatureMetadata(state, action) {
-      state.featureMetadata = action.payload;
-    },
-    setIdentifiedFeatures(state, action) {
-      state.identifiedFeatures = action.payload;
-    },
-    setSelectedFeature(state, action) {
-      state.selectedFeature = action.payload;
+    setSelectedFeatureId(state, action) {
+      state.selectedFeatureId = action.payload;
     },
     setSelectedFeatureIds(state, action) {
       state.selectedFeatureIds = action.payload;
     },
     setFeatureFilename(state, action) {
       state.featureFilename = action.payload;
-    },
-    setFeatureProjects(state, action) {
-      state.featureProjects = action.payload;
     },
     setCreatedFeatureInfo(state, action) {
       state.createdFeatureInfo = action.payload;
@@ -149,12 +135,7 @@ const featureSlice = createSlice({
 
 export const {
   setAddingRemovingFeatures,
-  setAllFeatures,
-  setCurrentFeature,
-  setFeatureMetadata,
-  setFeatureProjects,
-  setIdentifiedFeatures,
-  setSelectedFeature,
+  setSelectedFeatureId,
   setSelectedFeatureIds,
   setFeatureFilename,
   setCreatedFeatureInfo,

@@ -1,15 +1,12 @@
-import {
-  setCurrentFeature,
-  toggleFeatureD,
-} from "@slices/featureSlice";
+import { setCurrentFeature, toggleFeatureD } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-import Avatar from '@mui/material/Avatar';
+import Avatar from "@mui/material/Avatar";
 import IconButton from "@mui/material/IconButton";
 import LinearGauge from "../LinearGauge";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import ListItemAvatar from '@mui/material/ListItemAvatar';
+import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TargetIcon from "../TargetIcon";
@@ -23,20 +20,17 @@ const FeaturesList = ({
   toggleFeaturePUIDLayer,
   useFeatureColors,
   smallLinearGauge,
-  setMenuAnchor
+  setMenuAnchor,
 }) => {
-
   const projState = useSelector((state) => state.project);
+  console.log("projState ", projState);
   const dispatch = useDispatch();
-
 
   const handleIconClick = (evt, feature) => {
     evt.stopPropagation();
     setMenuAnchor(evt.target);
     dispatch(setCurrentFeature(feature));
-    dispatch(
-      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: true })
-    );
+    dispatch(toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: true }));
   };
 
   const handleItemClick = (evt, feature) => {
@@ -47,26 +41,27 @@ const FeaturesList = ({
     // clone + flip whichever flag
     const updated = {
       ...feature,
-      [key]: !feature[key]
+      [key]: !feature[key],
     };
 
     // update the map
-    evt.altKey
-      ? toggleFeaturePUIDLayer(updated)
-      : toggleFeatureLayer(updated);
+    evt.altKey ? toggleFeaturePUIDLayer(updated) : toggleFeatureLayer(updated);
 
     // and sync your Redux slice
-    dispatch(setProjectFeatures(
-      projState.projectFeatures.map(f =>
-        f.id === updated.id ? updated : f
+    dispatch(
+      setProjectFeatures(
+        projState.projectFeatures.map((f) =>
+          f.id === updated.id ? updated : f
+        )
       )
-    ));
+    );
   };
 
-  const handleTargetChange = (feature, newValue) => updateFeature(feature, { target_value: newValue });
+  const handleTargetChange = (feature, newValue) =>
+    updateFeature(feature, { target_value: newValue });
 
   return (
-    <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}  >
+    <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
       {projState.projectFeatures.map((item) => {
         const { pu_area, protected_area, target_value, color } = item;
         let protectedPercent;
