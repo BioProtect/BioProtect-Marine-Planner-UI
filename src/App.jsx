@@ -245,7 +245,7 @@ const App = () => {
   const onClickRef = useRef(null);
   const onContextMenuRef = useRef(null);
 
-  // ✅ Fetch planning unit data **ONLY when required values exist**
+  // Fetch planning unit data **ONLY when required values exist**
   const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
     {
       owner: uiState.owner,
@@ -1087,13 +1087,6 @@ const App = () => {
     preprocessingData,
     allFeatures
   ) => {
-    console.log(
-      "projectFeatures, preprocessingData, allFeatures ",
-      projectFeatures,
-      preprocessingData,
-      allFeatures
-    );
-
     const projectFeatureMap = Object.fromEntries(
       projectFeatures.map((f) => [f.feature_unique_id, f])
     );
@@ -1104,12 +1097,14 @@ const App = () => {
         { pu_area: area, pu_count: count },
       ])
     );
-    console.log("projectFeatureMap ", projectFeatureMap);
-    console.log("preprocessMap ", preprocessMap);
 
     const processedFeatures = allFeatures.map((feature) => {
+      console.log(
+        "does feature have an id or a feature_unique_id ? see below for the answer"
+      );
+      console.log("feature ", feature);
       const base = addFeatureAttributes(feature);
-      const proj = projectFeatureMap[feature.id];
+      const proj = projectFeatureMap[feature.feature_unique_id];
       const pre = preprocessMap[feature.id];
 
       const updated = { ...base };
@@ -1135,7 +1130,11 @@ const App = () => {
     console.log("selected ", selected);
     dispatch(setAllFeatures(processedFeatures));
     dispatch(setProjectFeatures(selected));
-    dispatch(setSelectedFeatureIds(selected.map((f) => f.feature_unique_id)));
+    console.log(
+      "does selected have an id or a feature_unique_id ? see above for the answer"
+    );
+    // dispatch(setSelectedFeatureIds(selected.map((f) => f.feature_unique_id)));
+    dispatch(setSelectedFeatureIds(selected.map((f) => f.id)));
   };
 
   //resets various variables and state in between users
@@ -1283,19 +1282,35 @@ const App = () => {
   const updateProjectFeatures = async (
     features = projState.projectFeatures
   ) => {
-    const joinFeatureProperties = (property) =>
-      features.map((item) => item[property]).join(",");
+    const getFeatureId = (item) => item.id ?? item.feature_unique_id;
+
+    const join = (getter) =>
+      features
+        .map(getter)
+        .filter((v) => v !== undefined && v !== null)
+        .join(",");
+
     const formData = new FormData();
     formData.append("user", projState.projectData.user);
     formData.append("project_id", projState.projectData.project.id);
-    formData.append("interest_features", joinFeatureProperties("id"));
-    formData.append("target_values", joinFeatureProperties("target_value"));
-    formData.append("spf_values", joinFeatureProperties("spf"));
+
+    formData.append(
+      "interest_features",
+      join((feature) => getFeatureId(feature))
+    );
+    formData.append(
+      "target_values",
+      join((feature) => feature.target_value)
+    );
+    formData.append(
+      "spf_values",
+      join((feature) => feature.spf)
+    );
+
     return await _post("projects?action=update_features", formData);
   };
 
   //preprocess a single feature
-
   const preprocessSingleFeature = async (feature) => {
     console.log("feature ", feature);
     // dispatch(
@@ -2719,14 +2734,32 @@ const App = () => {
 
   //updates the properties of a feature and then updates the features state
   const updateFeature = async (feature, newProps) => {
-    let features = [...featureState.allFeatures];
-    const index = features.findIndex((element) => element.id === feature.id);
-    if (index !== -1) {
-      features[index] = { ...features[index], ...newProps };
-      const updateFeatures = features.filter((item) => item.selected);
-      dispatch(setAllFeatures(features));
-      dispatch(setProjectFeatures(updateFeatures));
-      await updateProjectFeatures((features = updateFeatures));
+    // current state for rollback
+    const prevAll = featureState.allFeatures;
+    const prevProj = projState.projectFeatures;
+
+    // get next state (optimistic)
+    const updated = prevAll.map((f) =>
+      f.id === feature.id ? { ...f, ...newProps } : f
+    );
+
+    const nextProj = updated.filter((f) => f.selected);
+
+    // 3) Apply optimistic UI immediately
+    dispatch(setAllFeatures(updated));
+    dispatch(setProjectFeatures(nextProj));
+
+    try {
+      // Persist to server
+      await updateProjectFeatures(nextProj);
+    } catch (err) {
+      // Roll back UI if server update fails
+      dispatch(setAllFeatures(prevAll));
+      dispatch(setProjectFeatures(prevProj));
+      showMessage?.(
+        `Failed to save feature changes. Reverted. ${err}`,
+        "error"
+      );
     }
   };
 
@@ -2739,12 +2772,12 @@ const App = () => {
   };
 
   //adds a feature to the selectedFeatureIds array
-  const addFeature = (feature) =>
-    dispatch(
-      setSelectedFeatureIds((prevState) =>
-        prevState.includes(feature.id) ? prevState : [...prevState, feature.id]
-      )
-    );
+  const addFeature = (feature) => {
+    const next = featureState.selectedFeatureIds.includes(feature.id)
+      ? featureState.selectedFeatureIds
+      : [...featureState.selectedFeatureIds, feature.id];
+    dispatch(setSelectedFeatureIds(next));
+  };
 
   //starts a digitising session
   const initialiseDigitising = () => {
