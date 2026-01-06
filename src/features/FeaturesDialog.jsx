@@ -1,7 +1,5 @@
 import {
   setAddingRemovingFeatures,
-  setAllFeatures,
-  setSelectedFeature,
   setSelectedFeatureIds,
   toggleFeatureD,
 } from "@slices/featureSlice";
@@ -16,6 +14,7 @@ import { generateTableCols } from "../Helpers";
 import jsonp from "jsonp-promise";
 import { setLoading } from "@slices/uiSlice";
 import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 
 const FeaturesDialog = ({
   onOk,
@@ -35,11 +34,14 @@ const FeaturesDialog = ({
   const [newFeatureAnchor, setNewFeatureAnchor] = useState(null);
   const [importFeatureAnchor, setImportFeatureAnchor] = useState(null);
   const { showMessage } = useAppSnackbar();
+  const { data: allFeaturesResp, isFetching: isFetchingAllFeatures } =
+    useGetAllFeaturesQuery();
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
 
   // Lazy-load features the first time the dialog opens (or whenever it's opened with an empty cache)
   useEffect(() => {
     const dialogIsOpen = featureState.dialogs.featuresDialogOpen;
-    const noFeatures = !featureState.allFeatures?.length;
+    const noFeatures = !allFeatures?.length;
     const base = projState?.bpServer?.endpoint;
     if (!dialogIsOpen || !noFeatures || !base) return;
 
@@ -51,7 +53,7 @@ const FeaturesDialog = ({
         const resp = await jsonp(url, { timeout: CONSTANTS.TIMEOUT }).promise;
         if (cancelled) return;
         // resp.data expected from your App.jsx usage
-        dispatch(setAllFeatures(resp?.data || []));
+        // dispatch(setAllFeatures(resp?.data || []));
       } catch (err) {
         if (!cancelled) {
           showMessage("Failed to load features:", err);
@@ -66,7 +68,7 @@ const FeaturesDialog = ({
     };
   }, [
     featureState.dialogs.featuresDialogOpen,
-    featureState.allFeatures?.length,
+    allFeatures?.length,
     dispatch,
     projState?.bpServer?.endpoint,
   ]);
@@ -122,9 +124,7 @@ const FeaturesDialog = ({
       prevRow.index < thisRow.index ? thisRow.index + 1 : prevRow.index;
 
     const base =
-      filteredRows.length < featureState.allFeatures.length
-        ? filteredRows
-        : featureState.allFeatures;
+      filteredRows.length < allFeatures.length ? filteredRows : allFeatures;
 
     return toggleSelectionState(
       featureState.selectedFeatureIds || [],
@@ -154,9 +154,9 @@ const FeaturesDialog = ({
 
   const selectAllFeatures = () => {
     const ids =
-      filteredRows.length < featureState.allFeatures.length
+      filteredRows.length < allFeatures.length
         ? filteredRows.map((f) => f.id)
-        : featureState.allFeatures.map((f) => f.id);
+        : allFeatures.map((f) => f.id);
     dispatch(setSelectedFeatureIds(ids));
   };
 
@@ -196,11 +196,11 @@ const FeaturesDialog = ({
 
   const tableData = useMemo(
     () =>
-      featureState.allFeatures.map((feature, index) => ({
+      allFeatures.map((feature, index) => ({
         ...feature,
         index,
       })),
-    [featureState.allFeatures]
+    [allFeatures]
   );
 
   const closeDialog = () => {

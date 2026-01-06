@@ -3,7 +3,6 @@ import { selectCurrentUser, setCredentials } from "@slices/authSlice";
 import {
   setAddingRemovingFeatures,
   setFeaturePlanningUnits,
-  setFeatureProjects,
   toggleFeatureD,
 } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";

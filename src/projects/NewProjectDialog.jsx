@@ -1,6 +1,9 @@
 import { MenuItem, Select } from "@mui/material";
-import { setAllFeatures, setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice.js";
-import { setPlanningUnitGrids, useListPlanningUnitGridsQuery } from "@slices/planningUnitSlice";
+import {
+  setPlanningUnitGrids,
+  useListPlanningUnitGridsQuery,
+} from "@slices/planningUnitSlice";
+import { setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice.js";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 
@@ -11,12 +14,12 @@ import Divider from "@mui/material/Divider";
 import FeaturesDialog from "@features/FeaturesDialog";
 import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
-import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControlLabel from "@mui/material/FormControlLabel";
 import MarxanDialog from "../MarxanDialog.jsx";
 import PlanningUnitsDialog from "@planningGrids/PlanningUnitsDialog";
-import ProjectFeaturesTable from "@projects/ProjectFeaturesTable"
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
+import ProjectFeaturesTable from "@projects/ProjectFeaturesTable";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
 import SelectCostFeatures from "../SelectCostFeatures.jsx";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -28,10 +31,16 @@ import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useMemo } from "react";
 import { usePlanningGridWebSocket } from "@hooks/usePlanningGridWebSocket";
 
-const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, previewFeature, fileUpload }) => {
+const NewProjectDialog = ({
+  loading,
+  updateSelectedFeatures,
+  selectedCosts,
+  previewFeature,
+  fileUpload,
+}) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
-  const featureState = useSelector((state) => state.feature)
+  const featureState = useSelector((state) => state.feature);
   const projState = useSelector((state) => state.project);
   const puState = useSelector((state) => state.planningUnit);
 
@@ -54,8 +63,8 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
   const resolutionOptions = [
     { label: "Basin resolution (36 km²)", value: 6 },
     { label: "Regional resolution (5 km²)", value: 7 },
-    { label: "Local resolution (0.7 km²)", value: 8 }
-  ]
+    { label: "Local resolution (0.7 km²)", value: 8 },
+  ];
 
   // upload progress → continue automatically
   const [waitingForUpload, setWaitingForUpload] = useState(false);
@@ -63,11 +72,19 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
   const { createPlanningGridViaWebSocket } = usePlanningGridWebSocket();
   const { showMessage } = useAppSnackbar();
   const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
-  const selectedFeatures = useMemo(() => (featureState.allFeatures || []).filter((f) => (featureState.selectedFeatureIds || []).includes(f.id)), [featureState.allFeatures, featureState.selectedFeatureIds]);
+  const selectedFeatures = useMemo(
+    () =>
+      (featureState.allFeatures || []).filter((f) =>
+        (featureState.selectedFeatureIds || []).includes(f.id)
+      ),
+    [featureState.allFeatures, featureState.selectedFeatureIds]
+  );
 
   useEffect(() => {
     if (uiState.fileUploadResponse?.file) {
-      setPlanningGridName(uiState.fileUploadResponse.file.replaceAll("_", " ").split(".")[0]);
+      setPlanningGridName(
+        uiState.fileUploadResponse.file.replaceAll("_", " ").split(".")[0]
+      );
     }
   }, [uiState.fileUploadResponse]);
 
@@ -99,57 +116,68 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
     // const response = await _post("createProject", formData); - old
     const response = await _post("projects?action=create", formData);
     showMessage(response.info, "success");
-    dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
+    dispatch(
+      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
+    );
     await loadProject(response.name, response.user);
   };
 
   //creates a new planning grid unit
   const createPlanningUnitGrid = () => {
-    createPlanningGridViaWebSocket({
-      shapefile_path: uiState.fileUploadResponse.file_path,
-      alias: planningGridName,
-      description: `Grid created from uploaded shapefile`,
-      resolution: resolution,
-    }, {
-      onUpdate: (msg) => {
-        showMessage(msg)
-        console.log(msg);
+    createPlanningGridViaWebSocket(
+      {
+        shapefile_path: uiState.fileUploadResponse.file_path,
+        alias: planningGridName,
+        description: `Grid created from uploaded shapefile`,
+        resolution: resolution,
       },
-      onSuccess: async (result) => {
-        console.log("result ", result);
-        if (result?.status === "error" || result?.error) {
-          showMessage(result?.error || "Failed to create planning grid", "error");
-          return;
-        }
-        showMessage(result?.info || "Planning grid created");
-
-        const updated = await refetchPlanningUnitGrids();
-        const grids = updated?.data?.planning_unit_grids || [];
-
-        if (grids.length > 0) {
-          dispatch(setPlanningUnitGrids(grids));
-          const newGrid = grids.find(
-            (g) => g.alias === `${planningGridName} (Res ${resolution})`
-          );
-
-          if (newGrid?.tilesetid) {
-            setPu(newGrid.tilesetid);
-            changeItem(newGrid.tilesetid);
-            console.log("Planning grid uploaded");
-            showMessage("Planning grid uploaded", "success")
-            setWaitingForUpload(true);
-            dispatch(setLoading(false));
-            return
+      {
+        onUpdate: (msg) => {
+          showMessage(msg);
+          console.log(msg);
+        },
+        onSuccess: async (result) => {
+          console.log("result ", result);
+          if (result?.status === "error" || result?.error) {
+            showMessage(
+              result?.error || "Failed to create planning grid",
+              "error"
+            );
+            return;
           }
-        }
-        dispatch(setLoading(false));
-        showMessage("Grid creation did not complete or was not found.", "error");
-      },
-      onError: (errMsg) => {
-        dispatch(setLoading(false));
-        showMessage(`❌ ${errMsg}`, "error");
-      },
-    });
+          showMessage(result?.info || "Planning grid created");
+
+          const updated = await refetchPlanningUnitGrids();
+          const grids = updated?.data?.planning_unit_grids || [];
+
+          if (grids.length > 0) {
+            dispatch(setPlanningUnitGrids(grids));
+            const newGrid = grids.find(
+              (g) => g.alias === `${planningGridName} (Res ${resolution})`
+            );
+
+            if (newGrid?.tilesetid) {
+              setPu(newGrid.tilesetid);
+              changeItem(newGrid.tilesetid);
+              console.log("Planning grid uploaded");
+              showMessage("Planning grid uploaded", "success");
+              setWaitingForUpload(true);
+              dispatch(setLoading(false));
+              return;
+            }
+          }
+          dispatch(setLoading(false));
+          showMessage(
+            "Grid creation did not complete or was not found.",
+            "error"
+          );
+        },
+        onError: (errMsg) => {
+          dispatch(setLoading(false));
+          showMessage(`❌ ${errMsg}`, "error");
+        },
+      }
+    );
   };
 
   // ----------------------------------------------------------------
@@ -162,13 +190,20 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
   const handleChangeName = (e) => setName(e.target.value);
   const handleChangeDescription = (e) => setDescription(e.target.value);
   const handleRadioChange = (e) => setPuGrid(e.target.value);
-  const handleOpenFeaturesDialog = () => dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true }));
+  const handleOpenFeaturesDialog = () =>
+    dispatch(
+      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
+    );
 
   const handleCreateNewPlanningGrid = async () => {
-    console.log("filename,resolution: ", uiState.fileUploadResponse, resolution);
+    console.log(
+      "filename,resolution: ",
+      uiState.fileUploadResponse,
+      resolution
+    );
     dispatch(setLoading(true));
     try {
-      console.log("creating planning unit grid.....")
+      console.log("creating planning unit grid.....");
       await createPlanningUnitGrid(
         uiState.fileUploadResponse.file,
         planningGridName,
@@ -177,13 +212,13 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
     } catch (error) {
       console.error("Error creating planning grid:", error);
       dispatch(setLoading(false)); // ensure we hide loading on immediate failure
-      showMessage(`Error creating planning grid: ${error}`, "error")
+      showMessage(`Error creating planning grid: ${error}`, "error");
     }
   };
 
   const clickFeature = (feature) => {
     const ids = featureState.selectedFeatureIds;
-    // if the feature is already included remove it, otherwise add it 
+    // if the feature is already included remove it, otherwise add it
     if (ids.includes(feature.id)) {
       dispatch(setSelectedFeatureIds(ids.filter((id) => id !== feature.id)));
     } else {
@@ -202,10 +237,9 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
         ? filteredRows.map((f) => f.id)
         : featureState.allFeatures.map((f) => f.id);
     dispatch(setSelectedFeatureIds(ids));
-  }
+  };
 
   const clearAllFeatures = () => dispatch(setSelectedFeatureIds([]));
-
 
   const handleCreateNewProject = () => {
     createNewProject({
@@ -235,16 +269,19 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
       </Button>
       <Button
         variant="outlined"
-        onClick={stepIndex === steps.length - 1 ? handleCreateNewProject : handleNext}
+        onClick={
+          stepIndex === steps.length - 1 ? handleCreateNewProject : handleNext
+        }
         disabled={
-          (stepIndex === 0 && (name === "" || description === "" || puGrid === "")) ||
+          (stepIndex === 0 &&
+            (name === "" || description === "" || puGrid === "")) ||
           (stepIndex === 1 && puState.currentPUGrid === "") ||
           (stepIndex === 2 && featureState.selectedFeatureIds.length === 0)
         }
       >
         {stepIndex === steps.length - 1 ? "Finish" : "Next"}
       </Button>
-    </div >
+    </div>
   );
 
   return (
@@ -293,11 +330,24 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
                 Planning Grid Options
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Upload a shapefile to create a new planning grid or select one that already exists.
+                Upload a shapefile to create a new planning grid or select one
+                that already exists.
               </Typography>
-              <RadioGroup name="pu-grid-options" value={puGrid} onChange={handleRadioChange}>
-                <FormControlLabel value="upload" control={<Radio />} label="Upload a shapefile" />
-                <FormControlLabel value="select" control={<Radio />} label="Select from existing planning grids" />
+              <RadioGroup
+                name="pu-grid-options"
+                value={puGrid}
+                onChange={handleRadioChange}
+              >
+                <FormControlLabel
+                  value="upload"
+                  control={<Radio />}
+                  label="Upload a shapefile"
+                />
+                <FormControlLabel
+                  value="select"
+                  control={<Radio />}
+                  label="Select from existing planning grids"
+                />
               </RadioGroup>
             </Box>
           </FormControl>
@@ -324,7 +374,11 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
               <Typography variant="body2" gutterBottom>
                 Resolution of planning grid
               </Typography>
-              <Select value={resolution} onChange={(e) => setResolution(e.target.value)} sx={{ width: 500 }}>
+              <Select
+                value={resolution}
+                onChange={(e) => setResolution(e.target.value)}
+                sx={{ width: 500 }}
+              >
                 {resolutionOptions.map((item) => (
                   <MenuItem key={item.value} value={item.value}>
                     {item.label}
@@ -332,19 +386,34 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
                 ))}
               </Select>
             </Box>
-            <Button variant="outlined" onClick={handleCreateNewPlanningGrid} disabled={!uiState.fileUploadResponse?.file || !planningGridName}>
+            <Button
+              variant="outlined"
+              onClick={handleCreateNewPlanningGrid}
+              disabled={!uiState.fileUploadResponse?.file || !planningGridName}
+            >
               Create planning grid
             </Button>
           </Box>
         )}
 
         {stepIndex === 1 && puGrid === "select" && (
-          <PlanningUnitsDialog previewFeature={previewFeature} puMap={puMap} setPuMap={setPuMap} />
+          <PlanningUnitsDialog
+            previewFeature={previewFeature}
+            puMap={puMap}
+            setPuMap={setPuMap}
+          />
         )}
 
         {/* STEP 2 — Features */}
         {stepIndex === 2 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, height: 390 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              height: 390,
+            }}
+          >
             <ProjectFeaturesTable />
 
             <Box>
@@ -362,7 +431,12 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
               open={featureState.dialogs.featuresDialogOpen}
               onOk={updateSelectedFeatures}
               onCancel={() =>
-                dispatch(toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }))
+                dispatch(
+                  toggleFeatureD({
+                    dialogName: "featuresDialogOpen",
+                    isOpen: false,
+                  })
+                )
               }
               loadingFeatures={false}
               metadata={{ OLDVERSION: false }}
@@ -373,12 +447,11 @@ const NewProjectDialog = ({ loading, updateSelectedFeatures, selectedCosts, prev
           </Box>
         )}
 
-
-
         {/* STEP 3 — Costs */}
-        {stepIndex === 3 && <SelectCostFeatures selectedCosts={selectedCosts} />}
+        {stepIndex === 3 && (
+          <SelectCostFeatures selectedCosts={selectedCosts} />
+        )}
       </MarxanDialog>
-
     </>
   );
 };

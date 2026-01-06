@@ -1,4 +1,3 @@
-import { setCurrentFeature, toggleFeatureD } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Avatar from "@mui/material/Avatar";
@@ -13,6 +12,7 @@ import TargetIcon from "../TargetIcon";
 import { grey } from "@mui/material/colors";
 import { selectCurrentUser } from "@slices/authSlice";
 import { setProjectFeatures } from "@slices/projectSlice";
+import { toggleFeatureD } from "@slices/featureSlice";
 
 const FeaturesList = ({
   updateFeature,
@@ -29,7 +29,7 @@ const FeaturesList = ({
   const handleIconClick = (evt, feature) => {
     evt.stopPropagation();
     setMenuAnchor(evt.target);
-    dispatch(setCurrentFeature(feature));
+    // dispatch(setCurrentFeature(feature));
     dispatch(toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: true }));
   };
 

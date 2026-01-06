@@ -45,14 +45,13 @@ import {
   selectIsUserLoggedIn,
 } from "@slices/authSlice";
 import {
-  setAllFeatures,
   setDigitisedFeatures,
-  setFeatureMetadata,
   setFeaturePlanningUnits,
-  setIdentifiedFeatures,
+  setSelectedFeatureId,
   setSelectedFeatureIds,
   toggleFeatureD,
   useGetAllFeaturesQuery,
+  useLazyListFeaturePUsQuery,
   useListFeaturePUsQuery,
 } from "@slices/featureSlice";
 import {
@@ -89,7 +88,6 @@ import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
 import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
-import ImportFromWebDialog from "./ImportComponents/ImportFromWebDialog";
 import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
@@ -173,7 +171,6 @@ const App = () => {
   const [dataBreaks, setDataBreaks] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
-  const [runMarxanResponse, setRunMarxanResponse] = useState({});
   const [pid, setPid] = useState("");
   const [allImpacts, setAllImpacts] = useState([]);
   const [atlasLayers, setAtlasLayers] = useState([]);
@@ -207,7 +204,6 @@ const App = () => {
   const [wdpaAttribution, setWdpaAttribution] = useState("");
   const [popupPoint, setPopupPoint] = useState({ x: 0, y: 0 });
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
-  const [solutions, setSolutions] = useState([]);
   const [wdpaLayer, setWdpaLayer] = useState();
   const [resultsLayer, setResultsLayer] = useState({});
   const [summaryStats, setSummaryStats] = useState([]);
@@ -255,7 +251,12 @@ const App = () => {
     { skip: !uiState.owner || !project || !featureState.selectedFeature?.id }
   );
 
-  const { data, isFetching, isError } = useGetAllFeaturesQuery();
+  // ALL FEATURES QUERY
+  const { data: allFeaturesResp, isFetching: isFetchingAllFeatures } =
+    useGetAllFeaturesQuery();
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+
+  const [triggerListFeaturePUs] = featureApiSlice.useLazyListFeaturePUsQuery();
 
   // Initialize map once after mount (prevents container=null errors)
   useEffect(() => {
@@ -796,14 +797,14 @@ const App = () => {
         addPlanningGridLayers(tilesetId);
 
         if (projState.costData) renderPuCostLayer(projState.costData);
-        await getResults(projectData.user, projectData.project);
+        // await getResults(projectData.user, projectData.project);
       }
 
       const { data: allFeaturesResponse } = await dispatch(
         featureApiSlice.endpoints.getAllFeatures.initiate()
       );
       const allFeatures = allFeaturesResponse?.data || [];
-      dispatch(setAllFeatures(allFeatures));
+      // dispatch(setAllFeatures(allFeatures));
 
       const activitiesData = await _get("getUploadedActivities");
       dispatch(setUploadedActivities(activitiesData.data));
@@ -843,12 +844,10 @@ const App = () => {
       setNotifications([]);
       setMetadata({});
       setFiles({});
-      setSolutions([]);
-      resetResults();
 
       // Reset Redux slices
       dispatch(setProjectFeatures([]));
-      dispatch(setAllFeatures([]));
+      // dispatch(setAllFeatures([]));
       dispatch(setUsers([]));
       dispatch(setProjects([]));
 
@@ -999,33 +998,6 @@ const App = () => {
     setNotifications(updatedNotifications);
   };
 
-  //removes a notification
-  const removeNotification = async (notification) => {
-    //remove the notification from the state
-    const updatedNotifications = notifications.filter(
-      (item) => item.id !== notification.id
-    );
-    //remove it in the users notifications.dat file
-    await dismissNotification(notification);
-    //set the state
-    setNotifications(updatedNotifications);
-  };
-
-  //dismisses a notification on the server
-  const dismissNotification = async (notification) => {
-    await _get(
-      `dismissNotification?user=${userId}&notificationid=${notification.id}`
-    );
-  };
-
-  //clears all of the dismissed notifications on the server
-  const resetNotifications = async () => {
-    await _get(`resetNotifications?user=${userId}`);
-    setDismissedNotifications([]);
-    setNotifications([]);
-    parseNotifications();
-  };
-
   const appendToFormData = (formData, obj) => {
     // Iterate through the object and add each key/value pair to the FormData
     Object.entries(obj).forEach(([key, value]) => {
@@ -1092,8 +1064,8 @@ const App = () => {
     );
 
     const preprocessMap = Object.fromEntries(
-      (preprocessingData || []).map(([id, area, count]) => [
-        id,
+      (preprocessingData || []).map(([projectId, featureId, area, count]) => [
+        featureId,
         { pu_area: area, pu_count: count },
       ])
     );
@@ -1102,9 +1074,11 @@ const App = () => {
       console.log(
         "does feature have an id or a feature_unique_id ? see below for the answer"
       );
+      ///////////////////////////// IT HAS AN ID
       console.log("feature ", feature);
       const base = addFeatureAttributes(feature);
-      const proj = projectFeatureMap[feature.feature_unique_id];
+
+      const proj = projectFeatureMap[feature.id];
       const pre = preprocessMap[feature.id];
 
       const updated = { ...base };
@@ -1126,27 +1100,13 @@ const App = () => {
     });
 
     const selected = processedFeatures.filter((f) => f.selected);
-    console.log("processedFeatures ", processedFeatures);
-    console.log("selected ", selected);
-    dispatch(setAllFeatures(processedFeatures));
+    // dispatch(setAllFeatures(processedFeatures));
     dispatch(setProjectFeatures(selected));
     console.log(
       "does selected have an id or a feature_unique_id ? see above for the answer"
     );
     // dispatch(setSelectedFeatureIds(selected.map((f) => f.feature_unique_id)));
     dispatch(setSelectedFeatureIds(selected.map((f) => f.id)));
-  };
-
-  //resets various variables and state in between users
-  const resetResults = () => {
-    setRunMarxanResponse({});
-    setSolutions([]); //reset the run
-    dispatch(setCostData(undefined)); //reset the cost data
-    projState.projectFeatures.forEach((feature) => {
-      if (feature.feature_layer_loaded) {
-        toggleFeatureLayer(feature);
-      }
-    }); //reset any feature layers that are shown
   };
 
   const getProjectList = async (obj, _type) => {
@@ -1848,7 +1808,7 @@ const App = () => {
       if (tileset) {
         addPlanningGridLayers(tileset.name);
         if (uiState.owner) {
-          await getResults(uiState.owner, projState.project);
+          // await getResults(uiState.owner, projState.project);
         }
         if (uiState.activeTab === "planningUnits") {
           setPUTabActive();
@@ -2735,7 +2695,7 @@ const App = () => {
   //updates the properties of a feature and then updates the features state
   const updateFeature = async (feature, newProps) => {
     // current state for rollback
-    const prevAll = featureState.allFeatures;
+    const prevAll = allFeatures;
     const prevProj = projState.projectFeatures;
 
     // get next state (optimistic)
@@ -2746,7 +2706,7 @@ const App = () => {
     const nextProj = updated.filter((f) => f.selected);
 
     // 3) Apply optimistic UI immediately
-    dispatch(setAllFeatures(updated));
+    // dispatch(setAllFeatures(updated));
     dispatch(setProjectFeatures(nextProj));
 
     try {
@@ -2754,7 +2714,7 @@ const App = () => {
       await updateProjectFeatures(nextProj);
     } catch (err) {
       // Roll back UI if server update fails
-      dispatch(setAllFeatures(prevAll));
+      // dispatch(setAllFeatures(prevAll));
       dispatch(setProjectFeatures(prevProj));
       showMessage?.(
         `Failed to save feature changes. Reverted. ${err}`,
@@ -2799,7 +2759,7 @@ const App = () => {
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
   const updateSelectedFeatures = async () => {
     // Get the updated features
-    let updatedFeatures = featureState.allFeatures.map((feature) => {
+    let updatedFeatures = allFeatures.map((feature) => {
       if (featureState.selectedFeatureIds.includes(feature.id)) {
         return { ...feature, selected: true };
       } else {
@@ -2826,7 +2786,7 @@ const App = () => {
     // because state calls are asynchronous pass in the selected featires directly to ensure they are there
     const selected = updatedFeatures.filter((item) => item.selected);
 
-    dispatch(setAllFeatures(updatedFeatures));
+    // dispatch(setAllFeatures(updatedFeatures));
     dispatch(setProjectFeatures(selected));
 
     // Persist changes to the server if the user is not read-only
@@ -2856,13 +2816,13 @@ const App = () => {
 
   //updates the target values for all features in the project to the passed value
   const updateTargetValueForFeatures = async (target_value) => {
-    const features = featureState.allFeatures.map((feature) => ({
+    const features = allFeatures.map((feature) => ({
       ...feature,
       target_value,
     }));
 
     // Set the features in app state
-    dispatch(setAllFeatures(features));
+    // dispatch(setAllFeatures(features));
     dispatch(setProjectFeatures(features.filter((item) => item.selected)));
     // Persist the changes to the server
     if (userData?.role !== "ReadOnly") {
@@ -2932,20 +2892,20 @@ const App = () => {
 
   //adds a new feature to the allFeatures array
   const addNewFeature = (newFeatures) => {
-    const featuresCopy = [...featureState.allFeatures, ...newFeatures];
+    const featuresCopy = [...allFeatures, ...newFeatures];
     featuresCopy.sort((a, b) =>
       a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
     );
-    dispatch(setAllFeatures(featuresCopy));
+    // dispatch(setAllFeatures(featuresCopy));
     return featuresCopy;
   };
 
   //removes a feature from the allFeatures array
   const removeFeatureFromAllFeatures = (feature) => {
-    const updatedFeatures = featureState.allFeatures.filter(
+    const updatedFeatures = allFeatures.filter(
       (item) => item.id !== feature.id
     );
-    dispatch(setAllFeatures(updatedFeatures));
+    // dispatch(setAllFeatures(updatedFeatures));
   };
 
   //gets the feature ids as a set from the allFeatures array
@@ -2959,7 +2919,7 @@ const App = () => {
     const newFeatures = response.data;
 
     // Extract existing and new feature IDs
-    const existingFeatureIds = getFeatureIds(featureState.allFeatures);
+    const existingFeatureIds = getFeatureIds(allFeatures);
     const newFeatureIds = getFeatureIds(newFeatures);
 
     // Determine which features have been removed or added
@@ -3037,48 +2997,53 @@ const App = () => {
     if (map.current.getLayer(layerName)) {
       removeMapLayer(layerName);
       updateFeature(feature, { feature_puid_layer_loaded: false });
-    } else {
-      //get the planning units where the feature occurs
-      const { data, error, isLoading } = useListFeaturePUsQuery(
-        uiState.owner,
-        projState.project,
-        feature.id
-      );
-
-      addMapLayer({
-        id: layerName,
-        metadata: {
-          name: feature.alias,
-          type: CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
-          lineColor: feature.color,
-        },
-        type: "line",
-        source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
-        "source-layer": tileset.name,
-        layout: {
-          visibility: "visible",
-        },
-        paint: {
-          "line-opacity": CONSTANTS.FEATURE_PLANNING_GRID_LAYER_OPACITY,
-        },
-      });
-      //update the paint property for the layer
-      const line_color_expression = initialiseFillColorExpression("puid");
-
-      data.data.forEach((puid) =>
-        line_color_expression.push(puid, feature.color)
-      );
-      // Last value is the default, used where there is no data
-      line_color_expression.push("rgba(0,0,0,0)");
-      map.current.setPaintProperty(
-        layerName,
-        "line-color",
-        line_color_expression
-      );
-      //show the layer
-      showLayer(layerName);
-      updateFeature(feature, { feature_puid_layer_loaded: true });
+      return;
     }
+    //get the planning units where the feature occurs
+    const data = await triggerListFeaturePUs({
+      owner: uiState.owner,
+      project: projState.project,
+      featureId: feature.id,
+    }).unwrap();
+    // const { data, error, isLoading } = useListFeaturePUsQuery(
+    //   uiState.owner,
+    //   projState.project,
+    //   feature.id
+    // );
+
+    addMapLayer({
+      id: layerName,
+      metadata: {
+        name: feature.alias,
+        type: CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
+        lineColor: feature.color,
+      },
+      type: "line",
+      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
+      "source-layer": tileset.name,
+      layout: {
+        visibility: "visible",
+      },
+      paint: {
+        "line-opacity": CONSTANTS.FEATURE_PLANNING_GRID_LAYER_OPACITY,
+      },
+    });
+    //update the paint property for the layer
+    const line_color_expression = initialiseFillColorExpression("puid");
+
+    data.data.forEach((puid) =>
+      line_color_expression.push(puid, feature.color)
+    );
+    // Last value is the default, used where there is no data
+    line_color_expression.push("rgba(0,0,0,0)");
+    map.current.setPaintProperty(
+      layerName,
+      "line-color",
+      line_color_expression
+    );
+    //show the layer
+    showLayer(layerName);
+    updateFeature(feature, { feature_puid_layer_loaded: true });
   };
 
   //removes the current feature from the project
@@ -3384,8 +3349,6 @@ const App = () => {
               onClickRef={onClickRef}
               onContextMenuRef={onContextMenuRef}
               metadata={metadata}
-              runMarxan={runMarxan}
-              stopProcess={stopProcess}
               pid={pid}
               changeCostname={changeCostname}
               puLayerIdsRef={puLayerIdsRef}
@@ -3419,8 +3382,6 @@ const App = () => {
           <ResultsPanel
             open={uiState.resultsPanelOpen}
             preprocessing={preprocessing}
-            solutions={solutions}
-            loadSolution={loadSolution}
             setClassificationDialogOpen={() =>
               dispatch(
                 toggleDialog({
@@ -3550,7 +3511,7 @@ const App = () => {
             />
           ) : null}
           <ResetDialog onOk={resetServer} />
-          <RunLogDialog
+          {/* <RunLogDialog
             preprocessing={preprocessing}
             unauthorisedMethods={unauthorisedMethods}
             runLogs={runLogs}
@@ -3559,7 +3520,7 @@ const App = () => {
             stopMarxan={stopProcess}
             userRole={userData?.role}
             runlogTimer={runlogTimer}
-          />
+          /> */}
           <ServerDetailsDialog loading={uiState.loading} />
           <AlertDialog />
           <FeatureMenu

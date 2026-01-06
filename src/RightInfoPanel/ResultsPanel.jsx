@@ -24,10 +24,9 @@ const ResultsPanel = (props) => {
   const [selectedSolution, setSelectedSolution] = useState(undefined);
   const [runtimeStr, setRuntimeStr] = useState("00:00s");
   const [timer, setTimer] = useState(null);
-  const [currentTabIndex, setCurrentTabIndex] = useState(0)
+  const [currentTabIndex, setCurrentTabIndex] = useState(0);
   //   activeTabArr.indexOf(props.activeResultsTab) || 0
   // );
-
 
   const prevProps = useRef();
   useEffect(() => {
@@ -74,7 +73,7 @@ const ResultsPanel = (props) => {
   };
 
   const loadSolution = (solution) => {
-    props.loadSolution(solution, uiState.owner);
+    // props.loadSolution(solution, uiState.owner);
   };
 
   const resetSolution = () => {
@@ -122,13 +121,16 @@ const ResultsPanel = (props) => {
     props.setActiveTab(activeTabArr[tabIndex]);
   };
 
-  const panelStyle = useMemo(() => ({
-    top: "60px",
-    width: "300px",
-    height: "600px",
-    position: "absolute",
-    right: "140px",
-  }), [])
+  const panelStyle = useMemo(
+    () => ({
+      top: "60px",
+      width: "300px",
+      height: "600px",
+      position: "absolute",
+      right: "140px",
+    }),
+    []
+  );
 
   const displayStyle = {
     display: uiState.dialogStates.resultsPanelOpen ? "block" : "none",
@@ -136,22 +138,26 @@ const ResultsPanel = (props) => {
 
   const combinedDisplayStyles = { ...panelStyle, ...displayStyle };
 
-
   return (
     <React.Fragment>
       <div className="resultsPanel" style={combinedDisplayStyles}>
-        <Paper elevation={2} className="ResultsPanelPaper" mb={4} sx={{ maxHeight: "80vh" }}>
+        <Paper
+          elevation={2}
+          className="ResultsPanelPaper"
+          mb={4}
+          sx={{ maxHeight: "80vh" }}
+        >
           <div className="resultsTitle">Results</div>
           <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
             <Tab
               label="Legend"
               value={0}
-            // disabled={props.puEditing ? true : false}
+              // disabled={props.puEditing ? true : false}
             />
             <Tab
               label="Solutions"
               value={1}
-            // disabled={props.puEditing ? true : false}
+              // disabled={props.puEditing ? true : false}
             />
             <Tab label="Log" value={2} />
           </Tabs>
@@ -205,7 +211,7 @@ const ResultsPanel = (props) => {
                     style: {
                       background:
                         rowInfo.original.Run_Number ===
-                          (selectedSolution && selectedSolution.Run_Number)
+                        (selectedSolution && selectedSolution.Run_Number)
                           ? "aliceblue"
                           : "",
                     },
@@ -282,7 +288,7 @@ const ResultsPanel = (props) => {
           </div>
         </Paper>
       </div>
-    </React.Fragment >
+    </React.Fragment>
   );
 };
 

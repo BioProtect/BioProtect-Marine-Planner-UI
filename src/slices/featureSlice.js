@@ -34,11 +34,12 @@ export const featureApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     listFeaturePUs: builder.query({
-      query: (user, project, featureId) => ({
-        url: `features?action=planning-units&user=${user}&project=${project}&unique_id=${featureId}`,
+      query: ({ owner, project, featureId }) => ({
+        url: `features?action=planning-units&user=${owner}&project=${project}&unique_id=${featureId}`,
         method: "GET",
       }),
     }),
+
 
     createFeatureFromLinestring: builder.mutation({
       query: ({ id, data }) => ({
@@ -66,7 +67,8 @@ export const {
   useListFeatureProjectsQuery,
   useListFeaturePUsQuery,
   useCreateFeatureFromLinestringMutation,
-  useGetSensitivitiesMutation
+  useGetSensitivitiesMutation,
+  useLazyListFeaturePUsQuery,
 } = featureApiSlice;
 
 
@@ -125,7 +127,6 @@ const featureSlice = createSlice({
     setDigitisedFeatures(state, action) {
       state.digitisedFeatures = action.payload;
     },
-
     toggleFeatureD(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
