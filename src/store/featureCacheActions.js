@@ -7,12 +7,13 @@ import { featureApiSlice } from "@slices/featureSlice";
  */
 export const setOneFeatureInCache =
   ({ id, patch }) =>
-    (dispatch) =>
-      dispatch(
+    (dispatch) => {
+      return dispatch(
         featureApiSlice.util.updateQueryData("getAllFeatures", undefined, (draft) => {
           patchItemById(draft, id, patch);
         })
       );
+    }
 
 /**
  * Replace many features (whole objects) inside getAllFeatures cache.
@@ -32,8 +33,8 @@ export const setAllFeaturesInCache =
 
 export const addFeaturesToCache =
   ({ features }) =>
-    (dispatch) =>
-      dispatch(
+    (dispatch) => {
+      return dispatch(
         featureApiSlice.util.updateQueryData("getAllFeatures", undefined, (draft) => {
           const list = Array.isArray(draft) ? draft : draft?.data;
           if (!Array.isArray(list)) return;
@@ -49,15 +50,15 @@ export const addFeaturesToCache =
           list.sort((a, b) =>
             (a.alias || "").localeCompare(b.alias || "", undefined, { sensitivity: "base" })
           );
-
         })
       );
+    }
 
 
 export const removeFeaturesFromCache =
   ({ ids }) =>
-    (dispatch) =>
-      dispatch(
+    (dispatch) => {
+      return dispatch(
         featureApiSlice.util.updateQueryData("getAllFeatures", undefined, (draft) => {
           const list = Array.isArray(draft) ? draft : draft?.data;
           if (!Array.isArray(list)) return;
@@ -67,4 +68,5 @@ export const removeFeaturesFromCache =
             if (removeSet.has(list[i].id)) list.splice(i, 1);
           }
         })
-      );
+      )
+    };

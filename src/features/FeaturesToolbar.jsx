@@ -6,6 +6,8 @@ import {
   faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
+  featureApiSlice,
+  setSelectedFeatureId,
   setSelectedFeatureIds,
   toggleFeatureD,
   useDeleteFeatureMutation,
@@ -27,7 +29,7 @@ const FeaturesToolbar = ({ selectAllFeatures, _newByDigitising }) => {
 
   const [newAnchorEl, setNewAnchorEl] = useState(null);
   const [importAnchorEl, setImportAnchorEl] = useState(null);
-  const [deleteFeature, { isLoading }] = useDeleteFeatureMutation();
+  const [deleteFeature, { isLoading: isDeleting }] = useDeleteFeatureMutation();
 
   const newOpen = Boolean(newAnchorEl);
   const importOpen = Boolean(importAnchorEl);
@@ -70,37 +72,39 @@ const FeaturesToolbar = ({ selectAllFeatures, _newByDigitising }) => {
     );
   };
 
-  const handleDeleteFeature = async () => {
-    try {
-      let feature = { ...featureState.feature };
-      // check if any projects are using feature
-      const projects = await getProjectsForFeature(feature);
-      if (projects.length === 0) {
-        // Unwrap to handle the response
-        await deleteFeature(feature.feature_class_name).unwrap();
-        const updatedFeatureIds = uiState.selectedFeatureIds.filter(
-          (id) => id !== feature.id
-        );
-        const updatedFeatures = uiState.allFeatures.filter(
-          (item) => item.id !== feature.id
-        );
-        showMessage("Feature deleted", "success");
-        dispatch(setSelectedFeatureIds(updatedFeatureIds));
-        // dispatch(setAllFeatures(updatedFeatures));
-        // dispatch(setSelectedFeature({}));
-      } else {
-        // Projects using the feature, show dialog to the user
-        showProjectListDialog(
-          projects,
-          "Failed to delete planning feature",
-          "The feature is used in the following projects"
-        );
-      }
-    } catch (err) {
-      console.error("Error deleting feature:", err);
-      showMessage("Failed to delete feature due to an error.", "error");
-    }
-  };
+  // const handleDeleteFeature = async () => {
+  //   if (!selectedFeature) return;
+  //   // check if any projects are using feature
+  //   const projects = await getProjectsForFeature(selectedFeature);
+  //   if (projects?.length) {
+  //     showProjectListDialog(
+  //       projects,
+  //       "Failed to delete planning feature",
+  //       "The feature is used in the following projects"
+  //     );
+  //     showMessage("Feature is used by other projects.", "warning");
+  //     return;
+  //   }
+  //   let patch;
+
+  //   try {
+  //     patch = dispatch(removeFeaturesFromCache({ ids: [selectedFeature.id] }));
+  //     dispatch(
+  //       setSelectedFeatureIds(
+  //         (featureState.selectedFeatureIds || []).filter(
+  //           (id) => id !== selectedFeature.id
+  //         )
+  //       )
+  //     );
+  //     dispatch(setSelectedFeatureId(null));
+  //     // Unwrap to handle the response
+  //     await deleteFeature(selectedFeature.feature_class_name).unwrap();
+  //     showMessage("Feature deleted", "success");
+  //   } catch (err) {
+  //     patch?.undo?.();
+  //     showMessage(`Failed to delete feature due to an error: ${err}`, "error");
+  //   }
+  // };
 
   return (
     <>
@@ -158,7 +162,7 @@ const FeaturesToolbar = ({ selectAllFeatures, _newByDigitising }) => {
             </MenuItem>
           </Menu>
 
-          <Button
+          {/* <Button
             startIcon={
               <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
             }
@@ -171,7 +175,7 @@ const FeaturesToolbar = ({ selectAllFeatures, _newByDigitising }) => {
             onClick={handleDeleteFeature}
           >
             Delete
-          </Button>
+          </Button> */}
         </ButtonGroup>
       ) : (
         <ButtonGroup aria-label="Batch feature controls" fullWidth>
