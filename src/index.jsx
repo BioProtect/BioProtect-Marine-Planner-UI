@@ -5,7 +5,7 @@ import { Provider } from "react-redux";
 import ReactDOM from "react-dom/client";
 import { SnackbarProvider } from "notistack";
 import registerServiceWorker from "./registerServiceWorker";
-import store from "./store";
+import store from "@store/store";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>

@@ -10,6 +10,10 @@ import React, {
   useState,
 } from "react";
 import {
+  addFeaturesToCache,
+  setAllFeaturesInCache,
+} from "./store/featureCacheActions";
+import {
   addToImportLog,
   clearImportLog,
   removeImportLogMessage,
@@ -252,8 +256,12 @@ const App = () => {
   );
 
   // ALL FEATURES QUERY
-  const { data: allFeaturesResp, isFetching: isFetchingAllFeatures } =
-    useGetAllFeaturesQuery();
+  const {
+    data: allFeaturesResp,
+    isFetching: isFetchingAllFeatures,
+    refetch: refetchAllFeatures,
+  } = useGetAllFeaturesQuery();
+
   const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
 
   const [triggerListFeaturePUs] = featureApiSlice.useLazyListFeaturePUsQuery();
@@ -442,22 +450,30 @@ const App = () => {
       try {
         const result = await dispatch(
           featureApi.endpoints.getFeature.initiate(id)
-        );
+        ).unwrap();
 
         const featureData = result.data?.data?.[0];
         if (!featureData) return;
-        dispatch(addFeatureAttributes(featureData));
-        addNewFeature([featureData]);
+
+        const updatedFeature = addFeatureAttributes(featureData);
+        dispatch(addFeaturesToCache({ features: [updatedFeature] }));
+
+        // update server
+        dispatch(
+          featureApiSlice.util.invalidateTags([
+            { type: "Features", id: "LIST" },
+          ])
+        );
 
         if (addToProject) {
-          dispatch(addFeature(featureData));
+          dispatch(addFeature(updatedFeature));
           await updateSelectedFeatures();
         }
       } catch (err) {
         console.error("Failed to load feature:", err);
       }
     },
-    [dispatch]
+    [dispatch, addFeaturesToCache, addToProject, updateSelectedFeatures]
   );
 
   // ---------------------------------------- //
@@ -804,7 +820,6 @@ const App = () => {
         featureApiSlice.endpoints.getAllFeatures.initiate()
       );
       const allFeatures = allFeaturesResponse?.data || [];
-      // dispatch(setAllFeatures(allFeatures));
 
       const activitiesData = await _get("getUploadedActivities");
       dispatch(setUploadedActivities(activitiesData.data));
@@ -847,7 +862,6 @@ const App = () => {
 
       // Reset Redux slices
       dispatch(setProjectFeatures([]));
-      // dispatch(setAllFeatures([]));
       dispatch(setUsers([]));
       dispatch(setProjects([]));
 
@@ -1063,6 +1077,7 @@ const App = () => {
       projectFeatures.map((f) => [f.feature_unique_id, f])
     );
 
+    // preprocessing rows are [project_id, feature_id, area, count]
     const preprocessMap = Object.fromEntries(
       (preprocessingData || []).map(([projectId, featureId, area, count]) => [
         featureId,
@@ -1076,6 +1091,7 @@ const App = () => {
       );
       ///////////////////////////// IT HAS AN ID
       console.log("feature ", feature);
+
       const base = addFeatureAttributes(feature);
 
       const proj = projectFeatureMap[feature.id];
@@ -1100,12 +1116,11 @@ const App = () => {
     });
 
     const selected = processedFeatures.filter((f) => f.selected);
-    // dispatch(setAllFeatures(processedFeatures));
+
+    // update RTKQ cache instead of redux
+    dispatch(setAllFeaturesInCache({ features: processedFeatures }));
+
     dispatch(setProjectFeatures(selected));
-    console.log(
-      "does selected have an id or a feature_unique_id ? see above for the answer"
-    );
-    // dispatch(setSelectedFeatureIds(selected.map((f) => f.feature_unique_id)));
     dispatch(setSelectedFeatureIds(selected.map((f) => f.id)));
   };
 
@@ -2694,27 +2709,23 @@ const App = () => {
 
   //updates the properties of a feature and then updates the features state
   const updateFeature = async (feature, newProps) => {
-    // current state for rollback
-    const prevAll = allFeatures;
     const prevProj = projState.projectFeatures;
 
-    // get next state (optimistic)
-    const updated = prevAll.map((f) =>
-      f.id === feature.id ? { ...f, ...newProps } : f
+    // optimistic patch for one item using RTK Query cache
+    const patchResult = dispatch(
+      setOneFeatureInCache({ id: feature.id, patch: newProps })
     );
 
-    const nextProj = updated.filter((f) => f.selected);
-
-    // 3) Apply optimistic UI immediately
-    // dispatch(setAllFeatures(updated));
+    // update derived project features (still local)
+    const nextProj = prevProj.map((f) =>
+      (f.id ?? f.feature_unique_id) === feature.id ? { ...f, ...newProps } : f
+    );
     dispatch(setProjectFeatures(nextProj));
 
     try {
-      // Persist to server
       await updateProjectFeatures(nextProj);
     } catch (err) {
-      // Roll back UI if server update fails
-      // dispatch(setAllFeatures(prevAll));
+      patchResult.undo();
       dispatch(setProjectFeatures(prevProj));
       showMessage?.(
         `Failed to save feature changes. Reverted. ${err}`,
@@ -2759,6 +2770,9 @@ const App = () => {
   //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
   const updateSelectedFeatures = async () => {
     // Get the updated features
+    const prevAll = allFeatures;
+    const prevProj = projState.projectFeatures;
+
     let updatedFeatures = allFeatures.map((feature) => {
       if (featureState.selectedFeatureIds.includes(feature.id)) {
         return { ...feature, selected: true };
@@ -2783,35 +2797,37 @@ const App = () => {
     });
 
     // Apply updates to state
-    // because state calls are asynchronous pass in the selected featires directly to ensure they are there
     const selected = updatedFeatures.filter((item) => item.selected);
-
-    // dispatch(setAllFeatures(updatedFeatures));
+    const patchResult = dispatch(
+      setAllFeaturesInCache({ features: updatedFeatures })
+    );
     dispatch(setProjectFeatures(selected));
 
     // Persist changes to the server if the user is not read-only
-    if (userData?.role !== "ReadOnly") {
-      await updateProjectFeatures(selected);
+    try {
+      if (userData?.role !== "ReadOnly") {
+        ``;
+        await updateProjectFeatures(selected);
+      }
+    } catch (err) {
+      patchResult?.undo?.();
+      dispatch(setProjectFeatures(prevProj));
+      showMessage?.(`Failed to save selections. Reverted. ${err}`, "error");
+    } finally {
+      // close dialogs regardless
+      dispatch(
+        toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
+      );
+      dispatch(
+        toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false })
+      );
+      dispatch(
+        toggleFeatureD({
+          dialogName: "importFeaturePopoverOpen",
+          isOpen: false,
+        })
+      );
     }
-    // Close dialogs
-    dispatch(
-      toggleFeatureD({
-        dialogName: "featuresDialogOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "newFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
-    dispatch(
-      toggleFeatureD({
-        dialogName: "importFeaturePopoverOpen",
-        isOpen: false,
-      })
-    );
   };
 
   //updates the target values for all features in the project to the passed value
@@ -2820,13 +2836,19 @@ const App = () => {
       ...feature,
       target_value,
     }));
+    const projectFeatures = features.filter((item) => item.selected);
+    const patchResult = dispatch(setAllFeaturesInCache({ features: features }));
+    dispatch(setProjectFeatures(projectFeatures));
 
-    // Set the features in app state
-    // dispatch(setAllFeatures(features));
-    dispatch(setProjectFeatures(features.filter((item) => item.selected)));
     // Persist the changes to the server
-    if (userData?.role !== "ReadOnly") {
-      await updateProjectFeatures();
+    if (userData?.role === "ReadOnly") return;
+
+    // update the project featires on the server, or rollback on error
+    try {
+      await updateProjectFeatures(projectFeatures);
+    } catch (err) {
+      patchResult.undo();
+      showMessage?.(`Failed to save target values. Reverted. ${err}`, "error");
     }
   };
 
@@ -2890,24 +2912,6 @@ const App = () => {
       });
   };
 
-  //adds a new feature to the allFeatures array
-  const addNewFeature = (newFeatures) => {
-    const featuresCopy = [...allFeatures, ...newFeatures];
-    featuresCopy.sort((a, b) =>
-      a.alias.localeCompare(b.alias, undefined, { sensitivity: "base" })
-    );
-    // dispatch(setAllFeatures(featuresCopy));
-    return featuresCopy;
-  };
-
-  //removes a feature from the allFeatures array
-  const removeFeatureFromAllFeatures = (feature) => {
-    const updatedFeatures = allFeatures.filter(
-      (item) => item.id !== feature.id
-    );
-    // dispatch(setAllFeatures(updatedFeatures));
-  };
-
   //gets the feature ids as a set from the allFeatures array
   const getFeatureIds = (_features) =>
     new Set(_features.map((item) => item.id));
@@ -2915,12 +2919,13 @@ const App = () => {
   //refreshes the allFeatures state
   const refreshFeatures = async () => {
     // Fetch the latest features
-    const response = await _get("features?action=get-all");
-    const newFeatures = response.data;
+    const before = allFeatures;
+    const newFeatures = await refetchAllFeatures().unwrap();
+    const newFeats = newFeatures?.data ?? newFeatures ?? [];
 
     // Extract existing and new feature IDs
-    const existingFeatureIds = getFeatureIds(allFeatures);
-    const newFeatureIds = getFeatureIds(newFeatures);
+    const existingFeatureIds = getFeatureIds(before);
+    const newFeatureIds = getFeatureIds(newFeats);
 
     // Determine which features have been removed or added
     const removedFeatureIds = [...existingFeatureIds].filter(
@@ -2931,16 +2936,18 @@ const App = () => {
     );
 
     // Remove features that are no longer present
-    removedFeatureIds.forEach((id) => removeFeatureFromAllFeatures({ id }));
+    if (removedFeatureIds.length) {
+      dispatch(removeFeaturesFromCache({ ids: removedFeatureIds }));
+    }
 
     // Initialize new features
-    const addedFeatures = newFeatures.filter((feature) =>
-      addedFeatureIds.includes(feature.id)
-    );
-    const updatedFeatures = addedFeatures.map((feature) =>
-      addFeatureAttributes(feature)
-    );
-    addNewFeature(updatedFeatures);
+    if (addedFeatureIds.length) {
+      const added = newFeats
+        .filter((f) => addedFeatureIds.includes(f.id))
+        .map((f) => addFeatureAttributes(f));
+
+      dispatch(addFeaturesToCache({ features: added }));
+    }
   };
 
   //toggles the feature layer on the map

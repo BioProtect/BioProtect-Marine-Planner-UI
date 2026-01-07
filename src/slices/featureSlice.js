@@ -8,12 +8,14 @@ export const featureApiSlice = apiSlice.injectEndpoints({
         url: `features?action=get&unique_id=${id}`,
         method: "GET",
       }),
+      providesTags: (result, err, id) => [{ type: "Features", id }],
     }),
     getAllFeatures: builder.query({
       query: () => ({
         url: `features?action=get-all`,
         method: "GET",
       }),
+      providesTags: (result) => [{ type: "Features", id: "LIST" }],
     }),
     deleteFeature: builder.mutation({
       query: (featureName) => ({
@@ -84,6 +86,9 @@ const initialState = {
   // uploads / UI
   featureFilename: "",
   createdFeatureInfo: {},
+
+  // { [featureId]: partialUpdates }
+  overridesById: {},
 
   featurePlanningUnits: [],
 

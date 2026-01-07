@@ -33,49 +33,30 @@ const FeaturesDialog = ({
   const [filteredRows, setFilteredRows] = useState([]);
   const [newFeatureAnchor, setNewFeatureAnchor] = useState(null);
   const [importFeatureAnchor, setImportFeatureAnchor] = useState(null);
+  const dialogIsOpen = featureState.dialogs.featuresDialogOpen;
+
   const { showMessage } = useAppSnackbar();
-  const { data: allFeaturesResp, isFetching: isFetchingAllFeatures } =
-    useGetAllFeaturesQuery();
+  const {
+    data: allFeaturesResp,
+    isFetching: isFetchingAllFeatures,
+    isError,
+    error,
+  } = useGetAllFeaturesQuery(undefined, { skip: !dialogIsOpen });
   const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
-
-  // Lazy-load features the first time the dialog opens (or whenever it's opened with an empty cache)
-  useEffect(() => {
-    const dialogIsOpen = featureState.dialogs.featuresDialogOpen;
-    const noFeatures = !allFeatures?.length;
-    const base = projState?.bpServer?.endpoint;
-    if (!dialogIsOpen || !noFeatures || !base) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        dispatch(setLoading(true));
-        const url = new URL("features?action=get-all", base).toString();
-        const resp = await jsonp(url, { timeout: CONSTANTS.TIMEOUT }).promise;
-        if (cancelled) return;
-        // resp.data expected from your App.jsx usage
-        // dispatch(setAllFeatures(resp?.data || []));
-      } catch (err) {
-        if (!cancelled) {
-          showMessage("Failed to load features:", err);
-          console.error("Failed to load features:", err);
-        }
-      } finally {
-        if (!cancelled) dispatch(setLoading(false));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    featureState.dialogs.featuresDialogOpen,
-    allFeatures?.length,
-    dispatch,
-    projState?.bpServer?.endpoint,
-  ]);
 
   const _newByDigitising = () => {
     onOk();
     initialiseDigitising();
+  };
+
+  const addOrRemoveFeature = (feature) => {
+    const ids = featureState.selectedFeatureIds || [];
+    // if the feature is already included remove it, otherwise add it
+    if (ids.includes(feature.id)) {
+      dispatch(setSelectedFeatureIds(ids.filter((id) => id !== feature.id)));
+    } else {
+      dispatch(setSelectedFeatureIds([...ids, feature.id]));
+    }
   };
 
   // const showNewFeaturePopover = (event) => {
@@ -94,16 +75,6 @@ const FeaturesDialog = ({
   //     toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
   //   );
   // };
-
-  const addOrRemoveFeature = (feature) => {
-    const ids = featureState.selectedFeatureIds || [];
-    // if the feature is already included remove it, otherwise add it
-    if (ids.includes(feature.id)) {
-      dispatch(setSelectedFeatureIds(ids.filter((id) => id !== feature.id)));
-    } else {
-      dispatch(setSelectedFeatureIds([...ids, feature.id]));
-    }
-  };
 
   const toggleSelectionState = (selectedIds, features, first, last) => {
     const next = [...selectedIds];
@@ -171,7 +142,7 @@ const FeaturesDialog = ({
   };
 
   const unselectFeature = () => {
-    dispatch(setSelectedFeature(undefined));
+    dispatch(setSelectedFeature(null));
     dispatch(
       toggleFeatureD({ dialogName: "importFeaturePopoverOpen", isOpen: false })
     );
