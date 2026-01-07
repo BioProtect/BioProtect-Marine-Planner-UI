@@ -12,7 +12,6 @@ import { useDispatch } from "react-redux";
 
 const SelectCostFeatures = ({ selectedCosts }) => {
   const dispatch = useDispatch();
-  const [selectedFeature, setSelectedFeature] = useState(undefined);
   const [anchorEl, setAnchorEl] = useState(null);
 
   // Handlers
@@ -22,10 +21,6 @@ const SelectCostFeatures = ({ selectedCosts }) => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleSelectFeature = (feature) => {
-    setSelectedFeature(feature);
   };
 
   return (

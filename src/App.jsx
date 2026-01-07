@@ -12,6 +12,7 @@ import React, {
 import {
   addFeaturesToCache,
   setAllFeaturesInCache,
+  setOneFeatureInCache,
 } from "./store/featureCacheActions";
 import {
   addToImportLog,
@@ -215,6 +216,8 @@ const App = () => {
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
   const [runlogTimer, setRunlogTimer] = useState(0);
 
+  const [addToProject, setAddToProject] = useState(false);
+
   const tilesUrl = getTilesBaseUrl();
   const mapContainer = useRef(null);
   const map = useRef(import.meta.hot ? window._mapInstance : null);
@@ -246,13 +249,14 @@ const App = () => {
   const onContextMenuRef = useRef(null);
 
   // Fetch planning unit data **ONLY when required values exist**
+  const selectedFeatureId = featureState.selectedFeatureId;
   const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
     {
       owner: uiState.owner,
       project: project,
-      featureId: featureState.selectedFeature?.id,
+      featureId: selectedFeatureId,
     },
-    { skip: !uiState.owner || !project || !featureState.selectedFeature?.id }
+    { skip: !uiState.owner || !project || selectedFeatureId === null }
   );
 
   // ALL FEATURES QUERY
@@ -444,6 +448,69 @@ const App = () => {
     },
     [responseIsTimeoutOrEmpty, isServerError]
   );
+
+  //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
+  const updateSelectedFeatures = async () => {
+    // Get the updated features
+    const prevAll = allFeatures;
+    const prevProj = projState.projectFeatures;
+
+    let updatedFeatures = allFeatures.map((feature) => {
+      if (featureState.selectedFeatureIds.includes(feature.id)) {
+        return { ...feature, selected: true };
+      } else {
+        if (feature.feature_layer_loaded) {
+          toggleFeatureLayer(feature);
+        }
+        if (feature.feature_puid_layer_loaded) {
+          toggleFeaturePUIDLayer(feature);
+        } // Feature is not selected
+        return {
+          ...feature,
+          selected: false,
+          preprocessed: false,
+          protected_area: -1,
+          pu_area: -1,
+          pu_count: -1,
+          target_area: -1,
+          occurs_in_planning_grid: false,
+        };
+      }
+    });
+
+    // Apply updates to state
+    const selected = updatedFeatures.filter((item) => item.selected);
+    const patchResult = dispatch(
+      setAllFeaturesInCache({ features: updatedFeatures })
+    );
+    dispatch(setProjectFeatures(selected));
+
+    // Persist changes to the server if the user is not read-only
+    try {
+      if (userData?.role !== "ReadOnly") {
+        ``;
+        await updateProjectFeatures(selected);
+      }
+    } catch (err) {
+      patchResult?.undo?.();
+      dispatch(setProjectFeatures(prevProj));
+      showMessage?.(`Failed to save selections. Reverted. ${err}`, "error");
+    } finally {
+      // close dialogs regardless
+      dispatch(
+        toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
+      );
+      dispatch(
+        toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false })
+      );
+      dispatch(
+        toggleFeatureD({
+          dialogName: "importFeaturePopoverOpen",
+          isOpen: false,
+        })
+      );
+    }
+  };
 
   const newFeatureCreated = useCallback(
     async (id) => {
@@ -1086,17 +1153,9 @@ const App = () => {
     );
 
     const processedFeatures = allFeatures.map((feature) => {
-      console.log(
-        "does feature have an id or a feature_unique_id ? see below for the answer"
-      );
-      ///////////////////////////// IT HAS AN ID
-      console.log("feature ", feature);
-
       const base = addFeatureAttributes(feature);
-
       const proj = projectFeatureMap[feature.id];
       const pre = preprocessMap[feature.id];
-
       const updated = { ...base };
       // override with preprocessing if available
       if (pre) {
@@ -2765,69 +2824,6 @@ const App = () => {
       toggleFeatureD({ dialogName: "newFeatureDialogOpen", isOpen: true })
     );
     dispatch(setDigitisedFeatures(evt.features));
-  };
-
-  //updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
-  const updateSelectedFeatures = async () => {
-    // Get the updated features
-    const prevAll = allFeatures;
-    const prevProj = projState.projectFeatures;
-
-    let updatedFeatures = allFeatures.map((feature) => {
-      if (featureState.selectedFeatureIds.includes(feature.id)) {
-        return { ...feature, selected: true };
-      } else {
-        if (feature.feature_layer_loaded) {
-          toggleFeatureLayer(feature);
-        }
-        if (feature.feature_puid_layer_loaded) {
-          toggleFeaturePUIDLayer(feature);
-        } // Feature is not selected
-        return {
-          ...feature,
-          selected: false,
-          preprocessed: false,
-          protected_area: -1,
-          pu_area: -1,
-          pu_count: -1,
-          target_area: -1,
-          occurs_in_planning_grid: false,
-        };
-      }
-    });
-
-    // Apply updates to state
-    const selected = updatedFeatures.filter((item) => item.selected);
-    const patchResult = dispatch(
-      setAllFeaturesInCache({ features: updatedFeatures })
-    );
-    dispatch(setProjectFeatures(selected));
-
-    // Persist changes to the server if the user is not read-only
-    try {
-      if (userData?.role !== "ReadOnly") {
-        ``;
-        await updateProjectFeatures(selected);
-      }
-    } catch (err) {
-      patchResult?.undo?.();
-      dispatch(setProjectFeatures(prevProj));
-      showMessage?.(`Failed to save selections. Reverted. ${err}`, "error");
-    } finally {
-      // close dialogs regardless
-      dispatch(
-        toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
-      );
-      dispatch(
-        toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false })
-      );
-      dispatch(
-        toggleFeatureD({
-          dialogName: "importFeaturePopoverOpen",
-          isOpen: false,
-        })
-      );
-    }
   };
 
   //updates the target values for all features in the project to the passed value

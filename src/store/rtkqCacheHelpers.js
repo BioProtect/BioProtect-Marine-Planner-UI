@@ -5,7 +5,7 @@
  *
  * Returns the mutable list reference inside the draft (Immer draft).
  */
-export function getDraftList(draft) {
+export const getDraftList = (draft) => {
   if (Array.isArray(draft)) {
     return draft;
   }
@@ -18,7 +18,7 @@ export function getDraftList(draft) {
 /**
  * Update items in a cached list by id.
  */
-export function replaceItemsById(draft, byId) {
+export const replaceItemsById = (draft, byId) => {
   const list = getDraftList(draft);
   if (!list) return;
 
@@ -32,7 +32,7 @@ export function replaceItemsById(draft, byId) {
 /**
  * Patch a single item by id (merge patch into existing item).
  */
-export function patchItemById(draft, id, patch) {
+export const patchItemById = (draft, id, patch) => {
   const list = getDraftList(draft);
   if (!list) return;
 

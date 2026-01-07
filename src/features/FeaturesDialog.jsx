@@ -13,6 +13,7 @@ import MarxanDialog from "../MarxanDialog";
 import { generateTableCols } from "../Helpers";
 import jsonp from "jsonp-promise";
 import { setLoading } from "@slices/uiSlice";
+import { setSelectedFeatureId } from "../slices/featureSlice";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 
@@ -43,6 +44,13 @@ const FeaturesDialog = ({
     error,
   } = useGetAllFeaturesQuery(undefined, { skip: !dialogIsOpen });
   const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+
+  const selectedFeatureId = featureState.selectedFeatureId;
+
+  const selectedFeature = useMemo(() => {
+    if (selectedFeatureId == null) return null;
+    return allFeatures.find((f) => f.id === selectedFeatureId) ?? null;
+  }, [allFeatures, selectedFeatureId]);
 
   const _newByDigitising = () => {
     onOk();
@@ -118,8 +126,7 @@ const FeaturesDialog = ({
       }
       setPreviousRow(row);
     } else {
-      // Also track which feature is "active" for detail view
-      dispatch(setSelectedFeature(row));
+      dispatch(setSelectedFeatureId(row.id));
     }
   };
 
@@ -142,7 +149,7 @@ const FeaturesDialog = ({
   };
 
   const unselectFeature = () => {
-    dispatch(setSelectedFeature(null));
+    dispatch(setSelectedFeatureId(null));
     dispatch(
       toggleFeatureD({ dialogName: "importFeaturePopoverOpen", isOpen: false })
     );
@@ -194,11 +201,9 @@ const FeaturesDialog = ({
       // searchTextChanged={searchTextChanged}
       actions={
         <FeaturesToolbar
-          metadata={metadata}
-          userRole={userRole}
           selectAllFeatures={selectAllFeatures}
           _newByDigitising={_newByDigitising}
-          clearAll={clearAllFeatures}
+          selectedFeature={selectedFeature}
         />
       }
     >
@@ -211,7 +216,7 @@ const FeaturesDialog = ({
           dataFiltered={dataFiltered}
           selected={featureState.selectedFeatureIds}
           selectedFeatureIds={featureState.selectedFeatureIds}
-          selectedFeature={featureState.selectedFeature}
+          selectedFeature={selectedFeature}
           clickRow={clickRow}
           preview={(row) => previewFeature?.(row)}
         />

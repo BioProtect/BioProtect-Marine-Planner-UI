@@ -22,7 +22,11 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 
-const FeaturesToolbar = ({ selectAllFeatures, _newByDigitising }) => {
+const FeaturesToolbar = ({
+  selectAllFeatures,
+  _newByDigitising,
+  selectedFeature,
+}) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
@@ -168,9 +172,9 @@ const FeaturesToolbar = ({ selectAllFeatures, _newByDigitising }) => {
             }
             title="Delete feature"
             disabled={
-              featureState.selectedFeature === undefined ||
+              selectedFeature === undefined ||
               uiState.loading ||
-              featureState.selectedFeature?.created_by === "global admin"
+              selectedFeature?.created_by === "global admin"
             }
             onClick={handleDeleteFeature}
           >

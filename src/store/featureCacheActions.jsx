@@ -1,4 +1,4 @@
-import { patchItemById, replaceItemsById } from "./rtkqCacheHelpers";
+import { patchItemById, replaceItemsById } from "@store/rtkqCacheHelpers";
 
 import { featureApiSlice } from "@slices/featureSlice";
 
@@ -7,13 +7,17 @@ import { featureApiSlice } from "@slices/featureSlice";
  */
 export const setOneFeatureInCache =
   ({ id, patch }) =>
-    (dispatch) => {
-      return dispatch(
-        featureApiSlice.util.updateQueryData("getAllFeatures", undefined, (draft) => {
+  (dispatch) => {
+    return dispatch(
+      featureApiSlice.util.updateQueryData(
+        "getAllFeatures",
+        undefined,
+        (draft) => {
           patchItemById(draft, id, patch);
-        })
-      );
-    }
+        }
+      )
+    );
+  };
 
 /**
  * Replace many features (whole objects) inside getAllFeatures cache.
@@ -21,24 +25,29 @@ export const setOneFeatureInCache =
  */
 export const setAllFeaturesInCache =
   ({ features }) =>
-    (dispatch) => {
-      const byId = new Map((features || []).map((f) => [f.id, f]));
-      return dispatch(
-        featureApiSlice.util.updateQueryData("getAllFeatures", undefined, (draft) => {
+  (dispatch) => {
+    const byId = new Map((features || []).map((f) => [f.id, f]));
+    return dispatch(
+      featureApiSlice.util.updateQueryData(
+        "getAllFeatures",
+        undefined,
+        (draft) => {
           replaceItemsById(draft, byId);
-        })
-      );
-    };
-
+        }
+      )
+    );
+  };
 
 export const addFeaturesToCache =
   ({ features }) =>
-    (dispatch) => {
-      return dispatch(
-        featureApiSlice.util.updateQueryData("getAllFeatures", undefined, (draft) => {
+  (dispatch) => {
+    return dispatch(
+      featureApiSlice.util.updateQueryData(
+        "getAllFeatures",
+        undefined,
+        (draft) => {
           const list = Array.isArray(draft) ? draft : draft?.data;
           if (!Array.isArray(list)) return;
-
 
           for (const feature of features) {
             // avoid duplicates
@@ -48,18 +57,23 @@ export const addFeaturesToCache =
           }
 
           list.sort((a, b) =>
-            (a.alias || "").localeCompare(b.alias || "", undefined, { sensitivity: "base" })
+            (a.alias || "").localeCompare(b.alias || "", undefined, {
+              sensitivity: "base",
+            })
           );
-        })
-      );
-    }
-
+        }
+      )
+    );
+  };
 
 export const removeFeaturesFromCache =
   ({ ids }) =>
-    (dispatch) => {
-      return dispatch(
-        featureApiSlice.util.updateQueryData("getAllFeatures", undefined, (draft) => {
+  (dispatch) => {
+    return dispatch(
+      featureApiSlice.util.updateQueryData(
+        "getAllFeatures",
+        undefined,
+        (draft) => {
           const list = Array.isArray(draft) ? draft : draft?.data;
           if (!Array.isArray(list)) return;
 
@@ -67,6 +81,7 @@ export const removeFeaturesFromCache =
           for (let i = list.length - 1; i >= 0; i--) {
             if (removeSet.has(list[i].id)) list.splice(i, 1);
           }
-        })
+        }
       )
-    };
+    );
+  };
