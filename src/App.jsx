@@ -30,7 +30,9 @@ import {
 import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
   initialiseServers,
+  projectApiSlice,
   selectServer,
+  setActiveProjectId,
   setCostData,
   setPlanningCostsTrigger,
   setProjectCosts,
@@ -41,6 +43,16 @@ import {
   setProjectListDialogTitle,
   setProjects,
   toggleProjDialog,
+  useCloneProjectMutation,
+  useCreateProjectGroupMutation,
+  useCreateProjectMutation,
+  useDeleteProjectClusterMutation,
+  useDeleteProjectMutation,
+  useGetProjectQuery,
+  useListProjectsQuery,
+  useListProjectsWithGridsQuery,
+  useRenameProjectMutation,
+  useUpdateProjectMutation,
 } from "@slices/projectSlice";
 import {
   logOut,
@@ -151,26 +163,89 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
 
 const App = () => {
   const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
 
-  // CREATING REFS FOR MAPCLICK OTHERWISE STATE IN MAP CLICK IS STALE.
+  ////////////////////////////////////////////////////////////////////////
+  /////////// RTKQ data                       ////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
+  const userId = useSelector(selectCurrentUserId);
+  const isLoggedIn = useSelector(selectIsUserLoggedIn);
+
+  const userData = useSelector(selectCurrentUser);
+  const [updateUser] = useUpdateUserMutation();
   const projState = useSelector((state) => state.project);
-  const projStateRef = useRef(projState);
+  const owner = useSelector((state) => state.ui.owner);
+  const uiState = useSelector((state) => state.ui);
+  const userState = useSelector((state) => state.user);
+  const puState = useSelector((state) => state.planningUnit);
+  const featureState = useSelector((state) => state.feature);
+  const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const token = useSelector(selectCurrentToken);
+
+  // PROJECT QUERY
+  const activeProjectId = useSelector((state) => state.project.activeProjectId);
+
+  const { data: projectResp, isFetching } = useGetProjectQuery(
+    activeProjectId,
+    {
+      skip: !isLoggedIn || activeProjectId == null,
+    }
+  );
+  const project = projectResp?.project;
+  const renderer = projectResp?.renderer;
+  const projectFeatures = projectResp?.features ?? [];
+  const planningUnits = projectResp?.planning_units;
+  const costNames = projectResp?.costnames ?? [];
+  // Refs for Map so state isnt stale.
+  const featuresRef = useRef(projectFeatures);
+  const planningUnitsRef = useRef(planningUnits);
+  const ownerRef = useRef(owner);
+  const projectIdRef = useRef(activeProjectId);
+  const projectFeaturesRef = useRef(projectFeatures);
+
   useEffect(() => {
-    projStateRef.current = projState;
-  }, [projState]);
+    ownerRef.current = owner;
+  }, [owner]);
+  useEffect(() => {
+    projectIdRef.current = activeProjectId;
+  }, [activeProjectId]);
+  useEffect(() => {
+    projectFeaturesRef.current = projectFeatures;
+  }, [projectFeatures]);
+  useEffect(() => {
+    planningUnitsRef.current = planningUnits;
+  }, [planningUnits]);
+
+  const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
+  const [logoutUser] = useLogoutUserMutation();
+
+  // PLANNING UNITS QUERY
+  const selectedFeatureId = featureState.selectedFeatureId;
+  const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
+    {
+      owner: uiState.owner,
+      project: project,
+      featureId: selectedFeatureId,
+    },
+    { skip: !uiState.owner || !project || selectedFeatureId === null }
+  );
+
+  // ALL FEATURES QUERY
+  const {
+    data: allFeaturesResp,
+    isFetching: isFetchingAllFeatures,
+    refetch: refetchAllFeatures,
+  } = useGetAllFeaturesQuery(undefined, {
+    skip: !isLoggedIn,
+  });
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+  const [triggerListFeaturePUs] = featureApiSlice.useLazyListFeaturePUsQuery();
 
   const [puEditing, setPuEditing] = useState(false);
   const puEditingRef = useRef(puEditing);
   useEffect(() => {
     puEditingRef.current = puEditing;
   }, [puEditing]);
-
-  const userState = useSelector((state) => state.user);
-  const puState = useSelector((state) => state.planningUnit);
-  const featureState = useSelector((state) => state.feature);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const token = useSelector(selectCurrentToken);
 
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
@@ -196,7 +271,6 @@ const App = () => {
   const [notifications, setNotifications] = useState([]);
 
   const [preprocessing, setPreprocessing] = useState(false);
-  const [renderer, setRenderer] = useState({});
   const [runLogs, setRunLogs] = useState([]);
   const [runParams, setRunParams] = useState([]);
   const [selectedCosts, setSelectedCosts] = useState([]);
@@ -215,13 +289,10 @@ const App = () => {
   const [paLayerVisible, setPaLayerVisible] = useState(false);
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
   const [runlogTimer, setRunlogTimer] = useState(0);
-
   const [addToProject, setAddToProject] = useState(false);
-
   const tilesUrl = getTilesBaseUrl();
   const mapContainer = useRef(null);
   const map = useRef(import.meta.hot ? window._mapInstance : null);
-
   const puLayerIdsRef = useRef({
     sourceId: null,
     resultsLayerId: null,
@@ -232,43 +303,11 @@ const App = () => {
     propId: "h3_index",
   });
 
-  const userId = useSelector(selectCurrentUserId);
-  const userData = useSelector(selectCurrentUser);
-  const project = useSelector((state) => state.project.projectData);
-
-  const [updateUser] = useUpdateUserMutation();
-
   const { showMessage } = useAppSnackbar();
   const { enqueueSnackbar } = useSnackbar();
-
-  const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
-  const [logoutUser] = useLogoutUserMutation();
-
   // store handler references for cleanup
   const onClickRef = useRef(null);
   const onContextMenuRef = useRef(null);
-
-  // Fetch planning unit data **ONLY when required values exist**
-  const selectedFeatureId = featureState.selectedFeatureId;
-  const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
-    {
-      owner: uiState.owner,
-      project: project,
-      featureId: selectedFeatureId,
-    },
-    { skip: !uiState.owner || !project || selectedFeatureId === null }
-  );
-
-  // ALL FEATURES QUERY
-  const {
-    data: allFeaturesResp,
-    isFetching: isFetchingAllFeatures,
-    refetch: refetchAllFeatures,
-  } = useGetAllFeaturesQuery();
-
-  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
-
-  const [triggerListFeaturePUs] = featureApiSlice.useLazyListFeaturePUsQuery();
 
   // Initialize map once after mount (prevents container=null errors)
   useEffect(() => {
@@ -310,7 +349,6 @@ const App = () => {
     const fetchGlobalVariables = async () => {
       console.log("fetchGlobalVariables.... ");
       try {
-        initialiseServers(INITIAL_VARS.BP_SERVERS);
         setBrew(new classyBrew());
         dispatch(setRegistry(INITIAL_VARS));
         setInitialLoading(false);
@@ -852,13 +890,20 @@ const App = () => {
 
   const loadProjectAndSetup = async (projectId) => {
     try {
-      // 1️⃣ Load project (either first available or by ID)
-      const projectResponse = await dispatch(switchProject(projectId)).unwrap();
-      console.log("projectResponse ", projectResponse);
-      // 2️⃣ Run post-load setup
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      await postLoginSetup(projectResponse);
-      return projectResponse;
+      await dispatch(switchProject(projectId)).unwrap();
+
+      const projectData = await dispatch(
+        projectApiSlice.endpoints.getProject.initiate(projectId, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      console.log("projectData (RTKQ)", projectData);
+
+      await postLoginSetup(projectData);
+      console.log("should be returnng project data");
+      console.log("projectData ", projectData);
+
+      return projectData;
     } catch (error) {
       console.error("❌ Failed to load project:", error);
       showMessage("Error loading project", "error");
@@ -867,7 +912,6 @@ const App = () => {
 
   //the user is validated so login
   const postLoginSetup = async (projectData) => {
-    console.log("projectData ", projectData);
     try {
       const currentBasemap = uiState.basemaps.find(
         (item) => item.name === uiState.basemap
@@ -887,13 +931,20 @@ const App = () => {
         featureApiSlice.endpoints.getAllFeatures.initiate()
       );
       const allFeatures = allFeaturesResponse?.data || [];
+      console.log("allFeatures ", allFeatures);
 
       const activitiesData = await _get("getUploadedActivities");
+      console.log("activitiesData ", activitiesData);
       dispatch(setUploadedActivities(activitiesData.data));
 
       setPUTabInactive();
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
       dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: true }));
+      console.log(
+        "should hgave dispatched and now set initial loading to false"
+      );
+
+      setInitialLoading(false);
 
       configureProjectFeatures(
         projectData.features,
@@ -931,6 +982,9 @@ const App = () => {
       dispatch(setProjectFeatures([]));
       dispatch(setUsers([]));
       dispatch(setProjects([]));
+      dispatch(setActiveProjectId(null));
+      dispatch(setSelectedFeatureIds([]));
+      dispatch(setSelectedFeatureId(null));
 
       // Clear authentication data
       dispatch(logOut()); // from authSlice
@@ -1143,6 +1197,7 @@ const App = () => {
     const projectFeatureMap = Object.fromEntries(
       projectFeatures.map((f) => [f.feature_unique_id, f])
     );
+    console.log("projectFeatureMap ", projectFeatureMap);
 
     // preprocessing rows are [project_id, feature_id, area, count]
     const preprocessMap = Object.fromEntries(
@@ -1175,12 +1230,14 @@ const App = () => {
     });
 
     const selected = processedFeatures.filter((f) => f.selected);
+    console.log("selected ", selected);
 
     // update RTKQ cache instead of redux
     dispatch(setAllFeaturesInCache({ features: processedFeatures }));
 
     dispatch(setProjectFeatures(selected));
     dispatch(setSelectedFeatureIds(selected.map((f) => f.id)));
+    return;
   };
 
   const getProjectList = async (obj, _type) => {
@@ -1558,6 +1615,34 @@ const App = () => {
     return "Marxan PU costs rendered";
   };
 
+  const getPUData = useCallback(
+    async (h3_index) => {
+      const currentOwner = ownerRef.current;
+      const currentProjectId = projectIdRef.current;
+
+      if (!currentOwner || currentProjectId == null || !h3_index) return;
+
+      const response = await _get(
+        `planning-units?action=data&user=${currentOwner}&project_id=${currentProjectId}&h3_index=${h3_index}`
+      );
+
+      const features = response?.data?.features ?? [];
+
+      if (features.length) {
+        // join ids onto the full feature data from RTKQ-cached project features
+        joinArrays(features, projectFeaturesRef.current ?? [], "species", "id");
+      }
+
+      dispatch(
+        setIdentifyPlanningUnits({
+          puData: response.data.pu_data,
+          features,
+        })
+      );
+    },
+    [dispatch]
+  );
+
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -1711,9 +1796,12 @@ const App = () => {
           // Get the feature layer ids, get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
           // Set the popup point, get any planning unit features under the mouse
           const featureLayerIds = featureLayers.map((item) => item.id);
+
           const clickedFeatures =
             featureLayerIds.length && map.current?.getLayer(featureLayerIds[0])
-              ? map.current.queryRenderedFeatures(e.point, { featureLayerIds })
+              ? map.current.queryRenderedFeatures(e.point, {
+                  layers: featureLayerIds,
+                })
               : [];
 
           // ############################################################################################
@@ -1725,8 +1813,9 @@ const App = () => {
             clickedFeatures,
             "martin_layer_pu_"
           );
+
           if (puFeatures.length) {
-            // ✅ use the correct property name
+            // use the correct property name
             const puid =
               puFeatures[0].properties.h3_index ||
               puFeatures[0].properties.puid ||
@@ -1753,8 +1842,10 @@ const App = () => {
           const uniqueSourceLayers = Array.from(
             new Set(idFeatures.map((item) => item.sourceLayer))
           );
+
+          const featuresList = projectFeaturesRef.current ?? [];
           idFeatures = uniqueSourceLayers.map((sourceLayer) =>
-            projState.projectFeatures.find(
+            featuresList.find(
               (feature) => feature.feature_class_name === sourceLayer
             )
           );
@@ -1769,7 +1860,7 @@ const App = () => {
         console.error("Error handling map click:", error);
       }
     },
-    [projState]
+    [dispatch, getPUData]
   );
 
   //called when layers are added/removed or shown/hidden
@@ -1821,34 +1912,6 @@ const App = () => {
   //gets a set of features that have a layerid that starts with the passed text
   const getFeaturesByLayerStartsWith = (features, startsWith) =>
     features.filter((item) => item.layer.id.startsWith(startsWith));
-
-  //gets a list of features for the planning unit
-  const getPUData = async (h3_index) => {
-    const projectState = projStateRef.current;
-    const projectId = projectState.projectData.project.id;
-
-    const user = projectState.projectData.user;
-
-    const response = await _get(
-      `planning-units?action=data&user=${user}&project_id=${projectId}&h3_index=${h3_index}`
-    );
-    if (response.data.features.length) {
-      //if there are features for the planning unit join the ids onto the full feature data from the state.projectFeatures array
-      joinArrays(
-        response.data.features,
-        projectState.projectFeatures,
-        "species",
-        "id"
-      );
-    }
-    //set the state to update the identify popup
-    dispatch(
-      setIdentifyPlanningUnits({
-        puData: response.data.pu_data,
-        features: response.data.features,
-      })
-    );
-  };
 
   //joins a set of data from one object array to another
   const joinArrays = (arr1, arr2, leftId, rightId) => {
@@ -2241,17 +2304,19 @@ const App = () => {
   };
 
   //gets a particular set of layers based on the layer types (layerTypes is an array of layer types)
-  const getLayers = (layerTypes) => {
-    if (!mapContainer.current) {
-      console.warn("Map container not ready yet.");
-      return;
-    } else {
-      const allLayers = map.current.getStyle().layers;
-      return allLayers.filter(
-        ({ metadata }) => metadata?.type && layerTypes.includes(metadata.type)
-      );
-    }
-  };
+  const getLayers = useCallback((layerTypes = []) => {
+    if (!map.current) return [];
+    if (!mapContainer.current) return [];
+
+    // style may not be ready yet
+    const style = map.current.getStyle?.();
+    const allLayers = style?.layers ?? [];
+
+    return allLayers.filter(({ metadata }) => {
+      const type = metadata?.type;
+      return type && layerTypes.includes(type);
+    });
+  }, []);
 
   //shows/hides layers of a particular type (layerTypes is an array of layer types)
   const showHideLayerTypes = (layerTypes, show) => {
@@ -3269,10 +3334,9 @@ const App = () => {
             ref={mapContainer}
             className="map-container absolute top right left bottom"
           ></div>
-          {uiState.loading ? <Loading /> : null}
           {token ? null : (
             <LoginDialog
-              open={!token}
+              open={!isLoggedIn}
               loading={uiState.loading}
               loadProjectAndSetup={loadProjectAndSetup}
             />
@@ -3346,7 +3410,7 @@ const App = () => {
             marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
             wdpaAttribution={wdpaAttribution}
           />
-          {projState.projectData.project ? (
+          {project ? (
             <InfoPanel
               map={map}
               onClickRef={onClickRef}
@@ -3575,7 +3639,7 @@ const App = () => {
             runCumulativeImpact={runCumulativeImpact}
           />
           <MenuBar
-            open={token}
+            open={isLoggedIn}
             openFeaturesDialog={openFeaturesDialog}
             openProjectsDialog={openProjectsDialog}
             openPlanningGridsDialog={openPlanningGridsDialog}

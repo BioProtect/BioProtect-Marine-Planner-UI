@@ -11,7 +11,6 @@ import { apiSlice } from "./apiSlice";
 import { setSelectedFeatureIds } from "./featureSlice"
 
 export const projectApiSlice = apiSlice.injectEndpoints({
-  tagTypes: ['Project'],
   endpoints: (builder) => ({
     createProject: builder.mutation({
       query: (projectData) => ({
@@ -32,12 +31,27 @@ export const projectApiSlice = apiSlice.injectEndpoints({
     }),
 
     updateProject: builder.mutation({
-      query: (updateData) => ({
-        url: 'projects?action=',
-        method: 'POST',
-        body: { ...updateData, action: 'update' },
+      query: ({ projectId, ...updateData }) => ({
+        url: "projects?action=",
+        method: "POST",
+        body: { ...updateData, action: "update" },
       }),
-      invalidatesTags: ['Project'],
+      async onQueryStarted({ projectId, patch }, { dispatch, queryFulfilled }) {
+        // patch = { features: [...] } or whatever you send
+        const patchResult = dispatch(
+          projectApiSlice.util.updateQueryData("getProject", projectId, (draft) => {
+            // apply patch to draft
+            if (patch.features) draft.features = patch.features;
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
+      invalidatesTags: (res, err, arg) => [{ type: "Project", id: arg.projectId }],
     }),
 
     getProject: builder.query({
@@ -45,7 +59,21 @@ export const projectApiSlice = apiSlice.injectEndpoints({
         url: `projects?action=get&projectId=${projectId}`,
         method: 'GET',
       }),
-      providesTags: ['Project'],
+      transformResponse: (raw) => (typeof raw === "string" ? JSON.parse(raw) : raw),
+      providesTags: (result, err, projectId) => [{ type: "Project", id: projectId }],
+      async onQueryStarted(projectId, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setOwner(data?.project?.user));
+          dispatch(setActiveTab("project"));
+
+          // sync feature selection from project → feature slice if needed
+          const ids = (data?.features ?? []).map((f) => f.id);
+          dispatch(setSelectedFeatureIds(ids));
+        } catch {
+          // ignore
+        }
+      },
     }),
 
     listProjects: builder.query({
@@ -53,7 +81,9 @@ export const projectApiSlice = apiSlice.injectEndpoints({
         url: '?action=list',
         method: 'GET',
       }),
-      providesTags: ['Project'],
+      providesTags: (result) => {
+        return [{ type: "ProjectList", id: "LIST" }];
+      },
     }),
 
     listProjectsWithGrids: builder.query({
@@ -109,6 +139,7 @@ export const {
 
 
 const initialState = {
+  activeProjectId: null,
   addToProject: true,
   bpServers: [],
   bpServer: {},
@@ -119,18 +150,18 @@ const initialState = {
   error: null,
 
   costData: null,
-  renderer: {},
+  // renderer: {},
 
-  projectData: {},
+  // projectData: {},
   projects: [],
   projectList: [],
   projectListDialogHeading: "",
   projectListDialogTitle: "",
   projectChanged: false,
   projectImpacts: [],
-  projectFeatures: [],
-  projectPlanningUnits: {},
-  projectCosts: [],
+  // projectFeatures: [],
+  // projectPlanningUnits: {},
+  // projectCosts: [],
   planningCostsTrigger: false,
 
   dialogs: {
@@ -145,85 +176,116 @@ const initialState = {
 export const initialiseServers = createAsyncThunk(
   "project/initialiseServers",
   async (servers, { dispatch, rejectWithValue }) => {
-    console.log("Initialising servers.... ", servers);
     try {
       const updatedServers = addLocalServer(servers);
-      console.log("updatedServers ", updatedServers);
       // Fetch capabilities for each server
       const allCapabilities = await Promise.all(
         updatedServers.map((server) => getServerCapabilities(server))
       );
       const filteredAndSortedServers = filterAndSortServers(allCapabilities);
-      console.log("filteredAndSortedServers ", filteredAndSortedServers);
       dispatch(setBpServers(filteredAndSortedServers)); // Dispatch the updated servers to the store
       return "ServerData retrieved";
     } catch (error) {
-      console.error("Failed to initialise servers:", error);
       return rejectWithValue(error.message);
     }
   }
 );
 
 // Thunk to fetch the user's project only if not already in state
-export const getUserProject = createAsyncThunk(
-  "projects/getUserProject",
-  async (projectId, { dispatch, rejectWithValue }) => {
+// export const getUserProject = createAsyncThunk(
+//   "projects/getUserProject",
+//   async (projectId, { dispatch, rejectWithValue }) => {
+//     try {
+//       if (!projectId) {
+//         const allProjects = await dispatch(
+//           projectApiSlice.endpoints.listProjects.initiate()
+//         ).unwrap();
+
+//         const parsed = typeof allProjects === "string" ? JSON.parse(allProjects) : allProjects;
+//         const firstProject = parsed.projects?.[0];
+
+//         if (!firstProject) {
+//           enqueueSnackbar?.("No projects found for user", { variant: "warning" })
+//           return rejectWithValue("No projects found for user");
+//         }
+//         projectId = firstProject.id;
+//       }
+
+//       const data = await dispatch(
+//         projectApiSlice.endpoints.getProject.initiate(projectId)
+//       ).unwrap();
+
+//       const response = JSON.parse(data);
+//       // update store
+//       dispatch(setProjectData(response));
+//       dispatch(setRenderer(response.renderer));  // Add missing renderer update
+//       dispatch(setProjectCosts(response.costnames));
+//       dispatch(setProjectFeatures(response.features));
+//       dispatch(setOwner(response.project.user));
+//       dispatch(setProjectPlanningUnits(response.planning_units))
+//       dispatch(setActiveTab("project"));
+//       dispatch(setPlanningCostsTrigger(true));
+//       await new Promise((resolve) => setTimeout(resolve, 0));
+
+//       return response;
+//     } catch (error) {
+//       console.error("Failed to fetch project:", error);
+//       return rejectWithValue(error.message);
+//     }
+//   }
+// );
+
+export const bootstrapProject = createAsyncThunk(
+  "projects/bootstrapProject",
+  async (projectId, { dispatch, getState, rejectWithValue }) => {
     try {
-      if (!projectId) {
+      let projId = projectId;
+
+      if (!projId) {
         const allProjects = await dispatch(
-          projectApiSlice.endpoints.listProjects.initiate()
+          projectApiSlice.endpoints.listProjects.initiate(undefined, { forceRefetch: true })
         ).unwrap();
 
         const parsed = typeof allProjects === "string" ? JSON.parse(allProjects) : allProjects;
-        const firstProject = parsed.projects?.[0];
+        const projId = parsed.projects?.[0].id;
 
-        if (!firstProject) {
-          enqueueSnackbar?.("No projects found for user", { variant: "warning" })
+        if (!projId) {
           return rejectWithValue("No projects found for user");
         }
-        projectId = firstProject.id;
       }
 
-      const data = await dispatch(
-        projectApiSlice.endpoints.getProject.initiate(projectId)
-      ).unwrap();
-
-      const response = JSON.parse(data);
-      console.log("🔥 Project Data:", response);
-
-      // update store
-      dispatch(setProjectData(response));
-      dispatch(setRenderer(response.renderer));  // Add missing renderer update
-      dispatch(setProjectCosts(response.costnames));
-      dispatch(setProjectFeatures(response.features));
-      dispatch(setOwner(response.project.user));
-      dispatch(setProjectPlanningUnits(response.planning_units))
-      dispatch(setActiveTab("project"));
-      dispatch(setPlanningCostsTrigger(true));
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      return response; // Assuming response has { project: { id, name, ... } }
-    } catch (error) {
-      console.error("Failed to fetch project:", error);
-      return rejectWithValue(error.message);
+      dispatch(setActiveProjectId(projId));
+      dispatch(
+        projectApiSlice.endpoints.getProject.initiate(projectId, {
+          // keep it in cache, don't create extra subscriptions in components
+          subscribe: false,
+          forceRefetch: true,
+        })
+      );
+      return projectId;
+    } catch (e) {
+      return rejectWithValue(e?.message ?? String(e));
     }
   }
 );
 
+
 // projectSlice.js
-const switchProject = createAsyncThunk(
+export const switchProject = createAsyncThunk(
   "project/switchProject",
   async (projectId, { dispatch }) => {
-    const data = await dispatch(getUserProject(projectId)).unwrap();
-    return data;
+    await dispatch(bootstrapProject(projectId)).unwrap();
+    return projectId;
   }
 );
-
 
 const projectSlice = createSlice({
   name: "project",
   initialState,
   reducers: {
+    setActiveProjectId(state, action) {
+      state.activeProjectId = action.payload;
+    },
     setBpServers(state, action) {
       state.bpServers = action.payload;
     },
@@ -307,22 +369,23 @@ const projectSlice = createSlice({
         state.status = "failed";
         state.error = action.payload || "Failed to initialise servers";
       })
-      .addCase(getUserProject.pending, (state) => {
+      .addCase(switchProject.pending, (state) => {
         state.status = "loading";
+        state.error = null;
       })
-      .addCase(getUserProject.fulfilled, (state, action) => {
+      .addCase(switchProject.fulfilled, (state) => {
         state.status = "succeeded";
-        state.projectData = action.payload;
       })
-      .addCase(getUserProject.rejected, (state, action) => {
+      .addCase(switchProject.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload || "Failed to load project";
+        state.error = action.payload || "Failed to switch project";
       });
   },
 })
 
 
 export const {
+  setActiveProjectId,
   setBpServers,
   setBpServer,
   selectServer,
@@ -341,5 +404,4 @@ export const {
   setPlanningCostsTrigger,
   toggleProjDialog,
 } = projectSlice.actions;
-export { switchProject };
 export default projectSlice.reducer;

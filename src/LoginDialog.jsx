@@ -23,6 +23,7 @@ import Select from "@mui/material/Select";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { setCredentials } from "@slices/authSlice";
+import { setLoading } from "./slices/uiSlice";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useLoginMutation } from "@slices/authApiSlice";
 import { useSnackbar } from "notistack";
@@ -38,7 +39,6 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
   const dispatch = useDispatch();
   const { showMessage } = useAppSnackbar();
   const { enqueueSnackbar } = useSnackbar();
-
 
   useLayoutEffect(() => {
     if (userRef.current) {
@@ -59,15 +59,18 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
     e.preventDefault();
     try {
       const response = await login({ user, pwd }).unwrap();
-      dispatch(setCredentials({
-        userId: response.userId,
-        accessToken: response.accessToken,
-        userData: response.userData
-      }));
+      dispatch(
+        setCredentials({
+          userId: response.userId,
+          accessToken: response.accessToken,
+          userData: response.userData,
+        })
+      );
       await loadProjectAndSetup(response.project.id);
-
+      dispatch(setLoading(false));
       setUser("");
       setPwd("");
+      return;
     } catch (err) {
       let errMsg = "Login Failed";
       if (!err?.originalStatus) {
@@ -131,7 +134,7 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
             label="BioProtect Server"
           >
             {projectState.bpServers.map((item) => {
-              // if the server is offline - just put that otherwise: if CORS is enabled for this domain then it is read/write otherwise: 
+              // if the server is offline - just put that otherwise: if CORS is enabled for this domain then it is read/write otherwise:
               // if the guest user is enabled then put the domain and read only otherwise: put the domain and guest user disabled
               let text =
                 item.offline || item.corsEnabled || item.guestUserEnabled
