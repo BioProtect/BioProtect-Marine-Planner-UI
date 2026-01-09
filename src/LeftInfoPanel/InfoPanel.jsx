@@ -24,7 +24,7 @@ const InfoPanel = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
-  const puState = useSelector((state) => state.planningUnit)
+  const puState = useSelector((state) => state.planningUnit);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const userData = useSelector(selectCurrentUser);
 
@@ -41,7 +41,7 @@ const InfoPanel = (props) => {
 
   useEffect(() => {
     if (editingProjectName && projectNameRef.current) {
-      projectNameRef.current.value = projState.projectData.name;
+      projectNameRef.current.value = props.project?.name;
       projectNameRef.current.focus();
     }
 
@@ -52,7 +52,7 @@ const InfoPanel = (props) => {
   }, [
     editingProjectName,
     editingDescription,
-    projState.projectData,
+    props.project,
     props.metadata.DESCRIPTION,
   ]);
 
@@ -64,24 +64,24 @@ const InfoPanel = (props) => {
 
   //preprocess synchronously, i.e. one after another
   const preprocessAllFeatures = async () => {
-    // for (const feature of projState.projectFeatures) {
+    // for (const feature of props.projectFeatures) {
     //   if (!feature.preprocessed) {
     //     await preprocessFeature(feature);
     //   }
     // }
-    await preprocessFeature(projState.projectFeatures[1]);
+    await preprocessFeature(props.projectFeatures[1]);
   };
 
   const preprocessFeature = async (feature) => {
-    const project_id = projState.projectData.project.id;
-    const pu_id = projState.projectData.project.planning_unit_id;
+    const project_id = props.project?.id;
+    const pu_id = props.project?.planning_unit_id;
     const planning_grid_name = props.metadata;
     try {
       // Switch to the log tab
-      setActiveTab("log");
+      dispatch(setActiveTab("log"));
 
       // Call the WebSocket
-      const url = `preprocessFeature?project_id=${project_id}&feature_id=${feature.id}&planning_grid_id=${pu_id}&feature_class_name=${feature.feature_class_name}`
+      const url = `preprocessFeature?project_id=${project_id}&feature_id=${feature.id}&planning_grid_id=${pu_id}&feature_class_name=${feature.feature_class_name}`;
 
       const message = await props.handleWebSocket(url);
 
@@ -119,13 +119,13 @@ const InfoPanel = (props) => {
   };
 
   const startEditingProjectName = () => {
-    if (projState.projectData) {
+    if (props.project) {
       setEditingProjectName(true);
     }
   };
 
   const startEditingDescription = () => {
-    if (projState.projectData) {
+    if (props.project) {
       setEditingDescription(true);
     }
   };
@@ -220,7 +220,6 @@ const InfoPanel = (props) => {
     }
   };
 
-  let costnames = projState.projectCosts ? [...projState.projectCosts, "Custom.."] : [];
   const displayStyle = {
     display: dialogStates.infoPanelOpen ? "block" : "none",
   };
@@ -228,19 +227,17 @@ const InfoPanel = (props) => {
   const titleDisplayStyle = { display: editingProjectName ? "block" : "none" };
   const combinedDisplayStyle = { ...titleStyle, ...titleDisplayStyle };
 
-
-  return projState.projectData ? (
+  return (
     <React.Fragment>
       <div className="infoPanel" style={combinedDisplayStyles}>
         <Paper elevation={2} className="InfoPanelPaper" mb={4}>
-
           <Paper elevation={2} className="titleBar">
             <span
               onClick={startEditingProjectName}
               className="projectNameEditBox"
               title="Click to rename the project"
             >
-              {projState.projectData?.project?.name || "Untitled project"}
+              {props.project?.name || "Untitled project"}
             </span>
             <input
               id="projectName"
@@ -260,6 +257,8 @@ const InfoPanel = (props) => {
 
           {currentTabIndex === 0 && (
             <ProjectTabContent
+              project={props.project}
+              metadata={props.metadata}
               toggleProjectPrivacy={toggleProjectPrivacy}
               updateDetails={handleChange}
             />
@@ -277,13 +276,32 @@ const InfoPanel = (props) => {
           )}
           {currentTabIndex === 2 && (
             <PlanningUnitsTab
-              {...props}
               userRole={userData?.role}
+              preprocessing={props.preprocessing}
+              changeCostname={props.changeCostname}
+              map={props.map}
+              onClickRef={props.onClickRef}
+              onContextMenuRef={props.onContextMenuRef}
+              puLayerIdsRef={props.puLayerIdsRef}
+              _post={props._post}
+              puEditing={props.puEditing}
+              setPuEditing={props.setPuEditing}
+              planningUnits={props.planningUnits}
+              metadata={props.metadata}
+              costname={props.costname}
+              costNames={props.costNames}
             />
           )}
 
           <Paper>
-            <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" pb={2} pt={2}>
+            <Stack
+              direction="row"
+              spacing={1}
+              justifyContent="center"
+              alignItems="center"
+              pb={2}
+              pt={2}
+            >
               {projState.bpServer.type === "remote" && (
                 <Button
                   variant="contained"
@@ -298,9 +316,18 @@ const InfoPanel = (props) => {
 
               <Button
                 variant="contained"
-                startIcon={<Settings style={{ height: "20px", width: "20px" }} />}
+                startIcon={
+                  <Settings style={{ height: "20px", width: "20px" }} />
+                }
                 title="Run Settings"
-                onClick={() => dispatch(toggleDialog({ dialogName: "settingsDialogOpen", isOpen: true }))}
+                onClick={() =>
+                  dispatch(
+                    toggleDialog({
+                      dialogName: "settingsDialogOpen",
+                      isOpen: true,
+                    })
+                  )
+                }
                 key="openSettingsButton"
               >
                 Settings
@@ -320,7 +347,11 @@ const InfoPanel = (props) => {
                   variant="contained"
                   title="Click to run this project"
                   onClick={props.runMarxan}
-                  disabled={props.preprocessing || projState.projectFeatures.length === 0 || puState.puEditing}
+                  disabled={
+                    props.preprocessing ||
+                    props.projectFeatures.length === 0 ||
+                    puState.puEditing
+                  }
                   key="runButton"
                 >
                   Run
@@ -331,10 +362,7 @@ const InfoPanel = (props) => {
         </Paper>
       </div>
     </React.Fragment>
-  ) : (
-    <Loading />
   );
-
 };
 
 export default InfoPanel;

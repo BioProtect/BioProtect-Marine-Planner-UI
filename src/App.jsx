@@ -173,7 +173,12 @@ const App = () => {
 
   const userData = useSelector(selectCurrentUser);
   const [updateUser] = useUpdateUserMutation();
+  // Instead of importing the whole state - import whats needed
   const projState = useSelector((state) => state.project);
+  const bioprotectServers = useSelector((state) => state.project.bpServers);
+  const bioprotectServer = useSelector((state) => state.project.bpServer);
+  const projDialogStates = useSelector((state) => state.project.dialogs);
+
   const owner = useSelector((state) => state.ui.owner);
   const uiState = useSelector((state) => state.ui);
   const userState = useSelector((state) => state.user);
@@ -185,23 +190,28 @@ const App = () => {
   // PROJECT QUERY
   const activeProjectId = useSelector((state) => state.project.activeProjectId);
 
-  const { data: projectResp, isFetching } = useGetProjectQuery(
-    activeProjectId,
-    {
-      skip: !isLoggedIn || activeProjectId == null,
-    }
-  );
+  const {
+    data: projectResp,
+    isFetching,
+    refetch: refetchProject,
+  } = useGetProjectQuery(activeProjectId, {
+    skip: !isLoggedIn || activeProjectId == null,
+  });
+  console.log(" 🔴 projectResp ", projectResp);
+
   const project = projectResp?.project;
   const renderer = projectResp?.renderer;
   const projectFeatures = projectResp?.features ?? [];
   const planningUnits = projectResp?.planning_units;
+  const metadata = projectResp?.metadata ?? {};
   const costNames = projectResp?.costnames ?? [];
+
   // Refs for Map so state isnt stale.
   const featuresRef = useRef(projectFeatures);
   const planningUnitsRef = useRef(planningUnits);
   const ownerRef = useRef(owner);
   const projectIdRef = useRef(activeProjectId);
-  const projectFeaturesRef = useRef(projectFeatures);
+  const projFeaturesRef = useRef(projectFeatures);
 
   useEffect(() => {
     ownerRef.current = owner;
@@ -210,11 +220,11 @@ const App = () => {
     projectIdRef.current = activeProjectId;
   }, [activeProjectId]);
   useEffect(() => {
-    projectFeaturesRef.current = projectFeatures;
-  }, [projectFeatures]);
-  useEffect(() => {
     planningUnitsRef.current = planningUnits;
   }, [planningUnits]);
+  useEffect(() => {
+    projFeaturesRef.current = projectFeatures;
+  }, [projectFeatures]);
 
   const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
   const [logoutUser] = useLogoutUserMutation();
@@ -249,7 +259,6 @@ const App = () => {
 
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [pid, setPid] = useState("");
   const [allImpacts, setAllImpacts] = useState([]);
@@ -267,7 +276,6 @@ const App = () => {
     mapPP4: [],
   });
   const [menuAnchor, setMenuAnchor] = useState(null);
-  const [metadata, setMetadata] = useState({});
   const [notifications, setNotifications] = useState([]);
 
   const [preprocessing, setPreprocessing] = useState(false);
@@ -334,35 +342,34 @@ const App = () => {
     (servername) => {
       // Remove the search part of the URL
       window.history.replaceState({}, document.title, "/");
-      const server = projState.bpServers.find(
-        (item) => item.name === servername
-      );
+      const server = bioprotectServers.find((item) => item.name === servername);
       if (server) {
         dispatch(selectServer(server));
       }
     },
-    [dispatch, projState.bpServers]
+    [dispatch, bioprotectServers]
   );
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const fetchGlobalVariables = async () => {
       console.log("fetchGlobalVariables.... ");
+      dispatch(setLoading(true));
       try {
         setBrew(new classyBrew());
         dispatch(setRegistry(INITIAL_VARS));
-        setInitialLoading(false);
-
         if (searchParams.has("server")) {
           selectServerByName(searchParams.get("server"));
         }
       } catch (error) {
         console.error("Error fetching global variables:", error);
+      } finally {
+        dispatch(setLoading(false));
       }
     };
 
     fetchGlobalVariables();
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     if (
@@ -398,15 +405,9 @@ const App = () => {
   useEffect(() => {
     if (!map.current) return;
     if (!puLayerIdsRef.current?.sourceId) return;
-    if (
-      !projState.projectPlanningUnits ||
-      Object.keys(projState.projectPlanningUnits).length === 0
-    )
-      return;
+    if (!planningUnits || Object.keys(planningUnits).length === 0) return;
     const { sourceId, sourceLayerName } = puLayerIdsRef.current;
-    for (const [status, ids] of Object.entries(
-      projState.projectPlanningUnits
-    )) {
+    for (const [status, ids] of Object.entries(planningUnits)) {
       ids.forEach((id) => {
         map.current.setFeatureState(
           { source: sourceId, sourceLayer: sourceLayerName, id: String(id) },
@@ -415,11 +416,7 @@ const App = () => {
       });
     }
     map.current.triggerRepaint();
-  }, [
-    projState.projectPlanningUnits,
-    puLayerIdsRef.current?.sourceId,
-    map.current,
-  ]);
+  }, [planningUnits, puLayerIdsRef.current?.sourceId, map.current]);
 
   const setSnackBar = (message, silent = false) => {
     if (!silent) {
@@ -491,7 +488,7 @@ const App = () => {
   const updateSelectedFeatures = async () => {
     // Get the updated features
     const prevAll = allFeatures;
-    const prevProj = projState.projectFeatures;
+    const prevProj = projectFeatures;
 
     let updatedFeatures = allFeatures.map((feature) => {
       if (featureState.selectedFeatureIds.includes(feature.id)) {
@@ -592,8 +589,7 @@ const App = () => {
   // ---------------------------------------- //
   const _get = useCallback(
     async (path, { timeout = CONSTANTS.TIMEOUT } = {}) => {
-      const base =
-        projState?.bpServer?.endpoint || projState?.bpServers[0].endpoint;
+      const base = bioprotectServer?.endpoint || bioprotectServers[0].endpoint;
       const url = new URL(path, base).toString();
       dispatch(setLoading(true));
 
@@ -636,15 +632,12 @@ const App = () => {
           timeoutId = setTimeout(() => controller.abort(), timeout);
         }
 
-        const response = await fetch(
-          projState.bpServer.endpoint + endpointPath,
-          {
-            method: "POST",
-            body: formData,
-            credentials: withCredentials,
-            signal, // Pass the AbortSignal to the fetch call
-          }
-        );
+        const response = await fetch(bioprotectServer.endpoint + endpointPath, {
+          method: "POST",
+          body: formData,
+          credentials: withCredentials,
+          signal, // Pass the AbortSignal to the fetch call
+        });
         clearTimeout(timeoutId);
         const data = await response.json();
 
@@ -662,12 +655,12 @@ const App = () => {
         dispatch(setLoading(false));
       }
     },
-    [projState.bpServer.endpoint, checkForErrors, setSnackBar]
+    [bioprotectServer.endpoint, checkForErrors, setSnackBar]
   );
 
   const startLogging = (clearLog = false) => {
     //switches the results pane to the log tab and clears log if needs be
-    setActiveTab("log");
+    dispatch(setActiveTab("log"));
     if (clearLog) {
       dispatch(clearImportLog());
     }
@@ -897,12 +890,8 @@ const App = () => {
           forceRefetch: true,
         })
       ).unwrap();
-      console.log("projectData (RTKQ)", projectData);
 
       await postLoginSetup(projectData);
-      console.log("should be returnng project data");
-      console.log("projectData ", projectData);
-
       return projectData;
     } catch (error) {
       console.error("❌ Failed to load project:", error);
@@ -931,20 +920,14 @@ const App = () => {
         featureApiSlice.endpoints.getAllFeatures.initiate()
       );
       const allFeatures = allFeaturesResponse?.data || [];
-      console.log("allFeatures ", allFeatures);
-
       const activitiesData = await _get("getUploadedActivities");
-      console.log("activitiesData ", activitiesData);
+
       dispatch(setUploadedActivities(activitiesData.data));
 
       setPUTabInactive();
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
       dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: true }));
-      console.log(
-        "should hgave dispatched and now set initial loading to false"
-      );
-
-      setInitialLoading(false);
+      dispatch(setLoading(false));
 
       configureProjectFeatures(
         projectData.features,
@@ -972,8 +955,7 @@ const App = () => {
       // Reset local React state
       setBrew(new classyBrew());
       setRunParams([]);
-      setRenderer({});
-      setOwner("");
+      dispatch(setOwner(""));
       setNotifications([]);
       setMetadata({});
       setFiles({});
@@ -1022,10 +1004,7 @@ const App = () => {
 
   const toggleProjectPrivacy = async (newValue) => {
     await updateProjectParameter("PRIVATE", newValue);
-    setMetadata((prevState) => ({
-      ...prevState.metadata,
-      PRIVATE: newValue === "True",
-    }));
+    await refetchProject();
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -1061,7 +1040,7 @@ const App = () => {
       ]);
     }
     //see if there is a new version of the marxan-server software
-    if (projState.bpServer.server_version !== uiState.registry.SERVER_VERSION) {
+    if (bioprotectServer.server_version !== uiState.registry.SERVER_VERSION) {
       addNotifications([
         {
           id: "marxan_server_update_" + uiState.registry.SERVER_VERSION,
@@ -1075,7 +1054,7 @@ const App = () => {
       ]);
     }
     //check that there is enough disk space
-    if (projState.bpServer.disk_space < 1000) {
+    if (bioprotectServer.disk_space < 1000) {
       addNotifications([
         {
           id: "hardware_1000",
@@ -1084,7 +1063,7 @@ const App = () => {
           showForRoles: ["Admin"],
         },
       ]);
-    } else if (projState.bpServer.disk_space < 2000) {
+    } else if (bioprotectServer.disk_space < 2000) {
       addNotifications([
         {
           id: "hardware_2000",
@@ -1093,7 +1072,7 @@ const App = () => {
           showForRoles: ["Admin"],
         },
       ]);
-    } else if (projState.bpServer.disk_space < 3000) {
+    } else if (bioprotectServer.disk_space < 3000) {
       addNotifications([
         {
           id: "hardware_3000",
@@ -1175,7 +1154,7 @@ const App = () => {
 
   //updates a single parameter in the input.dat file directly
   const updateProjectParameter = async (parameter, value) =>
-    await updateProjectParams(projState.project, { [parameter]: value });
+    await updateProjectParams(project, { [parameter]: value });
 
   //updates the run parameters for the current project
   const updateRunParams = async (array) => {
@@ -1184,7 +1163,7 @@ const App = () => {
       acc[obj.key] = obj.value;
       return acc;
     }, {});
-    await updateProjectParams(projState.project, parameters);
+    await updateProjectParams(project, parameters);
     setRunParams(parameters);
   };
 
@@ -1197,7 +1176,6 @@ const App = () => {
     const projectFeatureMap = Object.fromEntries(
       projectFeatures.map((f) => [f.feature_unique_id, f])
     );
-    console.log("projectFeatureMap ", projectFeatureMap);
 
     // preprocessing rows are [project_id, feature_id, area, count]
     const preprocessMap = Object.fromEntries(
@@ -1230,7 +1208,6 @@ const App = () => {
     });
 
     const selected = processedFeatures.filter((f) => f.selected);
-    console.log("selected ", selected);
 
     // update RTKQ cache instead of redux
     dispatch(setAllFeaturesInCache({ features: processedFeatures }));
@@ -1287,14 +1264,12 @@ const App = () => {
       showMessage(response.info, "info", silent);
 
       // Check if the deleted project is the current one
-      if (response.project === projState.project) {
+      if (response.project === project) {
         showMessage(
           "Current project deleted - loading first available",
           "success"
         );
-        const nextProject = projState.projects.find(
-          (p) => p.name !== projState.project
-        );
+        const nextProject = projState.projects.find((p) => p.name !== project);
         if (nextProject) {
           await dispatch(switchProject(nextProject.id)).unwrap();
         }
@@ -1308,11 +1283,11 @@ const App = () => {
   //exports the project on the server and returns the *.mxw file
   const exportProject = async (user, proj) => {
     try {
-      setActiveTab("log");
+      dispatch(setActiveTab("log"));
       const message = await handleWebSocket(
         `exportProject?user=${user}project=${proj}`
       );
-      return projState.bpServer.endpoint + "exports/" + message.filename;
+      return bioprotectServer.endpoint + "exports/" + message.filename;
     } catch (error) {
       console.log(error);
     }
@@ -1329,9 +1304,9 @@ const App = () => {
 
   //rename a specific project on the server
   const renameProject = async (newName) => {
-    if (newName !== "" && newName !== projState.project) {
+    if (newName !== "" && newName !== project) {
       const response = await _get(
-        `projects?action=rename&user=${uiState.owner}&project=${projState.project}&newName=${newName}`
+        `projects?action=rename&user=${uiState.owner}&project=${project}&newName=${newName}`
       );
 
       // dispatch(setProject(newName)); // FIX THIS - UPDATE NAME OF PROJECT ONLY.
@@ -1340,18 +1315,15 @@ const App = () => {
     }
   };
 
-  //rename the description for a specific project on the server
   const renameDescription = async (newDesc) => {
     await updateProjectParameter("DESCRIPTION", newDesc);
-    setMetadata({ ...metadata, DESCRIPTION: newDesc });
+    await refetchProject(); // or invalidateTags
     return "Description Renamed";
   };
 
   const getProjects = async () => {
     // const response = await _get(`getProjects?user=${user}`); - old
     const response = await _get(`projects?action=list&user=${userId}`);
-    console.log("getProjects response ", response);
-    console.log("getProjects userData ", userData);
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
       (proj) => !(proj.private && proj.user !== userId)
@@ -1370,9 +1342,7 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
 
   //updates the project features with target values that have changed
-  const updateProjectFeatures = async (
-    features = projState.projectFeatures
-  ) => {
+  const updateProjectFeatures = async (features = projectFeatures) => {
     const getFeatureId = (item) => item.id ?? item.feature_unique_id;
 
     const join = (getter) =>
@@ -1382,8 +1352,8 @@ const App = () => {
         .join(",");
 
     const formData = new FormData();
-    formData.append("user", projState.projectData.user);
-    formData.append("project_id", projState.projectData.project.id);
+    formData.append("user", projectResp.user);
+    formData.append("project_id", project.id);
 
     formData.append(
       "interest_features",
@@ -1403,7 +1373,6 @@ const App = () => {
 
   //preprocess a single feature
   const preprocessSingleFeature = async (feature) => {
-    console.log("feature ", feature);
     // dispatch(
     //   toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
     // );
@@ -1413,7 +1382,7 @@ const App = () => {
 
   //preprocess synchronously, i.e. one after another
   const preprocessAllFeatures = async () => {
-    for (const feature of projState.projectFeatures) {
+    for (const feature of projectFeatures) {
       if (!feature.preprocessed) {
         await preprocessFeature(feature);
       }
@@ -1424,9 +1393,9 @@ const App = () => {
   const preprocessFeature = async (feature) => {
     try {
       // Switch to the log tab
-      const projectId = projState.projectData.project.id;
-      const planningGridId = projState.projectData.metadata.pu_id;
-      setActiveTab("log");
+      const projectId = project.id;
+      const planningGridId = metadata.pu_id;
+      dispatch(setActiveTab("log"));
       // Call the WebSocket
       const message = await handleWebSocket(
         `preprocessFeature?project_id=${projectId}&planning_grid_id=${planningGridId}&feature_class_name=${feature.feature_class_name}&feature_id=${feature.id}`
@@ -1510,7 +1479,7 @@ const App = () => {
   const uploadFileToProject = async (value, filename) => {
     const formData = new FormData();
     formData.append("user", uiState.owner);
-    formData.append("project", projState.project);
+    formData.append("project", project);
     formData.append("filename", `input/${filename}`);
     formData.append("value", value);
 
@@ -1630,7 +1599,7 @@ const App = () => {
 
       if (features.length) {
         // join ids onto the full feature data from RTKQ-cached project features
-        joinArrays(features, projectFeaturesRef.current ?? [], "species", "id");
+        joinArrays(features, projFeaturesRef.current ?? [], "species", "id");
       }
 
       dispatch(
@@ -1843,7 +1812,7 @@ const App = () => {
             new Set(idFeatures.map((item) => item.sourceLayer))
           );
 
-          const featuresList = projectFeaturesRef.current ?? [];
+          const featuresList = projFeaturesRef.current ?? [];
           idFeatures = uniqueSourceLayers.map((sourceLayer) =>
             featuresList.find(
               (feature) => feature.feature_class_name === sourceLayer
@@ -1945,7 +1914,7 @@ const App = () => {
       if (tileset) {
         addPlanningGridLayers(tileset.name);
         if (uiState.owner) {
-          // await getResults(uiState.owner, projState.project);
+          // await getResults(uiState.owner, project);
         }
         if (uiState.activeTab === "planningUnits") {
           setPUTabActive();
@@ -2463,7 +2432,7 @@ const App = () => {
   const exportPlanningGrid = async (featureName) => {
     try {
       const response = await useExportPlanningUnitGridQuery(featureName);
-      return `${projState.bpServer.endpoint} exports / ${response.filename} `;
+      return `${bioprotectServer.endpoint} exports / ${response.filename} `;
     } catch (error) {
       throw new Error("Failed to export planning grid");
     }
@@ -2643,7 +2612,7 @@ const App = () => {
   const getAtlasLayers = async () => {
     try {
       const response = await fetch(
-        projState.bpServer.endpoint + "getAtlasLayers",
+        bioprotectServer.endpoint + "getAtlasLayers",
         {
           credentials: "include",
         }
@@ -2814,7 +2783,7 @@ const App = () => {
     dispatch(setLoading(true));
     startLogging();
     await handleWebSocket(
-      `createCostsFromImpact?user=${uiState.owner}&project=${projState.project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`
+      `createCostsFromImpact?user=${uiState.owner}&project=${project}&pu_filename=${metadata.PLANNING_UNIT_NAME}&impact_filename=${data.feature_class_name}&impact_type=${data.alias}`
     );
     dispatch(setLoading(false));
     addCost(data.alias);
@@ -2833,7 +2802,7 @@ const App = () => {
 
   //updates the properties of a feature and then updates the features state
   const updateFeature = async (feature, newProps) => {
-    const prevProj = projState.projectFeatures;
+    const prevProj = projectFeatures;
 
     // optimistic patch for one item using RTK Query cache
     const patchResult = dispatch(
@@ -3070,14 +3039,9 @@ const App = () => {
     //get the planning units where the feature occurs
     const data = await triggerListFeaturePUs({
       owner: uiState.owner,
-      project: projState.project,
+      project: project,
       featureId: feature.id,
     }).unwrap();
-    // const { data, error, isLoading } = useListFeaturePUsQuery(
-    //   uiState.owner,
-    //   projState.project,
-    //   feature.id
-    // );
 
     addMapLayer({
       id: layerName,
@@ -3230,12 +3194,9 @@ const App = () => {
   //changes the cost profile for a project
   const changeCostname = async (costname) => {
     await _get(
-      `updateCosts?user=${uiState.owner}&project=${projState.project}&costname=${costname}`
+      `updateCosts?user=${uiState.owner}&project=${project}&costname=${costname}`
     );
-    setMetadata((prevState) => ({
-      ...prevState.metadata,
-      COSTS: costname,
-    }));
+    await refetchProject();
   };
 
   const loadCostsLayer = async (forceReload = false) => {
@@ -3247,7 +3208,6 @@ const App = () => {
       if (map.current && statusLayerId && map.current.getLayer(statusLayerId)) {
         map.current.setLayoutProperty(statusLayerId, "visibility", "visible");
         map.current.setLayerZoomRange(statusLayerId, 0, 24);
-        console.log("✅ Status layer shown with Planning Units tab");
       }
       // cache in Redux
       dispatch(setCostData(response));
@@ -3261,7 +3221,7 @@ const App = () => {
   };
 
   const getPuCostsLayer = async (forceReload) => {
-    const project_id = projState.projectData.project.id;
+    const project_id = project.id;
     if (uiState.owner === "") {
       dispatch(setOwner(userId));
     }
@@ -3296,7 +3256,7 @@ const App = () => {
   //deletes a cost file on the server
   const deleteCost = async (costname) => {
     await _get(
-      `deleteCost?user=${uiState.owner}&project=${projState.project}&costname=${costname}`
+      `deleteCost?user=${uiState.owner}&project=${project}&costname=${costname}`
     );
     const _costnames = projState.projectCosts.filter(
       (item) => item !== costname
@@ -3306,7 +3266,7 @@ const App = () => {
   };
   //restores the database back to its original state and runs a git reset on the file system
   const resetServer = async () => {
-    setActiveTab("log");
+    dispatch(setActiveTab("log"));
     await handleWebSocket("resetDatabase");
     dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: false }));
     return;
@@ -3326,259 +3286,261 @@ const App = () => {
 
   return (
     <div>
-      {initialLoading ? (
-        <Loading />
-      ) : (
-        <React.Fragment>
-          <div
-            ref={mapContainer}
-            className="map-container absolute top right left bottom"
-          ></div>
-          {token ? null : (
-            <LoginDialog
-              open={!isLoggedIn}
-              loading={uiState.loading}
-              loadProjectAndSetup={loadProjectAndSetup}
-            />
-          )}
-          <ResendPasswordDialog open={dialogStates.resendPasswordDialogOpen} />
-          <ToolsMenu
-            menuAnchor={menuAnchor}
-            openUsersDialog={openUsersDialog}
-            openRunLogDialog={openRunLogDialog}
-            userRole={userData}
-            metadata={metadata}
-            cleanup={cleanup}
+      {uiState.loading && <Loading open={uiState.loading} />}
+
+      <React.Fragment>
+        <div
+          ref={mapContainer}
+          className="map-container absolute top right left bottom"
+        ></div>
+        {token ? null : (
+          <LoginDialog
+            open={!isLoggedIn}
+            loading={uiState.loading}
+            loadProjectAndSetup={loadProjectAndSetup}
           />
-          <UserMenu menuAnchor={menuAnchor} logout={handleLogOut} />
-          {dialogStates.helpMenuOpen ? (
-            <HelpMenu menuAnchor={menuAnchor} />
-          ) : null}
-          {dialogStates.userSettingsDialogOpen ? (
-            <UserSettingsDialog
-              open={dialogStates.userSettingsDialogOpen}
-              onCancel={() =>
-                dispatch(
-                  toggleDialog({
-                    dialogName: "userSettingsDialogOpen",
-                    isOpen: false,
-                  })
-                )
-              }
-              loading={uiState.loading}
-              saveOptions={saveOptions}
-              loadBasemap={loadBasemap}
-            />
-          ) : null}
-          {dialogStates.usersDialogOpen ? (
-            <UsersDialog
-              open={dialogStates.usersDialogOpen}
-              loading={uiState.loading}
-              deleteUser={handleDeleteUser}
-              changeRole={changeRole}
-              guestUserEnabled={projState.bpServer.guestUserEnabled}
-            />
-          ) : null}
-          {dialogStates.profileDialogOpen ? (
-            <ProfileDialog
-              open={dialogStates.profileDialogOpen}
-              onOk={() =>
-                dispatch(
-                  toggleDialog({
-                    dialogName: "profileDialogOpen",
-                    isOpen: false,
-                  })
-                )
-              }
-              onCancel={() =>
-                dispatch(
-                  toggleDialog({
-                    dialogName: "profileDialogOpen",
-                    isOpen: false,
-                  })
-                )
-              }
-              loading={uiState.loading}
-              updateUser={handleUpdateUser}
-            />
-          ) : null}
-          {dialogStates.changePasswordDialogOpen ? (
-            <ChangPasswordDialog open={dialogStates.changePasswordDialogOpen} />
-          ) : null}
-
-          <AboutDialog
-            marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
-            wdpaAttribution={wdpaAttribution}
-          />
-          {project ? (
-            <InfoPanel
-              map={map}
-              onClickRef={onClickRef}
-              onContextMenuRef={onContextMenuRef}
-              metadata={metadata}
-              pid={pid}
-              changeCostname={changeCostname}
-              puLayerIdsRef={puLayerIdsRef}
-              _post={_post}
-              puEditing={puEditingRef.current}
-              setPuEditing={setPuEditing}
-              // renderPuEditLayer={renderPuEditLayer}
-
-              renameProject={renameProject}
-              renameDescription={renameDescription}
-              setPUTabInactive={setPUTabInactive}
-              setPUTabActive={setPUTabActive}
-              preprocessing={preprocessing}
-              openFeaturesDialog={openFeaturesDialog}
-              updateFeature={updateFeature}
-              toggleProjectPrivacy={toggleProjectPrivacy}
-              toggleFeatureLayer={toggleFeatureLayer}
-              toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
-              useFeatureColors={userData?.USEFEATURECOLORS}
-              smallLinearGauge={smallLinearGauge}
-              openCostsDialog={openCostsDialog}
-              costname={metadata?.COSTS}
-              loadCostsLayer={loadCostsLayer}
-              loading={uiState.loading}
-              setMenuAnchor={setMenuAnchor}
-              handleWebSocket={handleWebSocket}
-              // protectedAreaIntersections={protectedAreaIntersections}
-            />
-          ) : null}
-
-          <ResultsPanel
-            open={uiState.resultsPanelOpen}
-            preprocessing={preprocessing}
-            setClassificationDialogOpen={() =>
+        )}
+        <ResendPasswordDialog open={dialogStates.resendPasswordDialogOpen} />
+        <ToolsMenu
+          menuAnchor={menuAnchor}
+          openUsersDialog={openUsersDialog}
+          openRunLogDialog={openRunLogDialog}
+          userRole={userData}
+          metadata={metadata}
+          cleanup={cleanup}
+        />
+        <UserMenu menuAnchor={menuAnchor} logout={handleLogOut} />
+        {dialogStates.helpMenuOpen ? (
+          <HelpMenu menuAnchor={menuAnchor} />
+        ) : null}
+        {dialogStates.userSettingsDialogOpen ? (
+          <UserSettingsDialog
+            open={dialogStates.userSettingsDialogOpen}
+            onCancel={() =>
               dispatch(
                 toggleDialog({
-                  dialogName: "classificationDialogOpen",
-                  isOpen: true,
+                  dialogName: "userSettingsDialogOpen",
+                  isOpen: false,
                 })
               )
             }
-            brew={brew}
-            messages={logMessages}
-            activeResultsTab={uiState.activeResultsTab}
-            setActiveTab={setActiveTab}
-            clearLog={() => dispatch(clearImportLog())}
-            resultsLayer={resultsLayer}
-            wdpaLayer={wdpaLayer}
-            paLayerVisible={paLayerVisible}
-            changeOpacity={changeOpacity}
-            userRole={userData?.role}
-            visibleLayers={visibleLayers}
-            metadata={metadata}
-            costsLoading={costsLoading}
-          />
-          {puState.dialogs.hexInfoDialogOpen ? (
-            <HexInfoDialog xy={popupPoint} metadata={metadata} />
-          ) : null}
-          {projState.dialogs.projectsDialogOpen ? (
-            <ProjectsDialog
-              loading={uiState.loading}
-              deleteProject={deleteProject}
-              exportProject={exportProject}
-              cloneProject={cloneProject}
-              unauthorisedMethods={unauthorisedMethods}
-              userRole={userData?.role}
-              loadProjectAndSetup={loadProjectAndSetup}
-            />
-          ) : null}
-          <ProjectsListDialog />
-          <NewProjectDialog
             loading={uiState.loading}
-            openFeaturesDialog={openFeaturesDialog}
-            selectedCosts={selectedCosts}
-            previewFeature={previewFeature}
-            fileUpload={uploadFileToFolder}
-            updateSelectedFeatures={updateSelectedFeatures}
+            saveOptions={saveOptions}
+            loadBasemap={loadBasemap}
           />
-          <NewPlanningGridDialog
-            loading={uiState.loading || preprocessing || uploading}
-            fileUpload={uploadFileToFolder}
-          />
-          <ImportPlanningGridDialog
-            importPlanningUnitGrid={importPlanningUnitGrid}
-            loading={uiState.loading || uploading}
-            fileUpload={uploadFileToFolder}
-          />
-          <FeatureInfoDialog open={true} updateFeature={updateFeature} />
-          <FeaturesDialog
-            onOk={updateSelectedFeatures}
-            metadata={metadata}
-            userRole={userData?.role}
-            openFeaturesDialog={openFeaturesDialog}
-            initialiseDigitising={initialiseDigitising}
-            previewFeature={previewFeature}
-            refreshFeatures={refreshFeatures}
-            preview={true}
-          />
-          {featureState.dialogs.featureDialogOpen ? (
-            <FeatureDialog getTilesetMetadata={getMetadata} />
-          ) : null}
-          <NewFeatureDialog
-            loading={uiState.loading || uploading}
-            newFeatureCreated={newFeatureCreated}
-          />
-          {featureState.dialogs.importFeaturesDialogOpen ? (
-            <ImportFeaturesDialog
-              importFeatures={importFeatures}
-              fileUpload={uploadFileToFolder}
-              unzipShapefile={unzipShapefile}
-              getShapefileFieldnames={getShapefileFieldnames}
-              deleteShapefile={deleteShapefile}
-            />
-          ) : null}
-          <PlanningGridsDialog
+        ) : null}
+        {dialogStates.usersDialogOpen ? (
+          <UsersDialog
+            open={dialogStates.usersDialogOpen}
             loading={uiState.loading}
+            deleteUser={handleDeleteUser}
+            changeRole={changeRole}
+            guestUserEnabled={bioprotectServer.guestUserEnabled}
+          />
+        ) : null}
+        {dialogStates.profileDialogOpen ? (
+          <ProfileDialog
+            open={dialogStates.profileDialogOpen}
+            onOk={() =>
+              dispatch(
+                toggleDialog({
+                  dialogName: "profileDialogOpen",
+                  isOpen: false,
+                })
+              )
+            }
+            onCancel={() =>
+              dispatch(
+                toggleDialog({
+                  dialogName: "profileDialogOpen",
+                  isOpen: false,
+                })
+              )
+            }
+            loading={uiState.loading}
+            updateUser={handleUpdateUser}
+          />
+        ) : null}
+        {dialogStates.changePasswordDialogOpen ? (
+          <ChangPasswordDialog open={dialogStates.changePasswordDialogOpen} />
+        ) : null}
+
+        <AboutDialog
+          marxanClientReleaseVersion={MARXAN_CLIENT_VERSION}
+          wdpaAttribution={wdpaAttribution}
+        />
+        {project && (
+          <InfoPanel
+            project={project}
+            projectFeatures={projectFeatures}
+            planningUnits={planningUnits}
+            metadata={metadata}
+            costname={metadata?.COSTS}
+            costNames={costNames}
+            map={map}
+            onClickRef={onClickRef}
+            onContextMenuRef={onContextMenuRef}
+            pid={pid}
+            changeCostname={changeCostname}
+            puLayerIdsRef={puLayerIdsRef}
+            _post={_post}
+            puEditing={puEditing}
+            setPuEditing={setPuEditing}
+            // renderPuEditLayer={renderPuEditLayer}
+
+            renameProject={renameProject}
+            renameDescription={renameDescription}
+            setPUTabInactive={setPUTabInactive}
+            setPUTabActive={setPUTabActive}
+            preprocessing={preprocessing}
+            openFeaturesDialog={openFeaturesDialog}
+            updateFeature={updateFeature}
+            toggleProjectPrivacy={toggleProjectPrivacy}
+            toggleFeatureLayer={toggleFeatureLayer}
+            toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
+            useFeatureColors={userData?.USEFEATURECOLORS}
+            smallLinearGauge={smallLinearGauge}
+            openCostsDialog={openCostsDialog}
+            loadCostsLayer={loadCostsLayer}
+            loading={uiState.loading}
+            setMenuAnchor={setMenuAnchor}
+            handleWebSocket={handleWebSocket}
+            // protectedAreaIntersections={protectedAreaIntersections}
+          />
+        )}
+
+        <ResultsPanel
+          open={uiState.resultsPanelOpen}
+          preprocessing={preprocessing}
+          setClassificationDialogOpen={() =>
+            dispatch(
+              toggleDialog({
+                dialogName: "classificationDialogOpen",
+                isOpen: true,
+              })
+            )
+          }
+          brew={brew}
+          messages={logMessages}
+          activeResultsTab={uiState.activeResultsTab}
+          clearLog={() => dispatch(clearImportLog())}
+          resultsLayer={resultsLayer}
+          wdpaLayer={wdpaLayer}
+          paLayerVisible={paLayerVisible}
+          changeOpacity={changeOpacity}
+          userRole={userData?.role}
+          visibleLayers={visibleLayers}
+          metadata={metadata}
+          costsLoading={costsLoading}
+        />
+        {puState.dialogs.hexInfoDialogOpen ? (
+          <HexInfoDialog xy={popupPoint} metadata={metadata} />
+        ) : null}
+        {projDialogStates.projectsDialogOpen ? (
+          <ProjectsDialog
+            loading={uiState.loading}
+            deleteProject={deleteProject}
+            exportProject={exportProject}
+            cloneProject={cloneProject}
             unauthorisedMethods={unauthorisedMethods}
-            exportPlanningGrid={exportPlanningGrid}
-            deletePlanningGrid={deletePlanningUnitGrid}
-            previewPlanningGrid={previewPlanningGrid}
-            fullWidth={true}
-            maxWidth="false"
-          />
-          <PlanningGridDialog
-            planningGridMetadata={planningGridMetadata}
-            getTilesetMetadata={getMetadata}
-            getProjectList={getProjectList}
-          />
-          {dialogStates.costsDialogOpen ? (
-            <CostsDialog
-              unauthorisedMethods={unauthorisedMethods}
-              costname={metadata?.COSTS}
-              deleteCost={deleteCost}
-              createCostsFromImpact={createCostsFromImpact}
-            />
-          ) : null}
-          <ImportCostsDialog
-            addCost={addCost}
-            deleteCostFileThenClose={deleteCostFileThenClose}
-            fileUpload={uploadFileToProject}
-          />
-          <RunSettingsDialog
-            updateRunParams={updateRunParams}
-            runParams={runParams}
             userRole={userData?.role}
+            loadProjectAndSetup={loadProjectAndSetup}
           />
-          {dialogStates.classificationDialogOpen ? (
-            <ClassificationDialog
-              open={dialogStates.classificationDialogOpen}
-              onOk={() => setClassificationDialogOpen(false)}
-              onCancel={() => setClassificationDialogOpen(false)}
-              renderer={renderer}
-              changeColorCode={changeColorCode}
-              changeRenderer={changeRenderer}
-              changeNumClasses={changeNumClasses}
-              changeShowTopClasses={changeShowTopClasses}
-              summaryStats={summaryStats}
-              brew={brew}
-              dataBreaks={dataBreaks}
-            />
-          ) : null}
-          <ResetDialog onOk={resetServer} />
-          {/* <RunLogDialog
+        ) : null}
+        <ProjectsListDialog />
+        <NewProjectDialog
+          loading={uiState.loading}
+          openFeaturesDialog={openFeaturesDialog}
+          selectedCosts={selectedCosts}
+          previewFeature={previewFeature}
+          fileUpload={uploadFileToFolder}
+          updateSelectedFeatures={updateSelectedFeatures}
+        />
+        <NewPlanningGridDialog
+          loading={uiState.loading || preprocessing || uploading}
+          fileUpload={uploadFileToFolder}
+        />
+        <ImportPlanningGridDialog
+          importPlanningUnitGrid={importPlanningUnitGrid}
+          loading={uiState.loading || uploading}
+          fileUpload={uploadFileToFolder}
+        />
+        <FeatureInfoDialog open={true} updateFeature={updateFeature} />
+        <FeaturesDialog
+          onOk={updateSelectedFeatures}
+          metadata={metadata}
+          userRole={userData?.role}
+          openFeaturesDialog={openFeaturesDialog}
+          initialiseDigitising={initialiseDigitising}
+          previewFeature={previewFeature}
+          refreshFeatures={refreshFeatures}
+          preview={true}
+        />
+        {featureState.dialogs.featureDialogOpen ? (
+          <FeatureDialog getTilesetMetadata={getMetadata} />
+        ) : null}
+        <NewFeatureDialog
+          loading={uiState.loading || uploading}
+          newFeatureCreated={newFeatureCreated}
+        />
+        {featureState.dialogs.importFeaturesDialogOpen ? (
+          <ImportFeaturesDialog
+            importFeatures={importFeatures}
+            fileUpload={uploadFileToFolder}
+            unzipShapefile={unzipShapefile}
+            getShapefileFieldnames={getShapefileFieldnames}
+            deleteShapefile={deleteShapefile}
+          />
+        ) : null}
+        <PlanningGridsDialog
+          loading={uiState.loading}
+          unauthorisedMethods={unauthorisedMethods}
+          exportPlanningGrid={exportPlanningGrid}
+          deletePlanningGrid={deletePlanningUnitGrid}
+          previewPlanningGrid={previewPlanningGrid}
+          fullWidth={true}
+          maxWidth="false"
+        />
+        <PlanningGridDialog
+          planningGridMetadata={planningGridMetadata}
+          getTilesetMetadata={getMetadata}
+          getProjectList={getProjectList}
+        />
+        {dialogStates.costsDialogOpen ? (
+          <CostsDialog
+            unauthorisedMethods={unauthorisedMethods}
+            costname={metadata?.COSTS}
+            deleteCost={deleteCost}
+            createCostsFromImpact={createCostsFromImpact}
+          />
+        ) : null}
+        <ImportCostsDialog
+          addCost={addCost}
+          deleteCostFileThenClose={deleteCostFileThenClose}
+          fileUpload={uploadFileToProject}
+        />
+        <RunSettingsDialog
+          updateRunParams={updateRunParams}
+          runParams={runParams}
+          userRole={userData?.role}
+        />
+        {dialogStates.classificationDialogOpen ? (
+          <ClassificationDialog
+            open={dialogStates.classificationDialogOpen}
+            onOk={() => setClassificationDialogOpen(false)}
+            onCancel={() => setClassificationDialogOpen(false)}
+            renderer={renderer}
+            changeColorCode={changeColorCode}
+            changeRenderer={changeRenderer}
+            changeNumClasses={changeNumClasses}
+            changeShowTopClasses={changeShowTopClasses}
+            summaryStats={summaryStats}
+            brew={brew}
+            dataBreaks={dataBreaks}
+          />
+        ) : null}
+        <ResetDialog onOk={resetServer} />
+        {/* <RunLogDialog
             preprocessing={preprocessing}
             unauthorisedMethods={unauthorisedMethods}
             runLogs={runLogs}
@@ -3588,67 +3550,66 @@ const App = () => {
             userRole={userData?.role}
             runlogTimer={runlogTimer}
           /> */}
-          <ServerDetailsDialog loading={uiState.loading} />
-          <AlertDialog />
-          <FeatureMenu
-            anchorEl={menuAnchor}
-            removeFromProject={removeFromProject}
-            toggleFeatureLayer={toggleFeatureLayer}
-            toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
-            zoomToFeature={zoomToFeature}
-            preprocessSingleFeature={preprocessSingleFeature}
-            preprocessing={preprocessing}
+        <ServerDetailsDialog loading={uiState.loading} />
+        <AlertDialog />
+        <FeatureMenu
+          anchorEl={menuAnchor}
+          removeFromProject={removeFromProject}
+          toggleFeatureLayer={toggleFeatureLayer}
+          toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
+          zoomToFeature={zoomToFeature}
+          preprocessSingleFeature={preprocessSingleFeature}
+          preprocessing={preprocessing}
+        />
+        <TargetDialog
+          showCancelButton={true}
+          updateTargetValueForFeatures={updateTargetValueForFeatures}
+        />
+        {dialogStates.atlasLayersDialogOpen ? (
+          <AtlasLayersDialog map={map} atlasLayers={atlasLayers} />
+        ) : null}
+
+        {dialogStates.cumulativeImpactDialogOpen ? (
+          <CumulativeImpactDialog
+            loading={uiState.loading || uploading}
+            _get={_get}
+            metadata={metadata}
+            clickImpact={clickImpact}
+            initialiseDigitising={initialiseDigitising}
+            selectedImpactIds={selectedImpactIds}
+            userRole={userData?.role}
           />
-          <TargetDialog
-            showCancelButton={true}
-            updateTargetValueForFeatures={updateTargetValueForFeatures}
-          />
-          {dialogStates.atlasLayersDialogOpen ? (
-            <AtlasLayersDialog map={map} atlasLayers={atlasLayers} />
-          ) : null}
+        ) : null}
 
-          {dialogStates.cumulativeImpactDialogOpen ? (
-            <CumulativeImpactDialog
-              loading={uiState.loading || uploading}
-              _get={_get}
-              metadata={metadata}
-              clickImpact={clickImpact}
-              initialiseDigitising={initialiseDigitising}
-              selectedImpactIds={selectedImpactIds}
-              userRole={userData?.role}
-            />
-          ) : null}
-
-          {dialogStates.humanActivitiesDialogOpen ? (
-            <HumanActivitiesDialog
-              loading={uiState.loading || uploading}
-              metadata={metadata}
-              initialiseDigitising={initialiseDigitising}
-              userRole={userData?.role}
-              fileUpload={uploadRaster}
-              saveActivityToDb={saveActivityToDb}
-              startLogging={startLogging}
-              handleWebSocket={handleWebSocket}
-            />
-          ) : null}
-
-          <RunCumuluativeImpactDialog
+        {dialogStates.humanActivitiesDialogOpen ? (
+          <HumanActivitiesDialog
             loading={uiState.loading || uploading}
             metadata={metadata}
+            initialiseDigitising={initialiseDigitising}
             userRole={userData?.role}
-            runCumulativeImpact={runCumulativeImpact}
+            fileUpload={uploadRaster}
+            saveActivityToDb={saveActivityToDb}
+            startLogging={startLogging}
+            handleWebSocket={handleWebSocket}
           />
-          <MenuBar
-            open={isLoggedIn}
-            openFeaturesDialog={openFeaturesDialog}
-            openProjectsDialog={openProjectsDialog}
-            openPlanningGridsDialog={openPlanningGridsDialog}
-            openCumulativeImpactDialog={openCumulativeImpactDialog}
-            openAtlasLayersDialog={openAtlasLayersDialog}
-            setMenuAnchor={setMenuAnchor}
-          />
-        </React.Fragment>
-      )}
+        ) : null}
+
+        <RunCumuluativeImpactDialog
+          loading={uiState.loading || uploading}
+          metadata={metadata}
+          userRole={userData?.role}
+          runCumulativeImpact={runCumulativeImpact}
+        />
+        <MenuBar
+          open={isLoggedIn}
+          openFeaturesDialog={openFeaturesDialog}
+          openProjectsDialog={openProjectsDialog}
+          openPlanningGridsDialog={openPlanningGridsDialog}
+          openCumulativeImpactDialog={openCumulativeImpactDialog}
+          openAtlasLayersDialog={openAtlasLayersDialog}
+          setMenuAnchor={setMenuAnchor}
+        />
+      </React.Fragment>
     </div>
   );
 };

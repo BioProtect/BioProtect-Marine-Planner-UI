@@ -1,19 +1,16 @@
 import BioProtectLogo from "./images/bioprotect_logo.gif";
 import CardMedia from "@mui/material/CardMedia";
 import Dialog from "@mui/material/Dialog";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import React from "react";
-import Typography from "@mui/material/Typography";
 
-const Loading = () => {
+const Loading = ({ open }) => {
   return (
     <Dialog
       fullWidth={false}
       maxWidth="sm"
       component="form"
       noValidate
-      open={true}
+      open={Boolean(open)}
     >
       <DialogTitle>
         <div style={{ display: "flex", justifyContent: "center" }}>

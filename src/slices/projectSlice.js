@@ -152,16 +152,12 @@ const initialState = {
   costData: null,
   // renderer: {},
 
-  // projectData: {},
   projects: [],
   projectList: [],
   projectListDialogHeading: "",
   projectListDialogTitle: "",
   projectChanged: false,
   projectImpacts: [],
-  // projectFeatures: [],
-  // projectPlanningUnits: {},
-  // projectCosts: [],
   planningCostsTrigger: false,
 
   dialogs: {

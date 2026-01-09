@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import Clipboard from "@mui/icons-material/Assignment";
@@ -12,12 +13,13 @@ import Tab from "@mui/material/Tab";
 import Table from "@mui/material/Table";
 import Tabs from "@mui/material/Tabs";
 import { faEraser } from "@fortawesome/free-solid-svg-icons";
-import { useSelector } from "react-redux";
+import { setActiveTab } from "@slices/uiSlice";
 
 let runtime = 0;
 const activeTabArr = ["legend", "solutions", "log"];
 
 const ResultsPanel = (props) => {
+  const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
 
   const [showClipboard, setShowClipboard] = useState(false);
@@ -118,7 +120,7 @@ const ResultsPanel = (props) => {
 
   const handleTabChange = (evt, tabIndex) => {
     setCurrentTabIndex(tabIndex);
-    props.setActiveTab(activeTabArr[tabIndex]);
+    dispatch(setActiveTab(activeTabArr[tabIndex]));
   };
 
   const panelStyle = useMemo(

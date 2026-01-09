@@ -1,12 +1,4 @@
 import { IconButton, Stack } from "@mui/material";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
 import React, { useEffect, useState } from "react";
 
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -35,7 +27,6 @@ const LayerLegend = (props) => {
     }
     setOpacity(initialOpacity);
   }, [props.layer, props.subLayers]);
-
 
   const changeOpacity = (newOpacity) => {
     //the layer legend may in fact represent many separate layers (e.g. for features) - these are passed in as subLayers and each needs to have the opacity set
@@ -97,22 +88,15 @@ const LayerLegend = (props) => {
   ) : null;
 
   return (
-    <React.Fragment >
-      <Stack
-        direction="row"
-        pl={1}
-        justifyContent="left"
-        alignItems="center"
-      >
+    <React.Fragment>
+      <Stack direction="row" pl={1} justifyContent="left" alignItems="center">
         <Typography variant="h5" component="div">
           {props.layer.metadata.name}
         </Typography>
         {setSymbologyBtn}
         <TransparencyControl changeOpacity={changeOpacity} opacity={opacity} />
       </Stack>
-      <Stack spacing={1} p={1}
-        sx={{ maxHeight: "100vh", overflowY: "auto", }}
-      >
+      <Stack spacing={1} p={1} sx={{ maxHeight: "100vh", overflowY: "auto" }}>
         {items}
       </Stack>
     </React.Fragment>
