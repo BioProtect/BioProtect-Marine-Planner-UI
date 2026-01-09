@@ -276,6 +276,7 @@ const InfoPanel = (props) => {
           )}
           {currentTabIndex === 2 && (
             <PlanningUnitsTab
+              project={props.project}
               userRole={userData?.role}
               preprocessing={props.preprocessing}
               changeCostname={props.changeCostname}

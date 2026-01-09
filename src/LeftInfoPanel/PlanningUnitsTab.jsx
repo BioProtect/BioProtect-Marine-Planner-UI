@@ -28,6 +28,7 @@ import Typography from "@mui/material/Typography";
 import { setShowPlanningGrid } from "@slices/planningUnitSlice";
 
 const PlanningUnitsTab = ({
+  project,
   preprocessing,
   userRole,
   changeCostname,
@@ -44,8 +45,6 @@ const PlanningUnitsTab = ({
   costNames,
 }) => {
   const dispatch = useDispatch();
-  const puState = useSelector((state) => state.planningUnit);
-  const projState = useSelector((state) => state.project);
   const uiState = useSelector((state) => state.ui);
 
   // Build a quick lookup of puid → status, recomputed whenever the planningUnits array changes
@@ -70,22 +69,11 @@ const PlanningUnitsTab = ({
       console.warn("No PU layer ID available yet");
       return;
     }
-    // assign handlers
-    // onClickRef.current = (e) => updatePlanningUnitStatus(e, "cycle");
-    // onContextMenuRef.current = (e) => updatePlanningUnitStatus(e, "reset");
-    // const puLayerId = puLayerIdsRef.current?.puLayerId;
-    // if (!puLayerId) {
-    //   console.warn("No PU layer ID available yet");
-    //   return;
-    // }
-    // map.current.on("click", puLayerId, onClickRef.current);
-    // map.current.on("contextmenu", puLayerId, onContextMenuRef.current);
     onClickRef.current = (e) => updatePlanningUnitStatus(e, "change");
     onContextMenuRef.current = (e) => updatePlanningUnitStatus(e, "reset");
 
     map.current.on("click", puLayerId, onClickRef.current);
     map.current.on("contextmenu", puLayerId, onContextMenuRef.current);
-    // renderPuEditLayer();
   };
 
   const stopPuEditSession = (e) => {
@@ -95,7 +83,6 @@ const PlanningUnitsTab = ({
       return;
     }
     dispatch(setShowPlanningGrid(false));
-    setPuEditing(false);
     map.current.getCanvas().style.cursor = "pointer";
 
     if (onClickRef.current) {
@@ -132,14 +119,13 @@ const PlanningUnitsTab = ({
 
   const updateProjectPus = async () => {
     const formData = new FormData();
-    formData.append("user", uiState.owner);
-    formData.append("project", projState.project);
-
-    for (const [status, ids] of Object.entries(planningUnits)) {
-      formData.append(`status${status}`, ids);
+    formData.append("project_id", project.id);
+    formData.append("status1", (planningUnits[1] || []).join(","));
+    formData.append("status2", (planningUnits[2] || []).join(","));
+    for (const [key, value] of formData.entries()) {
+      console.log(key, value);
     }
-
-    await _post("planning_units?action=update", formData);
+    await _post("planning-units?action=update", formData);
   };
 
   function appPuidsToPlanningUnits(statuses, status, puids) {
@@ -165,33 +151,7 @@ const PlanningUnitsTab = ({
     return newStatuses;
   };
 
-  // const updatePlanningUnitStatus = (e, mode = "change") => {
-  //   const puLayerId = CONSTANTS.PU_LAYER_NAME;
-  //   if (!map.current?.getLayer(puLayerId)) return;
-
-  //   // find clicked feature
-  //   const features = map.current.queryRenderedFeatures(e.point, { layers: [puLayerId] });
-  //   if (!features.length) return;
-
-  //   const puid = features[0].properties.h3_index || features[0].properties.puid;
-
-  //   // get current and next statsu
-  //   const currentStatus = planningUnitStatusMap[puid] ?? 0;
-  //   const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
-
-  //   let updated = removePuidsFromArray(planningUnits, currentStatus, [puid]);
-  //   updated = appPuidsToPlanningUnits(updated, nextStatus, [puid]);
-  //   dispatch(setProjectPlanningUnits(updated));
-
-  //   const featureRef = {
-  //     source: puLayerIdsRef.current.sourceId,
-  //     sourceLayer: puLayerIdsRef.current.sourceLayerName,
-  //     id: puid,  // h3_index value
-  //   };
-  //   map.current.setFeatureState(featureRef, { status: nextStatus });
-  // };
   const updatePlanningUnitStatus = (e, mode = "change") => {
-    console.log("updatePlanningUnitStatus ");
     const puLayerId = puLayerIdsRef.current?.puLayerId;
     if (!map.current?.getLayer(puLayerId)) return;
 
@@ -204,7 +164,6 @@ const PlanningUnitsTab = ({
     const puid =
       feature.properties.h3_index || feature.properties.puid || feature.id;
     if (!puid) return;
-    console.log("planningUnitStatusMap[puid] ", planningUnitStatusMap[puid]);
 
     // Determine current & next status
     const featureRef = {
@@ -213,9 +172,10 @@ const PlanningUnitsTab = ({
       id: String(puid),
     };
     const currentState = map.current.getFeatureState(featureRef);
-    const currentStatus = currentState?.status ?? 0;
+    const currentStatus = [0, 1, 2].includes(currentState?.status)
+      ? currentState.status
+      : 0;
 
-    // const currentStatus = planningUnitStatusMap[puid] ?? 0;
     const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
     if (currentStatus === nextStatus) return;
 
