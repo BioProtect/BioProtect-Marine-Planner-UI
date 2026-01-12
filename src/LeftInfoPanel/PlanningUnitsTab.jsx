@@ -118,37 +118,36 @@ const PlanningUnitsTab = ({
   };
 
   const updateProjectPus = async () => {
+    const base1 = new Set(planningUnits[1] || []);
+    const base2 = new Set(planningUnits[2] || []);
+    const localEdits = localEditsRef.current;
+
+    for (const [h3, status] of Object.entries(localEdits)) {
+      // remove from both first
+      base1.delete(h3);
+      base2.delete(h3);
+
+      // add to target bucket if needed
+      if (status === 1) {
+        base1.add(h3);
+      } else if (status === 2) {
+        base2.add(h3);
+      }
+      // status 0 => stays removed
+    }
+
+    const status1Out = Array.from(base1);
+    const status2Out = Array.from(base2);
+
     const formData = new FormData();
     formData.append("project_id", project.id);
-    formData.append("status1", (planningUnits[1] || []).join(","));
-    formData.append("status2", (planningUnits[2] || []).join(","));
+    formData.append("status1", status1Out.join(","));
+    formData.append("status2", status2Out.join(","));
+
     for (const [key, value] of formData.entries()) {
       console.log(key, value);
     }
     await _post("planning-units?action=update", formData);
-  };
-
-  function appPuidsToPlanningUnits(statuses, status, puids) {
-    const newStatuses = { ...statuses };
-    //  Get the current list for this status or start with an empty array
-    const currentList = newStatuses[status] || [];
-    //  Combine old and new PU IDs and Remove duplicates
-    const uniqueIds = Array.from(new Set([...currentList, ...puids]));
-    newStatuses[status] = uniqueIds;
-    return newStatuses;
-  }
-
-  const removePuidsFromArray = (statuses, status, puids) => {
-    const newStatuses = { ...statuses };
-    const currentList = newStatuses[status] || [];
-    // remove matching IDs
-    const remaining = currentList.filter((id) => !puids.includes(id));
-    if (remaining.length > 0) {
-      newStatuses[status] = remaining;
-    } else {
-      delete newStatuses[status];
-    }
-    return newStatuses;
   };
 
   const updatePlanningUnitStatus = (e, mode = "change") => {
