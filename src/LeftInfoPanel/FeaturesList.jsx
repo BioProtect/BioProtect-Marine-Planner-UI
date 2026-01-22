@@ -1,16 +1,15 @@
 import { useDispatch, useSelector } from "react-redux";
 
-import Avatar from "@mui/material/Avatar";
 import IconButton from "@mui/material/IconButton";
-import LinearGauge from "../LinearGauge";
+import LinearGauge from "./LinearGauge";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import TargetIcon from "../TargetIcon";
+import TargetAvatar from "./TargetAvatar";
 import { grey } from "@mui/material/colors";
-import { selectCurrentUser } from "@slices/authSlice";
+import { memo } from "react";
 import { setProjectFeatures } from "@slices/projectSlice";
 import { toggleFeatureD } from "@slices/featureSlice";
 
@@ -18,12 +17,9 @@ const FeaturesList = ({
   updateFeature,
   toggleFeatureLayer,
   toggleFeaturePUIDLayer,
-  useFeatureColors,
-  smallLinearGauge,
   setMenuAnchor,
 }) => {
-  const projState = useSelector((state) => state.project);
-  console.log("projState ", projState);
+  const projectFeatures = useSelector((s) => s.project.projectFeatures);
   const dispatch = useDispatch();
 
   const handleIconClick = (evt, feature) => {
@@ -50,10 +46,8 @@ const FeaturesList = ({
     // and sync your Redux slice
     dispatch(
       setProjectFeatures(
-        projState.projectFeatures.map((f) =>
-          f.id === updated.id ? updated : f
-        )
-      )
+        projectFeatures.map((f) => (f.id === updated.id ? updated : f)),
+      ),
     );
   };
 
@@ -62,7 +56,8 @@ const FeaturesList = ({
 
   return (
     <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
-      {projState.projectFeatures.map((item) => {
+      {projectFeatures.map((item) => {
+        console.log("item ", item);
         const { pu_area, protected_area, target_value, color } = item;
         let protectedPercent;
         if (protected_area === -1) {
@@ -87,42 +82,30 @@ const FeaturesList = ({
             }
           >
             <ListItemAvatar>
-              <Avatar>
-                <TargetIcon
-                  target_value={target_value}
-                  updateTargetValue={handleTargetChange}
-                  feature={item}
-                  targetStatus={
-                    pu_area === 0
-                      ? "Does not occur in planning area"
-                      : protectedPercent === -1
-                        ? "Unknown"
-                        : protected_area >= item.target_area
-                          ? "Target achieved"
-                          : "Target missed"
-                  }
-                  visible={pu_area !== 0}
-                />
-              </Avatar>
+              <TargetAvatar
+                target_value={target_value}
+                updateTargetValue={handleTargetChange}
+                feature={item}
+                targetStatus={
+                  pu_area === 0
+                    ? "Does not occur in planning area"
+                    : protectedPercent === -1
+                      ? "Unknown"
+                      : protected_area >= item.target_area
+                        ? "Target achieved"
+                        : "Target missed"
+                }
+                visible={pu_area !== 0}
+              />
             </ListItemAvatar>
+
             <ListItemText
               onClick={(evt) => handleItemClick(evt, item)}
               primary={item.alias}
               primaryTypographyProps={{ variant: "body2" }}
               sx={{ flex: 1 }}
               secondaryTypographyProps={{ component: "div" }}
-              secondary={
-                <LinearGauge
-                  scaledWidth={220}
-                  target_value={target_value}
-                  protected_percent={protectedPercent}
-                  visible={item.pu_area !== 0}
-                  color={color}
-                  useFeatureColors={useFeatureColors}
-                  sx={{ mt: 0.5, height: smallLinearGauge ? 3 : "auto" }}
-                  smallLinearGauge={smallLinearGauge}
-                />
-              }
+              secondary={<LinearGauge value={target_value} />}
             />
           </ListItem>
         );
@@ -131,4 +114,4 @@ const FeaturesList = ({
   );
 };
 
-export default FeaturesList;
+export default memo(FeaturesList);

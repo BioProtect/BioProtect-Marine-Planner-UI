@@ -211,11 +211,7 @@ const App = () => {
   const ownerRef = useRef(owner);
   const projectIdRef = useRef(activeProjectId);
   const projFeaturesRef = useRef(projectFeatures);
-  const bioprotectServerRef = useRef(null);
 
-  useEffect(() => {
-    bioprotectServerRef.current = bioprotectServer;
-  }, [bioprotectServer]);
   useEffect(() => {
     ownerRef.current = owner;
   }, [owner]);
@@ -593,21 +589,13 @@ const App = () => {
   // ---------------------------------------- //
   const _get = useCallback(
     async (path, { timeout = CONSTANTS.TIMEOUT } = {}) => {
-      const server = bioprotectServerRef.current;
-
-      if (!server?.endpoint) {
-        console.warn("GET skipped: no active server", server);
-        return null;
-      }
-
-      const url = new URL(path, server.endpoint).toString();
-      console.log("url ", url);
+      const base = bioprotectServer?.endpoint || bioprotectServers[0].endpoint;
+      const url = new URL(path, base).toString();
       dispatch(setLoading(true));
 
       try {
         const { promise } = jsonp(url, { timeout });
         const response = await promise;
-        console.log("response ", response);
 
         if (checkForErrors(response)) {
           // If your checkForErrors returns truthy, throw the error it found
@@ -1334,6 +1322,7 @@ const App = () => {
   };
 
   const getProjects = async () => {
+    // const response = await _get(`getProjects?user=${user}`); - old
     const response = await _get(`projects?action=list&user=${userId}`);
     //filter the projects so that private ones arent shown
     const projects = response.projects.filter(
@@ -1597,16 +1586,16 @@ const App = () => {
 
   const getPUData = useCallback(
     async (h3_index) => {
+      const currentOwner = ownerRef.current;
       const currentProjectId = projectIdRef.current;
-      if (currentProjectId == null || !h3_index) return;
+
+      if (!currentOwner || currentProjectId == null || !h3_index) return;
 
       const response = await _get(
-        `planning-units?action=data&project_id=${currentProjectId}&h3_index=${h3_index}`,
+        `planning-units?action=data&user=${currentOwner}&project_id=${currentProjectId}&h3_index=${h3_index}`,
       );
 
-      console.log("planning unit data ", response);
       const features = response?.data?.features ?? [];
-      const puData = response?.data?.pu_data ?? null;
 
       if (features.length) {
         // join ids onto the full feature data from RTKQ-cached project features
@@ -1615,7 +1604,7 @@ const App = () => {
 
       dispatch(
         setIdentifyPlanningUnits({
-          puData: puData,
+          puData: response.data.pu_data,
           features,
         }),
       );
@@ -1632,36 +1621,6 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
-  const setLayerMetadata = (layerId, metadata) => {
-    const layer = map.current.getLayer(layerId);
-    if (layer) {
-      // Use spread operator to merge metadata
-      layer.metadata = { ...layer.metadata, ...metadata };
-    }
-  };
-
-  //gets a particular set of layers based on the layer types (layerTypes is an array of layer types)
-  const getLayers = useCallback((layerTypes = []) => {
-    if (!map.current) return [];
-    if (!mapContainer.current) return [];
-
-    // style may not be ready yet
-    const style = map.current.getStyle?.();
-    const allLayers = style?.layers ?? [];
-
-    return allLayers.filter(({ metadata }) => {
-      const type = metadata?.type;
-      return type && layerTypes.includes(type);
-    });
-  }, []);
-
-  //shows/hides layers of a particular type (layerTypes is an array of layer types)
-  const showHideLayerTypes = (layerTypes, show) => {
-    const layers = getLayers(layerTypes);
-    layers.forEach((layer) =>
-      show ? showLayer(layer.id) : hideLayer(layer.id),
-    );
-  };
 
   //instantiates the mapboxgl map
   // instantiates the mapboxgl map
@@ -1792,85 +1751,99 @@ const App = () => {
     async (e) => {
       try {
         const isEditing = puEditingRef.current;
-        const isDrawing = map.current?.getSource("mapbox-gl-draw-cold");
-        if (isEditing || isDrawing) return;
+        
 
-        setPopupPoint(e.point);
-        ///////////////////////////////////////////
-        // Planning unit layer
-        ///////////////////////////////////////////
-        const puLayers = getLayers([CONSTANTS.LAYER_TYPE_PLANNING_UNITS]);
-        let puid = null;
 
-        if (puLayers.length) {
-          const puHits = map.current.queryRenderedFeatures(e.point, {
-            layers: puLayers.map((l) => l.id),
-          });
 
-          if (puHits.length) {
-            const props = puHits[0].properties;
-            puid = props.h3_index || props.puid || props.id;
+
+
+
+
+
+      }
+      //if the user is not editing planning units or creating a new feature
+      // then show the identify features for the clicked point
+
+      try {
+        if (!isEditing && !map.current.getSource("mapbox-gl-draw-cold")) {
+          const featureLayers = getLayers([
+            CONSTANTS.LAYER_TYPE_PLANNING_UNITS,
+            CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
+            CONSTANTS.LAYER_TYPE_PROTECTED_AREAS,
+            CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
+          ]);
+          // Get the feature layer ids, get a list of all of the rendered features that were clicked on - these will be planning units, features and protected areas
+          // Set the popup point, get any planning unit features under the mouse
+          const featureLayerIds = featureLayers.map((item) => item.id);
+
+          const clickedFeatures =
+            featureLayerIds.length && map.current?.getLayer(featureLayerIds[0])
+              ? map.current.queryRenderedFeatures(e.point, {
+                  layers: featureLayerIds,
+                })
+              : [];
+
+          // ############################################################################################
+          // ############################################################################################
+          // need to have a look at this logic again
+          // ############################################################################################
+          // ############################################################################################
+          const puFeatures = getFeaturesByLayerStartsWith(
+            clickedFeatures,
+            "martin_layer_pu_",
+          );
+
+          if (puFeatures.length) {
+            // use the correct property name
+            const puid =
+              puFeatures[0].properties.h3_index ||
+              puFeatures[0].properties.puid ||
+              puFeatures[0].properties.id;
+
+            if (puid) {
+              await getPUData(puid); // fetch PU details
+            } else {
+              console.warn(
+                "No PU identifier found in feature:",
+                puFeatures[0].properties,
+              );
+            }
           }
-        }
-        if (puid) {
-          await getPUData(puid); // sets puData + puFeatures
-        } else {
-          // clear PU data if none found
-          dispatch(setIdentifyPlanningUnits({ puData: null, features: [] }));
-        }
+          setPopupPoint(e.point);
+          // Get any conservation features under the mouse
+          // Might be dupliate conservation features (e.g. with GBIF data) so get a unique list of sourceLayers
+          // Get the full features data from the state.projectFeatures array
 
-        ///////////////////////////////////////////
-        // Feature layers
-        ///////////////////////////////////////////
-        const featureLayers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_LAYER]);
-        let identifiedFeatures = [];
-
-        if (featureLayers.length) {
-          const featureHits = map.current.queryRenderedFeatures(e.point, {
-            layers: featureLayers.map((l) => l.id),
-          });
-
-          const uniqueSourceLayers = [
-            ...new Set(featureHits.map((f) => f.sourceLayer)),
-          ];
+          let idFeatures = getFeaturesByLayerStartsWith(
+            clickedFeatures,
+            "martin_layer_f_",
+          );
+          const uniqueSourceLayers = Array.from(
+            new Set(idFeatures.map((item) => item.sourceLayer)),
+          );
 
           const featuresList = projFeaturesRef.current ?? [];
+          idFeatures = uniqueSourceLayers.map((sourceLayer) =>
+            featuresList.find(
+              (feature) => feature.feature_class_name === sourceLayer,
+            ),
+          );
 
-          identifiedFeatures = uniqueSourceLayers
-            .map((sourceLayer) =>
-              featuresList.find((f) => f.feature_class_name === sourceLayer),
-            )
-            .filter(Boolean);
+          //set the state to populate the identify popup
+          dispatch(
+            togglePUD({ dialogName: "hexInfoDialogOpen", isOpen: true }),
+          );
+          dispatch(
+            setIdentifyPlanningUnits({ identifiedFeatures: idFeatures }),
+          );
+          console.log("identifyPlanningUnits", puState.identifyPlanningUnits);
         }
-
-        dispatch(
-          setIdentifyPlanningUnits({
-            identifiedFeatures,
-          }),
-        );
-
-        dispatch(
-          togglePUD({
-            dialogName: "hexInfoDialogOpen",
-            isOpen: true,
-          }),
-        );
       } catch (error) {
         console.error("Error handling map click:", error);
       }
     },
-    [dispatch, getPUData, getLayers],
+    [dispatch, getPUData],
   );
-
-  ////////////////////////////////////////
-  // KEEP AN EYE ON THIS
-  ////////////////////////////////////////
-  useEffect(() => {
-    if (!map.current) return;
-    map.current.off("click", mapClick);
-    map.current.on("click", mapClick);
-    return () => map.current?.off("click", mapClick);
-  }, [mapClick]);
 
   //after a layer has been added/removed/shown/hidden update the legend items
   const updateLegend = () => {
@@ -2320,6 +2293,38 @@ const App = () => {
         // code
       }
     }
+  };
+
+  //sets the metadata for the layer
+  const setLayerMetadata = (layerId, metadata) => {
+    const layer = map.current.getLayer(layerId);
+    if (layer) {
+      // Use spread operator to merge metadata
+      layer.metadata = { ...layer.metadata, ...metadata };
+    }
+  };
+
+  //gets a particular set of layers based on the layer types (layerTypes is an array of layer types)
+  const getLayers = useCallback((layerTypes = []) => {
+    if (!map.current) return [];
+    if (!mapContainer.current) return [];
+
+    // style may not be ready yet
+    const style = map.current.getStyle?.();
+    const allLayers = style?.layers ?? [];
+
+    return allLayers.filter(({ metadata }) => {
+      const type = metadata?.type;
+      return type && layerTypes.includes(type);
+    });
+  }, []);
+
+  //shows/hides layers of a particular type (layerTypes is an array of layer types)
+  const showHideLayerTypes = (layerTypes, show) => {
+    const layers = getLayers(layerTypes);
+    layers.forEach((layer) =>
+      show ? showLayer(layer.id) : hideLayer(layer.id),
+    );
   };
 
   // ----------------------------------------------------------------------------------------------- //

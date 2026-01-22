@@ -179,7 +179,12 @@ export const initialiseServers = createAsyncThunk(
         updatedServers.map((server) => getServerCapabilities(server))
       );
       const filteredAndSortedServers = filterAndSortServers(allCapabilities);
+      console.log("filteredAndSortedServers ", filteredAndSortedServers);
       dispatch(setBpServers(filteredAndSortedServers)); // Dispatch the updated servers to the store
+      if (filteredAndSortedServers.length) {
+        dispatch(selectServer(filteredAndSortedServers[0]));
+        console.log("filteredAndSortedServers[0]) ", filteredAndSortedServers[0]);
+      }
       return "ServerData retrieved";
     } catch (error) {
       return rejectWithValue(error.message);
@@ -187,49 +192,6 @@ export const initialiseServers = createAsyncThunk(
   }
 );
 
-// Thunk to fetch the user's project only if not already in state
-// export const getUserProject = createAsyncThunk(
-//   "projects/getUserProject",
-//   async (projectId, { dispatch, rejectWithValue }) => {
-//     try {
-//       if (!projectId) {
-//         const allProjects = await dispatch(
-//           projectApiSlice.endpoints.listProjects.initiate()
-//         ).unwrap();
-
-//         const parsed = typeof allProjects === "string" ? JSON.parse(allProjects) : allProjects;
-//         const firstProject = parsed.projects?.[0];
-
-//         if (!firstProject) {
-//           enqueueSnackbar?.("No projects found for user", { variant: "warning" })
-//           return rejectWithValue("No projects found for user");
-//         }
-//         projectId = firstProject.id;
-//       }
-
-//       const data = await dispatch(
-//         projectApiSlice.endpoints.getProject.initiate(projectId)
-//       ).unwrap();
-
-//       const response = JSON.parse(data);
-//       // update store
-//       dispatch(setProjectData(response));
-//       dispatch(setRenderer(response.renderer));  // Add missing renderer update
-//       dispatch(setProjectCosts(response.costnames));
-//       dispatch(setProjectFeatures(response.features));
-//       dispatch(setOwner(response.project.user));
-//       dispatch(setProjectPlanningUnits(response.planning_units))
-//       dispatch(setActiveTab("project"));
-//       dispatch(setPlanningCostsTrigger(true));
-//       await new Promise((resolve) => setTimeout(resolve, 0));
-
-//       return response;
-//     } catch (error) {
-//       console.error("Failed to fetch project:", error);
-//       return rejectWithValue(error.message);
-//     }
-//   }
-// );
 
 export const bootstrapProject = createAsyncThunk(
   "projects/bootstrapProject",
@@ -243,7 +205,7 @@ export const bootstrapProject = createAsyncThunk(
         ).unwrap();
 
         const parsed = typeof allProjects === "string" ? JSON.parse(allProjects) : allProjects;
-        const projId = parsed.projects?.[0].id;
+        projId = parsed.projects?.[0]?.id;
 
         if (!projId) {
           return rejectWithValue("No projects found for user");
@@ -283,9 +245,11 @@ const projectSlice = createSlice({
       state.activeProjectId = action.payload;
     },
     setBpServers(state, action) {
+      console.warn("setBpServers called with", action.payload);
       state.bpServers = action.payload;
     },
     setBpServer(state, action) {
+      console.warn("setBpServer called with", action.payload);
       state.bpServer = action.payload;
     },
     selectServer(state, action) {
