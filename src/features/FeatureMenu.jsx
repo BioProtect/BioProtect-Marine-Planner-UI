@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import { setSelectedFeatureId, toggleFeatureD } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import AddToMap from "@mui/icons-material/Visibility";
@@ -10,9 +10,7 @@ import Properties from "@mui/icons-material/ErrorOutline";
 import RemoveFromMap from "@mui/icons-material/VisibilityOff";
 import RemoveFromProject from "@mui/icons-material/Remove";
 import ZoomIn from "@mui/icons-material/ZoomIn";
-import { generateTableCols } from "../Helpers";
 import { selectCurrentUser } from "@slices/authSlice";
-import { toggleFeatureD } from "@slices/featureSlice";
 
 const FeatureMenu = ({
   anchorEl,
@@ -24,12 +22,13 @@ const FeatureMenu = ({
   preprocessing,
 }) => {
   const dispatch = useDispatch();
-  const featureState = useSelector((state) => state.feature);
-  const userData = useSelector(selectCurrentUser);
+  const selectedFeatureId = useSelector((s) => s.feature.selectedFeatureId);
+  const featureDialogs = useSelector((s) => s.feature.dialogs);
 
   const handleInfoMenuItemClick = () => {
+    console.log("item clicked...");
     dispatch(
-      toggleFeatureD({ dialogName: "featureInfoDialogOpen", isOpen: true })
+      toggleFeatureD({ dialogName: "featureInfoDialogOpen", isOpen: true }),
     );
     closeDialog();
   };
@@ -38,12 +37,12 @@ const FeatureMenu = ({
     dispatch(toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false }));
   return (
     <Menu
-      open={featureState.dialogs.featureMenuOpen}
+      open={featureDialogs.featureMenuOpen}
       anchorEl={anchorEl}
       onClose={() => closeDialog()}
       onMouseLeave={closeDialog}
     >
-      <MenuItem onClick={() => removeFromProject(featureState.currentFeature)}>
+      <MenuItem onClick={() => removeFromProject(selectedFeatureId)}>
         <ListItemIcon>
           <RemoveFromProject />
         </ListItemIcon>
@@ -57,35 +56,33 @@ const FeatureMenu = ({
         Feature Properties
       </MenuItem>
 
-      <MenuItem onClick={() => toggleFeatureLayer(featureState.currentFeature)}>
+      <MenuItem onClick={() => toggleFeatureLayer(selectedFeatureId)}>
         <ListItemIcon>
-          {featureState.currentFeature?.feature_layer_loaded ? (
+          {selectedFeatureId?.feature_layer_loaded ? (
             <RemoveFromMap />
           ) : (
             <AddToMap />
           )}
         </ListItemIcon>
-        {featureState.currentFeature?.feature_puid_layer_loaded
+        {selectedFeatureId?.feature_puid_layer_loaded
           ? "Remove from Map"
           : "Add to Map"}
       </MenuItem>
 
-      <MenuItem
-        onClick={() => toggleFeaturePUIDLayer(featureState.currentFeature)}
-      >
+      <MenuItem onClick={() => toggleFeaturePUIDLayer(selectedFeatureId)}>
         <ListItemIcon>
-          {featureState.currentFeature?.feature_puid_layer_loaded ? (
+          {selectedFeatureId?.feature_puid_layer_loaded ? (
             <RemoveFromMap />
           ) : (
             <AddToMap />
           )}
         </ListItemIcon>
-        {featureState.currentFeature?.feature_puid_layer_loaded
+        {selectedFeatureId?.feature_puid_layer_loaded
           ? "Remove planning unit outlines"
           : "Outline planning units where the feature occurs"}
       </MenuItem>
 
-      <MenuItem onClick={() => zoomToFeature(featureState.currentFeature)}>
+      <MenuItem onClick={() => zoomToFeature(selectedFeatureId)}>
         <ListItemIcon>
           <ZoomIn />
         </ListItemIcon>
@@ -93,8 +90,8 @@ const FeatureMenu = ({
       </MenuItem>
 
       <MenuItem
-        onClick={() => preprocessSingleFeature(featureState.currentFeature)}
-        // {/*disabled={featureState.currentFeature?.preprocessed || preprocessing}*/}
+        onClick={() => preprocessSingleFeature(selectedFeatureId)}
+        // {/*disabled={selectedFeatureId?.preprocessed || preprocessing}*/}
       >
         <ListItemIcon>
           <Preprocess />

@@ -41,7 +41,7 @@ const TargetAvatar = ({
         return { bg: "lightgray", fg: "white" };
       case "Unknown":
       case "Target achieved":
-        return { bg: "white", fg: blue[300] };
+        return { bg: "white", fg: blue[700] };
       default:
         return { bg: blue[300], fg: "white" };
     }

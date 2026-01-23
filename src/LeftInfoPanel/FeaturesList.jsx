@@ -1,3 +1,4 @@
+import { setSelectedFeatureId, toggleFeatureD } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import IconButton from "@mui/material/IconButton";
@@ -10,8 +11,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TargetAvatar from "./TargetAvatar";
 import { grey } from "@mui/material/colors";
 import { memo } from "react";
-import { setProjectFeatures } from "@slices/projectSlice";
-import { toggleFeatureD } from "@slices/featureSlice";
+import { useGetProjectQuery } from "@slices/projectSlice";
 
 const FeaturesList = ({
   updateFeature,
@@ -19,13 +19,17 @@ const FeaturesList = ({
   toggleFeaturePUIDLayer,
   setMenuAnchor,
 }) => {
-  const projectFeatures = useSelector((s) => s.project.projectFeatures);
   const dispatch = useDispatch();
+  const activeProjectId = useSelector((state) => state.project.activeProjectId);
+  const { data: projectResp } = useGetProjectQuery(activeProjectId, {
+    skip: activeProjectId == null,
+  });
+  const projectFeatures = projectResp?.features ?? [];
 
-  const handleIconClick = (evt, feature) => {
+  const handleIconClick = (evt, id) => {
     evt.stopPropagation();
     setMenuAnchor(evt.target);
-    // dispatch(setCurrentFeature(feature));
+    dispatch(setSelectedFeatureId(id));
     dispatch(toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: true }));
   };
 
@@ -45,8 +49,20 @@ const FeaturesList = ({
 
     // and sync your Redux slice
     dispatch(
-      setProjectFeatures(
-        projectFeatures.map((f) => (f.id === updated.id ? updated : f)),
+      projectApiSlice.util.updateQueryData(
+        "getProject",
+        activeProjectId,
+        (draft) => {
+          if (!draft?.features) return;
+
+          const f = draft.features.find(
+            (pf) => (pf.id ?? pf.feature_unique_id) === updated.id,
+          );
+
+          if (f) {
+            f[key] = updated[key];
+          }
+        },
       ),
     );
   };
@@ -57,24 +73,24 @@ const FeaturesList = ({
   return (
     <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
       {projectFeatures.map((item) => {
-        console.log("item ", item);
-        const { pu_area, protected_area, target_value, color } = item;
+        const { feature_unique_id, area, protected_area, target_value, color } =
+          item;
         let protectedPercent;
         if (protected_area === -1) {
           protectedPercent = -1;
-        } else if (pu_area > 0 && protected_area > 0) {
-          protectedPercent = (protected_area / pu_area) * 100;
+        } else if (area > 0 && protected_area > 0) {
+          protectedPercent = (protected_area / area) * 100;
         } else {
           protectedPercent = 0;
         }
 
         return (
           <ListItem
-            key={item.id}
+            key={feature_unique_id}
             secondaryAction={
               <IconButton
                 edge="end"
-                onClick={(evt) => handleIconClick(evt, item)}
+                onClick={(evt) => handleIconClick(evt, feature_unique_id)}
                 sx={{ ml: 1 }}
               >
                 <MoreVertIcon sx={{ color: grey[400] }} />
@@ -87,7 +103,7 @@ const FeaturesList = ({
                 updateTargetValue={handleTargetChange}
                 feature={item}
                 targetStatus={
-                  pu_area === 0
+                  area === 0
                     ? "Does not occur in planning area"
                     : protectedPercent === -1
                       ? "Unknown"
@@ -95,7 +111,7 @@ const FeaturesList = ({
                         ? "Target achieved"
                         : "Target missed"
                 }
-                visible={pu_area !== 0}
+                visible={area !== 0}
               />
             </ListItemAvatar>
 

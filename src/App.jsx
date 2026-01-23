@@ -36,7 +36,6 @@ import {
   setCostData,
   setPlanningCostsTrigger,
   setProjectCosts,
-  setProjectFeatures,
   setProjectImpacts,
   setProjectList,
   setProjectListDialogHeading,
@@ -519,23 +518,33 @@ const App = () => {
 
     // Apply updates to state
     const selected = updatedFeatures.filter((item) => item.selected);
-    const patchResult = dispatch(
+
+    // update all features
+    const patchAllResult = dispatch(
       setAllFeaturesInCache({ features: updatedFeatures }),
     );
-    dispatch(setProjectFeatures(selected));
+
+    // update project features
+    const patchProjectResult = dispatch(
+      projectApiSlice.util.updateQueryData(
+        "getProject",
+        activeProjectId,
+        (draft) => {
+          draft.features = selected;
+        },
+      ),
+    );
 
     // Persist changes to the server if the user is not read-only
     try {
       if (userData?.role !== "ReadOnly") {
-        ``;
         await updateProjectFeatures(selected);
       }
     } catch (err) {
-      patchResult?.undo?.();
-      dispatch(setProjectFeatures(prevProj));
+      patchAllResult?.undo?.();
+      patchProjectResult?.undo?.();
       showMessage?.(`Failed to save selections. Reverted. ${err}`, "error");
     } finally {
-      // close dialogs regardless
       dispatch(
         toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }),
       );
@@ -956,7 +965,7 @@ const App = () => {
 
   //log out and reset some state
   const handleLogOut = async () => {
-    console.log("🔴 Logging out...");
+    console.log("* * * Logging out... * * *");
 
     try {
       // Close all open dialogs
@@ -964,25 +973,27 @@ const App = () => {
       dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: false }));
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
 
-      // Reset local React state
+      // Reset local state
       setBrew(new classyBrew());
       setRunParams([]);
-      dispatch(setOwner(""));
       setNotifications([]);
       setMetadata({});
       setFiles({});
 
       // Reset Redux slices
-      dispatch(setProjectFeatures([]));
+      dispatch(setOwner(""));
       dispatch(setUsers([]));
       dispatch(setProjects([]));
       dispatch(setActiveProjectId(null));
       dispatch(setSelectedFeatureIds([]));
       dispatch(setSelectedFeatureId(null));
 
+      // Clear RTK Query cache
+      dispatch(apiSlice.util.resetApiState());
+
       // Clear authentication data
       dispatch(logOut()); // from authSlice
-      await logoutUser().unwrap(); // RTK Query mutation → clears cookie/session on server
+      await logoutUser().unwrap();
 
       // Clear cookies manually if needed
       document.cookie
@@ -997,7 +1008,7 @@ const App = () => {
               )),
         );
 
-      // 6️⃣ Reset UI
+      // 6Reset UI
       showMessage("Successfully logged out", "success");
     } catch (err) {
       console.error("Logout error:", err);
@@ -1224,7 +1235,18 @@ const App = () => {
     // update RTKQ cache instead of redux
     dispatch(setAllFeaturesInCache({ features: processedFeatures }));
 
-    dispatch(setProjectFeatures(selected));
+    // update project featires
+    dispatch(
+      projectApiSlice.util.updateQueryData(
+        "getProject",
+        activeProjectId,
+        (draft) => {
+          if (!draft) return;
+          draft.features = selected;
+        },
+      ),
+    );
+
     dispatch(setSelectedFeatureIds(selected.map((f) => f.id)));
     return;
   };
@@ -1383,12 +1405,9 @@ const App = () => {
   };
 
   //preprocess a single feature
-  const preprocessSingleFeature = async (feature) => {
-    // dispatch(
-    //   toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
-    // );
+  const preprocessSingleFeature = async (featureId) => {
     startLogging();
-    await preprocessFeature(feature);
+    await preprocessFeature(featureId);
   };
 
   //preprocess synchronously, i.e. one after another
@@ -1401,24 +1420,26 @@ const App = () => {
   };
 
   //preprocesses a feature using websockets - i.e. intersects it with the planning units grid and writes the intersection results into the database. this will have no server timeout as its running using websockets
-  const preprocessFeature = async (feature) => {
+  const preprocessFeature = async (featureId) => {
     try {
       // Switch to the log tab
-      const projectId = project.id;
       const planningGridId = metadata.pu_id;
       dispatch(setActiveTab("log"));
       // Call the WebSocket
       const message = await handleWebSocket(
-        `preprocessFeature?project_id=${projectId}&planning_grid_id=${planningGridId}&feature_class_name=${feature.feature_class_name}&feature_id=${feature.id}`,
+        `preprocessFeature?project_id=${activeProjectId}&planning_grid_id=${planningGridId}&feature_id=${featureId}`,
       );
       showMessage(message.info, "info");
       // Update feature with new data
-      updateFeature(feature, {
-        preprocessed: true,
-        pu_count: Number(message.pu_count),
-        pu_area: Number(message.pu_area),
-        occurs_in_planning_grid: Number(message.pu_count) > 0,
-      });
+      updateFeature(
+        { id: featureId },
+        {
+          preprocessed: true,
+          pu_count: Number(message.pu_count),
+          pu_area: Number(message.pu_area),
+          occurs_in_planning_grid: Number(message.pu_count) > 0,
+        },
+      );
 
       return message;
     } catch (error) {
@@ -2830,27 +2851,43 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
-
+  const updateFeatureById = (features, featureId, newProps) =>
+    features.map((f) =>
+      (f.id ?? f.feature_unique_id) === featureId ? { ...f, ...newProps } : f,
+    );
   //updates the properties of a feature and then updates the features state
-  const updateFeature = async (feature, newProps) => {
-    const prevProj = projectFeatures;
-
+  const updateFeature = async (featureId, newProps) => {
     // optimistic patch for one item using RTK Query cache
-    const patchResult = dispatch(
-      setOneFeatureInCache({ id: feature.id, patch: newProps }),
+    const patchGlobal = dispatch(
+      setOneFeatureInCache({ id: featureId, patch: newProps }),
     );
+    // update derived project features
+    const patchProject = dispatch(
+      projectApiSlice.util.updateQueryData(
+        "getProject",
+        activeProjectId,
+        (draft) => {
+          if (!draft?.features) return;
 
-    // update derived project features (still local)
-    const nextProj = prevProj.map((f) =>
-      (f.id ?? f.feature_unique_id) === feature.id ? { ...f, ...newProps } : f,
+          const f = draft.features.find(
+            (pf) => (pf.id ?? pf.feature_unique_id) === featureId,
+          );
+
+          if (f) {
+            Object.assign(f, newProps);
+          }
+        },
+      ),
     );
-    dispatch(setProjectFeatures(nextProj));
 
     try {
-      await updateProjectFeatures(nextProj);
+      await updateProjectFeatures(
+        updateFeatureById(projectFeatures, featureId, newProps),
+      );
     } catch (err) {
-      patchResult.undo();
-      dispatch(setProjectFeatures(prevProj));
+      patchGlobal.undo();
+      patchProject.undo();
+
       showMessage?.(
         `Failed to save feature changes. Reverted. ${err}`,
         "error",
@@ -2898,8 +2935,19 @@ const App = () => {
       target_value,
     }));
     const projectFeatures = features.filter((item) => item.selected);
-    const patchResult = dispatch(setAllFeaturesInCache({ features: features }));
-    dispatch(setProjectFeatures(projectFeatures));
+
+    const patchAll = dispatch(setAllFeaturesInCache({ features: features }));
+    // Update project features
+    const patchProject = dispatch(
+      projectApiSlice.util.updateQueryData(
+        "getProject",
+        activeProjectId,
+        (draft) => {
+          if (!draft?.features) return;
+          draft.features = selected;
+        },
+      ),
+    );
 
     // Persist the changes to the server
     if (userData?.role === "ReadOnly") return;
@@ -2908,7 +2956,8 @@ const App = () => {
     try {
       await updateProjectFeatures(projectFeatures);
     } catch (err) {
-      patchResult.undo();
+      patchAll?.undo?.();
+      patchProject?.undo?.();
       showMessage?.(`Failed to save target values. Reverted. ${err}`, "error");
     }
   };

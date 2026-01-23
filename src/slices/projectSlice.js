@@ -280,9 +280,6 @@ const projectSlice = createSlice({
     setProjectData(state, action) {
       state.projectData = action.payload;
     },
-    setProjectFeatures(state, action) {
-      state.projectFeatures = action.payload;
-    },
     setProjectImpacts(state, action) {
       state.projectImpacts = action.payload;
     },
@@ -352,7 +349,6 @@ export const {
   setAddToProject,
   setCostData,
   setProjectData,
-  setProjectFeatures,
   setProjectImpacts,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
