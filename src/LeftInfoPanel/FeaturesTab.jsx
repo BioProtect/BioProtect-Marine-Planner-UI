@@ -29,7 +29,6 @@ const FeaturesTab = ({
 }) => {
   const dispatch = useDispatch();
   const userData = useSelector(selectCurrentUser);
-  const featureState = useSelector((state) => state.feature);
 
   const handleOpenFeaturesDialog = () => {
     dispatch(setAddingRemovingFeatures(true));
@@ -37,7 +36,7 @@ const FeaturesTab = ({
       toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: true,
-      })
+      }),
     );
   };
 
@@ -71,7 +70,7 @@ const FeaturesTab = ({
                   toggleDialog({
                     dialogName: "targetDialogOpen",
                     isOpen: true,
-                  })
+                  }),
                 )
               }
               startIcon={<FontAwesomeIcon icon={faCrosshairs} />}

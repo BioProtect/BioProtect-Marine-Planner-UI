@@ -1,6 +1,11 @@
-import { setSelectedFeatureId, toggleFeatureD } from "@slices/featureSlice";
+import {
+  featureApiSlice,
+  setSelectedFeatureId,
+  toggleFeatureD,
+} from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import LinearGauge from "./LinearGauge";
 import List from "@mui/material/List";
@@ -9,9 +14,10 @@ import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TargetAvatar from "./TargetAvatar";
+import Tooltip from "@mui/material/Tooltip";
 import { grey } from "@mui/material/colors";
 import { memo } from "react";
-import { useGetProjectQuery } from "@slices/projectSlice";
+import { projectApiSlice } from "@slices/projectSlice";
 
 const FeaturesList = ({
   updateFeature,
@@ -21,10 +27,12 @@ const FeaturesList = ({
 }) => {
   const dispatch = useDispatch();
   const activeProjectId = useSelector((state) => state.project.activeProjectId);
-  const { data: projectResp } = useGetProjectQuery(activeProjectId, {
-    skip: activeProjectId == null,
-  });
-  const projectFeatures = projectResp?.features ?? [];
+  // get all features and then filter by selectedIds for project features
+  const selectedIds = useSelector((s) => s.feature.selectedFeatureIds);
+  const { data: allFeaturesResp } =
+    featureApiSlice.endpoints.getAllFeatures.useQuery();
+  const allFeatures = allFeaturesResp?.data ?? [];
+  const projectFeatures = allFeatures.filter((f) => selectedIds.includes(f.id));
 
   const handleIconClick = (evt, id) => {
     evt.stopPropagation();
@@ -56,7 +64,7 @@ const FeaturesList = ({
           if (!draft?.features) return;
 
           const f = draft.features.find(
-            (pf) => (pf.id ?? pf.feature_unique_id) === updated.id,
+            (pf) => (pf.id ?? pf.id) === updated.id,
           );
 
           if (f) {
@@ -73,8 +81,7 @@ const FeaturesList = ({
   return (
     <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
       {projectFeatures.map((item) => {
-        const { feature_unique_id, area, protected_area, target_value, color } =
-          item;
+        const { id, area, protected_area, target_value, color } = item;
         let protectedPercent;
         if (protected_area === -1) {
           protectedPercent = -1;
@@ -84,19 +91,30 @@ const FeaturesList = ({
           protectedPercent = 0;
         }
 
-        return (
+        const content = (
           <ListItem
-            key={feature_unique_id}
+            key={"feature" + id}
+            sx={{
+              borderLeft: item.preprocessed
+                ? "4px solid #1990FF"
+                : "4px solid transparent",
+              pl: 1,
+              bgcolor: item.preprocessed
+                ? "rgba(32, 129, 35, 0.06)"
+                : "transparent",
+              borderRadius: 1,
+            }}
             secondaryAction={
               <IconButton
                 edge="end"
-                onClick={(evt) => handleIconClick(evt, feature_unique_id)}
+                onClick={(evt) => handleIconClick(evt, id)}
                 sx={{ ml: 1 }}
               >
                 <MoreVertIcon sx={{ color: grey[400] }} />
               </IconButton>
             }
           >
+            {/* Goal */}
             <ListItemAvatar>
               <TargetAvatar
                 target_value={target_value}
@@ -117,13 +135,21 @@ const FeaturesList = ({
 
             <ListItemText
               onClick={(evt) => handleItemClick(evt, item)}
-              primary={item.alias}
+              primary={item.alias.replaceAll("_", " ")}
               primaryTypographyProps={{ variant: "body2" }}
               sx={{ flex: 1 }}
               secondaryTypographyProps={{ component: "div" }}
               secondary={<LinearGauge value={target_value} />}
             />
           </ListItem>
+        );
+
+        return item.preprocessed ? (
+          <Tooltip title="Preprocessing complete" arrow disableInteractive>
+            <Box>{content}</Box>
+          </Tooltip>
+        ) : (
+          content
         );
       })}
     </List>

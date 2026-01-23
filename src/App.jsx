@@ -2,13 +2,7 @@ import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 import { CONSTANTS, INITIAL_VARS } from "./bpVars";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   addFeaturesToCache,
   setAllFeaturesInCache,
@@ -19,7 +13,6 @@ import {
   clearImportLog,
   removeImportLogMessage,
   setActiveTab,
-  setActivities,
   setBasemap,
   setLoading,
   setOwner,
@@ -42,16 +35,7 @@ import {
   setProjectListDialogTitle,
   setProjects,
   toggleProjDialog,
-  useCloneProjectMutation,
-  useCreateProjectGroupMutation,
-  useCreateProjectMutation,
-  useDeleteProjectClusterMutation,
-  useDeleteProjectMutation,
   useGetProjectQuery,
-  useListProjectsQuery,
-  useListProjectsWithGridsQuery,
-  useRenameProjectMutation,
-  useUpdateProjectMutation,
 } from "@slices/projectSlice";
 import {
   logOut,
@@ -67,7 +51,6 @@ import {
   setSelectedFeatureIds,
   toggleFeatureD,
   useGetAllFeaturesQuery,
-  useLazyListFeaturePUsQuery,
   useListFeaturePUsQuery,
 } from "@slices/featureSlice";
 import {
@@ -108,7 +91,6 @@ import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
 import LoginDialog from "./LoginDialog";
-import { Map } from "mapbox-gl"; // Assuming you're using mapbox-gl
 //mapbox imports
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
@@ -124,9 +106,7 @@ import ProjectsListDialog from "@projects/ProjectsListDialog";
 import ResendPasswordDialog from "./User/ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./RightInfoPanel/ResultsPanel";
-//@mui/material components and icons
 import RunCumuluativeImpactDialog from "./Impacts/RunCumuluativeImpactDialog";
-import RunLogDialog from "./RunLogDialog";
 import RunSettingsDialog from "./RunSettingsDialog";
 import ServerDetailsDialog from "./User/ServerDetails/ServerDetailsDialog";
 import TargetDialog from "./TargetDialog";
@@ -134,18 +114,21 @@ import ToolsMenu from "./ToolsMenu";
 import UserMenu from "./User/UserMenu";
 import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
+//@mui/material components and icons
 import { addFeatureAttributes } from "@features/featureUtils";
+import classyBrew from "classybrew";
+import { featureApiSlice } from "@slices/featureSlice";
 /*global fetch*/
 /*global URLSearchParams*/
 /*global AbortController*/
-import classyBrew from "classybrew";
-import { featureApiSlice } from "@slices/featureSlice";
 import { getTilesBaseUrl } from "@config/api";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
+// wherever loadProjectAndSetup lives
+import store from "@store/store";
 import { switchProject } from "./slices/projectSlice";
 /*eslint-disable no-unused-vars*/
 import useAppSnackbar from "@hooks/useAppSnackbar";
@@ -915,7 +898,7 @@ const App = () => {
       await postLoginSetup(projectData);
       return projectData;
     } catch (error) {
-      console.error("❌ Failed to load project:", error);
+      console.error("Failed to load project:", error);
       showMessage("Error loading project", "error");
     }
   };
@@ -1219,6 +1202,7 @@ const App = () => {
         updated.pu_area = pre.pu_area;
         updated.pu_count = pre.pu_count;
         updated.occurs_in_planning_grid = pre.pu_count > 0;
+        console.log("updated ", updated);
       }
 
       // override with project feature settings if selected
@@ -1231,22 +1215,10 @@ const App = () => {
     });
 
     const selected = processedFeatures.filter((f) => f.selected);
+    console.log("selected ", selected);
 
     // update RTKQ cache instead of redux
     dispatch(setAllFeaturesInCache({ features: processedFeatures }));
-
-    // update project featires
-    dispatch(
-      projectApiSlice.util.updateQueryData(
-        "getProject",
-        activeProjectId,
-        (draft) => {
-          if (!draft) return;
-          draft.features = selected;
-        },
-      ),
-    );
-
     dispatch(setSelectedFeatureIds(selected.map((f) => f.id)));
     return;
   };

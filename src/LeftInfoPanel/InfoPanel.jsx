@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { faLock, faShareAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  featureApiSlice,
+  setSelectedFeatureId,
+  toggleFeatureD,
+} from "@slices/featureSlice";
 import { setActiveTab, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -16,7 +21,7 @@ import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { selectCurrentUser } from "@slices/authSlice";
-import { setProjectCosts } from "../slices/projectSlice";
+import { setProjectCosts } from "@slices/projectSlice";
 
 const activeTabArr = ["project", "features", "planning_units"];
 
@@ -38,6 +43,13 @@ const InfoPanel = (props) => {
 
   const projectNameRef = useRef(null);
   const descriptionEditRef = useRef(null);
+
+  // get project features (selectedIds) and get all features. Then filter all features down by selectedIds
+  const selectedIds = useSelector((s) => s.feature.selectedFeatureIds);
+  const { data: allFeaturesResp } =
+    featureApiSlice.endpoints.getAllFeatures.useQuery();
+  const allFeatures = allFeaturesResp?.data ?? [];
+  const projectFeatures = allFeatures.filter((f) => selectedIds.includes(f.id));
 
   useEffect(() => {
     if (editingProjectName && projectNameRef.current) {
@@ -64,12 +76,12 @@ const InfoPanel = (props) => {
 
   //preprocess synchronously, i.e. one after another
   const preprocessAllFeatures = async () => {
-    // for (const feature of props.projectFeatures) {
+    // for (const feature of projectFeatures) {
     //   if (!feature.preprocessed) {
     //     await preprocessFeature(feature);
     //   }
     // }
-    await preprocessFeature(props.projectFeatures[1]);
+    await preprocessFeature(projectFeatures[1]);
   };
 
   const preprocessFeature = async (feature) => {
@@ -138,7 +150,7 @@ const InfoPanel = (props) => {
       width: "365px",
       border: "1px lightgray solid",
     }),
-    []
+    [],
   );
   const panelStyle = useMemo(
     () => ({
@@ -146,7 +158,7 @@ const InfoPanel = (props) => {
       width: "300px",
       height: "300px",
     }),
-    []
+    [],
   );
   const iconStyle = useMemo(
     () => ({
@@ -156,7 +168,7 @@ const InfoPanel = (props) => {
       marginBottom: "2px",
       marginRight: "5px",
     }),
-    []
+    [],
   );
 
   const handleChange = (e) => {
@@ -326,7 +338,7 @@ const InfoPanel = (props) => {
                     toggleDialog({
                       dialogName: "settingsDialogOpen",
                       isOpen: true,
-                    })
+                    }),
                   )
                 }
                 key="openSettingsButton"
@@ -350,7 +362,7 @@ const InfoPanel = (props) => {
                   onClick={props.runMarxan}
                   disabled={
                     props.preprocessing ||
-                    props.projectFeatures.length === 0 ||
+                    projectFeatures.length === 0 ||
                     puState.puEditing
                   }
                   key="runButton"

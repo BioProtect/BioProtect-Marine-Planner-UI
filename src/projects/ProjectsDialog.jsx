@@ -1,47 +1,70 @@
-import React, { useCallback, useState } from "react";
-import { setActiveTab, toggleDialog } from "@slices/uiSlice";
-import { switchProject, toggleProjDialog } from "@slices/projectSlice";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
+import { selectCurrentUserId } from "@slices/authSlice";
+import { toggleProjDialog } from "@slices/projectSlice";
+import { useListProjectsQuery } from "@slices/projectSlice";
 
 const ProjectsDialog = ({
-  loading, oldVersion, deleteProject, loadProject, cloneProject, exportProject, userRole, unauthorisedMethods, loadProjectAndSetup
+  loading,
+  oldVersion,
+  deleteProject,
+  loadProject,
+  cloneProject,
+  exportProject,
+  userRole,
+  unauthorisedMethods,
+  loadProjectAndSetup,
 }) => {
   const dispatch = useDispatch();
-  const projState = useSelector((state) => state.project);
-  const [selectedProjectId, setSelectedProjectId] = useState(projState.projectData.project)
+  const userId = useSelector(selectCurrentUserId);
 
+  const projDialogs = useSelector((state) => state.project.dialogs);
 
-  const handleDeleteProject = useCallback(() => {
-    deleteProject(projState.projectData.user, projState.projectData.name);
-  }, [projState.projectData]);
+  const { data: projectsResp = {}, isFetching } = useListProjectsQuery(userId, {
+    skip: !userId,
+  });
+  console.log("projectsResp ", projectsResp);
+  const projects = projectsResp.projects ?? [];
+  const activeProjectId = useSelector((state) => state.project.activeProjectId);
+  const [selectedProjectId, setSelectedProjectId] = useState(activeProjectId);
+  const project = projects.find((p) => p.id === selectedProjectId);
+
+  useEffect(() => {
+    setSelectedProjectId(activeProjectId);
+  }, [activeProjectId]);
 
   const loadAndClose = useCallback(async () => {
     try {
-      dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
+      dispatch(
+        toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
+      );
       await loadProjectAndSetup(selectedProjectId);
     } catch (error) {
       showMessage("Failed to load project", "error");
     }
   }, [dispatch, selectedProjectId]);
 
+  const handleDeleteProject = useCallback(() => {
+    if (!project) return;
+    deleteProject(project.user, project.name);
+  }, [project]);
+
   const handleCloneProject = useCallback(() => {
-    cloneProject(projState.projectData.user, projState.projectData.name);
-  }, [cloneProject]);
+    if (!project) return;
+    cloneProject(project.user, project.name);
+  }, [project]);
 
   const handleExportProject = useCallback(() => {
-    exportProject(projState.projectData.user, projState.projectData.name).then((url) => {
+    if (!project) return;
+    exportProject(project.user, project.name).then((url) => {
       window.location = url;
     });
-    dispatch(
-      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false })
-    );
-  }, [projState.projectData]);
-
+  }, [project]);
 
   const handleProjectChange = (event, row) => {
     const projectId = row?.id;
@@ -50,7 +73,7 @@ const ProjectsDialog = ({
       console.warn("Invalid project selected");
       return;
     }
-    setSelectedProjectId(projectId)
+    setSelectedProjectId(projectId);
   };
 
   const sortDate = useCallback((a, b, desc) => {
@@ -79,18 +102,20 @@ const ProjectsDialog = ({
   const columns = generateTableCols(tableColumns);
 
   const closeDialog = () => {
-    dispatch(toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }));
-  }
+    dispatch(
+      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
+    );
+  };
 
-  if (projState.projects) {
+  if (projects) {
     return (
       <MarxanDialog
-        open={projState.dialogs.projectsDialogOpen}
+        open={projDialogs.projectsDialogOpen}
         loading={loading}
         okLabel={userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
         onOk={loadAndClose}
         onCancel={() => closeDialog()}
-        okDisabled={!projState.projectData}
+        okDisabled={!project}
         showCancelButton={true}
         autoDetectWindowHeight={false}
         title="Projects"
@@ -108,7 +133,7 @@ const ProjectsDialog = ({
         <div id="projectsTable">
           <BioprotectTable
             title="Projects"
-            data={projState.projects}
+            data={projects}
             tableColumns={columns}
             selected={[selectedProjectId]}
             ableToSelectAll={false}

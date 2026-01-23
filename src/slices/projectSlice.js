@@ -77,8 +77,8 @@ export const projectApiSlice = apiSlice.injectEndpoints({
     }),
 
     listProjects: builder.query({
-      query: () => ({
-        url: '?action=list',
+      query: (userId) => ({
+        url: `projects?action=list&user=${userId}`,
         method: 'GET',
       }),
       providesTags: (result) => {
