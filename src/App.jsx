@@ -3031,7 +3031,7 @@ const App = () => {
       if (map.current.getLayer(layerId)) {
         removeMapLayer(layerId);
         map.current.removeSource(sourceId);
-        updateFeature(feature, { feature_layer_loaded: false });
+        updateFeature(feature.id, { feature_layer_loaded: false });
       } else {
         // 1) make sure the vector‐tile source is added
         if (!map.current.getSource(sourceId)) {
@@ -3060,7 +3060,7 @@ const App = () => {
         };
 
         addMapLayer(mapLayer, beforeLayer);
-        updateFeature(feature, { feature_layer_loaded: true });
+        updateFeature(feature.id, { feature_layer_loaded: true });
         // Helper function tozom to layer to see if its working
         // zoomToLayer(tileJSON)
       }
@@ -3125,7 +3125,7 @@ const App = () => {
     );
     //show the layer
     showLayer(layerName);
-    updateFeature(feature, { feature_puid_layer_loaded: true });
+    updateFeature(feature.id, { feature_puid_layer_loaded: true });
   };
 
   //removes the current feature from the project

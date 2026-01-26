@@ -76,7 +76,7 @@ const FeaturesList = ({
   };
 
   const handleTargetChange = (feature, newValue) =>
-    updateFeature(feature, { target_value: newValue });
+    updateFeature(feature.id, { target_value: newValue });
 
   return (
     <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>

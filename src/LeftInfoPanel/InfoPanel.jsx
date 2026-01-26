@@ -98,7 +98,7 @@ const InfoPanel = (props) => {
       const message = await props.handleWebSocket(url);
 
       // Update feature with new data
-      updateFeature(feature, {
+      updateFeature(feature.id, {
         preprocessed: true,
         pu_count: Number(message.pu_count),
         pu_area: Number(message.pu_area),
