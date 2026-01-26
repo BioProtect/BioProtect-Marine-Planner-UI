@@ -13,6 +13,7 @@ import { useState } from "react";
 
 export const HexInfoFeatureRow = (props) => {
   const { row } = props;
+  console.log("row ", row);
   const [open, setOpen] = useState(false);
 
   return (

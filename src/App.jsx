@@ -1402,17 +1402,17 @@ const App = () => {
         `preprocessFeature?project_id=${activeProjectId}&planning_grid_id=${planningGridId}&feature_id=${featureId}`,
       );
       showMessage(message.info, "info");
+      console.log("message ", message);
       // Update feature with new data
-      updateFeature(
-        { id: featureId },
-        {
-          preprocessed: true,
-          pu_count: Number(message.pu_count),
-          pu_area: Number(message.pu_area),
-          occurs_in_planning_grid: Number(message.pu_count) > 0,
-        },
+      updateFeature(featureId, {
+        preprocessed: true,
+        pu_count: Number(message.pu_count),
+        pu_area: Number(message.pu_area),
+        occurs_in_planning_grid: Number(message.pu_count) > 0,
+      });
+      dispatch(
+        toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false }),
       );
-
       return message;
     } catch (error) {
       console.error("Error preprocessing feature:", error);
@@ -2851,20 +2851,6 @@ const App = () => {
         },
       ),
     );
-
-    try {
-      await updateProjectFeatures(
-        updateFeatureById(projectFeatures, featureId, newProps),
-      );
-    } catch (err) {
-      patchGlobal.undo();
-      patchProject.undo();
-
-      showMessage?.(
-        `Failed to save feature changes. Reverted. ${err}`,
-        "error",
-      );
-    }
   };
 
   //removes a feature from the selectedFeatureIds array
