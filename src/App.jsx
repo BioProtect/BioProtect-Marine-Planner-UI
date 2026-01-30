@@ -1202,7 +1202,6 @@ const App = () => {
         updated.pu_area = pre.pu_area;
         updated.pu_count = pre.pu_count;
         updated.occurs_in_planning_grid = pre.pu_count > 0;
-        console.log("updated ", updated);
       }
 
       // override with project feature settings if selected
