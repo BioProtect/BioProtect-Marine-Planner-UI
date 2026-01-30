@@ -347,7 +347,7 @@ const InfoPanel = (props) => {
               </Button>
 
               <>
-                <Button
+                {/* <Button
                   variant="contained"
                   title="Click to stop the current run"
                   onClick={props.stopProcess}
@@ -355,11 +355,11 @@ const InfoPanel = (props) => {
                   key="stopRunButton"
                 >
                   Stop
-                </Button>
+                </Button> */}
                 <Button
                   variant="contained"
                   title="Click to run this project"
-                  onClick={props.runMarxan}
+                  onClick={props.runPrioitizr}
                   disabled={
                     props.preprocessing ||
                     projectFeatures.length === 0 ||
@@ -367,7 +367,7 @@ const InfoPanel = (props) => {
                   }
                   key="runButton"
                 >
-                  Run
+                  Run Prioitizr
                 </Button>
               </>
             </Stack>

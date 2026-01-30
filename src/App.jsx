@@ -3202,6 +3202,29 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
 
+  // Run Prioitizr
+  // `/server/prioritizr?action=run&user=${}&project_id=${}`
+  const runPrioitizr = async () => {
+    console.log("userId ", userId);
+    console.log("userId ", activeProjectId);
+    try {
+      // Switch to the log tab
+      const planningGridId = metadata.pu_id;
+      dispatch(setActiveTab("log"));
+      // Call the WebSocket
+      const message = await handleWebSocket(
+        `prioritizr?action=run&user=${userId}&project_id=${activeProjectId}`,
+      );
+      showMessage(message.info, "info");
+      console.log("message ", message);
+
+      return message;
+    } catch (error) {
+      console.error("Error running Prioirtizr:", error);
+      throw error; // Re-throw the error to handle it further up the call stack if needed
+    }
+  };
+
   //called when the run log dialog opens and starts polling the run log
   const startPollingRunLogs = async () => {
     // Function to handle the polling
@@ -3223,12 +3246,6 @@ const App = () => {
       const response = await _get("getRunLogs");
       setRunLogs(response.data);
     }
-  };
-
-  //clears the records from the run logs file
-  const clearRunLogs = async () => {
-    await _get("clearRunLogs");
-    await getRunLogs();
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -3455,6 +3472,7 @@ const App = () => {
             loading={uiState.loading}
             setMenuAnchor={setMenuAnchor}
             handleWebSocket={handleWebSocket}
+            runPrioitizr={runPrioitizr}
             // protectedAreaIntersections={protectedAreaIntersections}
           />
         )}
