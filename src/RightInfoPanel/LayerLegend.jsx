@@ -10,45 +10,56 @@ import Typography from "@mui/material/Typography";
 const LayerLegend = (props) => {
   const [opacity, setOpacity] = useState(0);
 
+  /**
+   * Determine a representative layer:
+   * - first subLayer if present
+   * - otherwise the layer itself
+   */
+  const effectiveLayer =
+    props.subLayers && props.subLayers.length
+      ? props.subLayers[0]
+      : props.layer;
+
   useEffect(() => {
-    let layer = props.subLayers ? props.subLayers[0] : props.layer;
-    if (!layer) return;
+    if (!effectiveLayer?.paint || !effectiveLayer?.type) return;
 
     let initialOpacity = 0;
-    switch (layer.type) {
+
+    switch (effectiveLayer.type) {
       case "fill":
-        initialOpacity = layer.paint?.["fill-opacity"] ?? 0;
+        initialOpacity = effectiveLayer.paint["fill-opacity"] ?? 0;
         break;
       case "line":
-        initialOpacity = layer.paint?.["line-opacity"] ?? 0;
+        initialOpacity = effectiveLayer.paint["line-opacity"] ?? 0;
+        break;
+      case "circle":
+        initialOpacity = effectiveLayer.paint["circle-opacity"] ?? 0;
         break;
       default:
         break;
     }
     setOpacity(initialOpacity);
-  }, [props.layer, props.subLayers]);
+  }, [effectiveLayer]);
 
   const changeOpacity = (newOpacity) => {
     //the layer legend may in fact represent many separate layers (e.g. for features) - these are passed in as subLayers and each needs to have the opacity set
     setOpacity(newOpacity);
-    if (props.subLayers && props.subLayers.length) {
+
+    if (props.subLayers?.length) {
       props.subLayers.forEach((layer) => {
-        if (!layer) return; // guard
+        if (!layer?.id) return; // guard
         props.changeOpacity(layer.id, newOpacity);
       });
-    } else if (props.layer) {
+    } else if (props.layer?.id) {
       props.changeOpacity(props.layer.id, newOpacity);
-    } else {
-      console.warn("LayerLegend changeOpacity: no layer(s) provided");
     }
   };
 
   const renderItems = () => {
-    //iterate through the items in this layers legend
-    //get a unique key
+    //iterate through the items in this layers legend. get a unique key
     //if the legend is showing a range in values then put in a horizontal separator between the items
     return props.items.map((item, index) => {
-      let key = `legend_${props.layer.id}_item_${index}`;
+      const key = `legend_${props.layer?.id ?? "static"}_${index}`;
       return (
         <div key={key} style={{ display: props.range ? "inline" : "block" }}>
           <Swatch item={item} key={key} shape={props.shape} />
@@ -57,7 +68,6 @@ const LayerLegend = (props) => {
               display: "inline-flex",
               verticalAlign: "top",
             }}
-            key={`${key}_label`}
           >
             {item.label}
           </div>
@@ -76,30 +86,23 @@ const LayerLegend = (props) => {
     renderItems()
   );
 
-  let setSymbologyBtn = props.setSymbology ? (
-    <IconButton
-      className="setSymbologyBtn"
-      onClick={props.setSymbology}
-      title="Configure symbology"
-      style={{ color: "gainsboro" }}
-    >
-      <SettingsIcon />
-    </IconButton>
-  ) : null;
-
   return (
-    <React.Fragment>
-      <Stack direction="row" pl={1} justifyContent="left" alignItems="center">
-        <Typography variant="h5" component="div">
-          {props.layer.metadata.name}
+    <>
+      <Stack direction="row" pl={1} alignItems="center" spacing={1}>
+        <Typography variant="h6" component="div" noWrap sx={{ flexShrink: 0 }}>
+          {props.layer?.metadata?.name ?? "Layer"}
         </Typography>
-        {setSymbologyBtn}
-        <TransparencyControl changeOpacity={changeOpacity} opacity={opacity} />
+        {(props.layer?.id || props.subLayers?.length) && (
+          <TransparencyControl
+            changeOpacity={changeOpacity}
+            opacity={opacity}
+          />
+        )}
       </Stack>
       <Stack spacing={1} p={1} sx={{ maxHeight: "100vh", overflowY: "auto" }}>
         {items}
       </Stack>
-    </React.Fragment>
+    </>
   );
 };
 

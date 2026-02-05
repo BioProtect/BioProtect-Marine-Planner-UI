@@ -5,6 +5,7 @@ import { featureApiSlice } from "@slices/featureSlice";
 import featureReducer from "@slices/featureSlice"
 import { planningUnitApiSlice } from "@slices/planningUnitSlice";
 import planningUnitReducer from "@slices/planningUnitSlice"; // Import the slice reducer
+import prioritizrReducer from "@slices/prioritizrSlice";
 import { projectApiSlice } from "@slices/projectSlice";
 import projectReducer from "@slices/projectSlice";
 import uiReducer from "@slices/uiSlice";
@@ -19,6 +20,7 @@ const store = configureStore({
     project: projectReducer,
     ui: uiReducer,
     user: userReducer,
+    prioritizr: prioritizrReducer,
 
     [featureApiSlice.reducerPath]: featureApiSlice.reducer,
     [planningUnitApiSlice.reducerPath]: planningUnitApiSlice.reducer,

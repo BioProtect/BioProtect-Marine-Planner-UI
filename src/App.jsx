@@ -1553,6 +1553,56 @@ const App = () => {
     };
   };
 
+  const renderPuPrioritizrLayer = (runResults) => {
+    // runResults should be array of { h3_index: "892...", solution: 0/1 or numeric }
+    const propId = puLayerIdsRef.current?.propId || "h3_index";
+    const resultsLayerId = puLayerIdsRef.current?.resultsLayerId;
+
+    if (
+      !map.current ||
+      !resultsLayerId ||
+      !map.current.getLayer(resultsLayerId)
+    ) {
+      console.warn("Results layer not ready yet.");
+      return;
+    }
+
+    if (!runResults?.length) {
+      // clear
+      map.current.setPaintProperty(
+        resultsLayerId,
+        "fill-color",
+        "rgba(0,0,0,0)",
+      );
+      showLayer(resultsLayerId);
+      return;
+    }
+
+    // If solution is binary 0/1: show selected as solid, unselected transparent.
+    // If solution is rank/score, you can bucket it like costs (see note below).
+    const selectedIds = runResults
+      .filter((r) => Number(r.solution) === 1)
+      .map((r) => String(r.h3_index));
+
+    const expr = ["match", ["get", propId]];
+    if (selectedIds.length) expr.push(selectedIds, "rgba(255, 64, 129, 0.75)"); // selected
+    expr.push("rgba(0,0,0,0)"); // fallback
+
+    map.current.setPaintProperty(resultsLayerId, "fill-color", expr);
+    map.current.setPaintProperty(
+      resultsLayerId,
+      "fill-outline-color",
+      "rgba(0,0,0,0)",
+    );
+
+    setLayerMetadata(resultsLayerId, {
+      run_type: "prioritizr",
+      selected_count: selectedIds.length,
+    });
+
+    showLayer(resultsLayerId);
+  };
+
   const renderPuCostLayer = (cost_data) => {
     const propId = puLayerIdsRef.current?.propId || "h3_index"; // single truth
     const costsLayerId = puLayerIdsRef.current?.costsLayerId;
