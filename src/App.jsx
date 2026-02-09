@@ -132,6 +132,7 @@ import store from "@store/store";
 import { switchProject } from "./slices/projectSlice";
 /*eslint-disable no-unused-vars*/
 import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useGetPrioritizrRunResultsQuery } from "@slices/prioritizrApiSlice";
 import { useSnackbar } from "notistack";
 import useWebSocketHandler from "./WebSocketHandler";
 import { zoomToBounds } from "./Helpers";
@@ -241,6 +242,28 @@ const App = () => {
   useEffect(() => {
     puEditingRef.current = puEditing;
   }, [puEditing]);
+
+  // RESULTS QUERY
+  const selectedRunId = useSelector((s) => s.prioritizr.selectedRunId);
+  const { data: runResultsResp } = useGetPrioritizrRunResultsQuery(
+    selectedRunId,
+    { skip: !selectedRunId },
+  );
+  const runResults = runResultsResp?.data ?? [];
+
+  useEffect(() => {
+    if (!map.current) return;
+    if (!puLayerIdsRef.current?.resultsLayerId) return;
+
+    // If no run selected, clear results layer
+    if (!selectedRunId) {
+      renderPuPrioritizrLayer([]);
+      return;
+    }
+
+    // Render whenever the API response changes
+    renderPuPrioritizrLayer(runResults);
+  }, [selectedRunId, runResults]);
 
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
@@ -1584,11 +1607,18 @@ const App = () => {
       .filter((r) => Number(r.solution) === 1)
       .map((r) => String(r.h3_index));
 
-    const expr = ["match", ["get", propId]];
-    if (selectedIds.length) expr.push(selectedIds, "rgba(255, 64, 129, 0.75)"); // selected
-    expr.push("rgba(0,0,0,0)"); // fallback
+    // const fillExpr = ["match", ["get", propId]];
+    // if (selectedIds.length) fillExpr.push(selectedIds, "rgba(255, 64, 129, 0.75)"); // selected
+    // fillExpr.push("rgba(0,0,0,0)"); // fallback
 
-    map.current.setPaintProperty(resultsLayerId, "fill-color", expr);
+    const fillExpr = [
+      "case",
+      ["in", ["to-string", ["get", propId]], ["literal", selectedIds]],
+      "rgba(255, 64, 129, 0.75)",
+      "rgba(0,0,0,0)",
+    ];
+
+    map.current.setPaintProperty(resultsLayerId, "fill-color", fillExpr);
     map.current.setPaintProperty(
       resultsLayerId,
       "fill-outline-color",
@@ -1598,6 +1628,7 @@ const App = () => {
     setLayerMetadata(resultsLayerId, {
       run_type: "prioritizr",
       selected_count: selectedIds.length,
+      run_id: selectedRunId,
     });
 
     showLayer(resultsLayerId);
@@ -2249,6 +2280,10 @@ const App = () => {
     });
     //set the result layer in app state so that it can update the Legend component and its opacity control
     setResultsLayer(map.current.getLayer(resultsLayerId));
+    if (selectedRunId && runResults?.length) {
+      // slight delay not required, layer exists now
+      renderPuPrioritizrLayer(runResults);
+    }
   };
 
   const removePlanningGridLayers = (puLayerName) => {
@@ -3262,7 +3297,7 @@ const App = () => {
       dispatch(setActiveTab("log"));
       // Call the WebSocket
       const message = await handleWebSocket(
-        `prioritizr?action=run&user=${userId}&project_id=${activeProjectId}`,
+        `prioritizr-ws?action=run&user=${userId}&project_id=${activeProjectId}`,
       );
       showMessage(message.info, "info");
       console.log("message ", message);

@@ -5,7 +5,7 @@ export const featureApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getFeature: builder.query({
       query: (id) => ({
-        url: `features?action=get&unique_id=${id}`,
+        url: `features?action=get&id=${id}`,
         method: "GET",
       }),
       providesTags: (result, err, id) => [{ type: "Features", id }],
@@ -19,7 +19,7 @@ export const featureApiSlice = apiSlice.injectEndpoints({
     }),
     deleteFeature: builder.mutation({
       query: (featureName) => ({
-        url: `features?action=delete&feature_name=${featureName}`,
+        url: `features?action=delete&feature=${featureName}`,
         method: "GET",
       }),
     }),
@@ -31,13 +31,13 @@ export const featureApiSlice = apiSlice.injectEndpoints({
     }),
     listFeatureProjects: builder.query({
       query: (featureId) => ({
-        url: `features?action=list-projects&feature_class_id=${featureId}`,
+        url: `features?action=list-projects&feature-id=${featureId}`,
         method: "GET",
       }),
     }),
     listFeaturePUs: builder.query({
       query: ({ owner, project, featureId }) => ({
-        url: `features?action=planning-units&user=${owner}&project=${project}&unique_id=${featureId}`,
+        url: `features?action=planning-units&user=${owner}&project=${project}&id=${featureId}`,
         method: "GET",
       }),
     }),
@@ -45,7 +45,7 @@ export const featureApiSlice = apiSlice.injectEndpoints({
 
     createFeatureFromLinestring: builder.mutation({
       query: ({ id, data }) => ({
-        url: `features?action=create_from_linestring`,
+        url: `features?action=create-from-linestring`,
         method: "POST",
         body: { id, ...data },
       }),

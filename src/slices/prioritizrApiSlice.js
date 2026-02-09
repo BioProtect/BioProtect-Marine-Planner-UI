@@ -5,7 +5,7 @@ export const prioritizrApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     listPrioritizrRuns: builder.query({
       query: (projectId) =>
-        `prioritizr?action=list_runs&project_id=${projectId}`,
+        `prioritizr?action=list-runs&project-id=${projectId}`,
       providesTags: (res, err, projectId) => [
         { type: "PrioritizrRun", id: "LIST" },
         { type: "PrioritizrRun", id: projectId },
@@ -14,7 +14,7 @@ export const prioritizrApiSlice = apiSlice.injectEndpoints({
 
     getPrioritizrRun: builder.query({
       query: (runId) =>
-        `prioritizr?action=get_run&run_id=${runId}`,
+        `prioritizr?action=get-run&run-id=${runId}`,
       providesTags: (res, err, runId) => [
         { type: "PrioritizrRun", id: runId },
       ],
@@ -22,7 +22,7 @@ export const prioritizrApiSlice = apiSlice.injectEndpoints({
 
     getPrioritizrRunResults: builder.query({
       query: (runId) =>
-        `prioritizr?action=get_results&run_id=${runId}`,
+        `prioritizr?action=get-results&run-id=${runId}`,
       providesTags: (res, err, runId) => [
         { type: "PrioritizrResults", id: runId },
       ],
@@ -33,5 +33,5 @@ export const prioritizrApiSlice = apiSlice.injectEndpoints({
 export const {
   useListPrioritizrRunsQuery,
   useGetPrioritizrRunQuery,
-  useGetPrioritizrResultsQuery,
+  useGetPrioritizrRunResultsQuery,
 } = prioritizrApiSlice;

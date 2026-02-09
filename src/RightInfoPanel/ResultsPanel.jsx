@@ -1,18 +1,17 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import Button from "@mui/material/Button";
-import Clipboard from "@mui/icons-material/Assignment";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Log from "../Log";
 import MapLegend from "./MapLegend";
 import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Sync from "@mui/icons-material/Sync";
 import Tab from "@mui/material/Tab";
 import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
-import { faEraser } from "@fortawesome/free-solid-svg-icons";
 import { selectRun } from "@slices/prioritizrSlice";
 import { useListPrioritizrRunsQuery } from "@slices/prioritizrApiSlice";
 
@@ -23,10 +22,16 @@ const ResultsPanel = (props) => {
   const { dialogStates, importLog } = useSelector((state) => state.ui);
   const projectId = useSelector((s) => s.project.activeProjectId);
   const selectedRunId = useSelector((s) => s.prioritizr.selectedRunId);
+  const [selected, setSelected] = useState(null);
 
-  const { data: runs = [] } = useListPrioritizrRunsQuery(projectId, {
+  // const { data: runs = [] } = useListPrioritizrRunsQuery(projectId, {
+  //   skip: !projectId,
+  // });
+  const { data: runsResp } = useListPrioritizrRunsQuery(projectId, {
     skip: !projectId,
   });
+  const runs = runsResp?.data ?? [];
+  console.log("runs ", runs);
 
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
 
@@ -34,12 +39,6 @@ const ResultsPanel = (props) => {
   useEffect(() => {
     prevProps.current = props;
   });
-
-  const handleTabChange = (evt, currentTabIndex) => {
-    setCurrentTabIndex(currentTabIndex);
-  };
-
-  if (!dialogStates.resultsPanelOpen) return null;
 
   const panelStyle = useMemo(
     () => ({
@@ -51,6 +50,24 @@ const ResultsPanel = (props) => {
     }),
     [],
   );
+
+  const handleTabChange = (evt, currentTabIndex) => {
+    setCurrentTabIndex(currentTabIndex);
+  };
+
+  const handleTableClick = (evt, row) => {
+    setSelected(row.id);
+    dispatch(selectRun(row.id));
+  };
+
+  const formatted = (created_at) => {
+    return new Intl.DateTimeFormat("en-GB", {
+      dateStyle: "medium",
+      timeZone: "UTC",
+    }).format(new Date(created_at));
+  };
+
+  if (!dialogStates.resultsPanelOpen) return null;
 
   const displayStyle = {
     display: dialogStates.resultsPanelOpen ? "block" : "none",
@@ -72,26 +89,32 @@ const ResultsPanel = (props) => {
         {currentTabIndex === 0 && <MapLegend {...props} brew={props.brew} />}
 
         {currentTabIndex === 1 && (
-          <Table
-            data={runs}
-            columns={[
-              { Header: "Run ID", accessor: "id", width: 60 },
-              { Header: "Status", accessor: "status", width: 100 },
-              { Header: "Created", accessor: "created_at", width: 160 },
-              { Header: "User", accessor: "created_by", width: 80 },
-            ]}
-            getTrProps={(_, row) => ({
-              onClick: () => dispatch(selectRun(row.original.id)),
-              style: {
-                background:
-                  row.original.id === selectedRunId ? "aliceblue" : "",
-              },
-              title: "Click to show results on map",
-            })}
-            showPagination={false}
-            pageSize={runs.length}
-            noDataText="No runs yet"
-          />
+          <TableContainer component={Paper} elevation={0}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Run ID</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Created</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {runs.map((row) => (
+                  <TableRow
+                    key={`${row.date}${row.id}`}
+                    onClick={(e) => handleTableClick(e, row)}
+                    selected={row.id === selected}
+                  >
+                    <TableCell>{row.id}</TableCell>
+                    <TableCell>{row.status}</TableCell>
+                    <TableCell align="right">
+                      {formatted(row.created_at)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
 
         {currentTabIndex === 2 && <Log messages={importLog} />}

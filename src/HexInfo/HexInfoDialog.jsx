@@ -9,9 +9,9 @@ import ClickAwayListener from "@mui/material/ClickAwayListener";
 import CloseIcon from "@mui/icons-material/Close";
 import Fade from "@mui/material/Fade";
 import { HexInfoFeatureRow } from "./HexInfoFeatureRow";
+import Hexagon from "react-hexagon";
 import Paper from "@mui/material/Paper";
 import Popper from "@mui/material/Popper";
-import Swatch from "../Swatch";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -199,13 +199,13 @@ const HexInfoDialog = ({ xy, metadata }) => {
                         <Typography variant="body2" fontWeight={500}>
                           {puStatus.label}
                         </Typography>
-                        <Swatch
-                          item={puStatus}
-                          shape={
-                            metadata?.PLANNING_UNIT_NAME?.includes("hexagon")
-                              ? "hexagon"
-                              : "square"
-                          }
+                        <Hexagon
+                          className={"hexLegendItem"}
+                          style={{
+                            fill: puStatus.fillColor,
+                            stroke: puStatus.strokeColor,
+                            strokeWidth: 30,
+                          }}
                         />
                       </Box>
                     </Box>

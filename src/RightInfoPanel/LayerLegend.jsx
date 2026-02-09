@@ -1,8 +1,7 @@
-import { IconButton, Stack } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import SettingsIcon from "@mui/icons-material/Settings";
-import Swatch from "../Swatch";
+import Hexagon from "react-hexagon";
+import { Stack } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import TransparencyControl from "../TransparencyControl";
 import Typography from "@mui/material/Typography";
@@ -62,7 +61,14 @@ const LayerLegend = (props) => {
       const key = `legend_${props.layer?.id ?? "static"}_${index}`;
       return (
         <div key={key} style={{ display: props.range ? "inline" : "block" }}>
-          <Swatch item={item} key={key} shape={props.shape} />
+          <Hexagon
+            className={"hexLegendItem"}
+            style={{
+              fill: item.fillColor,
+              stroke: item.strokeColor,
+              strokeWidth: 30,
+            }}
+          />
           <div
             style={{
               display: "inline-flex",

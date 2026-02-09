@@ -1,3 +1,4 @@
+import { Fragment, memo } from "react";
 import {
   featureApiSlice,
   setSelectedFeatureId,
@@ -16,7 +17,6 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TargetAvatar from "./TargetAvatar";
 import Tooltip from "@mui/material/Tooltip";
 import { grey } from "@mui/material/colors";
-import { memo } from "react";
 import { projectApiSlice } from "@slices/projectSlice";
 
 const FeaturesList = ({
@@ -144,12 +144,16 @@ const FeaturesList = ({
           </ListItem>
         );
 
-        return item.preprocessed ? (
-          <Tooltip title="Preprocessing complete" arrow disableInteractive>
-            <Box>{content}</Box>
-          </Tooltip>
-        ) : (
-          content
+        return (
+          <Fragment key={`feature-${id}`}>
+            {item.preprocessed ? (
+              <Tooltip title="Preprocessing complete" arrow disableInteractive>
+                <Box>{content}</Box>
+              </Tooltip>
+            ) : (
+              content
+            )}
+          </Fragment>
         );
       })}
     </List>
