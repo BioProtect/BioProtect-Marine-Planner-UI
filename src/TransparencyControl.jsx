@@ -33,6 +33,8 @@ const TransparencyControl = ({ opacity, changeOpacity }) => {
       alignItems="center"
       pb={2}
       pt={2}
+      pr={4}
+      sx={{ width: "100%" }}
     >
       <div className="transparencyControl" title="Click to toggle visibility">
         <FontAwesomeIcon
@@ -41,11 +43,11 @@ const TransparencyControl = ({ opacity, changeOpacity }) => {
           onClick={toggleLayer}
         />
       </div>
-      <Box sx={{ width: 100 }}>
+      <Box sx={{ flexGrow: 1 }}>
         <Slider
           value={opacity}
           onChange={handleChange}
-          aria-label="Default"
+          aria-label="Opacity"
           min={0}
           step={0.1}
           max={1}

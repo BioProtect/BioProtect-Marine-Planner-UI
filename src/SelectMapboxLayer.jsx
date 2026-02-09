@@ -111,7 +111,7 @@ const SelectMapboxLayer = ({
     // Add vector tile source from Martin
     map.addSource(sourceId, {
       type: "vector",
-      url: `/${tilesetid}`,
+      url: tileUrl,
     });
 
     map.addLayer({

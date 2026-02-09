@@ -55,8 +55,12 @@ const planningUnitSlice = createSlice({
   initialState,
   reducers: {
     setIdentifyPlanningUnits(state, action) {
-      state.identifyPlanningUnits = action.payload;
+      state.identifyPlanningUnits = {
+        ...(state.identifyPlanningUnits || {}),
+        ...(action.payload || {}),
+      };
     },
+
     setPlanningUnitGrids(state, action) {
       state.planningUnitGrids = action.payload;
     },

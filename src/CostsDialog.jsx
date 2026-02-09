@@ -13,8 +13,12 @@ import ToolbarButton from "./ToolbarButton";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "@slices/uiSlice";
 
-const CostsDialog = ({ unauthorisedMethods, costname, deleteCost, createCostsFromImpact }) => {
-
+const CostsDialog = ({
+  unauthorisedMethods,
+  costname,
+  deleteCost,
+  createCostsFromImpact,
+}) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
@@ -60,9 +64,8 @@ const CostsDialog = ({ unauthorisedMethods, costname, deleteCost, createCostsFro
           changeCost={changeCost}
           clickRow={() => changeCost(e, rowInfo.original)}
         ></BioprotectTable>
-        {/* <Table
-          {...props}
-          pageSize={_data.length}
+        <Table
+          pageSize={_data.length || 0}
           columns={[
             {
               label: "Name",
@@ -86,7 +89,7 @@ const CostsDialog = ({ unauthorisedMethods, costname, deleteCost, createCostsFro
               changeCost(e, rowInfo.original);
             },
           })}
-        /> */}
+        />
         <div id="costsToolbar">
           <ToolbarButton
             icon={<Import style={{ height: "20px", width: "20px" }} />}
@@ -121,7 +124,7 @@ const CostsDialog = ({ unauthorisedMethods, costname, deleteCost, createCostsFro
         <div id="projectsTable">
           <h3 className="dialogTitleStyle">Use Cumulative Impact</h3>
           <Table
-            {...props}
+            // {...props}
             data={uiState.allImpacts}
             columns={[
               {
@@ -145,7 +148,7 @@ const CostsDialog = ({ unauthorisedMethods, costname, deleteCost, createCostsFro
               style: {
                 background:
                   rowInfo.original.name ===
-                    (state.selectedCost && state.selectedCost.name)
+                  (state.selectedCost && state.selectedCost.name)
                     ? "aliceblue"
                     : "",
               },

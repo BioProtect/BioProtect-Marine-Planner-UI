@@ -1,7 +1,5 @@
 import {
   setAddingRemovingFeatures,
-  setAllFeatures,
-  setSelectedFeature,
   setSelectedFeatureIds,
   toggleFeatureD,
 } from "@slices/featureSlice";
@@ -15,7 +13,9 @@ import MarxanDialog from "../MarxanDialog";
 import { generateTableCols } from "../Helpers";
 import jsonp from "jsonp-promise";
 import { setLoading } from "@slices/uiSlice";
+import { setSelectedFeatureId } from "../slices/featureSlice";
 import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 
 const FeaturesDialog = ({
   onOk,
@@ -34,46 +34,37 @@ const FeaturesDialog = ({
   const [filteredRows, setFilteredRows] = useState([]);
   const [newFeatureAnchor, setNewFeatureAnchor] = useState(null);
   const [importFeatureAnchor, setImportFeatureAnchor] = useState(null);
+  const dialogIsOpen = featureState.dialogs.featuresDialogOpen;
+
   const { showMessage } = useAppSnackbar();
+  const {
+    data: allFeaturesResp,
+    isFetching: isFetchingAllFeatures,
+    isError,
+    error,
+  } = useGetAllFeaturesQuery(undefined, { skip: !dialogIsOpen });
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
 
-  // Lazy-load features the first time the dialog opens (or whenever it's opened with an empty cache)
-  useEffect(() => {
-    const dialogIsOpen = featureState.dialogs.featuresDialogOpen;
-    const noFeatures = !featureState.allFeatures?.length;
-    const base = projState?.bpServer?.endpoint;
-    if (!dialogIsOpen || !noFeatures || !base) return;
+  const selectedFeatureId = featureState.selectedFeatureId;
 
-    let cancelled = false;
-    (async () => {
-      try {
-        dispatch(setLoading(true));
-        const url = new URL("features?action=get-all", base).toString();
-        const resp = await jsonp(url, { timeout: CONSTANTS.TIMEOUT }).promise;
-        if (cancelled) return;
-        // resp.data expected from your App.jsx usage
-        dispatch(setAllFeatures(resp?.data || []));
-      } catch (err) {
-        if (!cancelled) {
-          showMessage("Failed to load features:", err);
-          console.error("Failed to load features:", err);
-        }
-      } finally {
-        if (!cancelled) dispatch(setLoading(false));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    featureState.dialogs.featuresDialogOpen,
-    featureState.allFeatures?.length,
-    dispatch,
-    projState?.bpServer?.endpoint,
-  ]);
+  const selectedFeature = useMemo(() => {
+    if (selectedFeatureId == null) return null;
+    return allFeatures.find((f) => f.id === selectedFeatureId) ?? null;
+  }, [allFeatures, selectedFeatureId]);
 
   const _newByDigitising = () => {
     onOk();
     initialiseDigitising();
+  };
+
+  const addOrRemoveFeature = (feature) => {
+    const ids = featureState.selectedFeatureIds || [];
+    // if the feature is already included remove it, otherwise add it
+    if (ids.includes(feature.id)) {
+      dispatch(setSelectedFeatureIds(ids.filter((id) => id !== feature.id)));
+    } else {
+      dispatch(setSelectedFeatureIds([...ids, feature.id]));
+    }
   };
 
   // const showNewFeaturePopover = (event) => {
@@ -92,16 +83,6 @@ const FeaturesDialog = ({
   //     toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
   //   );
   // };
-
-  const addOrRemoveFeature = (feature) => {
-    const ids = featureState.selectedFeatureIds || [];
-    // if the feature is already included remove it, otherwise add it
-    if (ids.includes(feature.id)) {
-      dispatch(setSelectedFeatureIds(ids.filter((id) => id !== feature.id)));
-    } else {
-      dispatch(setSelectedFeatureIds([...ids, feature.id]));
-    }
-  };
 
   const toggleSelectionState = (selectedIds, features, first, last) => {
     const next = [...selectedIds];
@@ -122,9 +103,7 @@ const FeaturesDialog = ({
       prevRow.index < thisRow.index ? thisRow.index + 1 : prevRow.index;
 
     const base =
-      filteredRows.length < featureState.allFeatures.length
-        ? filteredRows
-        : featureState.allFeatures;
+      filteredRows.length < allFeatures.length ? filteredRows : allFeatures;
 
     return toggleSelectionState(
       featureState.selectedFeatureIds || [],
@@ -147,16 +126,15 @@ const FeaturesDialog = ({
       }
       setPreviousRow(row);
     } else {
-      // Also track which feature is "active" for detail view
-      dispatch(setSelectedFeature(row));
+      dispatch(setSelectedFeatureId(row.id));
     }
   };
 
   const selectAllFeatures = () => {
     const ids =
-      filteredRows.length < featureState.allFeatures.length
+      filteredRows.length < allFeatures.length
         ? filteredRows.map((f) => f.id)
-        : featureState.allFeatures.map((f) => f.id);
+        : allFeatures.map((f) => f.id);
     dispatch(setSelectedFeatureIds(ids));
   };
 
@@ -171,7 +149,7 @@ const FeaturesDialog = ({
   };
 
   const unselectFeature = () => {
-    dispatch(setSelectedFeature(undefined));
+    dispatch(setSelectedFeatureId(null));
     dispatch(
       toggleFeatureD({ dialogName: "importFeaturePopoverOpen", isOpen: false })
     );
@@ -196,11 +174,11 @@ const FeaturesDialog = ({
 
   const tableData = useMemo(
     () =>
-      featureState.allFeatures.map((feature, index) => ({
+      allFeatures.map((feature, index) => ({
         ...feature,
         index,
       })),
-    [featureState.allFeatures]
+    [allFeatures]
   );
 
   const closeDialog = () => {
@@ -223,11 +201,9 @@ const FeaturesDialog = ({
       // searchTextChanged={searchTextChanged}
       actions={
         <FeaturesToolbar
-          metadata={metadata}
-          userRole={userRole}
           selectAllFeatures={selectAllFeatures}
           _newByDigitising={_newByDigitising}
-          clearAll={clearAllFeatures}
+          selectedFeature={selectedFeature}
         />
       }
     >
@@ -240,7 +216,7 @@ const FeaturesDialog = ({
           dataFiltered={dataFiltered}
           selected={featureState.selectedFeatureIds}
           selectedFeatureIds={featureState.selectedFeatureIds}
-          selectedFeature={featureState.selectedFeature}
+          selectedFeature={selectedFeature}
           clickRow={clickRow}
           preview={(row) => previewFeature?.(row)}
         />

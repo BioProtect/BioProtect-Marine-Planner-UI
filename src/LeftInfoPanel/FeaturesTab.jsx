@@ -3,7 +3,6 @@ import { selectCurrentUser, setCredentials } from "@slices/authSlice";
 import {
   setAddingRemovingFeatures,
   setFeaturePlanningUnits,
-  setFeatureProjects,
   toggleFeatureD,
 } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -30,7 +29,6 @@ const FeaturesTab = ({
 }) => {
   const dispatch = useDispatch();
   const userData = useSelector(selectCurrentUser);
-  const featureState = useSelector((state) => state.feature);
 
   const handleOpenFeaturesDialog = () => {
     dispatch(setAddingRemovingFeatures(true));
@@ -38,17 +36,17 @@ const FeaturesTab = ({
       toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: true,
-      })
+      }),
     );
   };
 
   const handlePreprocessAllFeatures = () => {
     preprocessAllFeatures();
-  }
+  };
 
   return (
     <React.Fragment>
-      <div style={{ padding: "8px" }} >
+      <div style={{ padding: "8px" }}>
         <FeaturesList
           setMenuAnchor={setMenuAnchor}
           updateFeature={updateFeature}
@@ -64,22 +62,23 @@ const FeaturesTab = ({
           alignItems="center"
           mb={2}
         >
-          {userData?.role !== "ReadOnly" && showTargetButton ? (
+          {showTargetButton ? (
             <Button
               variant="contained"
-              onClick={() => dispatch(
-                toggleDialog({
-                  dialogName: "targetDialogOpen",
-                  isOpen: true,
-                })
-              )}
+              onClick={() =>
+                dispatch(
+                  toggleDialog({
+                    dialogName: "targetDialogOpen",
+                    isOpen: true,
+                  }),
+                )
+              }
               startIcon={<FontAwesomeIcon icon={faCrosshairs} />}
             >
               Set target all features
             </Button>
           ) : null}
-          {(metadata && metadata.OLDVERSION) ||
-            userData?.role === "ReadOnly" ? null : (
+          {metadata && metadata.OLDVERSION ? null : (
             <Button
               variant="contained"
               label="+/-"
@@ -96,8 +95,7 @@ const FeaturesTab = ({
           justifyContent="center"
           alignItems="center"
         >
-          {(metadata && metadata.OLDVERSION) ||
-            userData?.role === "ReadOnly" ? null : (
+          {metadata && metadata.OLDVERSION ? null : (
             <Button
               variant="contained"
               onClick={() => handlePreprocessAllFeatures()}

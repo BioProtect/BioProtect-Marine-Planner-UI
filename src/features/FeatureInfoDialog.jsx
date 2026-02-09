@@ -27,7 +27,7 @@ const FeatureInfoDialog = ({ updateFeature }) => {
       toggleFeatureD({
         dialogName: "featureInfoDialogOpen",
         isOpen: false,
-      })
+      }),
     );
 
   const updateFeatureValue = useCallback(
@@ -38,12 +38,12 @@ const FeatureInfoDialog = ({ updateFeature }) => {
         (key === "spf" && isNumber(value))
       ) {
         const updatedProps = { [key]: value };
-        updateFeature(featureState.currentFeature, updatedProps);
+        updateFeature(featureState.currentFeature.id, updatedProps);
       } else {
         alert("Invalid value");
       }
     },
-    [featureState.currentFeature, updateFeature]
+    [featureState.currentFeature, updateFeature],
   );
 
   const onKeyDown = useCallback(
@@ -53,7 +53,7 @@ const FeatureInfoDialog = ({ updateFeature }) => {
         closeDialog(); // Close the dialog
       }
     },
-    [updateFeatureValue, closeDialog]
+    [updateFeatureValue, closeDialog],
   );
 
   const getHTML = (value, title = "") => (
@@ -62,8 +62,8 @@ const FeatureInfoDialog = ({ updateFeature }) => {
 
   const getAreaHTML = (rowKey, value) => {
     const color =
-      featureState.currentFeature.protected_area < featureState.currentFeature.target_area &&
-        rowKey === "Area protected"
+      featureState.currentFeature.protected_area <
+        featureState.currentFeature.target_area && rowKey === "Area protected"
         ? "red"
         : "rgba(0, 0, 0, 0.6)";
 
@@ -92,16 +92,16 @@ const FeatureInfoDialog = ({ updateFeature }) => {
         return row.value === "" || row.value === null
           ? getHTML("Not available", "The feature was not uploaded to Mapbox")
           : getHTML(
-            row.value,
-            "The feature was uploaded to Mapbox with this identifier"
-          );
+              row.value,
+              "The feature was uploaded to Mapbox with this identifier",
+            );
 
       case "Total area":
         return row.value === -1
           ? getHTML(
-            "Not calculated",
-            "Total areas are not available for imported projects"
-          )
+              "Not calculated",
+              "Total areas are not available for imported projects",
+            )
           : getAreaHTML(row.key, row.value);
 
       case "Total":
@@ -119,13 +119,13 @@ const FeatureInfoDialog = ({ updateFeature }) => {
             onBlur={(e) =>
               updateFeatureValue(
                 row.key === "Target percent" ? "target_value" : "spf",
-                e
+                e,
               )
             }
             onKeyDown={(e) =>
               onKeyDown(
                 row.key === "Target percent" ? "target_value" : "spf",
-                e
+                e,
               )
             }
           >
@@ -136,13 +136,13 @@ const FeatureInfoDialog = ({ updateFeature }) => {
       case "Preprocessed":
         return row.value
           ? getHTML(
-            "Yes",
-            "The feature has been intersected with the planning units"
-          )
+              "Yes",
+              "The feature has been intersected with the planning units",
+            )
           : getHTML(
-            "No",
-            "The feature has not yet been intersected with the planning units"
-          );
+              "No",
+              "The feature has not yet been intersected with the planning units",
+            );
 
       case "Planning grid area":
       case "Target area":
@@ -176,8 +176,9 @@ const FeatureInfoDialog = ({ updateFeature }) => {
       : CONSTANTS.FEATURE_PROPERTIES_POINTS;
 
   // Filter the items based on version compatibility
-  const filteredProperties = featureProperties.filter((item) =>
-    (isOldVersion && item.showForOld) || (!isOldVersion && item.showForNew)
+  const filteredProperties = featureProperties.filter(
+    (item) =>
+      (isOldVersion && item.showForOld) || (!isOldVersion && item.showForNew),
   );
 
   // Map the filtered items to the desired structure
@@ -187,7 +188,6 @@ const FeatureInfoDialog = ({ updateFeature }) => {
     hint: item.hint,
   }));
 
-
   return (
     <MarxanDialog
       open={featureState.dialogs.featureInfoDialogOpen}
@@ -195,15 +195,19 @@ const FeatureInfoDialog = ({ updateFeature }) => {
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}
       title="Properties"
-    // contentWidth={380}
-    // offsetX={135}
-    // offsetY={250}
+      // contentWidth={380}
+      // offsetX={135}
+      // offsetY={250}
     >
       <TableContainer>
         <Table
           key="k9"
           size="small"
-          className={featureState.currentFeature.old_version ? "infoTableOldVersion" : "infoTable"}
+          className={
+            featureState.currentFeature.old_version
+              ? "infoTableOldVersion"
+              : "infoTable"
+          }
         >
           <TableHead>
             <TableRow>
