@@ -3602,7 +3602,6 @@ const App = () => {
         <ProjectsListDialog />
         <NewProjectDialog
           loading={uiState.loading}
-          openFeaturesDialog={openFeaturesDialog}
           selectedCosts={selectedCosts}
           previewFeature={previewFeature}
           fileUpload={uploadFileToFolder}

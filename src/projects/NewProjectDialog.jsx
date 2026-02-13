@@ -5,7 +5,7 @@ import {
 } from "@slices/planningUnitSlice";
 import { setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice.js";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -33,13 +33,6 @@ import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 import { useMemo } from "react";
 import { usePlanningGridWebSocket } from "@hooks/usePlanningGridWebSocket";
 
-//// #####
-//// #####
-//// - set selected features locally and then when creating the project set them globally.
-
-// #####
-//// #####
-
 const NewProjectDialog = ({
   loading,
   updateSelectedFeatures,
@@ -48,7 +41,6 @@ const NewProjectDialog = ({
   fileUpload,
 }) => {
   const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
   const uiLoading = useSelector((state) => state.ui.loading);
   const fileUploadResponse = useSelector(
     (state) => state.ui.fileUploadResponse,
@@ -58,6 +50,16 @@ const NewProjectDialog = ({
     (state) => state.feature.selectedFeatureIds,
   );
   const projState = useSelector((state) => state.project);
+  const currentPUGrid = useSelector(
+    (state) => state.planningUnit.currentPUGrid,
+  );
+
+  // Track selectedFetaures so that if a new proect is being created the currents prject features arent used but also arent lost
+  const dialogOpen = useSelector(
+    (state) => state.project.dialogs.newProjectDialogOpen,
+  );
+  const prevSelectedFeatureIdsRef = useRef(null);
+  const projectWasCreatedRef = useRef(false);
 
   // 0: Info, 1: Planning units (upload/select), 2: Features, 3: Costs
   const [steps] = useState(["Info", "Planning units", "Features", "Costs"]);
@@ -70,7 +72,6 @@ const NewProjectDialog = ({
   // planning grid choice
   const [puGrid, setPuGrid] = useState(""); // 'upload' | 'select'
   const [puMap, setPuMap] = useState(null);
-  const [pu, setPu] = useState(""); // tileset id / selected grid id
 
   // upload - create grid inputs
   const [planningGridName, setPlanningGridName] = useState("");
@@ -88,7 +89,6 @@ const NewProjectDialog = ({
   const { showMessage } = useAppSnackbar();
   const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
 
-  const [newProjectFeatureIds, setNewProjectFeatureIds] = useState([]);
   const { data: allFeaturesResp } = useGetAllFeaturesQuery();
   const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
 
@@ -112,6 +112,20 @@ const NewProjectDialog = ({
       dispatch(setAddingRemovingFeatures(true));
     }
   }, [stepIndex, dispatch]);
+
+  useEffect(() => {
+    if (dialogOpen) {
+      // snapshot only once per open
+      if (prevSelectedFeatureIdsRef.current == null) {
+        prevSelectedFeatureIdsRef.current = selectedFeatureIds ?? [];
+      }
+      // clear for new project
+      dispatch(setSelectedFeatureIds([]));
+    } else {
+      // dialog closed -> reset refs so next open re-snapshots
+      prevSelectedFeatureIdsRef.current = null;
+    }
+  }, [dialogOpen]);
 
   const createNewProject = async (proj) => {
     const formData = prepareFormDataNewProject(proj, user);
@@ -170,7 +184,6 @@ const NewProjectDialog = ({
             console.log("newGrid ", newGrid);
 
             if (newGrid?.tilesetid) {
-              setPu(newGrid.tilesetid);
               dispatch(setCurrentPUGrid(newGrid.tilesetid));
               console.log("Planning grid uploaded");
               showMessage("Planning grid uploaded", "success");
@@ -221,42 +234,31 @@ const NewProjectDialog = ({
     }
   };
 
-  const clickFeature = (feature) => {
-    const ids = selectedFeatureIds;
-    // if the feature is already included remove it, otherwise add it
-    if (ids.includes(feature.id)) {
-      dispatch(setSelectedFeatureIds(ids.filter((id) => id !== feature.id)));
-    } else {
-      dispatch(setSelectedFeatureIds([...ids, feature.id]));
-    }
-  };
-
-  const removeSelectedFeature = (id) => {
-    const ids = selectedFeatureIds || [];
-    dispatch(setSelectedFeatureIds(ids.filter((x) => x !== id)));
-  };
-
-  const selectAllFeatures = () => {
-    const ids =
-      filteredRows.length < allFeatures.length
-        ? filteredRows.map((f) => f.id)
-        : allFeatures.map((f) => f.id);
-    dispatch(setSelectedFeatureIds(ids));
-  };
-
   const clearAllFeatures = () => dispatch(setSelectedFeatureIds([]));
 
-  const handleCreateNewProject = () => {
-    createNewProject({
+  const handleCreateNewProject = async () => {
+    projectWasCreatedRef.current = true;
+
+    await createNewProject({
       name,
       description,
-      planning_grid_name: pu,
-      features: uiState.allFeatures.filter((item) => item.selected),
+      planning_grid_name: currentPUGrid,
+      features: selectedFeatureIds,
     });
+
     closeDialog();
   };
 
   const closeDialog = () => {
+    // Only restore if project was NOT created
+    if (!projectWasCreatedRef.current) {
+      if (prevSelectedFeatureIdsRef.current != null) {
+        dispatch(setSelectedFeatureIds(prevSelectedFeatureIdsRef.current));
+      }
+    }
+    // Reset flags
+    projectWasCreatedRef.current = false;
+    prevSelectedFeatureIdsRef.current = null;
     setStepIndex(0);
     dispatch(
       toggleProjDialog({ dialogName: "newProjectDialogOpen", isOpen: false }),
@@ -280,8 +282,7 @@ const NewProjectDialog = ({
         disabled={
           (stepIndex === 0 &&
             (name === "" || description === "" || puGrid === "")) ||
-          (stepIndex === 1 && !pu) ||
-          (stepIndex === 2 && selectedFeatureIds.length === 0)
+          (stepIndex === 1 && !currentPUGrid)
         }
       >
         {stepIndex === steps.length - 1 ? "Finish" : "Next"}
