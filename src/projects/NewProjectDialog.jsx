@@ -79,7 +79,8 @@ const NewProjectDialog = ({
   const resolutionOptions = [
     { label: "Basin resolution (36 km²)", value: 6 },
     { label: "Regional resolution (5 km²)", value: 7 },
-    { label: "Local resolution (0.7 km²)", value: 8 },
+    { label: "Mid Regional Local resolution (0.7 km²)", value: 8 },
+    { label: "Local resolution (0.1 km²)", value: 9 },
   ];
 
   // upload progress - continue automatically
@@ -126,6 +127,23 @@ const NewProjectDialog = ({
       prevSelectedFeatureIdsRef.current = null;
     }
   }, [dialogOpen]);
+
+  // Helper function to prepare form data
+  const prepareFormDataNewProject = (proj, user) => {
+    const formData = new FormData();
+    formData.append("user", user);
+    formData.append("project", proj.name);
+    formData.append("description", proj.description);
+    formData.append("planning_grid_name", proj.planning_grid_name);
+    formData.append(
+      "interest_features",
+      proj.features.map((item) => item.id).join(","),
+    );
+    formData.append("target_values", proj.features.map(() => 17).join(","));
+    formData.append("spf_values", proj.features.map(() => 40).join(","));
+
+    return formData;
+  };
 
   const createNewProject = async (proj) => {
     const formData = prepareFormDataNewProject(proj, user);
