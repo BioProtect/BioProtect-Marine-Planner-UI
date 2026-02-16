@@ -26,15 +26,24 @@ const FeaturesDialog = ({
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
-  const featureState = useSelector((state) => state.feature);
-  const projState = useSelector((state) => state.project);
+  const addingRemovingFeatures = useSelector(
+    (state) => state.feature.addingRemovingFeatures,
+  );
+  const selectedFeatureId = useSelector(
+    (state) => state.feature.selectedFeatureId,
+  );
+  const selectedFeatureIds = useSelector(
+    (state) => state.feature.selectedFeatureIds,
+  );
+  const dialogIsOpen = useSelector(
+    (state) => state.feature.dialogs.featuresDialogOpen,
+  );
 
   const [previousRow, setPreviousRow] = useState(undefined);
   const [searchText, setSearchText] = useState("");
   const [filteredRows, setFilteredRows] = useState([]);
   const [newFeatureAnchor, setNewFeatureAnchor] = useState(null);
   const [importFeatureAnchor, setImportFeatureAnchor] = useState(null);
-  const dialogIsOpen = featureState.dialogs.featuresDialogOpen;
 
   const { showMessage } = useAppSnackbar();
   const {
@@ -44,8 +53,6 @@ const FeaturesDialog = ({
     error,
   } = useGetAllFeaturesQuery(undefined, { skip: !dialogIsOpen });
   const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
-
-  const selectedFeatureId = featureState.selectedFeatureId;
 
   const selectedFeature = useMemo(() => {
     if (selectedFeatureId == null) return null;
@@ -58,7 +65,7 @@ const FeaturesDialog = ({
   };
 
   const addOrRemoveFeature = (feature) => {
-    const ids = featureState.selectedFeatureIds || [];
+    const ids = selectedFeatureIds || [];
     // if the feature is already included remove it, otherwise add it
     if (ids.includes(feature.id)) {
       dispatch(setSelectedFeatureIds(ids.filter((id) => id !== feature.id)));
@@ -105,12 +112,7 @@ const FeaturesDialog = ({
     const base =
       filteredRows.length < allFeatures.length ? filteredRows : allFeatures;
 
-    return toggleSelectionState(
-      featureState.selectedFeatureIds || [],
-      base,
-      from,
-      to
-    );
+    return toggleSelectionState(selectedFeatureIds || [], base, from, to);
   };
 
   const clickRow = (event, row) => {
@@ -119,7 +121,7 @@ const FeaturesDialog = ({
 
     addOrRemoveFeature(row);
 
-    if (featureState.addingRemovingFeatures) {
+    if (addingRemovingFeatures) {
       if (event.shiftKey && previousRow) {
         const nextIds = getFeaturesBetweenRows(previousRow, row);
         dispatch(setSelectedFeatureIds(nextIds));
@@ -141,7 +143,7 @@ const FeaturesDialog = ({
   const clearAllFeatures = () => dispatch(setSelectedFeatureIds([]));
 
   const handleClickOk = () => {
-    if (featureState.addingRemovingFeatures) {
+    if (addingRemovingFeatures) {
       onOk();
     } else {
       unselectFeature();
@@ -151,13 +153,13 @@ const FeaturesDialog = ({
   const unselectFeature = () => {
     dispatch(setSelectedFeatureId(null));
     dispatch(
-      toggleFeatureD({ dialogName: "importFeaturePopoverOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "importFeaturePopoverOpen", isOpen: false }),
     );
     dispatch(
-      toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false }),
     );
     dispatch(
-      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }),
     );
   };
 
@@ -178,23 +180,23 @@ const FeaturesDialog = ({
         ...feature,
         index,
       })),
-    [allFeatures]
+    [allFeatures],
   );
 
   const closeDialog = () => {
     dispatch(
-      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }),
     );
     dispatch(setAddingRemovingFeatures(false));
   };
 
   return (
     <MarxanDialog
-      open={featureState.dialogs.featuresDialogOpen}
+      open={dialogIsOpen}
       loading={uiState.loading}
       onOk={handleClickOk}
       onCancel={closeDialog}
-      showCancelButton={featureState.addingRemovingFeatures}
+      showCancelButton={addingRemovingFeatures}
       autoDetectWindowHeight={false}
       title="Features"
       // showSearchBox={true}
@@ -214,8 +216,8 @@ const FeaturesDialog = ({
           tableColumns={columns}
           searchColumns={["alias", "description", "source", "created_by"]}
           dataFiltered={dataFiltered}
-          selected={featureState.selectedFeatureIds}
-          selectedFeatureIds={featureState.selectedFeatureIds}
+          selected={selectedFeatureIds}
+          selectedFeatureIds={selectedFeatureIds}
           selectedFeature={selectedFeature}
           clickRow={clickRow}
           preview={(row) => previewFeature?.(row)}

@@ -11,7 +11,7 @@ export const usePlanningGridWebSocket = () => {
   const createPlanningGridViaWebSocket = useCallback(
     (
       { shapefile_path, alias, description, resolution },
-      { onUpdate, onSuccess, onError }
+      { onUpdate, onSuccess, onError },
     ) => {
       // SOME AWFUL SHITE GOING ON HERE WITH SERVERS
       // so todo
@@ -23,15 +23,17 @@ export const usePlanningGridWebSocket = () => {
 
       socket.onopen = () => {
         socket.send(
-          JSON.stringify({ shapefile_path, alias, description, resolution })
+          JSON.stringify({ shapefile_path, alias, description, resolution }),
         );
         showMessage("🟢 Upload started...", "info");
         onUpdate?.("🟢 Upload started...");
       };
+
       socket.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
 
+          // Hard error
           if (msg.error) {
             showMessage(msg.error, "error");
             onError?.(msg.error);
@@ -39,8 +41,16 @@ export const usePlanningGridWebSocket = () => {
             return;
           }
 
+          // Grid already exists → ask user
+          if (msg.type === "grid_exists") {
+            showMessage(msg.info, "info");
+            onSuccess?.(msg); // treat like success
+            socket.close();
+            return;
+          }
+
+          // Explicit success
           if (msg.success === true) {
-            // ✅ close only when success is explicitly true
             if (msg.info) showMessage(msg.info, "success");
             onUpdate?.(msg.info ?? "✅ Done");
             onSuccess?.(msg);
@@ -48,14 +58,14 @@ export const usePlanningGridWebSocket = () => {
             return;
           }
 
-          // progress/info updates
+          // Progress/info messages
           if (msg.info) {
             onUpdate?.(msg.info);
             showMessage(msg.info);
             return;
           }
 
-          // fallback for any other message shape
+          // fallback
           onUpdate?.(JSON.stringify(msg));
         } catch (e) {
           const errMsg = "⚠️ Malformed message from server";
@@ -77,7 +87,7 @@ export const usePlanningGridWebSocket = () => {
         console.log("🧹 WebSocket closed");
       };
     },
-    []
+    [],
   );
 
   const closeConnection = () => {

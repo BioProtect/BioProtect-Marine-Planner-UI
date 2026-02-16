@@ -62,16 +62,6 @@ const PlanningUnitsDialog = ({
   }, []);
 
 
-  const openNewPlanningGridDialog = useCallback(() => {
-    dispatch(
-      togglePUD({
-        dialogName: "newPlanningGridDialogOpen",
-        isOpen: true,
-      })
-    );
-    closeDialog();
-  }, [closeDialog]);
-
   const changeItem = (event) => dispatch(setCurrentPUGrid(event));
   const safeSelected = puState.currentPUGrid || puState.planningUnitGrids?.[0]?.tilesetid || "";
 

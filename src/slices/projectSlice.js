@@ -14,22 +14,12 @@ export const projectApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     createProject: builder.mutation({
       query: (projectData) => ({
-        url: 'projects?action=',
-        method: 'POST',
-        body: { ...projectData, action: 'create' },
+        url: "projects?action=create",
+        method: "POST",
+        body: projectData,
       }),
-      invalidatesTags: ['Project'],
+      invalidatesTags: [{ type: "ProjectList", id: "LIST" }],
     }),
-
-    createProjectGroup: builder.mutation({
-      query: (groupData) => ({
-        url: 'projects?action=',
-        method: 'POST',
-        body: { ...groupData, action: 'create_group' },
-      }),
-      invalidatesTags: ['Project'],
-    }),
-
     updateProject: builder.mutation({
       query: ({ projectId, ...updateData }) => ({
         url: "projects?action=",
@@ -44,7 +34,6 @@ export const projectApiSlice = apiSlice.injectEndpoints({
             if (patch.features) draft.features = patch.features;
           })
         );
-
         try {
           await queryFulfilled;
         } catch {
@@ -53,7 +42,6 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       },
       invalidatesTags: (res, err, arg) => [{ type: "Project", id: arg.projectId }],
     }),
-
     getProject: builder.query({
       query: (projectId) => ({
         url: `projects?action=get&projectId=${projectId}`,
@@ -77,8 +65,8 @@ export const projectApiSlice = apiSlice.injectEndpoints({
     }),
 
     listProjects: builder.query({
-      query: (userId) => ({
-        url: `projects?action=list&user=${userId}`,
+      query: () => ({
+        url: `projects?action=list`,
         method: 'GET',
       }),
       providesTags: (result) => {
@@ -86,54 +74,54 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       },
     }),
 
-    listProjectsWithGrids: builder.query({
-      query: () => ({
-        url: 'projects?action=list_with_grids',
-        method: 'GET',
-      }),
-      providesTags: ['Project'],
-    }),
     cloneProject: builder.mutation({
       query: (projectId) => ({
-        url: `projects?action=clone&projectId=${projectId}`,
-        method: 'GET',
+        url: "projects?action=clone",
+        method: "POST",
+        body: { project_id: projectId },
       }),
-      invalidatesTags: ['Project'],
+      invalidatesTags: [{ type: "ProjectList", id: "LIST" }],
     }),
+
     deleteProject: builder.mutation({
       query: (projectId) => ({
-        url: `projects?action=delete&projectId=${projectId}`,
-        method: 'GET',
+        url: "projects?action=delete",
+        method: "POST",
+        body: { project_id: projectId },
       }),
-      invalidatesTags: ['Project'],
+      invalidatesTags: [
+        { type: "ProjectList", id: "LIST" },
+        { type: "Project" },
+      ],
     }),
-    deleteProjectCluster: builder.mutation({
-      query: (clusterId) => ({
-        url: `projects?action=delete_cluster&clusterId=${clusterId}`,
-        method: 'GET',
-      }),
-      invalidatesTags: ['Project'],
-    }),
+
     renameProject: builder.mutation({
       query: ({ projectId, newName }) => ({
-        url: `projects?action=rename&projectId=${projectId}&newName=${newName}`,
-        method: 'GET',
+        url: "projects?action=rename",
+        method: "POST",
+        body: {
+          project_id: projectId,
+          newName,
+        },
       }),
-      invalidatesTags: ['Project'],
+      invalidatesTags: (result, error, arg) => [
+        { type: "Project", id: arg.projectId },
+        { type: "ProjectList", id: "LIST" },
+      ],
     }),
+
+
+
   }),
 });
 
 export const {
   useCreateProjectMutation,
-  useCreateProjectGroupMutation,
   useUpdateProjectMutation,
   useGetProjectQuery,
   useListProjectsQuery,
-  useListProjectsWithGridsQuery,
   useCloneProjectMutation,
   useDeleteProjectMutation,
-  useDeleteProjectClusterMutation,
   useRenameProjectMutation,
 } = projectApiSlice;
 
