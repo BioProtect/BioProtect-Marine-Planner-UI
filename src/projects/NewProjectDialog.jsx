@@ -24,6 +24,7 @@ import SelectCostFeatures from "../SelectCostFeatures.jsx";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { selectCurrentUserId } from "@slices/authSlice";
 import { setAddingRemovingFeatures } from "../slices/featureSlice.js";
 import { setCurrentPUGrid } from "../slices/planningUnitSlice.js";
 import { setLoading } from "@slices/uiSlice";
@@ -41,6 +42,9 @@ const NewProjectDialog = ({
   fileUpload,
 }) => {
   const dispatch = useDispatch();
+  const userId = useSelector(selectCurrentUserId);
+  console.log("userId ", userId);
+
   const uiLoading = useSelector((state) => state.ui.loading);
   const fileUploadResponse = useSelector(
     (state) => state.ui.fileUploadResponse,
@@ -129,9 +133,9 @@ const NewProjectDialog = ({
   }, [dialogOpen]);
 
   // Helper function to prepare form data
-  const prepareFormDataNewProject = (proj, user) => {
+  const prepareFormDataNewProject = (proj) => {
     const formData = new FormData();
-    formData.append("user", user);
+    formData.append("userId", userId);
     formData.append("project", proj.name);
     formData.append("description", proj.description);
     formData.append("planning_grid_name", proj.planning_grid_name);
@@ -146,7 +150,7 @@ const NewProjectDialog = ({
   };
 
   const createNewProject = async (proj) => {
-    const formData = prepareFormDataNewProject(proj, user);
+    const formData = prepareFormDataNewProject(proj);
     // formData should be in the following format
     // {
     //     "user": "username",
@@ -163,7 +167,7 @@ const NewProjectDialog = ({
     dispatch(
       toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
     );
-    await loadProject(response.name, response.user);
+    await loadProject(response.name);
   };
 
   //creates a new planning grid unit

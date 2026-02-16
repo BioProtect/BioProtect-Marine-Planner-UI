@@ -36,6 +36,7 @@ import {
   setProjects,
   toggleProjDialog,
   useGetProjectQuery,
+  useRenameProjectMutation,
 } from "@slices/projectSlice";
 import {
   logOut,
@@ -187,6 +188,7 @@ const App = () => {
   const planningUnits = projectResp?.planning_units;
   const metadata = projectResp?.metadata ?? {};
   const costNames = projectResp?.costnames ?? [];
+  const [renameProjectMutation] = useRenameProjectMutation();
 
   // Refs for Map so state isnt stale.
   const featuresRef = useRef(projectFeatures);
@@ -1332,14 +1334,17 @@ const App = () => {
 
   //rename a specific project on the server
   const renameProject = async (newName) => {
-    if (newName !== "" && newName !== project) {
-      const response = await _get(
-        `projects?action=rename&user=${uiState.owner}&project=${project}&newName=${newName}`,
-      );
+    if (!newName || newName === project) return;
 
-      // dispatch(setProject(newName)); // FIX THIS - UPDATE NAME OF PROJECT ONLY.
-      showMessage(response.info, "success");
-      return "Project renamed";
+    try {
+      await renameProjectMutation({
+        projectId: activeProjectId,
+        newName,
+      }).unwrap();
+
+      showMessage("Project renamed", "success");
+    } catch (err) {
+      showMessage(err?.data?.error || "Rename failed", "error");
     }
   };
 
@@ -3560,31 +3565,32 @@ const App = () => {
             // protectedAreaIntersections={protectedAreaIntersections}
           />
         )}
-
-        <ResultsPanel
-          open={uiState.resultsPanelOpen}
-          preprocessing={preprocessing}
-          setClassificationDialogOpen={() =>
-            dispatch(
-              toggleDialog({
-                dialogName: "classificationDialogOpen",
-                isOpen: true,
-              }),
-            )
-          }
-          brew={brew}
-          messages={logMessages}
-          activeResultsTab={uiState.activeResultsTab}
-          clearLog={() => dispatch(clearImportLog())}
-          resultsLayer={resultsLayer}
-          wdpaLayer={wdpaLayer}
-          paLayerVisible={paLayerVisible}
-          changeOpacity={changeOpacity}
-          userRole={userData?.role}
-          visibleLayers={visibleLayers}
-          metadata={metadata}
-          costsLoading={costsLoading}
-        />
+        {project && (
+          <ResultsPanel
+            open={uiState.resultsPanelOpen}
+            preprocessing={preprocessing}
+            setClassificationDialogOpen={() =>
+              dispatch(
+                toggleDialog({
+                  dialogName: "classificationDialogOpen",
+                  isOpen: true,
+                }),
+              )
+            }
+            brew={brew}
+            messages={logMessages}
+            activeResultsTab={uiState.activeResultsTab}
+            clearLog={() => dispatch(clearImportLog())}
+            resultsLayer={resultsLayer}
+            wdpaLayer={wdpaLayer}
+            paLayerVisible={paLayerVisible}
+            changeOpacity={changeOpacity}
+            userRole={userData?.role}
+            visibleLayers={visibleLayers}
+            metadata={metadata}
+            costsLoading={costsLoading}
+          />
+        )}
         {puState.dialogs.hexInfoDialogOpen ? (
           <HexInfoDialog xy={popupPoint} metadata={metadata} />
         ) : null}
