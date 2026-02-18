@@ -37,6 +37,7 @@ import { useMemo } from "react";
 import { usePlanningGridWebSocket } from "@hooks/usePlanningGridWebSocket";
 
 const NewProjectDialog = ({
+  loadProjectAndSetup,
   updateSelectedFeatures,
   selectedCosts,
   previewFeature,
@@ -147,11 +148,12 @@ const NewProjectDialog = ({
         spf_values: proj.features.map(() => 40),
       };
       const response = await createProject(payload).unwrap();
+      console.log("response ", response);
       showMessage(response.info, "success");
       dispatch(
         toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
       );
-      await loadProject(response.name);
+      await loadProjectAndSetup(response.project_id);
       return response;
     } catch (error) {
       console.error("Error creating project:", error);

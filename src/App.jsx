@@ -911,6 +911,8 @@ const App = () => {
   const handleDeleteUser = async (user) => await deleteUser(user);
 
   const loadProjectAndSetup = async (projectId) => {
+    console.log("loadProjectAndSetup ");
+    console.log("projectId ", projectId);
     try {
       await dispatch(switchProject(projectId)).unwrap();
 
@@ -919,6 +921,7 @@ const App = () => {
           forceRefetch: true,
         }),
       ).unwrap();
+      console.log("projectData ", projectData);
 
       await postLoginSetup(projectData);
       return projectData;
@@ -2111,6 +2114,7 @@ const App = () => {
       const response = await fetch(`${tilesUrl}${puLayerName}`);
       if (!response.ok) throw new Error("Failed to fetch tileset metadata");
       const data = await response.json();
+      console.log("data - check if there are bounds to zoom to -  ", data);
       // Remove any existing PU-related layers and sources
       removePlanningGridLayers();
       // Add layers for the new planning unit grid
@@ -3597,6 +3601,7 @@ const App = () => {
         ) : null}
         <ProjectsListDialog />
         <NewProjectDialog
+          loadProjectAndSetup={loadProjectAndSetup}
           loading={uiState.loading}
           selectedCosts={selectedCosts}
           previewFeature={previewFeature}

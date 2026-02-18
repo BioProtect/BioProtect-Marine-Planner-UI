@@ -31,7 +31,6 @@ const ResultsPanel = (props) => {
     skip: !projectId,
   });
   const runs = runsResp?.data ?? [];
-  console.log("runs ", runs);
 
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
 
