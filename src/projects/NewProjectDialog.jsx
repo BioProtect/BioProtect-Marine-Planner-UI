@@ -4,6 +4,10 @@ import {
   useListPlanningUnitGridsQuery,
 } from "@slices/planningUnitSlice";
 import { setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice.js";
+import {
+  toggleProjDialog,
+  useCreateProjectMutation,
+} from "@slices/projectSlice.js";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useRef, useState } from "react";
 
@@ -27,15 +31,12 @@ import Typography from "@mui/material/Typography";
 import { selectCurrentUserId } from "@slices/authSlice";
 import { setAddingRemovingFeatures } from "../slices/featureSlice.js";
 import { setCurrentPUGrid } from "../slices/planningUnitSlice.js";
-import { setLoading } from "@slices/uiSlice";
-import { toggleProjDialog } from "@slices/projectSlice.js";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 import { useMemo } from "react";
 import { usePlanningGridWebSocket } from "@hooks/usePlanningGridWebSocket";
 
 const NewProjectDialog = ({
-  loading,
   updateSelectedFeatures,
   selectedCosts,
   previewFeature,
@@ -43,25 +44,16 @@ const NewProjectDialog = ({
 }) => {
   const dispatch = useDispatch();
   const userId = useSelector(selectCurrentUserId);
-  console.log("userId ", userId);
 
-  const uiLoading = useSelector((state) => state.ui.loading);
-  const fileUploadResponse = useSelector(
-    (state) => state.ui.fileUploadResponse,
-  );
-  const featureDialogs = useSelector((state) => state.feature.dialogs);
-  const selectedFeatureIds = useSelector(
-    (state) => state.feature.selectedFeatureIds,
-  );
-  const projState = useSelector((state) => state.project);
-  const currentPUGrid = useSelector(
-    (state) => state.planningUnit.currentPUGrid,
-  );
+  const uiLoading = useSelector((s) => s.ui.loading);
+  const fileUploadResponse = useSelector((s) => s.ui.fileUploadResponse);
+  const featureDialogs = useSelector((s) => s.feature.dialogs);
+  const selectedFeatureIds = useSelector((s) => s.feature.selectedFeatureIds);
+  const projState = useSelector((s) => s.project);
+  const currentPUGrid = useSelector((s) => s.planningUnit.currentPUGrid);
 
   // Track selectedFetaures so that if a new proect is being created the currents prject features arent used but also arent lost
-  const dialogOpen = useSelector(
-    (state) => state.project.dialogs.newProjectDialogOpen,
-  );
+  const dialogOpen = useSelector((s) => s.project.dialogs.newProjectDialogOpen);
   const prevSelectedFeatureIdsRef = useRef(null);
   const projectWasCreatedRef = useRef(false);
 
@@ -89,7 +81,7 @@ const NewProjectDialog = ({
 
   // upload progress - continue automatically
   const [waitingForUpload, setWaitingForUpload] = useState(false);
-
+  const [createProject, { isLoading, isError }] = useCreateProjectMutation();
   const { createPlanningGridViaWebSocket } = usePlanningGridWebSocket();
   const { showMessage } = useAppSnackbar();
   const { refetch: refetchPlanningUnitGrids } = useListPlanningUnitGridsQuery();
@@ -132,25 +124,7 @@ const NewProjectDialog = ({
     }
   }, [dialogOpen]);
 
-  // Helper function to prepare form data
-  const prepareFormDataNewProject = (proj) => {
-    const formData = new FormData();
-    formData.append("userId", userId);
-    formData.append("project", proj.name);
-    formData.append("description", proj.description);
-    formData.append("planning_grid_name", proj.planning_grid_name);
-    formData.append(
-      "interest_features",
-      proj.features.map((item) => item.id).join(","),
-    );
-    formData.append("target_values", proj.features.map(() => 17).join(","));
-    formData.append("spf_values", proj.features.map(() => 40).join(","));
-
-    return formData;
-  };
-
   const createNewProject = async (proj) => {
-    const formData = prepareFormDataNewProject(proj);
     // formData should be in the following format
     // {
     //     "user": "username",
@@ -162,12 +136,28 @@ const NewProjectDialog = ({
     //     "spf_values": "spf1,spf2"
     // }
     // const response = await _post("createProject", formData); - old
-    const response = await _post("projects?action=create", formData);
-    showMessage(response.info, "success");
-    dispatch(
-      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
-    );
-    await loadProject(response.name);
+    try {
+      const payload = {
+        userId: userId,
+        project: proj.name,
+        description: proj.description,
+        planning_grid_name: proj.planning_grid_name,
+        interest_features: proj.features,
+        target_values: proj.features.map(() => 17),
+        spf_values: proj.features.map(() => 40),
+      };
+      const response = await createProject(payload).unwrap();
+      showMessage(response.info, "success");
+      dispatch(
+        toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
+      );
+      await loadProject(response.name);
+      return response;
+    } catch (error) {
+      console.error("Error creating project:", error);
+      showMessage(`Error creating project: ${error.message || error}`, "error");
+      throw error;
+    }
   };
 
   //creates a new planning grid unit
@@ -196,9 +186,7 @@ const NewProjectDialog = ({
           showMessage(result?.info || "Planning grid created");
 
           const updated = await refetchPlanningUnitGrids();
-          console.log("updated ", updated);
           const grids = updated?.data?.planning_unit_grids || [];
-          console.log("grids ", grids);
 
           if (grids.length > 0) {
             dispatch(setPlanningUnitGrids(grids));
@@ -210,14 +198,11 @@ const NewProjectDialog = ({
               console.log("Planning grid uploaded");
               showMessage("Planning grid uploaded", "success");
               setWaitingForUpload(true);
-              dispatch(setLoading(false));
               return;
             }
           }
-          dispatch(setLoading(false));
         },
         onError: (errMsg) => {
-          dispatch(setLoading(false));
           showMessage(`❌ ${errMsg}`, "error");
         },
       },
@@ -240,34 +225,29 @@ const NewProjectDialog = ({
     );
 
   const handleCreateNewPlanningGrid = async () => {
-    console.log("filename,resolution: ", fileUploadResponse, resolution);
-    dispatch(setLoading(true));
     try {
       console.log("creating planning unit grid.....");
-      await createPlanningUnitGrid(
+      const resp = await createPlanningUnitGrid(
         fileUploadResponse.file,
         planningGridName,
         resolution,
       );
+      console.log("response from createPlanningUnitGrid: ", resp);
+      return resp;
     } catch (error) {
       console.error("Error creating planning grid:", error);
-      dispatch(setLoading(false)); // ensure we hide loading on immediate failure
       showMessage(`Error creating planning grid: ${error}`, "error");
     }
   };
 
-  const clearAllFeatures = () => dispatch(setSelectedFeatureIds([]));
-
   const handleCreateNewProject = async () => {
     projectWasCreatedRef.current = true;
-
     await createNewProject({
       name,
       description,
       planning_grid_name: currentPUGrid,
       features: selectedFeatureIds,
     });
-
     closeDialog();
   };
 
@@ -316,7 +296,7 @@ const NewProjectDialog = ({
     <>
       <MarxanDialog
         open={projState.dialogs.newProjectDialogOpen}
-        loading={loading}
+        loading={isLoading}
         title={`New project: ${steps[stepIndex]}`}
         fullWidth={true}
         actions={actions}

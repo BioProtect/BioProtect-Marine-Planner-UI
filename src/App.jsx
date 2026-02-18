@@ -1377,30 +1377,20 @@ const App = () => {
   const updateProjectFeatures = async (features = projectFeatures) => {
     const getFeatureId = (item) => item.id ?? item.feature_unique_id;
 
-    const join = (getter) =>
-      features
-        .map(getter)
-        .filter((v) => v !== undefined && v !== null)
-        .join(",");
+    const toCsv = (arr) =>
+      arr.filter((v) => v !== undefined && v !== null && v !== "").join(",");
+
+    const featureIds = toCsv(features.map((f) => getFeatureId(f)));
+    const targets = toCsv(features.map((f) => f.target_value));
+    const spfs = toCsv(features.map((f) => f.spf));
 
     const formData = new FormData();
-    formData.append("user", projectResp.user);
     formData.append("project_id", project.id);
+    formData.append("interest_features", featureIds);
+    formData.append("target_values", targets);
+    formData.append("spf_values", spfs);
 
-    formData.append(
-      "interest_features",
-      join((feature) => getFeatureId(feature)),
-    );
-    formData.append(
-      "target_values",
-      join((feature) => feature.target_value),
-    );
-    formData.append(
-      "spf_values",
-      join((feature) => feature.spf),
-    );
-
-    return await _post("projects?action=update_features", formData);
+    return _post("projects?action=update_features", formData);
   };
 
   //preprocess a single feature
