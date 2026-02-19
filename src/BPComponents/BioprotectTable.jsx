@@ -34,6 +34,43 @@ const BioprotectTable = (props) => {
   const [orderBy, setOrderBy] = useState("category");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const parseCreatedAt = (value) => {
+    if (!value) return null;
+    const [d, m, y, ...rest] = value.replace(" ", "/").split("/");
+    const [hh, mm, ss] = rest[0].split(":");
+    const year = 2000 + Number(y); // "20" -> 2020
+    return new Date(
+      year,
+      Number(m) - 1,
+      Number(d),
+      Number(hh),
+      Number(mm),
+      Number(ss),
+    );
+  };
+
+  const descendingComparator = (a, b, orderBy) => {
+    if (orderBy === "creation_date") {
+      const aDate = parseCreatedAt(a[orderBy]);
+      const bDate = parseCreatedAt(b[orderBy]);
+      const aTs = aDate ? aDate.getTime() : 0;
+      const bTs = bDate ? bDate.getTime() : 0;
+      if (bTs < aTs) return -1;
+      if (bTs > aTs) return 1;
+      return 0;
+    }
+
+    // existing generic logic for other fields
+    if (b[orderBy] < a[orderBy]) return -1;
+    if (b[orderBy] > a[orderBy]) return 1;
+    return 0;
+  };
+
+  const getComparator = (order, orderBy) =>
+    order === "desc"
+      ? (a, b) => descendingComparator(a, b, orderBy)
+      : (a, b) => -descendingComparator(a, b, orderBy);
+
   // Normalize the incoming `selected` into a Set of IDs for fast lookup.
   const selectedIdSet = useMemo(() => {
     const sel = props.selected || [];
@@ -55,8 +92,8 @@ const BioprotectTable = (props) => {
 
     const filteredResult = props.data.filter((row) =>
       props.searchColumns.some((column) =>
-        row[column].toString().toLowerCase().includes(lowerCaseQuery)
-      )
+        row[column].toString().toLowerCase().includes(lowerCaseQuery),
+      ),
     );
     return stableSort(filteredResult, getComparator(order, orderBy));
   }, [searchQuery, props.data, order, orderBy]);

@@ -12,6 +12,9 @@ import { setSelectedFeatureIds } from "./featureSlice"
 
 export const projectApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    // -----------------------------
+    // CREATE PROJECT (JSON)
+    // -----------------------------
     createProject: builder.mutation({
       query: (projectData) => ({
         url: "projects?action=create",
@@ -20,6 +23,12 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: [{ type: "ProjectList", id: "LIST" }],
     }),
+
+    // -----------------------------
+    // LEGACY: generic update (action=update)
+    // Still uses backend update_project_parameters (file-based)
+    // Not used for features.
+    // -----------------------------
     updateProject: builder.mutation({
       query: ({ projectId, ...updateData }) => ({
         url: "projects?action=",
@@ -42,6 +51,61 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       },
       invalidatesTags: (res, err, arg) => [{ type: "Project", id: arg.projectId }],
     }),
+
+    // -----------------------------
+    // UPDATE PROJECT FEATURES (JSON)
+    // POST /projects?action=update_features
+    // Body:
+    // {
+    //   project_id: number,
+    //   interest_features: number[],
+    //   target_values: number[],
+    //   spf_values: number[]
+    // }
+    // -----------------------------
+    updateProjectFeatures: builder.mutation({
+      query: ({ projectId, features }) => {
+        const getFeatureId = (f) => f.id ?? f.feature_unique_id;
+
+        return {
+          url: "projects?action=update_features",
+          method: "POST",
+          body: {
+            project_id: projectId,
+            interest_features: features.map((f) => getFeatureId(f)),
+            target_values: features.map((f) => f.target_value),
+            spf_values: features.map((f) => f.spf),
+          },
+        };
+      },
+      async onQueryStarted(
+        { projectId, features },
+        { dispatch, queryFulfilled },
+      ) {
+        // Optimistic update: keep UI responsive when editing features
+        const patchResult = dispatch(
+          projectApiSlice.util.updateQueryData(
+            "getProject",
+            projectId,
+            (draft) => {
+              draft.features = features;
+            },
+          ),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
+      invalidatesTags: (result, error, arg) => [
+        { type: "Project", id: arg.projectId },
+      ],
+    }),
+
+    // -----------------------------
+    // GET SINGLE PROJECT
+    // -----------------------------
     getProject: builder.query({
       query: (projectId) => ({
         url: `projects?action=get&projectId=${projectId}`,
@@ -52,28 +116,33 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       async onQueryStarted(projectId, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
+          console.log("data in get Project ", data);
           dispatch(setOwner(data?.project?.user));
           dispatch(setActiveTab("project"));
 
-          // sync feature selection from project → feature slice if needed
-          const ids = (data?.features ?? []).map((f) => f.id);
-          dispatch(setSelectedFeatureIds(ids));
+          // sync feature selection from project - feature slice if needed
+          // const ids = (data?.features ?? []).map((f) => f.feature_unique_id ?? f.id);
+          // dispatch(setSelectedFeatureIds(ids));
         } catch {
           // ignore
         }
       },
     }),
 
+    // -----------------------------
+    // LIST PROJECTS
+    // -----------------------------
     listProjects: builder.query({
       query: () => ({
         url: `projects?action=list`,
-        method: 'GET',
+        method: "GET",
       }),
-      providesTags: (result) => {
-        return [{ type: "ProjectList", id: "LIST" }];
-      },
+      providesTags: (result) => [{ type: "ProjectList", id: "LIST" }],
     }),
 
+    // -----------------------------
+    // CLONE PROJECT (not yet implemented backend)
+    // -----------------------------
     cloneProject: builder.mutation({
       query: (projectId) => ({
         url: "projects?action=clone",
@@ -83,6 +152,10 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: [{ type: "ProjectList", id: "LIST" }],
     }),
 
+
+    // -----------------------------
+    // DELETE PROJECT (JSON)
+    // -----------------------------
     deleteProject: builder.mutation({
       query: (projectId) => ({
         url: "projects?action=delete",
@@ -95,6 +168,9 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
+    // -----------------------------
+    // RENAME PROJECT (JSON)
+    // -----------------------------
     renameProject: builder.mutation({
       query: ({ projectId, newName }) => ({
         url: "projects?action=rename",
@@ -109,15 +185,13 @@ export const projectApiSlice = apiSlice.injectEndpoints({
         { type: "ProjectList", id: "LIST" },
       ],
     }),
-
-
-
   }),
 });
 
 export const {
   useCreateProjectMutation,
   useUpdateProjectMutation,
+  useUpdateProjectFeaturesMutation,
   useGetProjectQuery,
   useListProjectsQuery,
   useCloneProjectMutation,
@@ -162,16 +236,13 @@ export const initialiseServers = createAsyncThunk(
   async (servers, { dispatch, rejectWithValue }) => {
     try {
       const updatedServers = addLocalServer(servers);
-      // Fetch capabilities for each server
       const allCapabilities = await Promise.all(
         updatedServers.map((server) => getServerCapabilities(server))
       );
       const filteredAndSortedServers = filterAndSortServers(allCapabilities);
-      console.log("filteredAndSortedServers ", filteredAndSortedServers);
       dispatch(setBpServers(filteredAndSortedServers)); // Dispatch the updated servers to the store
       if (filteredAndSortedServers.length) {
         dispatch(selectServer(filteredAndSortedServers[0]));
-        console.log("filteredAndSortedServers[0]) ", filteredAndSortedServers[0]);
       }
       return "ServerData retrieved";
     } catch (error) {

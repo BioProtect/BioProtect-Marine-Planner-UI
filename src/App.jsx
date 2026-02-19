@@ -34,9 +34,11 @@ import {
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjects,
+  switchProject,
   toggleProjDialog,
   useGetProjectQuery,
   useRenameProjectMutation,
+  useUpdateProjectFeaturesMutation,
 } from "@slices/projectSlice";
 import {
   logOut,
@@ -130,7 +132,6 @@ import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
 // wherever loadProjectAndSetup lives
 import store from "@store/store";
-import { switchProject } from "./slices/projectSlice";
 /*eslint-disable no-unused-vars*/
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useGetPrioritizrRunResultsQuery } from "@slices/prioritizrApiSlice";
@@ -238,6 +239,7 @@ const App = () => {
   });
   const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
   const [triggerListFeaturePUs] = featureApiSlice.useLazyListFeaturePUsQuery();
+  const [updateProjectFeaturesMutation] = useUpdateProjectFeaturesMutation();
 
   const [puEditing, setPuEditing] = useState(false);
   const puEditingRef = useRef(puEditing);
@@ -533,24 +535,28 @@ const App = () => {
     );
 
     // update project features
-    const patchProjectResult = dispatch(
-      projectApiSlice.util.updateQueryData(
-        "getProject",
-        activeProjectId,
-        (draft) => {
-          draft.features = selected;
-        },
-      ),
-    );
+    // const patchProjectResult = dispatch(
+    //   projectApiSlice.util.updateQueryData(
+    //     "getProject",
+    //     activeProjectId,
+    //     (draft) => {
+    //       draft.features = selected;
+    //     },
+    //   ),
+    // );
 
     // Persist changes to the server if the user is not read-only
     try {
-      if (userData?.role !== "ReadOnly") {
-        await updateProjectFeatures(selected);
-      }
+      console.log("selected features ", selected);
+
+      const resp = await updateProjectFeaturesMutation({
+        projectId: activeProjectId,
+        features: selected,
+      }).unwrap();
+      console.log("updateProjectFeaturesMutation resp ", resp);
     } catch (err) {
       patchAllResult?.undo?.();
-      patchProjectResult?.undo?.();
+      // patchProjectResult?.undo?.();
       showMessage?.(`Failed to save selections. Reverted. ${err}`, "error");
     } finally {
       dispatch(
@@ -911,6 +917,8 @@ const App = () => {
   const handleDeleteUser = async (user) => await deleteUser(user);
 
   const loadProjectAndSetup = async (projectId) => {
+    console.log("loadProjectAndSetup ");
+    console.log("projectId ", projectId);
     try {
       await dispatch(switchProject(projectId)).unwrap();
 
@@ -919,6 +927,7 @@ const App = () => {
           forceRefetch: true,
         }),
       ).unwrap();
+      console.log("projectData ", projectData);
 
       await postLoginSetup(projectData);
       return projectData;
@@ -1377,30 +1386,20 @@ const App = () => {
   const updateProjectFeatures = async (features = projectFeatures) => {
     const getFeatureId = (item) => item.id ?? item.feature_unique_id;
 
-    const join = (getter) =>
-      features
-        .map(getter)
-        .filter((v) => v !== undefined && v !== null)
-        .join(",");
+    const toCsv = (arr) =>
+      arr.filter((v) => v !== undefined && v !== null && v !== "").join(",");
+
+    const featureIds = toCsv(features.map((f) => getFeatureId(f)));
+    const targets = toCsv(features.map((f) => f.target_value));
+    const spfs = toCsv(features.map((f) => f.spf));
 
     const formData = new FormData();
-    formData.append("user", projectResp.user);
     formData.append("project_id", project.id);
+    formData.append("interest_features", featureIds);
+    formData.append("target_values", targets);
+    formData.append("spf_values", spfs);
 
-    formData.append(
-      "interest_features",
-      join((feature) => getFeatureId(feature)),
-    );
-    formData.append(
-      "target_values",
-      join((feature) => feature.target_value),
-    );
-    formData.append(
-      "spf_values",
-      join((feature) => feature.spf),
-    );
-
-    return await _post("projects?action=update_features", formData);
+    return _post("projects?action=update_features", formData);
   };
 
   //preprocess a single feature
@@ -1420,6 +1419,7 @@ const App = () => {
 
   //preprocesses a feature using websockets - i.e. intersects it with the planning units grid and writes the intersection results into the database. this will have no server timeout as its running using websockets
   const preprocessFeature = async (featureId) => {
+    console.log("featureId ", featureId);
     try {
       // Switch to the log tab
       const planningGridId = metadata.pu_id;
@@ -2121,6 +2121,7 @@ const App = () => {
       const response = await fetch(`${tilesUrl}${puLayerName}`);
       if (!response.ok) throw new Error("Failed to fetch tileset metadata");
       const data = await response.json();
+      console.log("data - check if there are bounds to zoom to -  ", data);
       // Remove any existing PU-related layers and sources
       removePlanningGridLayers();
       // Add layers for the new planning unit grid
@@ -3360,6 +3361,8 @@ const App = () => {
       setCostsLoading(true);
       // fetch from server (or cache)
       const response = await getPuCostsLayer(forceReload);
+      console.log("response ", response);
+      console.log("response?.data ", response?.data);
       const statusLayerId = puLayerIdsRef.current?.statusLayerId;
       if (map.current && statusLayerId && map.current.getLayer(statusLayerId)) {
         map.current.setLayoutProperty(statusLayerId, "visibility", "visible");
@@ -3607,6 +3610,7 @@ const App = () => {
         ) : null}
         <ProjectsListDialog />
         <NewProjectDialog
+          loadProjectAndSetup={loadProjectAndSetup}
           loading={uiState.loading}
           selectedCosts={selectedCosts}
           previewFeature={previewFeature}

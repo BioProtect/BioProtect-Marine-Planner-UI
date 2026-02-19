@@ -82,6 +82,7 @@ const FeaturesList = ({
     <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
       {projectFeatures.map((item) => {
         const { id, area, protected_area, target_value, color } = item;
+
         let protectedPercent;
         if (protected_area === -1) {
           protectedPercent = -1;
@@ -91,6 +92,9 @@ const FeaturesList = ({
           protectedPercent = 0;
         }
 
+        const isActive =
+          item.feature_layer_loaded || item.feature_puid_layer_loaded;
+
         const content = (
           <ListItem
             key={"feature" + id}
@@ -99,9 +103,11 @@ const FeaturesList = ({
                 ? "4px solid #1990FF"
                 : "4px solid transparent",
               pl: 1,
-              bgcolor: item.preprocessed
-                ? "rgba(32, 129, 35, 0.06)"
-                : "transparent",
+              bgcolor: isActive
+                ? "rgba(25, 144, 255, 0.18)" // highlight when active
+                : item.preprocessed
+                  ? "rgba(32, 129, 35, 0.06)" // preprocessed only
+                  : "transparent",
               borderRadius: 1,
             }}
             secondaryAction={

@@ -24,14 +24,10 @@ const ResultsPanel = (props) => {
   const selectedRunId = useSelector((s) => s.prioritizr.selectedRunId);
   const [selected, setSelected] = useState(null);
 
-  // const { data: runs = [] } = useListPrioritizrRunsQuery(projectId, {
-  //   skip: !projectId,
-  // });
   const { data: runsResp } = useListPrioritizrRunsQuery(projectId, {
     skip: !projectId,
   });
   const runs = runsResp?.data ?? [];
-  console.log("runs ", runs);
 
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
 

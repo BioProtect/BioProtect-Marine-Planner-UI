@@ -1,5 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { setFeatureFilename, toggleFeatureD, useGetSensitivitiesMutation } from "@slices/featureSlice";
+import {
+  setFeatureFilename,
+  toggleFeatureD,
+  useGetSensitivitiesMutation,
+} from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -16,6 +20,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import { addToImportLog } from "../slices/uiSlice";
+import { featureApiSlice } from "@slices/featureSlice";
 import { setAddToProject } from "@slices/projectSlice";
 import { useLogToSnackbar } from "@hooks/useLogToSnackbar";
 
@@ -29,8 +34,9 @@ const ImportFeaturesDialog = ({
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
-  const featureState = useSelector((state) => state.feature)
-  const [getSensitivities, { data: sensitivitiesData, isLoading }] = useGetSensitivitiesMutation();
+  const featureState = useSelector((state) => state.feature);
+  const [getSensitivities, { data: sensitivitiesData, isLoading }] =
+    useGetSensitivitiesMutation();
   const [selectedSensitivity, setSelectedSensitivity] = useState("");
 
   const [steps, setSteps] = useState([
@@ -57,13 +63,24 @@ const ImportFeaturesDialog = ({
       unzipShapefile(featureState.featureFilename).then((response) => {
         const shapeFilePath = response.rootfilename;
         setShapeFile(`${shapeFilePath}.shp`);
-        setName(`${shapeFilePath}`)
+        setName(`${shapeFilePath}`);
         setStepIndex(stepIndex + 1);
         handleGetShapefileFieldnames(`${shapeFilePath}.shp`);
       });
     } else if (stepIndex === steps.length - 1) {
-      importFeatures(featureState.featureFilename, name, description, shapeFile, splitField).then((response) => {
-        dispatch(addToImportLog(response.message));
+      importFeatures(
+        featureState.featureFilename,
+        name,
+        description,
+        shapeFile,
+        splitField,
+      ).then((response) => {
+        // Force RTK Query to refetch all features
+        dispatch(
+          featureApiSlice.endpoints.getAllFeatures.initiate(undefined, {
+            forceRefetch: true,
+          }),
+        );
         closeDialog();
       });
     } else {
@@ -87,7 +104,7 @@ const ImportFeaturesDialog = ({
       setFieldNames(fieldnames);
 
       const descriptField = fieldnames.find((name) =>
-        name.toLowerCase().includes("descript")
+        name.toLowerCase().includes("descript"),
       );
 
       if (descriptField && values?.length > 0) {
@@ -100,7 +117,8 @@ const ImportFeaturesDialog = ({
     });
   };
 
-  const handleAddToProjectChange = (evt) => dispatch(setAddToProject(evt.target.checked));
+  const handleAddToProjectChange = (evt) =>
+    dispatch(setAddToProject(evt.target.checked));
 
   const closeDialog = () => {
     if (shapeFile) {
@@ -117,19 +135,21 @@ const ImportFeaturesDialog = ({
       toggleFeatureD({
         dialogName: "featuresDialogOpen",
         isOpen: true,
-      })
+      }),
     );
     dispatch(
       toggleFeatureD({
         dialogName: "importFeaturesDialogOpen",
         isOpen: false,
-      })
+      }),
     );
+    console.log("should have closed the dialog by now...");
   };
 
-  const _disabled =
-    (stepIndex === 0 && (featureState.featureFilename === "" || selectedSensitivity === "")) ||
-    (stepIndex === 1 && uiState.loading);
+  const _disabled = false;
+  // (stepIndex === 0 &&
+  //   (featureState.featureFilename === "" || selectedSensitivity === "")) ||
+  // (stepIndex === 1 && uiState.loading);
 
   return (
     <Dialog
@@ -143,7 +163,7 @@ const ImportFeaturesDialog = ({
       <DialogContent>
         {stepIndex === 0 && (
           <>
-            <Select
+            {/* <Select
               fullWidth
               required
               value={selectedSensitivity}
@@ -161,7 +181,7 @@ const ImportFeaturesDialog = ({
                 </MenuItem>
               ))}
 
-            </Select>
+            </Select> */}
             <FileUpload
               loading={uiState.loading}
               fileUpload={fileUpload}
@@ -170,7 +190,8 @@ const ImportFeaturesDialog = ({
               filename={featureState.featureFilename}
               destFolder="imports"
               label="Shapefile"
-            /></>
+            />
+          </>
         )}
         {stepIndex === 1 && (
           <RadioGroup name="createFeatureType" defaultValue="single">
@@ -264,7 +285,7 @@ const ImportFeaturesDialog = ({
           Cancel
         </Button>
       </DialogActions>
-    </Dialog >
+    </Dialog>
   );
 };
 
