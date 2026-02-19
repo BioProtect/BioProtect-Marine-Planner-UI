@@ -1,6 +1,7 @@
 import { addToImportLog, removeImportLogMessage } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
+import { prioritizrApiSlice } from "@slices/prioritizrApiSlice";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useCallback } from "react";
 
@@ -8,10 +9,13 @@ const useWebSocketHandler = (
   checkForErrors,
   setPreprocessing,
   setPid,
-  newFeatureCreated
+  newFeatureCreated,
 ) => {
   const dispatch = useDispatch();
-  const projState = useSelector((state) => state.project);
+  const activeProjectId = useSelector((state) => state.project.activeProjectId);
+  const websocketEndpoint = useSelector(
+    (state) => state.project.bpServer.websocketEndpoint,
+  );
   const { showMessage } = useAppSnackbar();
 
   const logMessage = useCallback(
@@ -20,28 +24,25 @@ const useWebSocketHandler = (
         addToImportLog({
           ...msg,
           time: new Date().toLocaleTimeString(),
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const removeMessageFromLog = useCallback(
     (matchText) => {
       dispatch(removeImportLogMessage(matchText));
     },
-    [dispatch]
+    [dispatch],
   );
 
   // Combined WebSocket handler
   const handleWebSocket = useCallback(
     (params) => {
       return new Promise((resolve, reject) => {
-        console.log(
-          "Connecting to:",
-          projState.bpServer.websocketEndpoint + params
-        );
-        const ws = new WebSocket(projState.bpServer.websocketEndpoint + params);
+        console.log("Connecting to:", websocketEndpoint + params);
+        const ws = new WebSocket(websocketEndpoint + params);
 
         ws.onopen = () => setPreprocessing(true);
 
@@ -51,6 +52,17 @@ const useWebSocketHandler = (
           showMessage(message.info, "info");
           if (!checkForErrors(message)) {
             logMessage(message);
+
+            // If this message relates to a Prioritizr run, invalidate run tags
+            if (message.run_id != null) {
+              dispatch(
+                prioritizrApiSlice.util.invalidateTags([
+                  { type: "PrioritizrRun", id: "LIST" },
+                  { type: "PrioritizrRun", id: activeProjectId },
+                  { type: "PrioritizrRun", id: message.run_id },
+                ]),
+              );
+            }
 
             switch (message.status) {
               case "Started":
@@ -109,8 +121,8 @@ const useWebSocketHandler = (
             });
             reject(
               new Error(
-                `WebSocket closed unexpectedly: ${evt.code} - ${reason}`
-              )
+                `WebSocket closed unexpectedly: ${evt.code} - ${reason}`,
+              ),
             );
           } else {
             showMessage("Socket Closed", "info");
@@ -120,7 +132,8 @@ const useWebSocketHandler = (
       });
     },
     [
-      projState.bpServer.websocketEndpoint,
+      websocketEndpoint,
+      activeProjectId,
       showMessage,
       checkForErrors,
       setPreprocessing,
@@ -128,7 +141,8 @@ const useWebSocketHandler = (
       newFeatureCreated,
       logMessage,
       removeMessageFromLog,
-    ]
+      dispatch,
+    ],
   );
 
   return handleWebSocket;

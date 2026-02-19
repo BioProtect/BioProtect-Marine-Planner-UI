@@ -34,9 +34,11 @@ import {
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjects,
+  switchProject,
   toggleProjDialog,
   useGetProjectQuery,
   useRenameProjectMutation,
+  useUpdateProjectFeaturesMutation,
 } from "@slices/projectSlice";
 import {
   logOut,
@@ -130,7 +132,6 @@ import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
 // wherever loadProjectAndSetup lives
 import store from "@store/store";
-import { switchProject } from "./slices/projectSlice";
 /*eslint-disable no-unused-vars*/
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useGetPrioritizrRunResultsQuery } from "@slices/prioritizrApiSlice";
@@ -238,6 +239,7 @@ const App = () => {
   });
   const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
   const [triggerListFeaturePUs] = featureApiSlice.useLazyListFeaturePUsQuery();
+  const [updateProjectFeaturesMutation] = useUpdateProjectFeaturesMutation();
 
   const [puEditing, setPuEditing] = useState(false);
   const puEditingRef = useRef(puEditing);
@@ -533,24 +535,28 @@ const App = () => {
     );
 
     // update project features
-    const patchProjectResult = dispatch(
-      projectApiSlice.util.updateQueryData(
-        "getProject",
-        activeProjectId,
-        (draft) => {
-          draft.features = selected;
-        },
-      ),
-    );
+    // const patchProjectResult = dispatch(
+    //   projectApiSlice.util.updateQueryData(
+    //     "getProject",
+    //     activeProjectId,
+    //     (draft) => {
+    //       draft.features = selected;
+    //     },
+    //   ),
+    // );
 
     // Persist changes to the server if the user is not read-only
     try {
-      if (userData?.role !== "ReadOnly") {
-        await updateProjectFeatures(selected);
-      }
+      console.log("selected features ", selected);
+
+      const resp = await updateProjectFeaturesMutation({
+        projectId: activeProjectId,
+        features: selected,
+      }).unwrap();
+      console.log("updateProjectFeaturesMutation resp ", resp);
     } catch (err) {
       patchAllResult?.undo?.();
-      patchProjectResult?.undo?.();
+      // patchProjectResult?.undo?.();
       showMessage?.(`Failed to save selections. Reverted. ${err}`, "error");
     } finally {
       dispatch(
@@ -1413,6 +1419,7 @@ const App = () => {
 
   //preprocesses a feature using websockets - i.e. intersects it with the planning units grid and writes the intersection results into the database. this will have no server timeout as its running using websockets
   const preprocessFeature = async (featureId) => {
+    console.log("featureId ", featureId);
     try {
       // Switch to the log tab
       const planningGridId = metadata.pu_id;

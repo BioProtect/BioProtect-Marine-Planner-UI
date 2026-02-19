@@ -116,12 +116,13 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       async onQueryStarted(projectId, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
+          console.log("data in get Project ", data);
           dispatch(setOwner(data?.project?.user));
           dispatch(setActiveTab("project"));
 
-          // sync feature selection from project → feature slice if needed
-          const ids = (data?.features ?? []).map((f) => f.id);
-          dispatch(setSelectedFeatureIds(ids));
+          // sync feature selection from project - feature slice if needed
+          // const ids = (data?.features ?? []).map((f) => f.feature_unique_id ?? f.id);
+          // dispatch(setSelectedFeatureIds(ids));
         } catch {
           // ignore
         }

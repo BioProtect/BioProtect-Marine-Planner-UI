@@ -186,11 +186,6 @@ const uiSlice = createSlice({
     },
     removeImportLogMessage: (state, action) => {
       const matchText = action.payload;
-      state.importLog = state.importLog.filter((msg) =>
-        typeof msg === "string"
-          ? !msg.includes(matchText)
-          : !(msg.info && msg.info.includes(matchText))
-      );
     },
     clearImportLog: (state) => {
       state.importLog = [];

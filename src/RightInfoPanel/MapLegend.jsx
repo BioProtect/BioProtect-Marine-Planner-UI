@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 
+import Box from "@mui/material/Box";
 import CONSTANTS from "../bpVars";
 import LayerLegend from "./LayerLegend";
-import { getMaxNumberOfClasses } from "../Helpers";
 
 const MapLegend = (props) => {
   const [planningGridShape, setPlanningGridShape] = useState("hexagon");
@@ -197,11 +197,29 @@ const MapLegend = (props) => {
   };
 
   return (
-    <>
+    <Box
+      sx={{
+        maxHeight: "calc(100vh - 200px)", // responsive vertical size
+        overflowY: "auto",
+        pr: 1, // avoids scrollbar overlay
+        my: 1,
+        // optional: MUI theme scrollbar
+        "&::-webkit-scrollbar": {
+          width: "8px",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          backgroundColor: "rgba(0,0,0,0.3)",
+          borderRadius: "4px",
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          backgroundColor: "rgba(0,0,0,0.5)",
+        },
+      }}
+    >
       {getNonFeatureLegendItems()}
       {getFeatureLegendItems()}
       {getFeaturePUIDLegendItems()}
-    </>
+    </Box>
   );
 };
 
