@@ -28,7 +28,6 @@ const ProjectsDialog = ({
   const { data: projectsResp = {}, isFetching } = useListProjectsQuery(userId, {
     skip: !userId,
   });
-  console.log("projectsResp ", projectsResp);
   const projects = projectsResp.projects ?? [];
   const activeProjectId = useSelector((state) => state.project.activeProjectId);
   const [selectedProjectId, setSelectedProjectId] = useState(activeProjectId);

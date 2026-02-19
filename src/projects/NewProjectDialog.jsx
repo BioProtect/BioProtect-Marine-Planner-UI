@@ -143,6 +143,7 @@ const NewProjectDialog = ({
         project: proj.name,
         description: proj.description,
         planning_grid_name: proj.planning_grid_name,
+        resolution: resolution,
         interest_features: proj.features,
         target_values: proj.features.map(() => 17),
         spf_values: proj.features.map(() => 40),

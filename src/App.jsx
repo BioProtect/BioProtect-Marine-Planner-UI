@@ -3354,6 +3354,8 @@ const App = () => {
       setCostsLoading(true);
       // fetch from server (or cache)
       const response = await getPuCostsLayer(forceReload);
+      console.log("response ", response);
+      console.log("response?.data ", response?.data);
       const statusLayerId = puLayerIdsRef.current?.statusLayerId;
       if (map.current && statusLayerId && map.current.getLayer(statusLayerId)) {
         map.current.setLayoutProperty(statusLayerId, "visibility", "visible");
