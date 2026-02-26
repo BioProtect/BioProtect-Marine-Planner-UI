@@ -2554,85 +2554,6 @@ const App = () => {
       `listProjectsForPlanningGrid ? feature_class_name = ${feature_class_name} `,
     );
 
-  const getCountries = async () => {
-    const response = await _get("getCountries");
-    setCountries(response.records);
-  };
-
-  const pollStatus = async (uploadid) => {
-    try {
-      const response = await fetch(
-        `https://api.mapbox.com/uploads/v1/${CONSTANTS.MAPBOX_USER}/${uploadid}?access_token=${uiState.registry.MBAT}`,
-      );
-      const result = await response.json();
-
-      if (result.complete) {
-        messageLogger({ info: "Uploaded", status: "UploadComplete" });
-        clearMapboxTimer(uploadid);
-        return "Uploaded to Mapbox";
-      }
-
-      if (result.error) {
-        const errorMsg = `Mapbox upload error: ${result.error}. See <a href='${CONSTANTS.ERRORS_PAGE}#mapbox-upload-error' target='blank'>here</a>`;
-        messageLogger({ error: errorMsg, status: "UploadFailed" });
-        showMessage(errorMsg, "error");
-        clearMapboxTimer(uploadid);
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      setUploading(false);
-      throw error;
-    }
-  };
-  //polls mapbox to see when an upload has finished - returns as promise
-  const pollMapbox = async (uploadid) => {
-    setUploading(true);
-    messageLogger({ info: "Uploading to Mapbox..", status: "Uploading" });
-
-    if (uploadid === "0") {
-      messageLogger({
-        info: "Tileset already exists on Mapbox",
-        status: "UploadComplete",
-      });
-      //reset state
-      setUploading(false);
-      return "Uploaded to Mapbox";
-    }
-
-    return new Promise((resolve, reject) => {
-      const timer = setInterval(async () => {
-        try {
-          const result = await pollStatus();
-          if (result) {
-            resolve(result);
-            clearInterval(timer);
-          }
-        } catch (error) {
-          reject(error);
-          clearInterval(timer);
-        }
-      }, 3000);
-
-      timers.push({ uploadid, timer });
-    });
-  };
-  //resets a timer for a mapbox upload poll
-  const clearMapboxTimer = (uploadid) => {
-    //clear the timer
-    const timerToClear = timers.find((timer) => timer.uploadid === uploadid);
-    clearInterval(timerToClear.timer);
-    //remove the timer from the timers array
-    timers = timers.filter((timer) => timer.uploadid !== uploadid);
-    if (timers.length === 0) {
-      setUploading(false);
-    }
-  };
-
-  const openWelcomeDialog = () => {
-    parseNotifications();
-    setWelcomeDialogOpen(true);
-  };
-
   // const openFeaturesDialog = async (showClearSelectAll) => {
   const openFeaturesDialog = async () => {
     // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
@@ -3114,6 +3035,7 @@ const App = () => {
       const tableName = feature.tilesetid
         ? feature.tilesetid.split(".")[1]
         : feature.feature_class_name;
+      console.log("feature ", feature);
       const sourceId = `martin_src_${tableName}`;
       const layerId = `martin_layer_${tableName}`;
       const tileJSON = `${tilesUrl}${tableName}`;
