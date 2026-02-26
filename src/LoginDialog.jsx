@@ -32,8 +32,8 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
   const [selectOpen, setSelectOpen] = useState(false);
   const projectState = useSelector((state) => state.project);
   const userRef = useRef(null);
-  const [user, setUser] = useState("");
-  const [pwd, setPwd] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
   const dispatch = useDispatch();
@@ -58,18 +58,18 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await login({ user, pwd }).unwrap();
+      const response = await login({ username, password }).unwrap();
       dispatch(
         setCredentials({
           userId: response.userId,
           accessToken: response.accessToken,
           userData: response.userData,
-        })
+        }),
       );
       await loadProjectAndSetup(response.project.id);
       dispatch(setLoading(false));
-      setUser("");
-      setPwd("");
+      setUsername("");
+      setPassword("");
       return;
     } catch (err) {
       let errMsg = "Login Failed";
@@ -84,16 +84,16 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
     }
   };
 
-  const handleUserInput = (e) => setUser(e.target.value);
+  const handleUserInput = (e) => setUsername(e.target.value);
 
-  const handlePwdInput = (e) => setPwd(e.target.value);
+  const handlePwdInput = (e) => setPassword(e.target.value);
 
   const handleClose = () => setSelectOpen(false);
   const handleOpen = () => setSelectOpen(true);
 
   const handleSelectServer = (event) => {
     const selectedServer = projectState.bpServers.find(
-      (server) => server.name === event.target.value
+      (server) => server.name === event.target.value,
     );
     dispatch(selectServer(selectedServer));
   };
@@ -178,7 +178,7 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
             }
             label="Username"
             ref={userRef}
-            value={user}
+            value={username}
             onChange={handleUserInput}
             autoComplete="off"
             required
@@ -203,7 +203,7 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
             }
             label="Password"
             onChange={handlePwdInput}
-            value={pwd}
+            value={password}
             required
           />
         </FormControl>
