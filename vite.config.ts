@@ -27,6 +27,16 @@ export default defineConfig({
     // this sets a default port to 4500
     port: 4500,
   },
+  optimizeDeps: {
+    include: [
+      "@mui/material",
+      "@mui/material/Box",
+      "@mui/system",
+      "@mui/styled-engine",
+      "@emotion/react",
+      "@emotion/styled",
+    ],
+  },
   build: {
     outDir: "build",
   },
