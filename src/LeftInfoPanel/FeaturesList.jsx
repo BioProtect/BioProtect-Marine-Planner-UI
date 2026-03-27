@@ -42,6 +42,7 @@ const FeaturesList = ({
   };
 
   const handleItemClick = (evt, feature) => {
+    console.log("item cloisked....");
     const key = evt.altKey
       ? "feature_puid_layer_loaded"
       : "feature_layer_loaded";

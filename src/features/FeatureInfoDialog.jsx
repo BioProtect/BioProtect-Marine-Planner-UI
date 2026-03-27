@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -14,13 +14,24 @@ import { useDispatch, useSelector } from "react-redux";
 import CONSTANTS from "../constants";
 import MarxanDialog from "../MarxanDialog";
 import { selectCurrentUser } from "@slices/authSlice";
-import { toggleFeatureD } from "@slices/featureSlice";
+import { toggleFeatureD, useGetAllFeaturesQuery } from "@slices/featureSlice";
 
 const FeatureInfoDialog = ({ updateFeature }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
-  const featureState = useSelector((state) => state.feature);
   const userData = useSelector(selectCurrentUser);
+  const featureDialogs = useSelector((s) => s.feature.dialogs);
+  const selectedFeatureId = useSelector(
+    (state) => state.feature.selectedFeatureId,
+  );
+
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+
+  const currentFeature = useMemo(() => {
+    if (selectedFeatureId == null) return null;
+    return allFeatures.find((f) => f.id === selectedFeatureId) ?? null;
+  }, [allFeatures, selectedFeatureId]);
 
   const closeDialog = () =>
     dispatch(
@@ -38,12 +49,12 @@ const FeatureInfoDialog = ({ updateFeature }) => {
         (key === "spf" && isNumber(value))
       ) {
         const updatedProps = { [key]: value };
-        updateFeature(featureState.currentFeature.id, updatedProps);
+        updateFeature(selectedFeatureId, updatedProps);
       } else {
         alert("Invalid value");
       }
     },
-    [featureState.currentFeature, updateFeature],
+    [selectedFeatureId, updateFeature],
   );
 
   const onKeyDown = useCallback(
@@ -62,8 +73,8 @@ const FeatureInfoDialog = ({ updateFeature }) => {
 
   const getAreaHTML = (rowKey, value) => {
     const color =
-      featureState.currentFeature.protected_area <
-        featureState.currentFeature.target_area && rowKey === "Area protected"
+      currentFeature.protected_area <
+        currentFeature.target_area && rowKey === "Area protected"
         ? "red"
         : "rgba(0, 0, 0, 0.6)";
 
@@ -164,14 +175,14 @@ const FeatureInfoDialog = ({ updateFeature }) => {
     }
   };
 
-  if (!featureState.currentFeature) {
+  if (!currentFeature) {
     return null;
   }
 
-  const isOldVersion = featureState.currentFeature.old_version;
+  const isOldVersion = currentFeature.old_version;
   // Select the appropriate feature properties based on the source
   const featureProperties =
-    featureState.currentFeature.source === "Imported shapefile"
+    currentFeature.source === "Imported shapefile"
       ? CONSTANTS.FEATURE_PROPERTIES_POLYGONS
       : CONSTANTS.FEATURE_PROPERTIES_POINTS;
 
@@ -184,13 +195,13 @@ const FeatureInfoDialog = ({ updateFeature }) => {
   // Map the filtered items to the desired structure
   const data = filteredProperties.map((item) => ({
     key: item.key,
-    value: featureState.currentFeature[item.name],
+    value: currentFeature[item.name],
     hint: item.hint,
   }));
 
   return (
     <MarxanDialog
-      open={featureState.dialogs.featureInfoDialogOpen}
+      open={featureDialogs.featureInfoDialogOpen}
       loading={uiState.loading}
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}
@@ -204,7 +215,7 @@ const FeatureInfoDialog = ({ updateFeature }) => {
           key="k9"
           size="small"
           className={
-            featureState.currentFeature.old_version
+            currentFeature.old_version
               ? "infoTableOldVersion"
               : "infoTable"
           }

@@ -31,6 +31,9 @@ export default defineConfig({
     include: [
       "@mui/material",
       "@mui/material/Box",
+      "@mui/material/Popper",
+      "@mui/material/Tooltip",
+      "@mui/material/styles",
       "@mui/system",
       "@mui/styled-engine",
       "@emotion/react",

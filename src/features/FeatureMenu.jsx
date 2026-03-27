@@ -1,4 +1,10 @@
-import { setSelectedFeatureId, toggleFeatureD } from "@slices/featureSlice";
+import { useMemo } from "react";
+import {
+  setAddingRemovingFeatures,
+  setSelectedFeatureIds,
+  toggleFeatureD,
+  useGetAllFeaturesQuery,
+} from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import AddToMap from "@mui/icons-material/Visibility";
@@ -14,23 +20,49 @@ import { selectCurrentUser } from "@slices/authSlice";
 
 const FeatureMenu = ({
   anchorEl,
-  removeFromProject,
-  toggleFeatureLayer,
   toggleFeaturePUIDLayer,
   zoomToFeature,
   preprocessSingleFeature,
   preprocessing,
 }) => {
   const dispatch = useDispatch();
-  const selectedFeatureId = useSelector((s) => s.feature.selectedFeatureId);
+  const selectedFeatureId = useSelector(
+    (state) => state.feature.selectedFeatureId,
+  );
+  const selectedFeatureIds = useSelector(
+    (state) => state.feature.selectedFeatureIds,
+  );
   const featureDialogs = useSelector((s) => s.feature.dialogs);
 
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+
+  const selectedFeature = useMemo(() => {
+    if (selectedFeatureId == null) return null;
+    return allFeatures.find((f) => f.id === selectedFeatureId) ?? null;
+  }, [allFeatures, selectedFeatureId]);
+
   const handleInfoMenuItemClick = () => {
-    console.log("item clicked...");
+    console.log("item clicked...", selectedFeatureId);
     dispatch(
       toggleFeatureD({ dialogName: "featureInfoDialogOpen", isOpen: true }),
     );
     closeDialog();
+  };
+
+  const removeFeature = () => {
+    const ids = selectedFeatureIds || [];
+    if (ids.includes(selectedFeatureId)) {
+      dispatch(
+        setSelectedFeatureIds(ids.filter((id) => id !== selectedFeatureId)),
+      );
+    }
+    dispatch(
+      toggleFeatureD({
+        dialogName: "featureMenuOpen",
+        isOpen: false,
+      }),
+    );
   };
 
   const closeDialog = () =>
@@ -42,7 +74,7 @@ const FeatureMenu = ({
       onClose={() => closeDialog()}
       onMouseLeave={closeDialog}
     >
-      <MenuItem onClick={() => removeFromProject(selectedFeatureId)}>
+      <MenuItem onClick={() => removeFeature()}>
         <ListItemIcon>
           <RemoveFromProject />
         </ListItemIcon>
@@ -56,33 +88,20 @@ const FeatureMenu = ({
         Feature Properties
       </MenuItem>
 
-      <MenuItem onClick={() => toggleFeatureLayer(selectedFeatureId)}>
+      <MenuItem onClick={() => selectedFeature && toggleFeaturePUIDLayer(selectedFeature)}>
         <ListItemIcon>
-          {selectedFeatureId?.feature_layer_loaded ? (
+          {selectedFeature?.feature_puid_layer_loaded ? (
             <RemoveFromMap />
           ) : (
             <AddToMap />
           )}
         </ListItemIcon>
-        {selectedFeatureId?.feature_puid_layer_loaded
-          ? "Remove from Map"
-          : "Add to Map"}
-      </MenuItem>
-
-      <MenuItem onClick={() => toggleFeaturePUIDLayer(selectedFeatureId)}>
-        <ListItemIcon>
-          {selectedFeatureId?.feature_puid_layer_loaded ? (
-            <RemoveFromMap />
-          ) : (
-            <AddToMap />
-          )}
-        </ListItemIcon>
-        {selectedFeatureId?.feature_puid_layer_loaded
+        {selectedFeature?.feature_puid_layer_loaded
           ? "Remove planning unit outlines"
           : "Outline planning units where the feature occurs"}
       </MenuItem>
 
-      <MenuItem onClick={() => zoomToFeature(selectedFeatureId)}>
+      <MenuItem onClick={() => selectedFeature && zoomToFeature(selectedFeature)}>
         <ListItemIcon>
           <ZoomIn />
         </ListItemIcon>

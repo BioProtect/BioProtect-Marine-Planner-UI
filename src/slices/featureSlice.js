@@ -36,8 +36,8 @@ export const featureApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     listFeaturePUs: builder.query({
-      query: ({ owner, project, featureId }) => ({
-        url: `features?action=planning-units&user=${owner}&project=${project}&id=${featureId}`,
+      query: ({ projectId, featureId }) => ({
+        url: `features?action=planning-units&project_id=${projectId}&id=${featureId}`,
         method: "GET",
       }),
     }),
