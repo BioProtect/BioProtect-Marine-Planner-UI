@@ -169,6 +169,9 @@ const App = () => {
   const userState = useSelector((state) => state.user);
   const puState = useSelector((state) => state.planningUnit);
   const featureState = useSelector((state) => state.feature);
+  const selectedFeatureIds = useSelector(
+    (state) => state.feature.selectedFeatureIds,
+  );
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const token = useSelector(selectCurrentToken);
 
@@ -222,11 +225,10 @@ const App = () => {
   const selectedFeatureId = featureState.selectedFeatureId;
   const { data: featurePUData, isLoading } = useListFeaturePUsQuery(
     {
-      owner: uiState.owner,
-      project: project,
+      projectId: activeProjectId,
       featureId: selectedFeatureId,
     },
-    { skip: !uiState.owner || !project || selectedFeatureId === null },
+    { skip: !activeProjectId || selectedFeatureId === null },
   );
 
   // ALL FEATURES QUERY
@@ -1524,6 +1526,10 @@ const App = () => {
   //pads a number with zeros to a specific size, e.g. pad(9,5) => 00009
   const pad = (num, size) => num.toString().padStart(size, "0");
 
+  const initialiseFillColorExpression = (attribute) => [
+    "match",
+    ["get", attribute],
+  ];
   //gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
   const getPaintProperties = (data, sum, setRenderer) => {
     // Get the matching puids with different numbers of 'numbers' in the marxan results
@@ -3091,17 +3097,25 @@ const App = () => {
 
   //toggles the planning unit feature layer on the map
   const toggleFeaturePUIDLayer = async (feature) => {
-    let layerName = `marxan_puid_${feature.id}`;
+    const { sourceId, sourceLayerName } = puLayerIdsRef.current || {};
+    if (!sourceId || !sourceLayerName) return;
+
+    // Ensure feature has a color assigned
+    const color = feature.color
+      || (Array.isArray(window.colors) && window.colors.length
+          ? window.colors[feature.id % window.colors.length]
+          : "#ff0000");
+
+    let layerName = `martin_layer_feature_puid_${feature.id}`;
 
     if (map.current.getLayer(layerName)) {
       removeMapLayer(layerName);
-      updateFeature(feature, { feature_puid_layer_loaded: false });
+      updateFeature(feature.id, { feature_puid_layer_loaded: false });
       return;
     }
     //get the planning units where the feature occurs
     const data = await triggerListFeaturePUs({
-      owner: uiState.owner,
-      project: project,
+      projectId: activeProjectId,
       featureId: feature.id,
     }).unwrap();
 
@@ -3110,41 +3124,42 @@ const App = () => {
       metadata: {
         name: feature.alias,
         type: CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
-        lineColor: feature.color,
+        lineColor: color,
       },
       type: "line",
-      source: CONSTANTS.PLANNING_UNIT_SOURCE_NAME,
-      "source-layer": tileset.name,
+      source: sourceId,
+      "source-layer": sourceLayerName,
       layout: {
         visibility: "visible",
       },
       paint: {
         "line-opacity": CONSTANTS.FEATURE_PLANNING_GRID_LAYER_OPACITY,
+        "line-width": 2,
       },
     });
     //update the paint property for the layer
-    const line_color_expression = initialiseFillColorExpression("puid");
+    const propId = puLayerIdsRef.current?.propId || "h3_index";
+    console.log("toggleFeaturePUIDLayer response:", JSON.stringify(data));
+    const puids = (data.data || []).map(String);
+    console.log("puids:", puids.slice(0, 5), "total:", puids.length);
 
-    data.data.forEach((puid) =>
-      line_color_expression.push(puid, feature.color),
-    );
-    // Last value is the default, used where there is no data
-    line_color_expression.push("rgba(0,0,0,0)");
-    map.current.setPaintProperty(
-      layerName,
-      "line-color",
-      line_color_expression,
-    );
+    if (puids.length > 0) {
+      const line_color_expression = [
+        "match",
+        ["get", propId],
+        puids,
+        color,
+        "rgba(0,0,0,0)",
+      ];
+      map.current.setPaintProperty(
+        layerName,
+        "line-color",
+        line_color_expression,
+      );
+    }
     //show the layer
     showLayer(layerName);
     updateFeature(feature.id, { feature_puid_layer_loaded: true });
-  };
-
-  //removes the current feature from the project
-  const removeFromProject = async (feature) => {
-    dispatch(toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false }));
-    removeFeature(feature);
-    await updateSelectedFeatures();
   };
 
   //zooms to a features extent
@@ -3637,8 +3652,6 @@ const App = () => {
         <AlertDialog />
         <FeatureMenu
           anchorEl={menuAnchor}
-          removeFromProject={removeFromProject}
-          toggleFeatureLayer={toggleFeatureLayer}
           toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
           zoomToFeature={zoomToFeature}
           preprocessSingleFeature={preprocessSingleFeature}
