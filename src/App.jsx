@@ -136,6 +136,7 @@ import store from "@store/store";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useGetPrioritizrRunResultsQuery } from "@slices/prioritizrApiSlice";
 import { useSnackbar } from "notistack";
+import useFeatureNotifications from "@hooks/useFeatureNotifications";
 import useWebSocketHandler from "./WebSocketHandler";
 import { zoomToBounds } from "./Helpers";
 
@@ -148,6 +149,7 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
 
 const App = () => {
   const dispatch = useDispatch();
+  useFeatureNotifications();
 
   ////////////////////////////////////////////////////////////////////////
   /////////// RTKQ data                       ////////////////////////////
@@ -196,6 +198,7 @@ const App = () => {
 
   // Refs for Map so state isnt stale.
   const featuresRef = useRef(projectFeatures);
+  const allFeaturesRef = useRef(null);
   const planningUnitsRef = useRef(planningUnits);
   const ownerRef = useRef(owner);
   const projectIdRef = useRef(activeProjectId);
@@ -240,6 +243,9 @@ const App = () => {
     skip: !isLoggedIn,
   });
   const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+  useEffect(() => {
+    allFeaturesRef.current = allFeatures;
+  }, [allFeatures]);
   const [triggerListFeaturePUs] = featureApiSlice.useLazyListFeaturePUsQuery();
   const [updateProjectFeaturesMutation] = useUpdateProjectFeaturesMutation();
 
@@ -1007,12 +1013,14 @@ const App = () => {
       dispatch(setSelectedFeatureIds([]));
       dispatch(setSelectedFeatureId(null));
 
+      // Clear authentication on server first (before resetting local state)
+      await logoutUser().unwrap();
+
       // Clear RTK Query cache
       dispatch(apiSlice.util.resetApiState());
 
       // Clear authentication data
       dispatch(logOut()); // from authSlice
-      await logoutUser().unwrap();
 
       // Clear cookies manually if needed
       document.cookie
@@ -1414,7 +1422,7 @@ const App = () => {
   const preprocessAllFeatures = async () => {
     for (const feature of projectFeatures) {
       if (!feature.preprocessed) {
-        await preprocessFeature(feature);
+        await preprocessFeature(feature.id);
       }
     }
   };
@@ -1692,15 +1700,14 @@ const App = () => {
       const features = response?.data?.features ?? [];
       const puData = response?.data?.pu_data ?? null;
 
-      if (features.length) {
-        // join ids onto the full feature data from RTKQ-cached project features
-        joinArrays(features, projFeaturesRef.current ?? [], "species", "id");
-      }
+      const enrichedFeatures = features.length
+        ? joinArrays(features, allFeaturesRef.current ?? [], "feature_id", "id")
+        : features;
 
       dispatch(
         setIdentifyPlanningUnits({
           puData: puData,
-          features,
+          features: enrichedFeatures,
         }),
       );
     },
@@ -3652,6 +3659,7 @@ const App = () => {
         <AlertDialog />
         <FeatureMenu
           anchorEl={menuAnchor}
+          toggleFeatureLayer={toggleFeatureLayer}
           toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
           zoomToFeature={zoomToFeature}
           preprocessSingleFeature={preprocessSingleFeature}

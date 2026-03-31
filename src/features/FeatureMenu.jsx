@@ -6,6 +6,7 @@ import {
   useGetAllFeaturesQuery,
 } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { useUpdateProjectFeaturesMutation } from "@slices/projectSlice";
 
 import AddToMap from "@mui/icons-material/Visibility";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -20,12 +21,15 @@ import { selectCurrentUser } from "@slices/authSlice";
 
 const FeatureMenu = ({
   anchorEl,
+  toggleFeatureLayer,
   toggleFeaturePUIDLayer,
   zoomToFeature,
   preprocessSingleFeature,
   preprocessing,
 }) => {
   const dispatch = useDispatch();
+  const [updateProjectFeatures] = useUpdateProjectFeaturesMutation();
+  const activeProjectId = useSelector((state) => state.project.activeProjectId);
   const selectedFeatureId = useSelector(
     (state) => state.feature.selectedFeatureId,
   );
@@ -50,19 +54,39 @@ const FeatureMenu = ({
     closeDialog();
   };
 
-  const removeFeature = () => {
+  const removeFeature = async () => {
     const ids = selectedFeatureIds || [];
-    if (ids.includes(selectedFeatureId)) {
-      dispatch(
-        setSelectedFeatureIds(ids.filter((id) => id !== selectedFeatureId)),
-      );
+    if (!ids.includes(selectedFeatureId)) return;
+
+    // Toggle off map layers for the removed feature
+    if (selectedFeature?.feature_layer_loaded) {
+      toggleFeatureLayer(selectedFeature);
     }
+    if (selectedFeature?.feature_puid_layer_loaded) {
+      toggleFeaturePUIDLayer(selectedFeature);
+    }
+
+    const remainingIds = ids.filter((id) => id !== selectedFeatureId);
+    dispatch(setSelectedFeatureIds(remainingIds));
     dispatch(
       toggleFeatureD({
         dialogName: "featureMenuOpen",
         isOpen: false,
       }),
     );
+
+    const remainingFeatures = allFeatures.filter((f) =>
+      remainingIds.includes(f.id),
+    );
+    try {
+      await updateProjectFeatures({
+        projectId: activeProjectId,
+        features: remainingFeatures,
+      }).unwrap();
+    } catch (err) {
+      console.error("Failed to persist feature removal:", err);
+      dispatch(setSelectedFeatureIds(ids));
+    }
   };
 
   const closeDialog = () =>
