@@ -130,13 +130,13 @@ import { getTilesBaseUrl } from "@config/api";
 import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
+import { prioritizrApiSlice } from "@slices/prioritizrApiSlice";
 // wherever loadProjectAndSetup lives
 import store from "@store/store";
 /*eslint-disable no-unused-vars*/
 import useAppSnackbar from "@hooks/useAppSnackbar";
-import { useGetPrioritizrRunResultsQuery } from "@slices/prioritizrApiSlice";
-import { useSnackbar } from "notistack";
 import useFeatureNotifications from "@hooks/useFeatureNotifications";
+import { useSnackbar } from "notistack";
 import useWebSocketHandler from "./WebSocketHandler";
 import { zoomToBounds } from "./Helpers";
 
@@ -255,27 +255,33 @@ const App = () => {
     puEditingRef.current = puEditing;
   }, [puEditing]);
 
-  // RESULTS QUERY
-  const selectedRunId = useSelector((s) => s.prioritizr.selectedRunId);
-  const { data: runResultsResp } = useGetPrioritizrRunResultsQuery(
-    selectedRunId,
-    { skip: !selectedRunId },
-  );
-  const runResults = runResultsResp?.data ?? [];
+  // RESULTS QUERY — support multiple selected runs
+  const selectedRunIds = useSelector((s) => s.prioritizr.selectedRunIds);
 
   useEffect(() => {
     if (!map.current) return;
     if (!puLayerIdsRef.current?.resultsLayerId) return;
 
-    // If no run selected, clear results layer
-    if (!selectedRunId) {
+    if (!selectedRunIds.length) {
       renderPuPrioritizrLayer([]);
       return;
     }
 
-    // Render whenever the API response changes
-    renderPuPrioritizrLayer(runResults);
-  }, [selectedRunId, runResults]);
+    // Fetch results for all selected runs and merge
+    const fetchAll = async () => {
+      const allResults = [];
+      for (const runId of selectedRunIds) {
+        const resp = await dispatch(
+          prioritizrApiSlice.endpoints.getPrioritizrRunResults.initiate(runId),
+        );
+        if (resp.data?.data) {
+          allResults.push(...resp.data.data);
+        }
+      }
+      renderPuPrioritizrLayer(allResults);
+    };
+    fetchAll();
+  }, [selectedRunIds]);
 
   const [brew, setBrew] = useState(null);
   const [dataBreaks, setDataBreaks] = useState([]);
@@ -1573,7 +1579,7 @@ const App = () => {
           ]);
         } else {
           // Single-value rendering
-          fillColorExpression.push(row[1], "rgba(255, 0, 136,1)");
+          fillColorExpression.push(row[1], "rgb(7, 116, 39)");
           fillOutlineColorExpression.push(row[1], "rgba(150, 150, 150, 0.6)"); // gray outline
         }
       });
@@ -1626,14 +1632,10 @@ const App = () => {
       .filter((r) => Number(r.solution) === 1)
       .map((r) => String(r.h3_index));
 
-    // const fillExpr = ["match", ["get", propId]];
-    // if (selectedIds.length) fillExpr.push(selectedIds, "rgba(255, 64, 129, 0.75)"); // selected
-    // fillExpr.push("rgba(0,0,0,0)"); // fallback
-
     const fillExpr = [
       "case",
       ["in", ["to-string", ["get", propId]], ["literal", selectedIds]],
-      "rgba(255, 64, 129, 0.75)",
+      "rgba(44, 163, 4, 0.75)",
       "rgba(0,0,0,0)",
     ];
 
@@ -1647,7 +1649,7 @@ const App = () => {
     setLayerMetadata(resultsLayerId, {
       run_type: "prioritizr",
       selected_count: selectedIds.length,
-      run_id: selectedRunId,
+      run_ids: selectedRunIds,
     });
 
     showLayer(resultsLayerId);
@@ -2299,9 +2301,23 @@ const App = () => {
     });
     //set the result layer in app state so that it can update the Legend component and its opacity control
     setResultsLayer(map.current.getLayer(resultsLayerId));
-    if (selectedRunId && runResults?.length) {
-      // slight delay not required, layer exists now
-      renderPuPrioritizrLayer(runResults);
+    if (selectedRunIds?.length) {
+      // re-trigger the effect to re-fetch and render
+      const fetchAll = async () => {
+        const allResults = [];
+        for (const runId of selectedRunIds) {
+          const resp = await dispatch(
+            prioritizrApiSlice.endpoints.getPrioritizrRunResults.initiate(
+              runId,
+            ),
+          );
+          if (resp.data?.data) {
+            allResults.push(...resp.data.data);
+          }
+        }
+        renderPuPrioritizrLayer(allResults);
+      };
+      fetchAll();
     }
   };
 
@@ -2791,15 +2807,18 @@ const App = () => {
     }
   };
 
-  const runCumulativeImpact = async (selectedUploadedActivityIds) => {
+  const runCumulativeImpact = async (selectedUploadedActivityIds, profileName) => {
     dispatch(setLoading(true));
     startLogging();
 
-    await handleWebSocket(
-      `runCumumlativeImpact?selectedIds=${selectedUploadedActivityIds}`,
+    const response = await handleWebSocket(
+      `runCumulativeImpact?project_id=${activeProjectId}` +
+      `&activity_ids=${selectedUploadedActivityIds.join(",")}` +
+      `&profile_name=${encodeURIComponent(profileName || "Cumulative Impact")}` +
+      `&set_active=true`,
     );
     dispatch(setLoading(false));
-    return "Cumulative Impact Layer uploaded";
+    return response;
   };
 
   const uploadRaster = async (data) => {
@@ -3108,10 +3127,11 @@ const App = () => {
     if (!sourceId || !sourceLayerName) return;
 
     // Ensure feature has a color assigned
-    const color = feature.color
-      || (Array.isArray(window.colors) && window.colors.length
-          ? window.colors[feature.id % window.colors.length]
-          : "#ff0000");
+    const color =
+      feature.color ||
+      (Array.isArray(window.colors) && window.colors.length
+        ? window.colors[feature.id % window.colors.length]
+        : "#ff0000");
 
     let layerName = `martin_layer_feature_puid_${feature.id}`;
 
@@ -3691,10 +3711,11 @@ const App = () => {
             metadata={metadata}
             initialiseDigitising={initialiseDigitising}
             userRole={userData?.role}
-            fileUpload={uploadRaster}
-            saveActivityToDb={saveActivityToDb}
+            fileUpload={uploadFileToFolder}
+            unzipShapefile={unzipShapefile}
             startLogging={startLogging}
             handleWebSocket={handleWebSocket}
+            _get={_get}
           />
         ) : null}
 

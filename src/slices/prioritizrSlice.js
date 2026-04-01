@@ -4,17 +4,23 @@ import { createSlice } from "@reduxjs/toolkit";
 const prioritizrSlice = createSlice({
   name: "prioritizr",
   initialState: {
-    selectedRunId: null,
+    selectedRunIds: [],
   },
   reducers: {
-    selectRun(state, action) {
-      state.selectedRunId = action.payload;
+    toggleRun(state, action) {
+      const runId = action.payload;
+      const idx = state.selectedRunIds.indexOf(runId);
+      if (idx === -1) {
+        state.selectedRunIds.push(runId);
+      } else {
+        state.selectedRunIds.splice(idx, 1);
+      }
     },
-    clearRun(state) {
-      state.selectedRunId = null;
+    clearRuns(state) {
+      state.selectedRunIds = [];
     },
   },
 });
 
-export const { selectRun, clearRun } = prioritizrSlice.actions;
+export const { toggleRun, clearRuns } = prioritizrSlice.actions;
 export default prioritizrSlice.reducer;
