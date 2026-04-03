@@ -28,11 +28,7 @@ const HexInfoDialog = ({ xy, metadata }) => {
 
   const { hexInfoDialogOpen } = useSelector((s) => s.planningUnit.dialogs);
   const puInfo = identifyPlanningUnits?.puData;
-  console.log("puInfo ", puInfo);
   const puFeatures = identifyPlanningUnits?.features || [];
-  console.log("puFeatures ", puFeatures);
-  const identifiedFeatures = identifyPlanningUnits?.identifiedFeatures || [];
-  console.log("identifiedFeatures ", identifiedFeatures);
 
   const virtualAnchor = useMemo(
     () =>
@@ -69,37 +65,6 @@ const HexInfoDialog = ({ xy, metadata }) => {
 
   if (!hexInfoDialogOpen || !virtualAnchor) return null;
 
-  /** TAB: Features */
-  const FeaturesTab =
-    identifiedFeatures.length > 0 ? (
-      <Box sx={{ p: 2 }}>
-        <Box>
-          <TableContainer component={Paper}>
-            <Table aria-label="collapsible table">
-              <TableHead>
-                <TableRow>
-                  <TableCell />
-                  <TableCell>Feature</TableCell>
-                  <TableCell align="right">Preprocessed</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {identifiedFeatures.map((row) => (
-                  <HexInfoFeatureRow key={row.alias} row={row} />
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-      </Box>
-    ) : (
-      <Box sx={{ p: 2, textAlign: "center" }}>
-        <Typography color="text.secondary">
-          No nearby features identified.
-        </Typography>
-      </Box>
-    );
-
   return (
     <Popper
       open={hexInfoDialogOpen}
@@ -118,8 +83,8 @@ const HexInfoDialog = ({ xy, metadata }) => {
           <Paper
             elevation={6}
             sx={{
-              width: 600,
-              maxHeight: 420,
+              width: 420,
+              maxHeight: 500,
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
@@ -135,21 +100,22 @@ const HexInfoDialog = ({ xy, metadata }) => {
               >
                 <Box
                   sx={{
-                    p: 2,
+                    p: 1.5,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 2,
+                    gap: 1.5,
+                    overflowY: "auto",
+                    flex: 1,
+                    minHeight: 0,
                   }}
                 >
-                  {/* ===================== */}
                   {/* Planning Unit Section */}
-                  {/* ===================== */}
                   {puInfo ? (
                     <Box
                       sx={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: 1.2,
+                        gap: 0.8,
                         border: "1px solid #eee",
                         borderRadius: 2,
                         p: 1.5,
@@ -159,7 +125,6 @@ const HexInfoDialog = ({ xy, metadata }) => {
                         Planning Unit
                       </Typography>
 
-                      {/* Hex ID */}
                       <Box
                         sx={{
                           display: "flex",
@@ -174,7 +139,6 @@ const HexInfoDialog = ({ xy, metadata }) => {
                         </Typography>
                       </Box>
 
-                      {/* Cost */}
                       <Box
                         sx={{
                           display: "flex",
@@ -189,24 +153,35 @@ const HexInfoDialog = ({ xy, metadata }) => {
                         </Typography>
                       </Box>
 
-                      {/* Status */}
                       <Box
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
                         }}
                       >
-                        <Typography variant="body2" fontWeight={500}>
-                          {puStatus.label}
+                        <Typography variant="body2" color="text.secondary">
+                          Status
                         </Typography>
-                        <Hexagon
-                          className={"hexLegendItem"}
-                          style={{
-                            fill: puStatus.fillColor,
-                            stroke: puStatus.strokeColor,
-                            strokeWidth: 30,
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
                           }}
-                        />
+                        >
+                          <Typography variant="body2" fontWeight={500}>
+                            {puStatus.label}
+                          </Typography>
+                          <Hexagon
+                            className={"hexLegendItem"}
+                            style={{
+                              fill: puStatus.fillColor,
+                              stroke: puStatus.strokeColor,
+                              strokeWidth: 30,
+                            }}
+                          />
+                        </Box>
                       </Box>
                     </Box>
                   ) : (
@@ -215,9 +190,7 @@ const HexInfoDialog = ({ xy, metadata }) => {
                     </Typography>
                   )}
 
-                  {/* ================= */}
-                  {/* Features Section  */}
-                  {/* ================= */}
+                  {/* Features Section */}
                   <Box
                     sx={{
                       border: "1px solid #eee",
@@ -228,53 +201,66 @@ const HexInfoDialog = ({ xy, metadata }) => {
                     <Box
                       sx={{
                         px: 1.5,
-                        py: 1,
+                        py: 0.8,
                         borderBottom: "1px solid #eee",
                         bgcolor: "grey.50",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                       }}
                     >
                       <Typography variant="subtitle2" fontWeight={600}>
-                        Planning Unit Features
+                        Features
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {puFeatures.length} feature
+                        {puFeatures.length !== 1 ? "s" : ""}
                       </Typography>
                     </Box>
 
-                    {identifiedFeatures.length > 0 ? (
-                      <Box sx={{ maxHeight: 260, overflowY: "auto" }}>
-                        <TableContainer component={Paper} elevation={0}>
+                    {puFeatures.length > 0 ? (
+                      <Box sx={{ maxHeight: 240, overflowY: "auto" }}>
+                        <TableContainer>
                           <Table size="small">
                             <TableHead>
                               <TableRow>
-                                <TableCell />
-                                <TableCell>Feature</TableCell>
-                                <TableCell align="right">
+                                <TableCell>Name</TableCell>
+                                <TableCell>Source</TableCell>
+                                <TableCell align="center">
                                   Preprocessed
                                 </TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {identifiedFeatures.map((row) => (
-                                <HexInfoFeatureRow key={row.alias} row={row} />
+                              {puFeatures.map((row, i) => (
+                                <HexInfoFeatureRow
+                                  key={row.feature_id ?? row.alias ?? i}
+                                  row={row}
+                                />
                               ))}
                             </TableBody>
                           </Table>
                         </TableContainer>
                       </Box>
                     ) : (
-                      <Box sx={{ p: 2, textAlign: "center" }}>
-                        <Typography color="text.secondary">
-                          No nearby features identified.
+                      <Box sx={{ p: 1.5, textAlign: "center" }}>
+                        <Typography variant="body2" color="text.secondary">
+                          No features in this planning unit.
                         </Typography>
                       </Box>
                     )}
                   </Box>
                 </Box>
+
                 <Box
                   sx={{
                     display: "flex",
                     justifyContent: "flex-end",
                     px: 1.5,
-                    py: 1,
+                    py: 0.8,
+                    pb: 1.5,
                     borderTop: "1px solid #eee",
+                    flexShrink: 0,
                   }}
                 >
                   <Button

@@ -1,11 +1,7 @@
 import {
-  Box,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
-  DialogContent,
-  DialogTitle,
   IconButton,
   Table,
   TableBody,
@@ -33,17 +29,9 @@ const ImportedActivitiesDialog = ({
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectDialogStates = useSelector(
-    (state) => state.ui.projectDialogStates
-  );
-  const featureDialogStates = useSelector(
-    (state) => state.ui.featureDialogStates
-  );
-  const planningGridDialogStates = useSelector(
-    (state) => state.ui.planningGridDialogStates
-  );
   const [searchText, setSearchText] = useState("");
   const [selectedActivityIds, setSelectedActivityIds] = useState([]);
+  const [profileName, setProfileName] = useState("");
 
   const handleSearchChange = (event) =>
     setSearchText(event.target.value.toLowerCase());
@@ -56,47 +44,48 @@ const ImportedActivitiesDialog = ({
     );
   };
 
-  const title = (title, subtitle) => {
-    return (
-      <div>
-        <div>{title}</div>
-        <h6>{subtitle}</h6>
-      </div>
-    );
-  };
+  const title = (title, subtitle) => (
+    <div>
+      <div>{title}</div>
+      <h6>{subtitle}</h6>
+    </div>
+  );
 
   const filteredActivities = uiState.uploadedActivities.filter(
     (activity) =>
-      activity.activity.toLowerCase().includes(searchText) ||
-      activity.description.toLowerCase().includes(searchText) ||
-      activity.source.toLowerCase().includes(searchText) ||
-      activity.created_by.toLowerCase().includes(searchText)
+      activity.activity?.toLowerCase().includes(searchText) ||
+      activity.description?.toLowerCase().includes(searchText) ||
+      activity.source?.toLowerCase().includes(searchText) ||
+      activity.created_by?.toLowerCase().includes(searchText)
   );
 
   const handleRunCumulativeImpact = () => {
-    runCumulativeImpact(selectedActivityIds);
+    runCumulativeImpact(selectedActivityIds, profileName);
   };
 
-  const closeDialog = () =>
+  const closeDialog = () => {
+    setSelectedActivityIds([]);
+    setProfileName("");
     dispatch(
       toggleDialog({
         dialogName: "uploadedActivitiesDialogOpen",
         isOpen: false,
       })
     );
+  };
 
   return (
     <MarxanDialog
       open={dialogStates.uploadedActivitiesDialogOpen}
-      onOk={() => closeDialog()}
-      onCancel={() => closeDialog()}
+      onOk={closeDialog}
+      onCancel={closeDialog}
       autoDetectWindowHeight={false}
       title={title(
         "Uploaded Activities",
-        "Select an uploaded activity and then run"
+        "Select activities and run cumulative impact"
       )}
       showSearchBox={true}
-      searchTextChanged={(e) => handleSearchChange(e)}
+      searchTextChanged={handleSearchChange}
     >
       <TableContainer>
         <Table>
@@ -128,12 +117,22 @@ const ImportedActivitiesDialog = ({
                 <TableCell>{activity.filename}</TableCell>
                 <TableCell>{activity.source}</TableCell>
                 <TableCell>{activity.created_by}</TableCell>
-                <TableCell>{activity.creation_date.substring(0, 10)}</TableCell>
+                <TableCell>{activity.creation_date?.substring(0, 10)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      <TextField
+        fullWidth
+        value={profileName}
+        onChange={(e) => setProfileName(e.target.value)}
+        label="Cost profile name"
+        variant="outlined"
+        sx={{ mt: 2 }}
+      />
+
       {metadata?.OLDVERSION && (
         <Typography color="error" mt={2}>
           This is an imported project. Only features from this project are
@@ -146,13 +145,14 @@ const ImportedActivitiesDialog = ({
           disabled={
             loading ||
             selectedActivityIds.length === 0 ||
+            profileName === "" ||
             userRole === "ReadOnly"
           }
           onClick={handleRunCumulativeImpact}
         >
           <FontAwesomeIcon icon={faPlusCircle} />
         </IconButton>
-        <Button onClick={() => closeDialog()}>Close</Button>
+        <Button onClick={closeDialog}>Close</Button>
       </DialogActions>
     </MarxanDialog>
   );

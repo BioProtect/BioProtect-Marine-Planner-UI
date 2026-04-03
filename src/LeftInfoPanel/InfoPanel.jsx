@@ -76,12 +76,11 @@ const InfoPanel = (props) => {
 
   //preprocess synchronously, i.e. one after another
   const preprocessAllFeatures = async () => {
-    // for (const feature of projectFeatures) {
-    //   if (!feature.preprocessed) {
-    //     await preprocessFeature(feature);
-    //   }
-    // }
-    await preprocessFeature(projectFeatures[1]);
+    for (const feature of projectFeatures) {
+      if (!feature.preprocessed) {
+        await preprocessFeature(feature);
+      }
+    }
   };
 
   const preprocessFeature = async (feature) => {
@@ -98,7 +97,7 @@ const InfoPanel = (props) => {
       const message = await props.handleWebSocket(url);
 
       // Update feature with new data
-      updateFeature(feature.id, {
+      props.updateFeature(feature.id, {
         preprocessed: true,
         pu_count: Number(message.pu_count),
         pu_area: Number(message.pu_area),

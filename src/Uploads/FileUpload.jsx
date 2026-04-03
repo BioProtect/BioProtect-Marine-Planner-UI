@@ -9,13 +9,13 @@ import useAppSnackbar from "@hooks/useAppSnackbar";
 
 // FileUpload component refactored to use React 18 and MUI 5
 const FileUpload = (props) => {
+  console.log("props.fileMatch ", props.fileMatch);
   const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui)
+  const uiState = useSelector((state) => state.ui);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(false);
   const id = `upload-${props.filename}`;
   const { showMessage } = useAppSnackbar();
-
 
   const handleChange = async (e) => {
     const destFolder = props.destFolder || "imports";
@@ -24,31 +24,17 @@ const FileUpload = (props) => {
       setLoading(true);
       const target = e.target.files[0];
       const filename = target.name;
-      // upload file  - if its an impact it uploads slightly differently
       try {
-        let response;
-        if (uiState.selectedActivity) {
-          response = await props.fileUpload({
-            value: target,
-            filename: filename,
-            destFolder: destFolder,
-            activity: uiState.selectedActivity.activity,
-          });
-        } else {
-          response = await props.fileUpload(
-            target,
-            filename,
-            destFolder,
-          );
-        }
+        const response = await props.fileUpload(target, filename, destFolder);
         if (!response || !response.file) {
           throw new Error("Invalid response from upload");
         }
         console.log("response after file upload ", response);
 
-        dispatch(setFileUploadResponse(response))
-        dispatch(setFeatureFilename(response.file))
-        showMessage(response.info, "success")
+        dispatch(setFileUploadResponse(response));
+        dispatch(setFeatureFilename(response.file));
+        if (props.setFilename) props.setFilename(response.file);
+        showMessage(response.info, "success");
       } catch (error) {
         showMessage(`Upload error: ${error.message || error}`, "error");
       } finally {
@@ -76,7 +62,6 @@ const FileUpload = (props) => {
       </Typography>
 
       <Box display="flex" alignItems="center">
-
         <IconButton
           component="label"
           sx={{ cursor: "pointer" }}
@@ -84,7 +69,7 @@ const FileUpload = (props) => {
           onChange={handleChange}
           onClick={handleClick}
         >
-          <UploadFile color="primary" fontSize='large' />
+          <UploadFile color="primary" fontSize="large" />
           <input
             type="file"
             accept={props.fileMatch}
@@ -93,9 +78,7 @@ const FileUpload = (props) => {
           />
         </IconButton>
 
-        <Typography
-          sx={{ width: "168px", textOverflow: "ellipsis" }}
-        >
+        <Typography sx={{ width: "168px", textOverflow: "ellipsis" }}>
           {props.filename}
         </Typography>
         {loading && (
