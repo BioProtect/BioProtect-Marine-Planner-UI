@@ -78,7 +78,7 @@ import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import ChangPasswordDialog from "./User/ChangePasswordDialog";
 import ClassificationDialog from "./ClassificationDialog";
-import CostsDialog from "./CostsDialog";
+// CostsDialog removed - merged into CumulativeImpactDialog
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
 import FeatureDialog from "@features/FeatureDialog";
 import FeatureInfoDialog from "@features/FeatureInfoDialog";
@@ -194,6 +194,7 @@ const App = () => {
   const planningUnits = projectResp?.planning_units;
   const metadata = projectResp?.metadata ?? {};
   const costNames = projectResp?.costnames ?? [];
+  const costProfiles = projectResp?.costProfiles ?? [];
   const [renameProjectMutation] = useRenameProjectMutation();
 
   // Refs for Map so state isnt stale.
@@ -267,18 +268,22 @@ const App = () => {
       return;
     }
 
-    // Fetch results for all selected runs and merge
+    // Fetch results for all selected runs and build frequency map
     const fetchAll = async () => {
-      const allResults = [];
+      const freq = {}; // h3_index -> count of runs it appears in
       for (const runId of selectedRunIds) {
         const resp = await dispatch(
           prioritizrApiSlice.endpoints.getPrioritizrRunResults.initiate(runId),
         );
-        if (resp.data?.data) {
-          allResults.push(...resp.data.data);
+        const rows = resp.data?.data ?? [];
+        for (const r of rows) {
+          if (Number(r.solution) === 1) {
+            const key = String(r.h3_index);
+            freq[key] = (freq[key] || 0) + 1;
+          }
         }
       }
-      renderPuPrioritizrLayer(allResults);
+      renderPuPrioritizrLayer(freq, selectedRunIds.length);
     };
     fetchAll();
   }, [selectedRunIds]);
@@ -975,6 +980,7 @@ const App = () => {
       const activitiesData = await _get("getUploadedActivities");
 
       dispatch(setUploadedActivities(activitiesData.data));
+      dispatch(setProjectCosts(projectData.costProfiles || []));
 
       setPUTabInactive();
       dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: true }));
@@ -1601,8 +1607,9 @@ const App = () => {
     };
   };
 
-  const renderPuPrioritizrLayer = (runResults) => {
-    // runResults should be array of { h3_index: "892...", solution: 0/1 or numeric }
+  const renderPuPrioritizrLayer = (freq, totalRuns) => {
+    // freq: { h3_index: count } — how many runs each hex was selected in
+    // totalRuns: number of selected runs (for normalising intensity)
     const propId = puLayerIdsRef.current?.propId || "h3_index";
     const resultsLayerId = puLayerIdsRef.current?.resultsLayerId;
 
@@ -1615,8 +1622,8 @@ const App = () => {
       return;
     }
 
-    if (!runResults?.length) {
-      // clear
+    const entries = Object.entries(freq || {});
+    if (!entries.length) {
       map.current.setPaintProperty(
         resultsLayerId,
         "fill-color",
@@ -1626,17 +1633,40 @@ const App = () => {
       return;
     }
 
-    // If solution is binary 0/1: show selected as solid, unselected transparent.
-    // If solution is rank/score, you can bucket it like costs (see note below).
-    const selectedIds = runResults
-      .filter((r) => Number(r.solution) === 1)
-      .map((r) => String(r.h3_index));
+    // Build a match expression: for each h3_index, map to its frequency count
+    // then use interpolate to go from light to dark based on count/totalRuns
+    const matchExpr = ["match", ["to-string", ["get", propId]]];
+    for (const [h3, count] of entries) {
+      matchExpr.push(h3, count);
+    }
+    matchExpr.push(0); // fallback: not selected
 
+    // YlGn colormap: yellow to dark green, normalised by totalRuns
+    const maxRuns = Math.max(totalRuns, 1);
     const fillExpr = [
-      "case",
-      ["in", ["to-string", ["get", propId]], ["literal", selectedIds]],
-      "rgba(44, 163, 4, 0.75)",
+      "interpolate",
+      ["linear"],
+      ["/", matchExpr, maxRuns],
+      0,
       "rgba(0,0,0,0)",
+      0.01,
+      "rgba(255, 255, 229, 0.75)", // #ffffe5
+      0.125,
+      "rgba(247, 252, 185, 0.75)", // #f7fcb9
+      0.25,
+      "rgba(217, 240, 163, 0.8)", // #d9f0a3
+      0.375,
+      "rgba(173, 221, 142, 0.8)", // #addd8e
+      0.5,
+      "rgba(120, 198, 121, 0.85)", // #78c679
+      0.625,
+      "rgba(65, 171, 93, 0.85)", // #41ab5d
+      0.75,
+      "rgba(35, 132, 67, 0.9)", // #238443
+      0.875,
+      "rgba(0, 104, 55, 0.9)", // #006837
+      1,
+      "rgba(0, 69, 41, 0.95)", // #004529
     ];
 
     map.current.setPaintProperty(resultsLayerId, "fill-color", fillExpr);
@@ -1648,7 +1678,7 @@ const App = () => {
 
     setLayerMetadata(resultsLayerId, {
       run_type: "prioritizr",
-      selected_count: selectedIds.length,
+      selected_count: entries.length,
       run_ids: selectedRunIds,
     });
 
@@ -2212,25 +2242,6 @@ const App = () => {
       },
     );
 
-    //add the results layer
-    addMapLayer({
-      id: resultsLayerId,
-      metadata: {
-        name: "Results",
-        type: CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
-      },
-      type: "fill",
-      source: sourceId,
-      layout: {
-        visibility: "visible",
-      },
-      "source-layer": puLayerName,
-      paint: {
-        "fill-color": "rgba(0, 0, 0, 0)",
-        "fill-outline-color": "rgba(0, 0, 0, 0)",
-        "fill-opacity": CONSTANTS.RESULTS_LAYER_OPACITY,
-      },
-    });
     //add the planning units costs layer
     addMapLayer({
       id: costsLayerId,
@@ -2248,6 +2259,25 @@ const App = () => {
         "fill-color": "rgba(255, 0, 0, 0)",
         "fill-outline-color": "rgba(150, 150, 150, 0)",
         "fill-opacity": CONSTANTS.PU_COSTS_LAYER_OPACITY,
+      },
+    });
+    //add the results layer (on top of costs)
+    addMapLayer({
+      id: resultsLayerId,
+      metadata: {
+        name: "Results",
+        type: CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS,
+      },
+      type: "fill",
+      source: sourceId,
+      layout: {
+        visibility: "visible",
+      },
+      "source-layer": puLayerName,
+      paint: {
+        "fill-color": "rgba(0, 0, 0, 0)",
+        "fill-outline-color": "rgba(0, 0, 0, 0)",
+        "fill-opacity": CONSTANTS.RESULTS_LAYER_OPACITY,
       },
     });
 
@@ -2304,18 +2334,22 @@ const App = () => {
     if (selectedRunIds?.length) {
       // re-trigger the effect to re-fetch and render
       const fetchAll = async () => {
-        const allResults = [];
+        const freq = {};
         for (const runId of selectedRunIds) {
           const resp = await dispatch(
             prioritizrApiSlice.endpoints.getPrioritizrRunResults.initiate(
               runId,
             ),
           );
-          if (resp.data?.data) {
-            allResults.push(...resp.data.data);
+          const rows = resp.data?.data ?? [];
+          for (const r of rows) {
+            if (Number(r.solution) === 1) {
+              const key = String(r.h3_index);
+              freq[key] = (freq[key] || 0) + 1;
+            }
           }
         }
-        renderPuPrioritizrLayer(allResults);
+        renderPuPrioritizrLayer(freq, selectedRunIds.length);
       };
       fetchAll();
     }
@@ -2807,43 +2841,39 @@ const App = () => {
     }
   };
 
-  const runCumulativeImpact = async (selectedUploadedActivityIds, profileName) => {
+  const runCumulativeImpact = async (
+    selectedUploadedActivityIds,
+    profileName,
+  ) => {
     dispatch(setLoading(true));
     startLogging();
 
     const response = await handleWebSocket(
       `runCumulativeImpact?project_id=${activeProjectId}` +
-      `&activity_ids=${selectedUploadedActivityIds.join(",")}` +
-      `&profile_name=${encodeURIComponent(profileName || "Cumulative Impact")}` +
-      `&set_active=true`,
+        `&activity_ids=${selectedUploadedActivityIds.join(",")}` +
+        `&profile_name=${encodeURIComponent(profileName || "Cumulative Impact")}` +
+        `&set_active=true`,
     );
+
+    // Refresh cost profiles after successful run
+    if (!response?.error) {
+      const newProfile = {
+        id: response.cost_profile_id,
+        name: profileName,
+        description: "",
+        is_default: false,
+        is_active: true,
+      };
+      // Mark previous profiles as not active, add new one
+      const updated = (projState.projectCosts || []).map((p) => ({
+        ...p,
+        is_active: false,
+      }));
+      dispatch(setProjectCosts([...updated, newProfile]));
+    }
+
     dispatch(setLoading(false));
     return response;
-  };
-
-  const uploadRaster = async (data) => {
-    dispatch(setLoading(true));
-    messageLogger({
-      method: "uploadRaster",
-      status: "In Progress",
-      info: "Uploading Raster...",
-    });
-    const formData = new FormData();
-    Object.keys(data).forEach((key) => formData.append(key, data[key]));
-    //the binary data for the file, the filename
-    const response = await _post("uploadRaster", formData);
-    return response;
-  };
-
-  //create new impact from the created pressures
-  const saveActivityToDb = async (filename, selectedActivity, description) => {
-    //start the logging
-    dispatch(setLoading(true));
-    startLogging();
-    const url = `saveRaster?filename=${filename}&activity=${selectedActivity}&description=${description}`;
-    await handleWebSocket(url);
-    dispatch(setLoading(false));
-    return "Raster saved to db";
   };
 
   const createCostsFromImpact = async (data) => {
@@ -3376,13 +3406,28 @@ const App = () => {
   const addCost = (costname) =>
     dispatch(setProjectCosts((prevState) => [...prevState, costname]));
 
+  // Sets a cost profile as the active profile for the project and reloads the map layer
+  const activateCostProfile = async (profileId) => {
+    await _get(
+      `setActiveCostProfile?project_id=${activeProjectId}&cost_profile_id=${profileId}`,
+    );
+    // Update Redux: mark this profile as active, others as inactive
+    const updated = (projState.projectCosts || []).map((p) => ({
+      ...p,
+      is_active: p.id === profileId,
+    }));
+    dispatch(setProjectCosts(updated));
+    // Reload the cost layer on the map from the newly active profile
+    await loadCostsLayer(true);
+  };
+
   //deletes a cost file on the server
   const deleteCost = async (costname) => {
     await _get(
       `deleteCost?user=${uiState.owner}&project=${project}&costname=${costname}`,
     );
     const _costnames = projState.projectCosts.filter(
-      (item) => item !== costname,
+      (item) => item.name !== costname,
     );
     dispatch(setProjectCosts(_costnames));
     return;
@@ -3498,13 +3543,12 @@ const App = () => {
             projectFeatures={projectFeatures}
             planningUnits={planningUnits}
             metadata={metadata}
-            costname={metadata?.COSTS}
-            costNames={costNames}
+            costProfiles={projState.projectCosts || []}
+            activateCostProfile={activateCostProfile}
             map={map}
             onClickRef={onClickRef}
             onContextMenuRef={onContextMenuRef}
             pid={pid}
-            changeCostname={changeCostname}
             puLayerIdsRef={puLayerIdsRef}
             _post={_post}
             puEditing={puEditing}
@@ -3631,14 +3675,7 @@ const App = () => {
           getTilesetMetadata={getMetadata}
           getProjectList={getProjectList}
         />
-        {dialogStates.costsDialogOpen ? (
-          <CostsDialog
-            unauthorisedMethods={unauthorisedMethods}
-            costname={metadata?.COSTS}
-            deleteCost={deleteCost}
-            createCostsFromImpact={createCostsFromImpact}
-          />
-        ) : null}
+        {/* CostsDialog removed - merged into CumulativeImpactDialog */}
         <ImportCostsDialog
           addCost={addCost}
           deleteCostFileThenClose={deleteCostFileThenClose}
@@ -3695,13 +3732,10 @@ const App = () => {
 
         {dialogStates.cumulativeImpactDialogOpen ? (
           <CumulativeImpactDialog
-            loading={uiState.loading || uploading}
             _get={_get}
-            metadata={metadata}
-            clickImpact={clickImpact}
-            initialiseDigitising={initialiseDigitising}
-            selectedImpactIds={selectedImpactIds}
             userRole={userData?.role}
+            deleteCost={deleteCost}
+            activateCostProfile={activateCostProfile}
           />
         ) : null}
 

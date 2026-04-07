@@ -1,19 +1,37 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { setActivities, toggleDialog } from "@slices/uiSlice";
+import React, { useCallback, useState } from "react";
+import {
+  setActivities,
+  setUploadedActivities,
+  toggleDialog,
+} from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-import BioprotectTable from "../BPComponents/BioprotectTable";
-import CumulativeImpactsToolbar from "./CumulativeImpactsToolbar";
-import Loading from "../Loading";
+import {
+  Button,
+  ButtonGroup,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faPlusCircle,
+  faPlay,
+  faTrashAlt,
+  faCheckCircle,
+} from "@fortawesome/free-solid-svg-icons";
 import MarxanDialog from "../MarxanDialog";
 
 const CumulativeImpactDialog = ({
   _get,
-  metadata,
-  clickImpact,
-  initialiseDigitising,
-  selectedImpactIds,
   userRole,
+  deleteCost,
+  activateCostProfile,
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
@@ -21,193 +39,173 @@ const CumulativeImpactDialog = ({
   const projState = useSelector((state) => state.project);
 
   const [searchText, setSearchText] = useState("");
-  const [selectedImpact, setSelectedImpact] = useState(undefined);
-  const [filteredRows, setFilteredRows] = useState([]);
-  const [selectedActivity, setSelectedActivity] = useState(undefined);
+  const [selectedProfile, setSelectedProfile] = useState(null);
 
-  // const handleDeleteImpact = useCallback(() => {
-  //   deleteImpact(selectedImpact);
-  //   setSelectedImpact(undefined);
-  // }, [selectedImpact, deleteImpact]);
+  const costProfiles = projState.projectCosts || [];
 
-  const openHumanActivitiesDialog = async () => {
+  const filteredProfiles = costProfiles.filter((p) =>
+    p.name?.toLowerCase().includes(searchText.toLowerCase()),
+  );
+
+  const openHumanActivitiesDialog = useCallback(async () => {
     if (uiState.activities.length < 1) {
       const response = await _get("getActivities");
-      const data = await JSON.parse(response.data);
+      const data = JSON.parse(response.data);
       dispatch(setActivities(data));
     }
     dispatch(
-      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: true })
+      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: true }),
     );
-  };
+  }, [_get, uiState.activities, dispatch]);
 
-  const handleOpenHumanActivitiesDialog = useCallback(() => {
-    // closeDialog();
-    openHumanActivitiesDialog();
-  }, [openHumanActivitiesDialog]);
-
-  const _openImportImpactsDialog = useCallback(() => {
+  const openRunCumulativeImpactDialog = useCallback(async () => {
+    const activitiesData = await _get("getUploadedActivities");
+    if (activitiesData?.data) {
+      dispatch(setUploadedActivities(activitiesData.data));
+    }
     dispatch(
-      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: false })
+      toggleDialog({
+        dialogName: "uploadedActivitiesDialogOpen",
+        isOpen: true,
+      }),
     );
-    dispatch(
-      toggleDialog({ dialogName: "importImpactPopoverOpen", isOpen: false })
-    );
-    dispatch(
-      toggleDialog({ dialogName: "openImportImpactsDialog", isOpen: true })
-    );
-  }, []);
+  }, [_get, dispatch]);
 
-  const _newByDigitising = useCallback(() => {
-    initialiseDigitising();
-    onOk();
-  }, [initialiseDigitising]);
+  const handleActivateProfile = useCallback(async () => {
+    if (selectedProfile && activateCostProfile) {
+      await activateCostProfile(selectedProfile.id);
+      setSelectedProfile(null);
+    }
+  }, [selectedProfile, activateCostProfile]);
 
-  const handleClickImpact = useCallback(
-    (event, rowInfo) => {
-      clickImpact(rowInfo.original, event.shiftKey, selectedImpact);
-      setSelectedImpact(rowInfo.original);
-    },
-    [selectedImpact, clickImpact]
-  );
-
-  const toggleSelectionState = (selectedIds, features, first, last) => {
-    const spannedImpacts = features.slice(first, last);
-    spannedImpacts.forEach((feature) => {
-      const index = selectedIds.indexOf(feature.id);
-      if (index !== -1) {
-        selectedIds.splice(index, 1);
-      } else {
-        selectedIds.push(feature.id);
-      }
-    });
-    return selectedIds;
-  };
-
-  const getImpactsBetweenRows = useCallback(
-    (previousRow, thisRow) => {
-      let selectedIds;
-      const idx1 =
-        previousRow.index < thisRow.index
-          ? previousRow.index + 1
-          : thisRow.index;
-      const idx2 =
-        previousRow.index < thisRow.index
-          ? thisRow.index + 1
-          : previousRow.index;
-
-      if (filteredRows.length < uiState.allImpacts.length) {
-        selectedIds = toggleSelectionState(
-          selectedImpactIds,
-          filteredRows,
-          idx1,
-          idx2
-        );
-      } else {
-        selectedIds = toggleSelectionState(
-          selectedImpactIds,
-          uiState.allImpacts,
-          idx1,
-          idx2
-        );
-      }
-      return selectedIds;
-    },
-    [filteredRows, toggleSelectionState]
-  );
-
-  // const preview = useCallback(
-  //   (impact_metadata) => {
-  //     previewImpact(impact_metadata);
-  //   },
-  //   [previewImpact]
-  // );
-
-  const dataFiltered = (filteredRows) => {
-    console.log("filteredRows ", filteredRows);
-    setFilteredRows(filteredRows);
-    return filteredRows;
-  };
-
-  const columns = [
-    {
-      id: "name",
-      numeric: false,
-      disablePadding: true,
-      label: "name",
-    },
-    {
-      id: "description",
-      numeric: false,
-      disablePadding: true,
-      label: "description",
-    },
-    {
-      id: "source",
-      numeric: false,
-      disablePadding: true,
-      label: "source",
-    },
-    {
-      id: "created by",
-      numeric: false,
-      disablePadding: true,
-      label: "created by",
-    },
-    {
-      id: "creation Date",
-      numeric: false,
-      disablePadding: true,
-      label: "creation date",
-    },
-  ];
+  const handleDeleteCost = useCallback(() => {
+    if (selectedProfile && deleteCost) {
+      deleteCost(selectedProfile.name);
+      setSelectedProfile(null);
+    }
+  }, [selectedProfile, deleteCost]);
 
   const closeDialog = () => {
-    setSelectedActivity(undefined);
+    setSelectedProfile(null);
+    setSearchText("");
     dispatch(
-      toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: false })
+      toggleDialog({
+        dialogName: "cumulativeImpactDialogOpen",
+        isOpen: false,
+      }),
     );
   };
 
   return (
     <MarxanDialog
       open={dialogStates.cumulativeImpactDialogOpen}
-      onOk={() => closeDialog()}
-      onCancel={() => closeDialog()}
+      onOk={closeDialog}
+      onCancel={closeDialog}
       loading={uiState.loading}
       autoDetectWindowHeight={false}
-      title="Impacts"
+      title="Cost Profiles"
       showSearchBox={true}
       searchText={searchText}
       searchTextChanged={setSearchText}
       fullWidth={true}
     >
-      <React.Fragment key="k10">
-        <div id="projectsTable">
-          {uiState.allImpacts ? (
-            <BioprotectTable
-              data={uiState.allImpacts}
-              tableColumns={columns}
-              ableToSelectAll={false}
-              searchColumns={["alias", "description", "source", "created_by"]}
-              searchText={searchText}
-              dataFiltered={dataFiltered}
-              selected={selectedImpactIds}
-              clickImpact={handleClickImpact}
-              // preview={preview}
-            />
-          ) : (
-            <Loading />
-          )}
-        </div>
-        <CumulativeImpactsToolbar
-          userRole={userRole}
-          openHumanActivitiesDialog={handleOpenHumanActivitiesDialog}
-          // deleteImpact={handleDeleteImpact}
-          selectedImpact={selectedImpact}
-          selectedProject={projState.project}
-        />
-      </React.Fragment>
+      <TableContainer>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell align="right">Status</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredProfiles.map((profile) => (
+              <TableRow
+                key={profile.id}
+                hover
+                selected={selectedProfile?.id === profile.id}
+                onClick={() => setSelectedProfile(profile)}
+                sx={{ cursor: "pointer" }}
+              >
+                <TableCell>{profile.name}</TableCell>
+                <TableCell>{profile.description}</TableCell>
+                <TableCell align="right">
+                  {profile.is_active && (
+                    <Chip label="Active" color="primary" size="small" />
+                  )}
+                  {profile.is_default && !profile.is_active && (
+                    <Chip label="Default" size="small" variant="outlined" />
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredProfiles.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3} align="center">
+                  <Typography variant="body2" color="text.secondary">
+                    No cost profiles found. Upload an activity and run the
+                    cumulative impact function to create one.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <ButtonGroup
+        aria-label="Cost profile actions"
+        fullWidth
+        sx={{ mt: 2 }}
+      >
+        <Button
+          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+          title="Upload a new activity"
+          onClick={openHumanActivitiesDialog}
+          disabled={uiState.loading || userRole === "ReadOnly"}
+        >
+          Add Activity
+        </Button>
+
+        <Button
+          startIcon={<FontAwesomeIcon icon={faPlay} />}
+          title="Run cumulative impact to create a new cost profile"
+          onClick={openRunCumulativeImpactDialog}
+          disabled={uiState.loading || userRole === "ReadOnly"}
+        >
+          Run Cumulative Impact
+        </Button>
+
+        <Button
+          startIcon={<FontAwesomeIcon icon={faCheckCircle} />}
+          title="Set selected cost profile as active"
+          onClick={handleActivateProfile}
+          disabled={
+            !selectedProfile ||
+            selectedProfile.is_active ||
+            uiState.loading ||
+            userRole === "ReadOnly"
+          }
+        >
+          Activate
+        </Button>
+
+        <Button
+          startIcon={
+            <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
+          }
+          title="Delete selected cost profile"
+          onClick={handleDeleteCost}
+          disabled={
+            !selectedProfile ||
+            selectedProfile.is_active ||
+            uiState.loading ||
+            userRole === "ReadOnly"
+          }
+        >
+          Delete
+        </Button>
+      </ButtonGroup>
     </MarxanDialog>
   );
 };

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
+import Box from "@mui/material/Box";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Log from "../Log";
 import MapLegend from "./MapLegend";
@@ -15,8 +16,46 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
 import { toggleRun } from "@slices/prioritizrSlice";
 import { useListPrioritizrRunsQuery } from "@slices/prioritizrApiSlice";
+
+// YlGn colormap stops matching the map layer
+const YLGN_STOPS = [
+  { color: "#ffffe5", label: "1 run" },
+  { color: "#d9f0a3", label: "" },
+  { color: "#78c679", label: "" },
+  { color: "#238443", label: "" },
+  { color: "#004529", label: "All runs" },
+];
+
+const FrequencyLegend = ({ runCount }) => {
+  if (runCount < 2) return null;
+  return (
+    <Box sx={{ px: 1.5, py: 1, borderTop: "1px solid #eee" }}>
+      <Typography variant="caption" fontWeight={600} sx={{ mb: 0.5, display: "block" }}>
+        Selection frequency
+      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5, whiteSpace: "nowrap" }}>
+          1 run
+        </Typography>
+        <Box
+          sx={{
+            flex: 1,
+            height: 14,
+            borderRadius: 1,
+            background: `linear-gradient(to right, ${YLGN_STOPS.map((s) => s.color).join(", ")})`,
+            border: "1px solid #ccc",
+          }}
+        />
+        <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5, whiteSpace: "nowrap" }}>
+          {runCount} runs
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
 
 const ResultsPanel = (props) => {
   const dispatch = useDispatch();
@@ -219,6 +258,7 @@ const ResultsPanel = (props) => {
                   No runs yet
                 </div>
               )}
+              <FrequencyLegend runCount={selectedRunIds.length} />
             </div>
           )}
 

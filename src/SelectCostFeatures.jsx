@@ -64,7 +64,7 @@ const SelectCostFeatures = ({ selectedCosts }) => {
         label="Select"
         onClick={() =>
           dispatch(
-            toggleDialog({ dialogName: "costsDialogOpen", isOpen: true })
+            toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true })
           )
         }
       />
