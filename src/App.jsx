@@ -109,7 +109,6 @@ import ProjectsListDialog from "@projects/ProjectsListDialog";
 import ResendPasswordDialog from "./User/ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./RightInfoPanel/ResultsPanel";
-import RunCumuluativeImpactDialog from "./Impacts/RunCumuluativeImpactDialog";
 import RunSettingsDialog from "./RunSettingsDialog";
 import ServerDetailsDialog from "./User/ServerDetails/ServerDetailsDialog";
 import TargetDialog from "./TargetDialog";
@@ -2844,6 +2843,7 @@ const App = () => {
   const runCumulativeImpact = async (
     selectedUploadedActivityIds,
     profileName,
+    profileDescription = "",
   ) => {
     dispatch(setLoading(true));
     startLogging();
@@ -2852,24 +2852,25 @@ const App = () => {
       `runCumulativeImpact?project_id=${activeProjectId}` +
         `&activity_ids=${selectedUploadedActivityIds.join(",")}` +
         `&profile_name=${encodeURIComponent(profileName || "Cumulative Impact")}` +
+        `&description=${encodeURIComponent(profileDescription)}` +
         `&set_active=true`,
     );
 
-    // Refresh cost profiles after successful run
+    // Refresh cost profiles and reload map layer after successful run
     if (!response?.error) {
       const newProfile = {
         id: response.cost_profile_id,
         name: profileName,
-        description: "",
+        description: profileDescription,
         is_default: false,
         is_active: true,
       };
-      // Mark previous profiles as not active, add new one
       const updated = (projState.projectCosts || []).map((p) => ({
         ...p,
         is_active: false,
       }));
       dispatch(setProjectCosts([...updated, newProfile]));
+      await loadCostsLayer(true);
     }
 
     dispatch(setLoading(false));
@@ -3421,16 +3422,21 @@ const App = () => {
     await loadCostsLayer(true);
   };
 
-  //deletes a cost file on the server
-  const deleteCost = async (costname) => {
-    await _get(
-      `deleteCost?user=${uiState.owner}&project=${project}&costname=${costname}`,
-    );
-    const _costnames = projState.projectCosts.filter(
-      (item) => item.name !== costname,
-    );
-    dispatch(setProjectCosts(_costnames));
-    return;
+  //deletes a cost profile from the database
+  const deleteCost = async (costProfileId) => {
+    try {
+      const response = await _get(
+        `deleteCost?cost_profile_id=${costProfileId}`,
+      );
+      const updated = projState.projectCosts.filter(
+        (item) => item.id !== costProfileId,
+      );
+      dispatch(setProjectCosts(updated));
+      return response;
+    } catch (err) {
+      // Error already shown via snackbar by _get/checkForErrors
+      return { error: err };
+    }
   };
   //restores the database back to its original state and runs a git reset on the file system
   const resetServer = async () => {
@@ -3736,6 +3742,7 @@ const App = () => {
             userRole={userData?.role}
             deleteCost={deleteCost}
             activateCostProfile={activateCostProfile}
+            runCumulativeImpact={runCumulativeImpact}
           />
         ) : null}
 
@@ -3753,12 +3760,6 @@ const App = () => {
           />
         ) : null}
 
-        <RunCumuluativeImpactDialog
-          loading={uiState.loading || uploading}
-          metadata={metadata}
-          userRole={userData?.role}
-          runCumulativeImpact={runCumulativeImpact}
-        />
         <MenuBar
           open={isLoggedIn}
           openFeaturesDialog={openFeaturesDialog}

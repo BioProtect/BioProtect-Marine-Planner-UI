@@ -90,12 +90,6 @@ const HumanActivitiesDialog = (props) => {
 
     dispatch(setLoading(false));
     closeDialog();
-    dispatch(
-      toggleDialog({
-        dialogName: "uploadedActivitiesDialogOpen",
-        isOpen: true,
-      })
-    );
   };
 
   const clickRow = (evt, rowInfo) => {
