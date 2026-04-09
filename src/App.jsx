@@ -2925,6 +2925,14 @@ const App = () => {
         },
       ),
     );
+
+    // Persist the updated features to the database
+    const updatedFeatures = projectFeatures.map((f) =>
+      (f.id ?? f.feature_unique_id) === featureId
+        ? { ...f, ...newProps }
+        : f,
+    );
+    await updateProjectFeatures(updatedFeatures);
   };
 
   //removes a feature from the selectedFeatureIds array
@@ -2966,7 +2974,10 @@ const App = () => {
       ...feature,
       target_value,
     }));
-    const projectFeatures = features.filter((item) => item.selected);
+    const updatedProjectFeatures = projectFeatures.map((f) => ({
+      ...f,
+      target_value,
+    }));
 
     const patchAll = dispatch(setAllFeaturesInCache({ features: features }));
     // Update project features
@@ -2976,7 +2987,7 @@ const App = () => {
         activeProjectId,
         (draft) => {
           if (!draft?.features) return;
-          draft.features = selected;
+          draft.features = updatedProjectFeatures;
         },
       ),
     );
@@ -2986,7 +2997,7 @@ const App = () => {
 
     // update the project featires on the server, or rollback on error
     try {
-      await updateProjectFeatures(projectFeatures);
+      await updateProjectFeatures(updatedProjectFeatures);
     } catch (err) {
       patchAll?.undo?.();
       patchProject?.undo?.();
