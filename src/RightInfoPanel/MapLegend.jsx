@@ -6,18 +6,46 @@ import LayerLegend from "./LayerLegend";
 import Typography from "@mui/material/Typography";
 import { useSelector } from "react-redux";
 
-const YLGN_GRADIENT = ["#ffffe5", "#f7fcb9", "#d9f0a3", "#addd8e", "#78c679", "#41ab5d", "#238443", "#006837", "#004529"];
-const ORRD_GRADIENT = ["#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"];
+const YLGN_GRADIENT = [
+  "#ffffe5",
+  "#f7fcb9",
+  "#d9f0a3",
+  "#addd8e",
+  "#78c679",
+  "#41ab5d",
+  "#238443",
+  "#006837",
+  "#004529",
+];
+const ORRD_GRADIENT = [
+  "#fff7ec",
+  "#fee8c8",
+  "#fdd49e",
+  "#fdbb84",
+  "#fc8d59",
+  "#ef6548",
+  "#d7301f",
+  "#b30000",
+  "#7f0000",
+];
 
 const GradientBar = ({ colors, leftLabel, rightLabel, title }) => (
   <Box sx={{ px: 1, py: 0.5 }}>
     {title && (
-      <Typography variant="caption" fontWeight={600} sx={{ display: "block", mb: 0.3 }}>
+      <Typography
+        variant="caption"
+        fontWeight={600}
+        sx={{ display: "block", mb: 0.3 }}
+      >
         {title}
       </Typography>
     )}
     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-      <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ whiteSpace: "nowrap" }}
+      >
         {leftLabel}
       </Typography>
       <Box
@@ -29,14 +57,18 @@ const GradientBar = ({ colors, leftLabel, rightLabel, title }) => (
           border: "1px solid #ccc",
         }}
       />
-      <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ whiteSpace: "nowrap" }}
+      >
         {rightLabel}
       </Typography>
     </Box>
   </Box>
 );
 
-const MapLegend = (props) => {
+const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
   const [planningGridShape, setPlanningGridShape] = useState("hexagon");
   const selectedRunIds = useSelector((s) => s.prioritizr.selectedRunIds);
 
@@ -49,7 +81,7 @@ const MapLegend = (props) => {
     return (
       <React.Fragment key={`legend_${layer.id}`}>
         <LayerLegend
-          changeOpacity={props.changeOpacity}
+          changeOpacity={changeOpacity}
           layer={layer}
           items={[
             {
@@ -74,16 +106,16 @@ const MapLegend = (props) => {
 
   const getNonFeatureLegendItems = () => {
     let layers = [];
-    let costLayers = props.visibleLayers.filter(
+    let costLayers = visibleLayers.filter(
       (item) => item.id === CONSTANTS.COSTS_LAYER_NAME,
     );
     if (costLayers.length) {
-      layers = props.visibleLayers.filter(
+      layers = visibleLayers.filter(
         (item) => item.id !== CONSTANTS.COSTS_LAYER_NAME,
       );
       layers.push(costLayers[0]);
     } else {
-      layers = props.visibleLayers;
+      layers = visibleLayers;
     }
     return layers.map((layer) => {
       //get a unique key create the legend for non-feature layers
@@ -104,8 +136,8 @@ const MapLegend = (props) => {
           return (
             <React.Fragment key={key}>
               <LayerLegend
-                loading={props.costsLoading}
-                changeOpacity={props.changeOpacity}
+                loading={costsLoading}
+                changeOpacity={changeOpacity}
                 layer={layer}
                 items={[
                   {
@@ -134,7 +166,7 @@ const MapLegend = (props) => {
           return (
             <LayerLegend
               key={key}
-              changeOpacity={props.changeOpacity}
+              changeOpacity={changeOpacity}
               layer={layer}
               subLayers={[puLayer, statusLayer].filter(Boolean)}
               items={[
@@ -150,7 +182,7 @@ const MapLegend = (props) => {
           return (
             <LayerLegend
               key={key}
-              changeOpacity={props.changeOpacity}
+              changeOpacity={changeOpacity}
               layer={layer}
               items={[
                 {
@@ -175,7 +207,7 @@ const MapLegend = (props) => {
   };
 
   const getFeatureLegendItems = () => {
-    let featureLayers = props.visibleLayers.filter(
+    let featureLayers = visibleLayers.filter(
       (layer) => layer.metadata.type === CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
     );
     let items = featureLayers.map((layer) => ({
@@ -188,7 +220,7 @@ const MapLegend = (props) => {
     );
     return items.length ? (
       <LayerLegend
-        changeOpacity={props.changeOpacity}
+        changeOpacity={changeOpacity}
         layer={{ metadata: { name: "Features" } }}
         subLayers={featureLayers}
         items={items}
@@ -198,7 +230,7 @@ const MapLegend = (props) => {
   };
 
   const getFeaturePUIDLegendItems = () => {
-    let featurePUIDLayers = props.visibleLayers.filter(
+    let featurePUIDLayers = visibleLayers.filter(
       (layer) => layer.metadata.type === CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
     );
     let items = featurePUIDLayers.map((layer) => ({
@@ -208,7 +240,7 @@ const MapLegend = (props) => {
     }));
     return items.length ? (
       <LayerLegend
-        changeOpacity={props.changeOpacity}
+        changeOpacity={changeOpacity}
         layer={{ metadata: { name: "Planning units for features" } }}
         subLayers={featurePUIDLayers}
         items={items}

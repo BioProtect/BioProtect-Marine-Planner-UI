@@ -14,6 +14,13 @@ const TargetAvatar = ({
   const [localTargetValue, setLocalTargetValue] = useState(target_value);
   const inputRef = useRef(null);
 
+  // Keep local edit state in sync with the prop so we don't commit a stale
+  // initial value when the parent updates target_value (e.g. after the
+  // project features cache loads).
+  useEffect(() => {
+    if (!editing) setLocalTargetValue(target_value);
+  }, [target_value, editing]);
+
   useEffect(() => {
     if (editing) {
       inputRef.current?.focus();
@@ -32,7 +39,9 @@ const TargetAvatar = ({
 
   const handleCommit = () => {
     setEditing(false);
-    updateTargetValue(feature, Number(localTargetValue) || 0);
+    const next = Number(localTargetValue) || 0;
+    if (next === Number(target_value)) return;
+    updateTargetValue(feature, next);
   };
 
   const getColors = () => {

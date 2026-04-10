@@ -12,6 +12,7 @@ import {
   addToImportLog,
   clearImportLog,
   removeImportLogMessage,
+  setActiveResultsTab,
   setActiveTab,
   setBasemap,
   setLoading,
@@ -109,6 +110,7 @@ import ProjectsListDialog from "@projects/ProjectsListDialog";
 import ResendPasswordDialog from "./User/ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./RightInfoPanel/ResultsPanel";
+import RunPrioritizrDialog from "./RunPrioritizrDialog";
 import RunSettingsDialog from "./RunSettingsDialog";
 import ServerDetailsDialog from "./User/ServerDetails/ServerDetailsDialog";
 import TargetDialog from "./TargetDialog";
@@ -130,6 +132,7 @@ import jsonp from "jsonp-promise";
 import mapboxgl from "mapbox-gl";
 import packageJson from "../package.json";
 import { prioritizrApiSlice } from "@slices/prioritizrApiSlice";
+import { setSelectedRuns } from "@slices/prioritizrSlice";
 // wherever loadProjectAndSetup lives
 import store from "@store/store";
 /*eslint-disable no-unused-vars*/
@@ -311,6 +314,7 @@ const App = () => {
   const [preprocessing, setPreprocessing] = useState(false);
   const [runLogs, setRunLogs] = useState([]);
   const [runParams, setRunParams] = useState([]);
+  const [boundaryPenalty, setBoundaryPenalty] = useState(0);
   const [selectedCosts, setSelectedCosts] = useState([]);
   const [selectedImpactIds, setSelectedImpactIds] = useState([]);
   const [smallLinearGauge, setSmallLinearGauge] = useState(true);
@@ -3300,19 +3304,50 @@ const App = () => {
 
   // Run Prioitizr
   // `/server/prioritizr?action=run&user=${}&project_id=${}`
-  const runPrioitizr = async () => {
-    console.log("userId ", userId);
-    console.log("userId ", activeProjectId);
+  const runPrioitizr = async (opts = {}) => {
+    const {
+      name = null,
+      description = null,
+      boundaryPenalty: bpOverride,
+    } = opts;
+    const bp = bpOverride ?? boundaryPenalty;
     try {
-      // Switch to the log tab
-      const planningGridId = metadata.pu_id;
-      dispatch(setActiveTab("log"));
+      // Open the results panel and switch to the log tab so the user
+      // can watch the run progress live.
+      dispatch(clearImportLog());
+      dispatch(
+        toggleDialog({ dialogName: "resultsPanelOpen", isOpen: true }),
+      );
+      dispatch(setActiveResultsTab("log"));
+      // Build run params (penalties, solver overrides) and pass via URL.
+      // The backend pulls name/description out into real DB columns and
+      // also keeps them inside params for the R script's resolved_config.
+      const runConfig = {
+        name,
+        description,
+        penalties: { boundary: Number(bp) || 0 },
+      };
+      const paramsQS = encodeURIComponent(JSON.stringify(runConfig));
       // Call the WebSocket
       const message = await handleWebSocket(
-        `prioritizr-ws?action=run&user=${userId}&project_id=${activeProjectId}`,
+        `prioritizr-ws?action=run&user=${userId}&project_id=${activeProjectId}&params=${paramsQS}`,
       );
       showMessage(message.info, "info");
       console.log("message ", message);
+
+      // Auto-select the new run so its results render on the map
+      // immediately instead of requiring the user to click it manually
+      // in the Runs tab.
+      if (message?.run_id != null) {
+        dispatch(setSelectedRuns([message.run_id]));
+        dispatch(
+          prioritizrApiSlice.util.invalidateTags([
+            { type: "PrioritizrRun", id: "LIST" },
+            { type: "PrioritizrRun", id: activeProjectId },
+            { type: "PrioritizrRun", id: message.run_id },
+          ]),
+        );
+      }
 
       return message;
     } catch (error) {
@@ -3590,6 +3625,8 @@ const App = () => {
             setMenuAnchor={setMenuAnchor}
             handleWebSocket={handleWebSocket}
             runPrioitizr={runPrioitizr}
+            boundaryPenalty={boundaryPenalty}
+            setBoundaryPenalty={setBoundaryPenalty}
             // protectedAreaIntersections={protectedAreaIntersections}
           />
         )}
@@ -3702,6 +3739,11 @@ const App = () => {
           updateRunParams={updateRunParams}
           runParams={runParams}
           userRole={userData?.role}
+        />
+        <RunPrioritizrDialog
+          runPrioitizr={runPrioitizr}
+          boundaryPenalty={boundaryPenalty}
+          setBoundaryPenalty={setBoundaryPenalty}
         />
         {dialogStates.classificationDialogOpen ? (
           <ClassificationDialog

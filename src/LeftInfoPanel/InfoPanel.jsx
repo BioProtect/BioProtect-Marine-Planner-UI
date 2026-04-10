@@ -344,7 +344,14 @@ const InfoPanel = (props) => {
                 <Button
                   variant="contained"
                   title="Click to run this project"
-                  onClick={props.runPrioitizr}
+                  onClick={() =>
+                    dispatch(
+                      toggleDialog({
+                        dialogName: "runPrioritizrDialogOpen",
+                        isOpen: true,
+                      }),
+                    )
+                  }
                   disabled={
                     props.preprocessing ||
                     projectFeatures.length === 0 ||

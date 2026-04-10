@@ -127,15 +127,15 @@ const FeaturesList = ({
                 target_value={target_value}
                 updateTargetValue={handleTargetChange}
                 feature={item}
-                targetStatus={
-                  area === 0
-                    ? "Does not occur in planning area"
-                    : protectedPercent === -1
-                      ? "Unknown"
-                      : protected_area >= item.target_area
-                        ? "Target achieved"
-                        : "Target missed"
-                }
+                // targetStatus={
+                //   area === 0
+                //     ? "Does not occur in planning area"
+                //     : protectedPercent === -1
+                //       ? "Unknown"
+                //       : protected_area >= item.target_area
+                //         ? "Target achieved"
+                //         : "Target missed"
+                // }
                 visible={area !== 0}
               />
             </ListItemAvatar>

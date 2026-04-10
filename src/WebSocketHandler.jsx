@@ -43,13 +43,27 @@ const useWebSocketHandler = (
       return new Promise((resolve, reject) => {
         console.log("Connecting to:", websocketEndpoint + params);
         const ws = new WebSocket(websocketEndpoint + params);
+        // Track when this socket opened so we can compute elapsed time
+        // for streaming "Running" messages.
+        let startTime = null;
 
-        ws.onopen = () => setPreprocessing(true);
+        ws.onopen = () => {
+          startTime = Date.now();
+          setPreprocessing(true);
+        };
 
         ws.onmessage = async (evt) => {
           const message = JSON.parse(evt.data);
           console.log("message from websocker - ", message);
-          showMessage(message.info, "info");
+          // Compute elapsed seconds since the socket opened so the log
+          // can show "Running — 00:23" style timestamps.
+          if (startTime != null) {
+            message.elapsed = Math.max(
+              0,
+              Math.floor((Date.now() - startTime) / 1000),
+            );
+          }
+          if (message.info) showMessage(message.info, "info");
           if (!checkForErrors(message)) {
             logMessage(message);
 

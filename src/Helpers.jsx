@@ -26,22 +26,22 @@ export const getArea = (
   units = "Km2",
   asHtml = false,
   sf = 3,
-  addCommas = true
+  addCommas = true,
+  sourceUnits = "m2"
 ) => {
   if (value == null || Number.isNaN(value))
     return asHtml ? <span>—</span> : "—";
 
   const u = String(units || "Km2").toLowerCase();
+  const src = String(sourceUnits || "m2").toLowerCase();
 
-  // Define the scale based on units
-  const scales = {
-    m2: 1,
-    Ha: 0.0001,
-    Km2: 0.000001,
-  };
+  // Scale factor m² -> target unit
+  const toM2 = { m2: 1, ha: 10000, km2: 1000000 };
+  const fromM2 = { m2: 1, ha: 0.0001, km2: 0.000001 };
 
-  const scale = scales[u] ?? scales["Km2"];
-  const converted = value * scale;
+  const valueInM2 = value * (toM2[src] ?? 1);
+  const scale = fromM2[u] ?? fromM2["km2"];
+  const converted = valueInM2 * scale;
   const roundSig = (num, sig) => {
     if (num === 0) return 0;
     const p = Math.ceil(Math.log10(Math.abs(num)));
