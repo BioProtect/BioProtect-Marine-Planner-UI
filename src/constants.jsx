@@ -142,15 +142,15 @@ const CONSTANTS = {
   FEATURE_PLANNING_GRID_LAYER_OPACITY: 0.9,
   RESULTS_LAYER_OPACITY: 0.8,
   COST_COLORS: [
-    "rgba(255,255,204,0.8)",
-    "rgba(255,237,160,0.8)",
-    "rgba(254,217,118,0.8)",
-    "rgba(254,178,76,0.8)",
-    "rgba(253,141,60,0.8)",
-    "rgba(252,78,42,0.8)",
-    "rgba(227,26,28,0.8)",
-    "rgba(189,0,38,0.8)",
-    "rgba(128,0,38,0.8)",
+    "rgba(255,247,236,0.8)",  // #fff7ec
+    "rgba(254,232,200,0.8)",  // #fee8c8
+    "rgba(253,212,158,0.8)",  // #fdd49e
+    "rgba(253,187,132,0.8)",  // #fdbb84
+    "rgba(252,141,89,0.8)",   // #fc8d59
+    "rgba(239,101,72,0.8)",   // #ef6548
+    "rgba(215,48,31,0.8)",    // #d7301f
+    "rgba(179,0,0,0.8)",      // #b30000
+    "rgba(127,0,0,0.8)",      // #7f0000
   ],
   UNIFORM_COST_NAME: "Equal area",
   //an array of feature property information that is used in the Feature Information dialog box - showForOld sets whether that property is shown for old versions of marxan

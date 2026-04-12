@@ -177,19 +177,6 @@ const InfoPanel = (props) => {
       : props.renameDescription(e.target.value);
   };
 
-  const changeCostname = (event) => {
-    const costname = event.target.value;
-    if (costname === "Custom..") {
-      // dispatch(toggleDialog({ dialogName: "costsDialogOpen", isOpen: true }));
-
-      props.openCostsDialog();
-    } else {
-      props.changeCostname(costname).then(() => {
-        props.loadCostsLayer(true);
-      });
-    }
-  };
-
   const toggleProjectPrivacy = (evt, isInputChecked) => {
     const checkedString = isInputChecked ? "True" : "False";
     props.toggleProjectPrivacy(checkedString);
@@ -290,7 +277,8 @@ const InfoPanel = (props) => {
               project={props.project}
               userRole={userData?.role}
               preprocessing={props.preprocessing}
-              changeCostname={props.changeCostname}
+              costProfiles={props.costProfiles}
+              activateCostProfile={props.activateCostProfile}
               map={props.map}
               onClickRef={props.onClickRef}
               onContextMenuRef={props.onContextMenuRef}
@@ -300,8 +288,6 @@ const InfoPanel = (props) => {
               setPuEditing={props.setPuEditing}
               planningUnits={props.planningUnits}
               metadata={props.metadata}
-              costname={props.costname}
-              costNames={props.costNames}
             />
           )}
 
@@ -358,7 +344,14 @@ const InfoPanel = (props) => {
                 <Button
                   variant="contained"
                   title="Click to run this project"
-                  onClick={props.runPrioitizr}
+                  onClick={() =>
+                    dispatch(
+                      toggleDialog({
+                        dialogName: "runPrioritizrDialogOpen",
+                        isOpen: true,
+                      }),
+                    )
+                  }
                   disabled={
                     props.preprocessing ||
                     projectFeatures.length === 0 ||

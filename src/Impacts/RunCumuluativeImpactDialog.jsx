@@ -1,8 +1,8 @@
 import {
+  Alert,
   Button,
   Checkbox,
   DialogActions,
-  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -15,10 +15,9 @@ import {
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
-import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "@slices/uiSlice";
+import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 
 const ImportedActivitiesDialog = ({
   loading,
@@ -29,9 +28,26 @@ const ImportedActivitiesDialog = ({
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const selectedFeatureIds = useSelector(
+    (state) => state.feature.selectedFeatureIds,
+  );
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+
   const [searchText, setSearchText] = useState("");
   const [selectedActivityIds, setSelectedActivityIds] = useState([]);
   const [profileName, setProfileName] = useState("");
+
+  // Check preprocessing from features already in Redux
+  const projectFeatures = allFeatures.filter((f) =>
+    selectedFeatureIds.includes(f.id),
+  );
+  const preprocessedFeatures = projectFeatures.filter((f) => f.preprocessed);
+  const unprocessedFeatures = projectFeatures.filter((f) => !f.preprocessed);
+  const allPreprocessed =
+    projectFeatures.length > 0 && unprocessedFeatures.length === 0;
+  const nonePreprocessed =
+    projectFeatures.length === 0 || preprocessedFeatures.length === 0;
 
   const handleSearchChange = (event) =>
     setSearchText(event.target.value.toLowerCase());
@@ -40,7 +56,7 @@ const ImportedActivitiesDialog = ({
     setSelectedActivityIds((prev) =>
       prev.includes(id)
         ? prev.filter((activityId) => activityId !== id)
-        : [...prev, id]
+        : [...prev, id],
     );
   };
 
@@ -56,11 +72,17 @@ const ImportedActivitiesDialog = ({
       activity.activity?.toLowerCase().includes(searchText) ||
       activity.description?.toLowerCase().includes(searchText) ||
       activity.source?.toLowerCase().includes(searchText) ||
-      activity.created_by?.toLowerCase().includes(searchText)
+      activity.created_by?.toLowerCase().includes(searchText),
   );
 
-  const handleRunCumulativeImpact = () => {
-    runCumulativeImpact(selectedActivityIds, profileName);
+  const handleRunCumulativeImpact = async () => {
+    const response = await runCumulativeImpact(
+      selectedActivityIds,
+      profileName,
+    );
+    if (!response?.error) {
+      closeDialog();
+    }
   };
 
   const closeDialog = () => {
@@ -70,23 +92,62 @@ const ImportedActivitiesDialog = ({
       toggleDialog({
         dialogName: "uploadedActivitiesDialogOpen",
         isOpen: false,
-      })
+      }),
     );
   };
+
+  const canRunImpact =
+    !loading &&
+    selectedActivityIds.length > 0 &&
+    profileName !== "" &&
+    userRole !== "ReadOnly" &&
+    !nonePreprocessed;
 
   return (
     <MarxanDialog
       open={dialogStates.uploadedActivitiesDialogOpen}
-      onOk={closeDialog}
-      onCancel={closeDialog}
+      hideOKButton={true}
       autoDetectWindowHeight={false}
       title={title(
         "Uploaded Activities",
-        "Select activities and run cumulative impact"
+        "Select activities and run cumulative impact",
       )}
       showSearchBox={true}
       searchTextChanged={handleSearchChange}
     >
+      {nonePreprocessed && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          No features have been preprocessed for this project. Preprocess your
+          features before running the cumulative impact function.
+        </Alert>
+      )}
+
+      {!allPreprocessed && !nonePreprocessed && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {preprocessedFeatures.length} of {projectFeatures.length} features
+          preprocessed.
+          {unprocessedFeatures.length > 0 && (
+            <>
+              Missing:{" "}
+              {unprocessedFeatures
+                .slice(0, 5)
+                .map((f) => f.alias)
+                .join(", ")}
+              {unprocessedFeatures.length > 5 &&
+                ` and ${unprocessedFeatures.length - 5} more`}
+              .
+            </>
+          )}
+          Unprocessed features will be excluded from the calculation.
+        </Alert>
+      )}
+
+      {allPreprocessed && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          All {projectFeatures.length} features preprocessed.
+        </Alert>
+      )}
+
       <TableContainer>
         <Table>
           <TableHead>
@@ -117,12 +178,20 @@ const ImportedActivitiesDialog = ({
                 <TableCell>{activity.filename}</TableCell>
                 <TableCell>{activity.source}</TableCell>
                 <TableCell>{activity.created_by}</TableCell>
-                <TableCell>{activity.creation_date?.substring(0, 10)}</TableCell>
+                <TableCell>
+                  {activity.creation_date?.substring(0, 10)}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {filteredActivities.length === 0 && (
+        <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+          No activities found.
+        </Typography>
+      )}
 
       <TextField
         fullWidth
@@ -133,26 +202,20 @@ const ImportedActivitiesDialog = ({
         sx={{ mt: 2 }}
       />
 
-      {metadata?.OLDVERSION && (
-        <Typography color="error" mt={2}>
-          This is an imported project. Only features from this project are
-          shown.
-        </Typography>
-      )}
       <DialogActions>
-        <IconButton
-          color="primary"
-          disabled={
-            loading ||
-            selectedActivityIds.length === 0 ||
-            profileName === "" ||
-            userRole === "ReadOnly"
-          }
+        <Button onClick={closeDialog}>Cancel</Button>
+        <Button
+          variant="contained"
+          disabled={!canRunImpact}
           onClick={handleRunCumulativeImpact}
+          title={
+            nonePreprocessed
+              ? "Preprocess features first"
+              : "Run cumulative impact"
+          }
         >
-          <FontAwesomeIcon icon={faPlusCircle} />
-        </IconButton>
-        <Button onClick={closeDialog}>Close</Button>
+          Run Cumulative Impact
+        </Button>
       </DialogActions>
     </MarxanDialog>
   );

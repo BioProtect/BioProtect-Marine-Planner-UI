@@ -31,7 +31,8 @@ const PlanningUnitsTab = ({
   project,
   preprocessing,
   userRole,
-  changeCostname,
+  costProfiles,
+  activateCostProfile,
   map,
   onClickRef,
   onContextMenuRef,
@@ -41,8 +42,6 @@ const PlanningUnitsTab = ({
   setPuEditing,
   planningUnits,
   metadata,
-  costname,
-  costNames,
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
@@ -287,23 +286,18 @@ const PlanningUnitsTab = ({
               <Select
                 labelId="costs-select-label"
                 id="costs-select"
-                value={(() => {
-                  const names = costNames ?? [];
-                  const current = costname;
-                  // if current is in the list, use it; otherwise pick the first element (if any)
-                  return names.includes(current) ? current : (names[0] ?? ""); // if names[0] is undefined, fall back to empty string
-                })()}
+                value={
+                  costProfiles.find((p) => p.is_active)?.id ?? ""
+                }
                 disabled={preprocessing || userRole === "ReadOnly"}
                 label="Use cost surface"
-                onChange={(event) => changeCostname(event)}
+                onChange={(event) => activateCostProfile(event.target.value)}
               >
-                {costNames.map((item) => {
-                  return (
-                    <MenuItem value={item} key={item}>
-                      {item}
-                    </MenuItem>
-                  );
-                })}
+                {(costProfiles ?? []).map((profile) => (
+                  <MenuItem value={profile.id} key={profile.id}>
+                    {profile.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Stack>

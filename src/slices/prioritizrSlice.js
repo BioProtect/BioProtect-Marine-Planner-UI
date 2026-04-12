@@ -16,11 +16,15 @@ const prioritizrSlice = createSlice({
         state.selectedRunIds.splice(idx, 1);
       }
     },
+    setSelectedRuns(state, action) {
+      state.selectedRunIds = action.payload;
+    },
     clearRuns(state) {
       state.selectedRunIds = [];
     },
   },
 });
 
-export const { toggleRun, clearRuns } = prioritizrSlice.actions;
+export const { toggleRun, setSelectedRuns, clearRuns } =
+  prioritizrSlice.actions;
 export default prioritizrSlice.reducer;

@@ -78,12 +78,18 @@ const FeatureInfoDialog = ({ updateFeature }) => {
         ? "red"
         : "rgba(0, 0, 0, 0.6)";
 
+    // "Total area" comes from metadata_interest_features._area (m²).
+    // "Planning grid area" / "Target area" / "Area protected" come from
+    // feature_preprocessing.pu_area and derived values, now stored in
+    // km² app-wide — tell getArea() to treat those as km² input.
+    const sourceUnits = rowKey === "Total area" ? "m2" : "km2";
+
     return (
       <div
-        title={getArea(value, userData?.report_units, false, 6)}
+        title={getArea(value, userData?.report_units, false, 6, true, sourceUnits)}
         style={{ color }}
       >
-        {getArea(value, userData?.report_units, true)}
+        {getArea(value, userData?.report_units, true, 3, true, sourceUnits)}
       </div>
     );
   };

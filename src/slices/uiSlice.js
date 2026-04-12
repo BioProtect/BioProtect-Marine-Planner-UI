@@ -124,6 +124,7 @@ const initialState = {
     resetDialogOpen: false,
     resultsPanelOpen: false,
     runLogDialogOpen: false,
+    runPrioritizrDialogOpen: false,
     serverDetailsDialogOpen: false,
     settingsDialogOpen: false,
     shareableLinkDialogOpen: false,

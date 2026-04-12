@@ -66,7 +66,7 @@ const updateProtectedAmount = (mvData) => {
     mvData.map(([id, , targetArea, protectedArea]) => [
       id,
       { targetArea, protectedArea },
-    ])
+    ]),
   );
 
   // Update features with corresponding data from mvData
@@ -152,36 +152,6 @@ const marxanStopped = async () => await getRunLogs();
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
-// SOLUTIONS
-// ----------------------------------------------------------------------------------------------- //
-// ----------------------------------------------------------------------------------------------- //
-// ----------------------------------------------------------------------------------------------- //
-// ----------------------------------------------------------------------------------------------- //
-//load a specific solution for the current project
-const loadSolution = async (solution) => {
-  if (solution === "Sum") {
-    updateProtectedAmount(runMarxanResponse.mvbest);
-    //load the sum of solutions which will already be loaded
-    renderSolution(runMarxanResponse.ssoln, true);
-  } else {
-    const response = await getSolution(
-      uiState.owner,
-      projState.project,
-      solution
-    );
-    updateProtectedAmount(response.mv);
-    renderSolution(response.solution, false);
-  }
-};
-
-// Gets a solution
-const getSolution = async (user, proj, solution) =>
-  await _get(`getSolution?user=${user}&project=${proj}&solution=${solution}`);
-
-// ----------------------------------------------------------------------------------------------- //
-// ----------------------------------------------------------------------------------------------- //
-// ----------------------------------------------------------------------------------------------- //
-// ----------------------------------------------------------------------------------------------- //
 // CLASSIFICATION AND RENDERING
 // ----------------------------------------------------------------------------------------------- //
 // ----------------------------------------------------------------------------------------------- //
@@ -229,7 +199,7 @@ const classifyData = (data, numClasses, colorCode, classification) => {
       const newBrewColorScheme = Array.from(
         { length: projState.renderer.NUMCLASSES },
         (_, index) =>
-          `rgba(255,0,136,${(1 / projState.renderer.NUMCLASSES) * (index + 1)})`
+          `rgba(255,0,136,${(1 / projState.renderer.NUMCLASSES) * (index + 1)})`,
       );
       //add the new color scheme
       if (brew.colorSchemes.opacity === undefined) {
@@ -261,7 +231,7 @@ const classifyData = (data, numClasses, colorCode, classification) => {
       setRenderer((prevState) => ({
         ...prevState,
         NUMCLASSES: finalNumClasses, // Update or add the NUMCLASSES property
-      }))
+      })),
     );
   }
   //set the number of classes
@@ -284,7 +254,7 @@ const changeRenderer = async (renderer) => {
     setRenderer((prevState) => ({
       ...prevState,
       CLASSIFICATION: renderer,
-    }))
+    })),
   );
 
   // Call the async function after the state has been updated
@@ -358,11 +328,11 @@ const renderSolution = (data, sum) => {
   map.current.setPaintProperty(
     CONSTANTS.RESULTS_LAYER_NAME,
     "fill-color",
-    paintProperties.fillColor
+    paintProperties.fillColor,
   );
   map.current.setPaintProperty(
     CONSTANTS.RESULTS_LAYER_NAME,
     "fill-outline-color",
-    paintProperties.oulineColor
+    paintProperties.oulineColor,
   );
 };
