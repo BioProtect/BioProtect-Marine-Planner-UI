@@ -92,6 +92,8 @@ const initialState = {
 
   featurePlanningUnits: [],
 
+  featureMetadata: {},
+
   dialogs: {
     newFeatureDialogOpen: false,
     featureDialogOpen: false,
@@ -132,6 +134,9 @@ const featureSlice = createSlice({
     setDigitisedFeatures(state, action) {
       state.digitisedFeatures = action.payload;
     },
+    setFeatureMetadata(state, action) {
+      state.featureMetadata = action.payload;
+    },
     toggleFeatureD(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
@@ -146,6 +151,7 @@ export const {
   setFeatureFilename,
   setCreatedFeatureInfo,
   setFeaturePlanningUnits,
+  setFeatureMetadata,
   toggleFeatureD,
   setDigitisedFeatures,
 } = featureSlice.actions;
