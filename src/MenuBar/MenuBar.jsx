@@ -15,6 +15,10 @@ import {
   faThLarge,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  setAddingRemovingFeatures,
+  toggleFeatureD,
+} from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import AppBar from "@mui/material/AppBar";
@@ -27,12 +31,10 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { selectCurrentUser } from "@slices/authSlice";
 import { toggleDialog } from "@slices/uiSlice";
-import { toggleFeatureD } from "@slices/featureSlice";
 
 const MenuBar = ({
   open,
   openProjectsDialog,
-  openFeaturesDialog,
   openPlanningGridsDialog,
   openCumulativeImpactDialog,
   openAtlasLayersDialog,
@@ -69,7 +71,17 @@ const MenuBar = ({
       toggleDialog({
         dialogName: val,
         isOpen: !valueToToggle,
-      })
+      }),
+    );
+  };
+
+  const handleOpenFeaturesDialog = () => {
+    dispatch(setAddingRemovingFeatures(false));
+    dispatch(
+      toggleFeatureD({
+        dialogName: "featuresDialogOpen",
+        isOpen: true,
+      }),
     );
   };
 
@@ -93,7 +105,7 @@ const MenuBar = ({
             />
             <AppBarIcon
               icon={faFishFins}
-              onClick={() => openFeaturesDialog()}
+              onClick={() => handleOpenFeaturesDialog()}
               title="Features"
             />
             {/* <AppBarIcon

@@ -118,7 +118,7 @@ const FeaturesDialog = ({
   const clickRow = (event, row) => {
     console.log("event, row ", event, row);
     if (!row || row.index === undefined) return;
-
+    ``;
     addOrRemoveFeature(row);
 
     if (addingRemovingFeatures) {

@@ -50,6 +50,7 @@ import {
 } from "@slices/authSlice";
 import {
   setDigitisedFeatures,
+  setFeatureMetadata,
   setFeaturePlanningUnits,
   setSelectedFeatureId,
   setSelectedFeatureIds,
@@ -2932,9 +2933,7 @@ const App = () => {
 
     // Persist the updated features to the database
     const updatedFeatures = projectFeatures.map((f) =>
-      (f.id ?? f.feature_unique_id) === featureId
-        ? { ...f, ...newProps }
-        : f,
+      (f.id ?? f.feature_unique_id) === featureId ? { ...f, ...newProps } : f,
     );
     await updateProjectFeatures(updatedFeatures);
   };
@@ -3315,9 +3314,7 @@ const App = () => {
       // Open the results panel and switch to the log tab so the user
       // can watch the run progress live.
       dispatch(clearImportLog());
-      dispatch(
-        toggleDialog({ dialogName: "resultsPanelOpen", isOpen: true }),
-      );
+      dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: true }));
       dispatch(setActiveResultsTab("log"));
       // Build run params (penalties, solver overrides) and pass via URL.
       // The backend pulls name/description out into real DB columns and
@@ -3815,7 +3812,6 @@ const App = () => {
 
         <MenuBar
           open={isLoggedIn}
-          openFeaturesDialog={openFeaturesDialog}
           openProjectsDialog={openProjectsDialog}
           openPlanningGridsDialog={openPlanningGridsDialog}
           openCumulativeImpactDialog={openCumulativeImpactDialog}
