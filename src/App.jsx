@@ -1825,6 +1825,7 @@ const App = () => {
       style: url || "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
       center: [-18, 55],
       zoom: 4,
+      preserveDrawingBuffer: true, // required for map screenshot (toDataURL)
     });
     // save globally for hot reloading
     if (import.meta.hot) window._mapInstance = map.current;
@@ -3651,6 +3652,9 @@ const App = () => {
             visibleLayers={visibleLayers}
             metadata={metadata}
             costsLoading={costsLoading}
+            map={map}
+            project={project}
+            projectFeatures={projectFeatures}
           />
         )}
         {puState.dialogs.hexInfoDialogOpen ? (
