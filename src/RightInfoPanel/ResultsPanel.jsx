@@ -5,6 +5,7 @@ import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CircularProgress from "@mui/material/CircularProgress";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -25,6 +26,7 @@ import Typography from "@mui/material/Typography";
 import { generatePdfReport } from "@utils/generatePdfReport";
 import { setActiveResultsTab } from "@slices/uiSlice";
 import { toggleRun } from "@slices/prioritizrSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useListPrioritizrRunsQuery } from "@slices/prioritizrApiSlice";
 
 // YlGn colormap stops matching the map layer
@@ -79,6 +81,7 @@ const TAB_VALUES = ["legend", "runs", "log"];
 
 const ResultsPanel = (props) => {
   const { map, project, projectFeatures, metadata } = props;
+  const { showMessage } = useAppSnackbar();
 
   const dispatch = useDispatch();
   const { dialogStates, importLog, activeResultsTab, uploadedActivities } =
@@ -92,12 +95,20 @@ const ResultsPanel = (props) => {
   const runs = runsResp?.data ?? [];
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // PDF report download 
+  // PDF report download
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const handleDownloadPdf = useCallback(async () => {
+    if (selectedRunIds.length === 0) {
+      showMessage(
+        "Please select at least one run to include in the report.",
+        "error",
+      );
+      return;
+    }
     setPdfLoading(true);
+
     try {
       // Capture map canvas (requires preserveDrawingBuffer: true on the map)
       let mapImageDataUrl = null;
@@ -109,7 +120,6 @@ const ResultsPanel = (props) => {
 
       // Gather the selected run objects (for display names in the PDF)
       const selectedRuns = runs.filter((r) => selectedRunIds.includes(r.id));
-
       await generatePdfReport({
         project,
         metadata,
@@ -121,7 +131,15 @@ const ResultsPanel = (props) => {
     } finally {
       setPdfLoading(false);
     }
-  }, [map, project, metadata, projectFeatures, uploadedActivities, runs, selectedRunIds]);
+  }, [
+    map,
+    project,
+    metadata,
+    projectFeatures,
+    uploadedActivities,
+    runs,
+    selectedRunIds,
+  ]);
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -195,6 +213,13 @@ const ResultsPanel = (props) => {
       return next;
     });
   };
+  const conditionalEndIcon = (pdfLoading) => {
+    return pdfLoading ? (
+      <CircularProgress size={18} sx={{ color: "white" }} />
+    ) : (
+      <DownloadIcon fontSize="small" />
+    );
+  };
 
   if (!dialogStates.resultsPanelOpen) return null;
 
@@ -227,18 +252,18 @@ const ResultsPanel = (props) => {
           <span style={{ flex: 1 }}>Results</span>
           <Tooltip title="Download PDF report">
             <span>
-              <IconButton
+              <Button
                 size="small"
                 onClick={handleDownloadPdf}
                 disabled={pdfLoading}
-                sx={{ color: "white", "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" } }}
+                sx={{
+                  color: "white",
+                  "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" },
+                }}
+                endIcon={conditionalEndIcon(pdfLoading)}
               >
-                {pdfLoading ? (
-                  <CircularProgress size={18} sx={{ color: "white" }} />
-                ) : (
-                  <DownloadIcon fontSize="small" />
-                )}
-              </IconButton>
+                Download PDF
+              </Button>
             </span>
           </Tooltip>
         </div>
@@ -330,7 +355,12 @@ const ResultsPanel = (props) => {
                                       ? "rgba(0, 188, 212, 0.25)"
                                       : "rgba(0, 0, 0, 0.04)",
                                   },
-                                  "& > td": { borderBottom: hasDescription && isExpanded ? "none" : undefined },
+                                  "& > td": {
+                                    borderBottom:
+                                      hasDescription && isExpanded
+                                        ? "none"
+                                        : undefined,
+                                  },
                                 }}
                               >
                                 <TableCell sx={{ width: 28, p: 0 }}>
