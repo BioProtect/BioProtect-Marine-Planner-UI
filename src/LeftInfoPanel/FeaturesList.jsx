@@ -1,4 +1,4 @@
-import { Fragment, memo } from "react";
+import { Fragment, memo, useMemo } from "react";
 import {
   featureApiSlice,
   setSelectedFeatureId,
@@ -18,6 +18,7 @@ import TargetAvatar from "./TargetAvatar";
 import Tooltip from "@mui/material/Tooltip";
 import { grey } from "@mui/material/colors";
 import { projectApiSlice } from "@slices/projectSlice";
+import { useGetFeatureRepresentationQuery } from "@slices/prioritizrApiSlice";
 
 const FeaturesList = ({
   updateFeature,
@@ -33,6 +34,24 @@ const FeaturesList = ({
     featureApiSlice.endpoints.getAllFeatures.useQuery();
   const allFeatures = allFeaturesResp?.data ?? [];
   const projectFeatures = allFeatures.filter((f) => selectedIds.includes(f.id));
+
+  // ── Feature representation from selected Prioritizr runs ────────────────
+  const selectedRunIds = useSelector((s) => s.prioritizr.selectedRunIds);
+  // Stable sorted key so RTK Query cache works correctly across toggle order
+  const sortedRunIds = useMemo(
+    () => [...selectedRunIds].sort((a, b) => a - b),
+    [selectedRunIds],
+  );
+  const { data: reprResp } = useGetFeatureRepresentationQuery(sortedRunIds, {
+    skip: sortedRunIds.length === 0,
+  });
+  // Map: feature_unique_id (number) → represented_percent (0-100)
+  const reprByFeatureUniqueId = useMemo(() => {
+    if (!reprResp?.data) return {};
+    return Object.fromEntries(
+      reprResp.data.map((r) => [r.feature_unique_id, r.represented_percent]),
+    );
+  }, [reprResp]);
 
   const handleIconClick = (evt, id) => {
     evt.stopPropagation();
@@ -83,6 +102,7 @@ const FeaturesList = ({
     <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
       {projectFeatures.map((item) => {
         const { id, area, protected_area, target_value, color } = item;
+        const achieved = reprByFeatureUniqueId[id] ?? null;
 
         let protectedPercent;
         if (protected_area === -1) {
@@ -146,7 +166,7 @@ const FeaturesList = ({
               primaryTypographyProps={{ variant: "body2" }}
               sx={{ flex: 1 }}
               secondaryTypographyProps={{ component: "div" }}
-              secondary={<LinearGauge value={target_value} />}
+              secondary={<LinearGauge value={target_value} achieved={achieved} />}
             />
           </ListItem>
         );
