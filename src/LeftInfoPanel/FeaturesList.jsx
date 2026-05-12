@@ -7,6 +7,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 
 import Box from "@mui/material/Box";
+import FeatureListItem from "./FeatureListItem";
 import FeatureProgressDemo from "./FeatureProgressDemo";
 import IconButton from "@mui/material/IconButton";
 import LinearGauge from "./LinearGauge";
@@ -46,11 +47,33 @@ const FeaturesList = ({
   const { data: reprResp } = useGetFeatureRepresentationQuery(sortedRunIds, {
     skip: sortedRunIds.length === 0,
   });
-  // Map: feature_unique_id (number) → represented_percent (0-100)
+  // Map: feature_unique_id (number) → {
+  //   achieved:    number  (server average across the selected runs),
+  //   achievedMin: number,
+  //   achievedMax: number,
+  //   perRun:      number[] (per-run percents — same length as selectedRunIds)
+  // }
+  // When the API hasn't been extended with `per_run`, we fall back to a
+  // single-element array so the tri-state UI degrades to current behaviour.
   const reprByFeatureUniqueId = useMemo(() => {
     if (!reprResp?.data) return {};
     return Object.fromEntries(
-      reprResp.data.map((r) => [r.feature_unique_id, r.represented_percent]),
+      reprResp.data.map((r) => {
+        const pct = r.represented_percent;
+        const perRun =
+          Array.isArray(r.per_run) && r.per_run.length > 0
+            ? r.per_run.map((p) => p.represented_percent)
+            : [pct];
+        return [
+          r.feature_unique_id,
+          {
+            achieved: pct,
+            achievedMin: Math.min(...perRun),
+            achievedMax: Math.max(...perRun),
+            perRun,
+          },
+        ];
+      }),
     );
   }, [reprResp]);
 
@@ -100,100 +123,61 @@ const FeaturesList = ({
     updateFeature(feature.id, { target_value: newValue });
 
   return (
-    <>
-      <FeatureProgressDemo />
-      <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
-        {projectFeatures.map((item) => {
-          const { id, area, protected_area, target_value, color } = item;
-          const achieved = reprByFeatureUniqueId[id] ?? null;
+    <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
+      {projectFeatures.map((item) => {
+        const { id, area, protected_area, target_value, color } = item;
+        const repr = reprByFeatureUniqueId[id] ?? null;
+        const achieved = repr?.achieved ?? null;
+        const achievedMin = repr?.achievedMin ?? null;
+        const achievedMax = repr?.achievedMax ?? null;
+        const perRun = repr?.perRun ?? null;
 
-          let protectedPercent;
-          if (protected_area === -1) {
-            protectedPercent = -1;
-          } else if (area > 0 && protected_area > 0) {
-            protectedPercent = (protected_area / area) * 100;
-          } else {
-            protectedPercent = 0;
-          }
+        const runCount = perRun?.length ?? 0;
+        const metCount =
+          perRun != null
+            ? perRun.filter((p) => p >= Number(target_value ?? 0)).length
+            : 0;
 
-          const isActive =
-            item.feature_layer_loaded || item.feature_puid_layer_loaded;
+        let protectedPercent;
+        if (protected_area === -1) {
+          protectedPercent = -1;
+        } else if (area > 0 && protected_area > 0) {
+          protectedPercent = (protected_area / area) * 100;
+        } else {
+          protectedPercent = 0;
+        }
 
-          const content = (
-            <ListItem
-              key={"feature" + id}
-              sx={{
-                borderLeft: item.preprocessed
-                  ? "4px solid #1990FF"
-                  : "4px solid transparent",
-                pl: 1,
-                bgcolor: isActive
-                  ? "rgba(25, 144, 255, 0.18)" // highlight when active
-                  : item.preprocessed
-                    ? "rgba(32, 129, 35, 0.06)" // preprocessed only
-                    : "transparent",
-                borderRadius: 1,
-              }}
-              secondaryAction={
-                <IconButton
-                  edge="end"
-                  onClick={(evt) => handleIconClick(evt, id)}
-                  sx={{ ml: 1 }}
-                >
-                  <MoreVertIcon sx={{ color: grey[400] }} />
-                </IconButton>
-              }
-            >
-              {/* Goal */}
-              <ListItemAvatar>
-                <TargetAvatar
-                  target_value={target_value}
-                  updateTargetValue={handleTargetChange}
-                  feature={item}
-                  // targetStatus={
-                  //   area === 0
-                  //     ? "Does not occur in planning area"
-                  //     : protectedPercent === -1
-                  //       ? "Unknown"
-                  //       : protected_area >= item.target_area
-                  //         ? "Target achieved"
-                  //         : "Target missed"
-                  // }
-                  visible={area !== 0}
-                />
-              </ListItemAvatar>
+        const isActive =
+          item.feature_layer_loaded || item.feature_puid_layer_loaded;
 
-              <ListItemText
-                onClick={(evt) => handleItemClick(evt, item)}
-                primary={item.alias.replaceAll("_", " ")}
-                primaryTypographyProps={{ variant: "body2" }}
-                sx={{ flex: 1 }}
-                secondaryTypographyProps={{ component: "div" }}
-                secondary={
-                  <LinearGauge value={target_value} achieved={achieved} />
-                }
-              />
-            </ListItem>
-          );
+        const content = (
+          <FeatureListItem
+            item={item}
+            id={id}
+            area={area}
+            protected_area={protected_area}
+            target_value={target_value}
+            color={color}
+            achieved={achieved}
+            achievedMin={achievedMin}
+            achievedMax={achievedMax}
+            metCount={metCount}
+            runCount={runCount}
+            protectedPercent={protectedPercent}
+            isActive={isActive}
+            handleIconClick={handleIconClick}
+            handleItemClick={handleItemClick}
+            handleTargetChange={handleTargetChange}
+          />
+        );
 
-          return (
-            <Fragment key={`feature-${id}`}>
-              {item.preprocessed ? (
-                <Tooltip
-                  title="Preprocessing complete"
-                  arrow
-                  disableInteractive
-                >
-                  <Box>{content}</Box>
-                </Tooltip>
-              ) : (
-                content
-              )}
-            </Fragment>
-          );
-        })}
-      </List>
-    </>
+        return (
+          <Fragment key={`feature-${id}`}>
+            <Box>{content}</Box>
+          </Fragment>
+        );
+      })}
+    </List>
   );
 };
 
