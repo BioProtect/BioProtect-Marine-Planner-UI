@@ -1,11 +1,14 @@
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Fragment, useMemo, useState } from "react";
 
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import CircularProgress from "@mui/material/CircularProgress";
+import DownloadIcon from "@mui/icons-material/Download";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import IconButton from "@mui/material/IconButton";
 import Log from "./Log";
@@ -18,9 +21,12 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { generatePdfReport } from "@utils/generatePdfReport";
 import { setActiveResultsTab } from "@slices/uiSlice";
 import { toggleRun } from "@slices/prioritizrSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useListPrioritizrRunsQuery } from "@slices/prioritizrApiSlice";
 
 // YlGn colormap stops matching the map layer
@@ -74,10 +80,12 @@ const FrequencyLegend = ({ runCount }) => {
 const TAB_VALUES = ["legend", "runs", "log"];
 
 const ResultsPanel = (props) => {
+  const { map, project, projectFeatures, metadata } = props;
+  const { showMessage } = useAppSnackbar();
+
   const dispatch = useDispatch();
-  const { dialogStates, importLog, activeResultsTab } = useSelector(
-    (state) => state.ui,
-  );
+  const { dialogStates, importLog, activeResultsTab, uploadedActivities } =
+    useSelector((state) => state.ui);
   const projectId = useSelector((s) => s.project.activeProjectId);
   const selectedRunIds = useSelector((s) => s.prioritizr.selectedRunIds);
 
@@ -85,6 +93,55 @@ const ResultsPanel = (props) => {
     skip: !projectId,
   });
   const runs = runsResp?.data ?? [];
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // PDF report download
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (selectedRunIds.length === 0) {
+      showMessage(
+        "Please select at least one run to include in the report.",
+        "error",
+      );
+      return;
+    }
+    setPdfLoading(true);
+
+    try {
+      // Capture map canvas (requires preserveDrawingBuffer: true on the map)
+      let mapImageDataUrl = null;
+      if (map?.current) {
+        map.current.triggerRepaint();
+        await new Promise((resolve) => map.current.once("render", resolve));
+        mapImageDataUrl = map.current.getCanvas().toDataURL("image/png");
+      }
+
+      // Gather the selected run objects (for display names in the PDF)
+      const selectedRuns = runs.filter((r) => selectedRunIds.includes(r.id));
+      await generatePdfReport({
+        project,
+        metadata,
+        features: projectFeatures ?? [],
+        activities: uploadedActivities ?? [],
+        selectedRuns,
+        mapImageDataUrl,
+      });
+    } finally {
+      setPdfLoading(false);
+    }
+  }, [
+    map,
+    project,
+    metadata,
+    projectFeatures,
+    uploadedActivities,
+    runs,
+    selectedRunIds,
+  ]);
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   const currentTabIndex = Math.max(0, TAB_VALUES.indexOf(activeResultsTab));
   const handleTabChange = (_e, idx) =>
@@ -156,6 +213,13 @@ const ResultsPanel = (props) => {
       return next;
     });
   };
+  const conditionalEndIcon = (pdfLoading) => {
+    return pdfLoading ? (
+      <CircularProgress size={18} sx={{ color: "white" }} />
+    ) : (
+      <DownloadIcon fontSize="small" />
+    );
+  };
 
   if (!dialogStates.resultsPanelOpen) return null;
 
@@ -181,7 +245,28 @@ const ResultsPanel = (props) => {
           overflow: "hidden",
         }}
       >
-        <div className="resultsTitle">Results</div>
+        <div
+          className="resultsTitle"
+          style={{ display: "flex", alignItems: "center", paddingRight: 6 }}
+        >
+          <span style={{ flex: 1 }}>Results</span>
+          <Tooltip title="Download PDF report">
+            <span>
+              <Button
+                size="small"
+                onClick={handleDownloadPdf}
+                disabled={pdfLoading}
+                sx={{
+                  color: "white",
+                  "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" },
+                }}
+                endIcon={conditionalEndIcon(pdfLoading)}
+              >
+                Download PDF
+              </Button>
+            </span>
+          </Tooltip>
+        </div>
 
         <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
           <Tab label="Legend" />
@@ -270,7 +355,12 @@ const ResultsPanel = (props) => {
                                       ? "rgba(0, 188, 212, 0.25)"
                                       : "rgba(0, 0, 0, 0.04)",
                                   },
-                                  "& > td": { borderBottom: hasDescription && isExpanded ? "none" : undefined },
+                                  "& > td": {
+                                    borderBottom:
+                                      hasDescription && isExpanded
+                                        ? "none"
+                                        : undefined,
+                                  },
                                 }}
                               >
                                 <TableCell sx={{ width: 28, p: 0 }}>

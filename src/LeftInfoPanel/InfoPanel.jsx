@@ -294,74 +294,32 @@ const InfoPanel = (props) => {
           <Paper>
             <Stack
               direction="row"
-              spacing={1}
-              justifyContent="center"
-              alignItems="center"
+              justifyContent="right"
+              alignItems="right"
               pb={2}
               pt={2}
+              px={2}
             >
-              {projState.bpServer.type === "remote" && (
-                <Button
-                  variant="contained"
-                  startIcon={<FontAwesomeIcon icon={faShareAlt} />}
-                  title="Get a shareable link to this project"
-                  onClick={props.getShareableLink}
-                  key="shareableLinkButton"
-                >
-                  Share
-                </Button>
-              )}
-
               <Button
                 variant="contained"
-                startIcon={
-                  <Settings style={{ height: "20px", width: "20px" }} />
-                }
-                title="Run Settings"
+                title="Click to run this project"
                 onClick={() =>
                   dispatch(
                     toggleDialog({
-                      dialogName: "settingsDialogOpen",
+                      dialogName: "runPrioritizrDialogOpen",
                       isOpen: true,
                     }),
                   )
                 }
-                key="openSettingsButton"
+                disabled={
+                  props.preprocessing ||
+                  projectFeatures.length === 0 ||
+                  puState.puEditing
+                }
+                key="runButton"
               >
-                Settings
+                Run Prioitizr
               </Button>
-
-              <>
-                {/* <Button
-                  variant="contained"
-                  title="Click to stop the current run"
-                  onClick={props.stopProcess}
-                  disabled={props.pid === 0}
-                  key="stopRunButton"
-                >
-                  Stop
-                </Button> */}
-                <Button
-                  variant="contained"
-                  title="Click to run this project"
-                  onClick={() =>
-                    dispatch(
-                      toggleDialog({
-                        dialogName: "runPrioritizrDialogOpen",
-                        isOpen: true,
-                      }),
-                    )
-                  }
-                  disabled={
-                    props.preprocessing ||
-                    projectFeatures.length === 0 ||
-                    puState.puEditing
-                  }
-                  key="runButton"
-                >
-                  Run Prioitizr
-                </Button>
-              </>
             </Stack>
           </Paper>
         </Paper>

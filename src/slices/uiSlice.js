@@ -126,7 +126,6 @@ const initialState = {
     runLogDialogOpen: false,
     runPrioritizrDialogOpen: false,
     serverDetailsDialogOpen: false,
-    settingsDialogOpen: false,
     shareableLinkDialogOpen: false,
     targetDialogOpen: false,
     updateWDPADialogOpen: false,

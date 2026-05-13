@@ -112,7 +112,6 @@ import ResendPasswordDialog from "./User/ResendPasswordDialog";
 import ResetDialog from "./ResetDialog";
 import ResultsPanel from "./RightInfoPanel/ResultsPanel";
 import RunPrioritizrDialog from "./RunPrioritizrDialog";
-import RunSettingsDialog from "./RunSettingsDialog";
 import ServerDetailsDialog from "./User/ServerDetails/ServerDetailsDialog";
 import TargetDialog from "./TargetDialog";
 import ToolsMenu from "./ToolsMenu";
@@ -1825,6 +1824,7 @@ const App = () => {
       style: url || "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
       center: [-18, 55],
       zoom: 4,
+      preserveDrawingBuffer: true, // required for map screenshot (toDataURL)
     });
     // save globally for hot reloading
     if (import.meta.hot) window._mapInstance = map.current;
@@ -3651,6 +3651,9 @@ const App = () => {
             visibleLayers={visibleLayers}
             metadata={metadata}
             costsLoading={costsLoading}
+            map={map}
+            project={project}
+            projectFeatures={projectFeatures}
           />
         )}
         {puState.dialogs.hexInfoDialogOpen ? (
@@ -3731,11 +3734,6 @@ const App = () => {
           addCost={addCost}
           deleteCostFileThenClose={deleteCostFileThenClose}
           fileUpload={uploadFileToProject}
-        />
-        <RunSettingsDialog
-          updateRunParams={updateRunParams}
-          runParams={runParams}
-          userRole={userData?.role}
         />
         <RunPrioritizrDialog
           runPrioitizr={runPrioitizr}
