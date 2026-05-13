@@ -47,7 +47,7 @@ const FeaturesList = ({
   const { data: reprResp } = useGetFeatureRepresentationQuery(sortedRunIds, {
     skip: sortedRunIds.length === 0,
   });
-  // Map: feature_unique_id (number) → {
+  // Map: feature_unique_id (number) - {
   //   achieved:    number  (server average across the selected runs),
   //   achievedMin: number,
   //   achievedMax: number,
@@ -125,7 +125,16 @@ const FeaturesList = ({
   return (
     <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
       {projectFeatures.map((item) => {
-        const { id, area, protected_area, target_value, color } = item;
+        console.log("item ", item);
+        const { id, area, protected_area, target_value } = item;
+        // Derive the layer color using the same palette logic as ensureFeatureColor
+        // in featuresService.jsx — window.colors[id % palette.length].
+        const color =
+          item.color ??
+          (Array.isArray(window.colors) && window.colors.length
+            ? window.colors[id % window.colors.length]
+            : undefined);
+        console.log("color ", color);
         const repr = reprByFeatureUniqueId[id] ?? null;
         const achieved = repr?.achieved ?? null;
         const achievedMin = repr?.achievedMin ?? null;
@@ -157,7 +166,7 @@ const FeaturesList = ({
             area={area}
             protected_area={protected_area}
             target_value={target_value}
-            color={color}
+            layerColor={color}
             achieved={achieved}
             achievedMin={achievedMin}
             achievedMax={achievedMax}

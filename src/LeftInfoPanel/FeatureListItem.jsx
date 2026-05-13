@@ -32,9 +32,14 @@ const COLORS = {
 };
 
 // ────────────────────────────────────────────────────────────────────────────
-// Green layered wave shown behind the row when the feature is on the map.
+// Layered wave shown behind the row when the feature is on the map.
+// Uses the feature's map layer colour so it matches the polygon on the map.
 // ────────────────────────────────────────────────────────────────────────────
-function WaveOverlay() {
+function WaveOverlay({ color = "#5BBD8C" }) {
+  // Unique gradient id per color avoids cross-row bleed when multiple
+  // features are active at the same time.
+  const gradId = `fwg-${color.replace("#", "")}`;
+
   return (
     <Box
       sx={{
@@ -51,40 +56,31 @@ function WaveOverlay() {
         height="100%"
       >
         <defs>
-          <linearGradient
-            id="feature-wave-gradient"
-            x1="0"
-            x2="1"
-            y1="0"
-            y2="0"
-          >
-            <stop offset="0" stopColor="#5BBD8C" stopOpacity="0" />
-            <stop offset="0.55" stopColor="#5BBD8C" stopOpacity="0.22" />
-            <stop offset="1" stopColor="#85B658" stopOpacity="0.30" />
+          <linearGradient id={gradId} x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0"    stopColor={color} stopOpacity="0"    />
+            <stop offset="0.55" stopColor={color} stopOpacity="0.22" />
+            <stop offset="1"    stopColor={color} stopOpacity="0.30" />
           </linearGradient>
         </defs>
 
-        <rect
-          x="0"
-          y="0"
-          width="400"
-          height="56"
-          fill="url(#feature-wave-gradient)"
-        />
+        <rect x="0" y="0" width="400" height="56" fill={`url(#${gradId})`} />
 
         <path
           d="M0,42 C70,22 130,52 210,36 C290,20 350,46 400,34 L400,56 L0,56 Z"
-          fill="rgba(91,189,140,.28)"
+          fill={color}
+          fillOpacity="0.28"
         />
 
         <path
           d="M0,48 C80,32 160,58 240,40 C320,26 380,48 400,42 L400,56 L0,56 Z"
-          fill="rgba(133,182,88,.22)"
+          fill={color}
+          fillOpacity="0.22"
         />
 
         <path
           d="M0,52 C100,38 200,60 300,46 C340,40 380,52 400,48 L400,56 L0,56 Z"
-          fill="rgba(91,189,140,.18)"
+          fill={color}
+          fillOpacity="0.18"
         />
       </svg>
     </Box>
@@ -295,6 +291,7 @@ const FeatureListItem = ({
   id,
   item,
   isActive,
+  layerColor,
   achieved,
   achievedMin,
   achievedMax,
@@ -425,7 +422,7 @@ const FeatureListItem = ({
         },
       }}
     >
-      {isActive && <WaveOverlay />}
+      {isActive && <WaveOverlay color={layerColor} />}
 
       <Box sx={{ position: "relative", zIndex: 1 }}>
         <FeatureOrb state={state} />

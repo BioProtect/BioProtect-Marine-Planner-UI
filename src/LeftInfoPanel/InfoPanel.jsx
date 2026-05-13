@@ -294,11 +294,11 @@ const InfoPanel = (props) => {
           <Paper>
             <Stack
               direction="row"
-              spacing={1}
-              justifyContent="center"
-              alignItems="center"
+              justifyContent="right"
+              alignItems="right"
               pb={2}
               pt={2}
+              px={2}
             >
               <Button
                 variant="contained"

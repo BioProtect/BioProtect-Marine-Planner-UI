@@ -8,13 +8,14 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
+import Divider from "@mui/material/Divider";
 import FeaturesList from "./FeaturesList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
 import { faGears } from "@fortawesome/free-solid-svg-icons";
+import { faLayerGroup } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "@slices/uiSlice";
 
 const FeaturesTab = ({
@@ -46,30 +47,24 @@ const FeaturesTab = ({
     preprocessAllFeatures();
   };
 
+  const btnSx = {
+    fontSize: "0.72rem",
+    fontWeight: 600,
+    px: 1.25,
+    py: 0.5,
+    whiteSpace: "nowrap",
+  };
+
   return (
     <React.Fragment>
-      <div style={{ padding: "8px" }}>
-        <FeaturesList
-          setMenuAnchor={setMenuAnchor}
-          updateFeature={updateFeature}
-          toggleFeatureLayer={toggleFeatureLayer}
-          toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
-          useFeatureColors={useFeatureColors}
-          smallLinearGauge={smallLinearGauge}
-        />
-        <Stack direction="row" justifyContent="center" alignItems="center">
-          <Typography variant="h6" color="textSecondary" mt={1}>
-            Features
-          </Typography>
-        </Stack>
-
+      <div style={{ padding: "4px" }}>
         <Stack
           direction="row"
-          justifyContent="center"
           alignItems="center"
-          mb={2}
+          justifyContent="space-between"
+          sx={{ mb: 0.75, mt: 0.5, px: 0.5 }}
         >
-          <ButtonGroup variant="text" aria-label="Basic button group">
+          <Stack direction="row" gap={0.75}>
             <Button
               size="small"
               variant="contained"
@@ -81,30 +76,42 @@ const FeaturesTab = ({
                   }),
                 )
               }
-              startIcon={<FontAwesomeIcon icon={faCrosshairs} />}
+              startIcon={<FontAwesomeIcon icon={faCrosshairs} size="xs" />}
+              sx={btnSx}
             >
-              Update
+              Targets
             </Button>
             <Button
               size="small"
               variant="contained"
-              label="+/-"
               onClick={() => handleOpenFeaturesDialog()}
               title="Add/remove features from the project"
+              startIcon={<FontAwesomeIcon icon={faLayerGroup} size="xs" />}
+              sx={btnSx}
             >
-              +/- Add/Remove
+              Add/Remove
             </Button>
             <Button
               size="small"
               variant="contained"
               onClick={() => handlePreprocessAllFeatures()}
-              title="preprocess all features"
-              startIcon={<FontAwesomeIcon icon={faGears} />}
+              title="Preprocess all features"
+              startIcon={<FontAwesomeIcon icon={faGears} size="xs" />}
+              sx={btnSx}
             >
               Preprocess
             </Button>
-          </ButtonGroup>
+          </Stack>
         </Stack>
+        <Divider sx={{ mb: 1, borderColor: "#e0ecec" }} />
+        <FeaturesList
+          setMenuAnchor={setMenuAnchor}
+          updateFeature={updateFeature}
+          toggleFeatureLayer={toggleFeatureLayer}
+          toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
+          useFeatureColors={useFeatureColors}
+          smallLinearGauge={smallLinearGauge}
+        />
       </div>
     </React.Fragment>
   );
