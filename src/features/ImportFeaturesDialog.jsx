@@ -100,7 +100,6 @@ const ImportFeaturesDialog = ({
     }
     getShapefileFieldnames(shapeFilePath).then((response) => {
       const { info, fieldnames, values } = response;
-      console.log("fieldnames, values ", fieldnames, values);
       setFieldNames(fieldnames);
 
       const descriptField = fieldnames.find((name) =>
@@ -109,7 +108,6 @@ const ImportFeaturesDialog = ({
 
       if (descriptField && values?.length > 0) {
         const value = values[0][descriptField];
-        console.log("value ", value);
         if (value) {
           setDescription(value);
         }
@@ -143,7 +141,6 @@ const ImportFeaturesDialog = ({
         isOpen: false,
       }),
     );
-    console.log("should have closed the dialog by now...");
   };
 
   const _disabled = false;

@@ -1,4 +1,11 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+} from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 
 import { toggleDialog } from "@slices/uiSlice";
@@ -7,11 +14,10 @@ import { useState } from "react";
 import { useUpdateUserMutation } from "@slices/userSlice";
 
 const ChangePasswordDialog = ({ open }) => {
-  const userState = useSelector((state) => state.user)
+  const userState = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const userId = useSelector((state) => state.auth.userId); // adjust to your store
-  console.log("userId ", userId);
   const { showMessage } = useAppSnackbar();
 
   const [updateUser] = useUpdateUserMutation();
@@ -21,8 +27,9 @@ const ChangePasswordDialog = ({ open }) => {
   const [confirmPwd, setConfirmPwd] = useState("");
 
   const closeDialog = () =>
-    dispatch(toggleDialog({ dialogName: "changePasswordDialogOpen", isOpen: false }));
-
+    dispatch(
+      toggleDialog({ dialogName: "changePasswordDialogOpen", isOpen: false }),
+    );
 
   const handleChangePassword = async () => {
     if (newPwd !== confirmPwd) {
@@ -57,13 +64,11 @@ const ChangePasswordDialog = ({ open }) => {
     }
   };
 
-
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       handleChangePassword();
     }
   };
-
 
   return (
     <Dialog open={open} onClose={closeDialog} maxWidth="sm" fullWidth>

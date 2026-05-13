@@ -9,7 +9,6 @@ import useAppSnackbar from "@hooks/useAppSnackbar";
 
 // FileUpload component refactored to use React 18 and MUI 5
 const FileUpload = (props) => {
-  console.log("props.fileMatch ", props.fileMatch);
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const [loading, setLoading] = useState(false);
@@ -29,7 +28,6 @@ const FileUpload = (props) => {
         if (!response || !response.file) {
           throw new Error("Invalid response from upload");
         }
-        console.log("response after file upload ", response);
 
         dispatch(setFileUploadResponse(response));
         dispatch(setFeatureFilename(response.file));

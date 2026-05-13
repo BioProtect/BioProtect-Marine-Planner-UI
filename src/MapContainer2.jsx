@@ -21,14 +21,10 @@ const MapContainer2 = ({
   const mapEl = useRef(null);
 
   useEffect(() => {
-    console.log("planningGridMetadata ", planningGridMetadata);
-
     const tilesetid = planningGridMetadata?.tilesetid;
-    console.log("tilesetid ", tilesetid);
     const tableName = tilesetid
       ? getTableName(tilesetid)
       : planningGridMetadata?.feature_class_name;
-    console.log("tableName ", !tableName);
     if (!tableName) return;
 
     const map = new mapboxgl.Map({
@@ -40,11 +36,8 @@ const MapContainer2 = ({
     });
 
     const sourceId = `martin_src_${tableName}`;
-    console.log("sourceId ", sourceId);
     const layerId = `martin_layer_${tableName}`;
-    console.log("layerId ", layerId);
     const tileJSON = new URL(tableName, martinBase).toString();
-    console.log("tileJSON ", tileJSON);
 
     const onLoad = async () => {
       // 1) Source via TileJSON URL (no manual tiles array needed)
@@ -74,7 +67,6 @@ const MapContainer2 = ({
       // 3) Optional: fetch TileJSON once to fit bounds
       try {
         const tj = await (await fetch(tileJSON)).json();
-        console.log("tj ", tj);
         if (Array.isArray(tj.bounds) && tj.bounds.length === 4) {
           const sw = [tj.bounds[0], tj.bounds[1]]; // [minLng, minLat]
           const ne = [tj.bounds[2], tj.bounds[3]]; // [maxLng, maxLat]

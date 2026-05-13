@@ -67,7 +67,6 @@ const ProjectsDialog = ({
 
   const handleProjectChange = (event, row) => {
     const projectId = row?.id;
-    console.log("projectId in handleProjectChange  ", projectId);
     if (!projectId) {
       console.warn("Invalid project selected");
       return;
