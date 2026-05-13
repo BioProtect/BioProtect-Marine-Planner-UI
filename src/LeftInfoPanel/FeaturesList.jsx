@@ -56,7 +56,7 @@ const FeaturesList = ({
   // When the API hasn't been extended with `per_run`, we fall back to a
   // single-element array so the tri-state UI degrades to current behaviour.
   const reprByFeatureUniqueId = useMemo(() => {
-    if (!reprResp?.data) return {};
+    if (sortedRunIds.length === 0 || !reprResp?.data) return {};
     return Object.fromEntries(
       reprResp.data.map((r) => {
         const pct = r.represented_percent;
@@ -75,7 +75,7 @@ const FeaturesList = ({
         ];
       }),
     );
-  }, [reprResp]);
+  }, [reprResp, sortedRunIds]);
 
   const handleIconClick = (evt, id) => {
     evt.stopPropagation();

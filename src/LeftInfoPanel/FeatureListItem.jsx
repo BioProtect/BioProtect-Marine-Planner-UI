@@ -148,7 +148,7 @@ function FeatureOrb({ state }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+//
 // Result figures — tri-state.
 //
 //   verdict   figures               caption          badge
@@ -156,7 +156,7 @@ function FeatureOrb({ state }) {
 //   met       <min>%/<target>%      Min / Target     green ✓
 //   mixed     <min>–<max>%/<tgt>%   Range / Target   amber –
 //   missed    <max>%/<target>%      Max / Target     coral ✕
-// ────────────────────────────────────────────────────────────────────────────
+//
 function ResultCluster({ verdict, primary, secondary, target }) {
   // primary  = the single number shown for met/missed (or low end of range)
   // secondary = high end of range when verdict === "mixed", else null
@@ -266,10 +266,10 @@ function ResultCluster({ verdict, primary, secondary, target }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+//
 // Subtitle copy per state (single-run / no-result baseline).
 // Multi-run results override with a "K of N runs met" copy at render time.
-// ────────────────────────────────────────────────────────────────────────────
+//
 const SUBTITLE_BY_STATE = {
   idle: "Awaiting preprocess",
   preprocessed: "Ready to run",
@@ -288,9 +288,9 @@ const SUBTITLE_COLOR_BY_STATE = {
   missed: COLORS.coralDeep,
 };
 
-// ────────────────────────────────────────────────────────────────────────────
+//
 // FeatureListItem
-// ────────────────────────────────────────────────────────────────────────────
+//
 const FeatureListItem = ({
   id,
   item,
@@ -412,7 +412,7 @@ const FeatureListItem = ({
         boxShadow: isActive ? `inset 0 0 0 1px ${COLORS.blue}` : "none",
         backgroundColor: "#fff",
         position: "relative",
-        overflow: "hidden",
+        // overflow: "hidden",
         display: "flex",
         alignItems: "center",
         gap: "10px",
@@ -445,7 +445,6 @@ const FeatureListItem = ({
             fontWeight: 700,
             color: COLORS.blueDeep,
             lineHeight: 1.2,
-            whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
           }}
