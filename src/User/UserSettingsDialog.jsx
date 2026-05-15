@@ -24,19 +24,19 @@ const UserSettingsDialog = (props) => {
   const [options, setOptions] = useState({});
   const userData = useSelector(selectCurrentUser);
 
-
   const setOption = (key, value) => {
     setSaveEnabled(true);
     setOptions((prevOptions) => {
       const newOptions = { ...prevOptions, [key]: value };
-      console.log("newOptions ", newOptions);
       props.saveOptions(newOptions);
       return newOptions;
     });
   };
 
   const changeBasemap = (event) => {
-    const basemap = uiState.basemaps.find((item) => item.name === event.target.value);
+    const basemap = uiState.basemaps.find(
+      (item) => item.name === event.target.value,
+    );
     dispatch(setBasemap(basemap));
     setOption("BASEMAP", basemap.name);
     props.loadBasemap(basemap);
@@ -59,9 +59,14 @@ const UserSettingsDialog = (props) => {
       {...props}
       maxWidth="md"
       showCancelButton={false}
-      onOk={() => dispatch(toggleDialog({
-        dialogName: "userSettingsDialogOpen", isOpen: false
-      }))}
+      onOk={() =>
+        dispatch(
+          toggleDialog({
+            dialogName: "userSettingsDialogOpen",
+            isOpen: false,
+          }),
+        )
+      }
       title="Settings"
     >
       <div key="k14">
@@ -115,7 +120,7 @@ const UserSettingsDialog = (props) => {
           />
         </FormGroup>
       </div>
-    </MarxanDialog >
+    </MarxanDialog>
   );
 };
 

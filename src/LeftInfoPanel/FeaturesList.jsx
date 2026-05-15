@@ -85,7 +85,6 @@ const FeaturesList = ({
   };
 
   const handleItemClick = (evt, feature) => {
-    console.log("item cloisked....");
     const key = evt.altKey
       ? "feature_puid_layer_loaded"
       : "feature_layer_loaded";
@@ -125,7 +124,6 @@ const FeaturesList = ({
   return (
     <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
       {projectFeatures.map((item) => {
-        console.log("item ", item);
         const { id, area, protected_area, target_value } = item;
         // Derive the layer color using the same palette logic as ensureFeatureColor
         // in featuresService.jsx — window.colors[id % palette.length].
@@ -134,7 +132,6 @@ const FeaturesList = ({
           (Array.isArray(window.colors) && window.colors.length
             ? window.colors[id % window.colors.length]
             : undefined);
-        console.log("color ", color);
         const repr = reprByFeatureUniqueId[id] ?? null;
         const achieved = repr?.achieved ?? null;
         const achievedMin = repr?.achievedMin ?? null;

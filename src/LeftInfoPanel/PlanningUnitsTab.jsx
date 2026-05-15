@@ -142,10 +142,6 @@ const PlanningUnitsTab = ({
     formData.append("project_id", project.id);
     formData.append("status1", status1Out.join(","));
     formData.append("status2", status2Out.join(","));
-
-    for (const [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
     await _post("planning-units?action=update", formData);
   };
 

@@ -82,10 +82,8 @@ const NewPlanningGridDialog = ({ loading, fileUpload }) => {
   };
 
   const handleOk = async () => {
-    console.log("filename,resolution: ", uiState.fileUploadResponse, resolution);
     const filename = `imports/${uiState.fileUploadResponse?.file}`;
     try {
-      console.log("creating planning unit grid.....")
       await createPlanningUnitGrid(
         filename,
         planningGridName,
@@ -99,7 +97,6 @@ const NewPlanningGridDialog = ({ loading, fileUpload }) => {
   };
 
   const closeDialog = () => {
-    console.log("closeDialog");
     dispatch(
       togglePUD({
         dialogName: "newPlanningGridDialogOpen",
