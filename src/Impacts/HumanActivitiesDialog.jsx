@@ -104,7 +104,7 @@ const HumanActivitiesDialog = (props) => {
     setUploadType("");
     dispatch(setSelectedActivity(""));
     dispatch(
-      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: false })
+      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: false }),
     );
   };
 
@@ -119,8 +119,7 @@ const HumanActivitiesDialog = (props) => {
     return false;
   };
 
-  const fileMatch =
-    uploadType === "raster" ? ".tif,.tiff" : ".zip";
+  const fileMatch = uploadType === "raster" ? ".tif,.tiff" : ".zip";
 
   const actions = (
     <ButtonGroup aria-label="Basic button group">
@@ -186,14 +185,6 @@ const HumanActivitiesDialog = (props) => {
             onClick={() => selectUploadType("shapefile")}
           >
             Import from Shapefile
-          </Button>
-          <Button
-            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-            title="Draw on screen"
-            disabled={true}
-            onClick={props.initialiseDigitising}
-          >
-            Draw on screen
           </Button>
         </ButtonGroup>
       )}

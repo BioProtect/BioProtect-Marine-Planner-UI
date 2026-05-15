@@ -149,7 +149,6 @@ const NewProjectDialog = ({
         spf_values: proj.features.map(() => 40),
       };
       const response = await createProject(payload).unwrap();
-      console.log("response ", response);
       showMessage(response.info, "success");
       dispatch(
         toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
@@ -175,10 +174,8 @@ const NewProjectDialog = ({
       {
         onUpdate: (msg) => {
           showMessage(msg);
-          console.log(msg);
         },
         onSuccess: async (result) => {
-          console.log("result ", result);
           if (result?.status === "error" || result?.error) {
             showMessage(
               result?.error || "Failed to create planning grid",
@@ -194,11 +191,9 @@ const NewProjectDialog = ({
           if (grids.length > 0) {
             dispatch(setPlanningUnitGrids(grids));
             const newGrid = grids.find((g) => g.tilesetid === result.view_name);
-            console.log("newGrid ", newGrid);
 
             if (newGrid?.tilesetid) {
               dispatch(setCurrentPUGrid(newGrid.tilesetid));
-              console.log("Planning grid uploaded");
               showMessage("Planning grid uploaded", "success");
               setWaitingForUpload(true);
               return;
@@ -229,13 +224,11 @@ const NewProjectDialog = ({
 
   const handleCreateNewPlanningGrid = async () => {
     try {
-      console.log("creating planning unit grid.....");
       const resp = await createPlanningUnitGrid(
         fileUploadResponse.file,
         planningGridName,
         resolution,
       );
-      console.log("response from createPlanningUnitGrid: ", resp);
       return resp;
     } catch (error) {
       console.error("Error creating planning grid:", error);

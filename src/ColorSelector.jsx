@@ -4,12 +4,6 @@ import Select from "@mui/material/Select";
 import { getMaxNumberOfClasses } from "./Helpers";
 
 const ColorSelector = ({ values, property, brew, changeValue }) => {
-  console.log("{ values, property, brew, changeValue } ", {
-    values,
-    property,
-    brew,
-    changeValue,
-  });
   // Handle change in selection
   const handleChange = (event) => {
     changeValue(event.target.value);

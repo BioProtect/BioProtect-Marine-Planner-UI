@@ -3,15 +3,15 @@ import {
   faCheckCircle,
   faPlusCircle,
   faTimesCircle,
-  faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
+<<<<<<< HEAD
+import { setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice";
+=======
 import {
-  featureApiSlice,
-  setSelectedFeatureId,
   setSelectedFeatureIds,
   toggleFeatureD,
-  useDeleteFeatureMutation,
 } from "@slices/featureSlice";
+>>>>>>> f3cd10d (updates to include runs and activities - though i dont know why activities arent showing - probably because marting not reading them)
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
@@ -20,27 +20,18 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Import from "@mui/icons-material/GetApp";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import useAppSnackbar from "@hooks/useAppSnackbar";
 
-const FeaturesToolbar = ({
-  selectAllFeatures,
-  _newByDigitising,
-  selectedFeature,
-}) => {
+const FeaturesToolbar = ({ selectAllFeatures }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const featureState = useSelector((state) => state.feature);
 
   const [newAnchorEl, setNewAnchorEl] = useState(null);
   const [importAnchorEl, setImportAnchorEl] = useState(null);
-  const [deleteFeature, { isLoading: isDeleting }] = useDeleteFeatureMutation();
 
   const newOpen = Boolean(newAnchorEl);
   const importOpen = Boolean(importAnchorEl);
-  const { showMessage } = useAppSnackbar();
 
-  const handleNewClick = (event) => setNewAnchorEl(event.currentTarget);
-  const handleImportClick = (event) => setImportAnchorEl(event.currentTarget);
   const handleClose = () => {
     setNewAnchorEl(null);
     setImportAnchorEl(null);
@@ -48,139 +39,26 @@ const FeaturesToolbar = ({
 
   const handleOpenImportFeaturesDialog = () => {
     dispatch(
-      toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false })
+      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }),
     );
     dispatch(
-      toggleFeatureD({ dialogName: "importFeaturePopoverOpen", isOpen: false })
-    );
-    dispatch(
-      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
-    );
-    dispatch(
-      toggleFeatureD({ dialogName: "importFeaturesDialogOpen", isOpen: true })
+      toggleFeatureD({ dialogName: "importFeaturesDialogOpen", isOpen: true }),
     );
   };
-
-  const handleOpenImportFromWebDialog = () => {
-    dispatch(
-      toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false })
-    );
-    dispatch(
-      toggleFeatureD({ dialogName: "importFeaturePopoverOpen", isOpen: false })
-    );
-    dispatch(
-      toggleFeatureD({ dialogName: "importFromWebDialogOpen", isOpen: true })
-    );
-    dispatch(
-      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
-    );
-  };
-
-  // const handleDeleteFeature = async () => {
-  //   if (!selectedFeature) return;
-  //   // check if any projects are using feature
-  //   const projects = await getProjectsForFeature(selectedFeature);
-  //   if (projects?.length) {
-  //     showProjectListDialog(
-  //       projects,
-  //       "Failed to delete planning feature",
-  //       "The feature is used in the following projects"
-  //     );
-  //     showMessage("Feature is used by other projects.", "warning");
-  //     return;
-  //   }
-  //   let patch;
-
-  //   try {
-  //     patch = dispatch(removeFeaturesFromCache({ ids: [selectedFeature.id] }));
-  //     dispatch(
-  //       setSelectedFeatureIds(
-  //         (featureState.selectedFeatureIds || []).filter(
-  //           (id) => id !== selectedFeature.id
-  //         )
-  //       )
-  //     );
-  //     dispatch(setSelectedFeatureId(null));
-  //     // Unwrap to handle the response
-  //     await deleteFeature(selectedFeature.feature_class_name).unwrap();
-  //     showMessage("Feature deleted", "success");
-  //   } catch (err) {
-  //     patch?.undo?.();
-  //     showMessage(`Failed to delete feature due to an error: ${err}`, "error");
-  //   }
-  // };
 
   return (
     <>
       {!featureState.addingRemovingFeatures ? (
-        <ButtonGroup aria-label="Feature actions" fullWidth>
-          <Button
-            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-            title="New feature"
-            disabled={uiState.loading}
-            onClick={handleNewClick}
-          >
-            New
-          </Button>
-
-          <Menu open={newOpen} anchorEl={newAnchorEl} onClose={handleClose}>
-            <MenuItem
-              title="Create a new feature by digitising it on the screen"
-              onClick={() => _newByDigitising()}
-            >
-              Draw on screen
-            </MenuItem>
-          </Menu>
-
-          <Button
-            startIcon={<Import style={{ height: 20, width: 20 }} />}
-            title="Create new features from existing data"
-            disabled={uiState.loading}
-            onClick={handleImportClick}
-          >
-            Import
-          </Button>
-
-          <Menu
-            open={importOpen}
-            anchorEl={importAnchorEl}
-            onClose={handleClose}
-          >
-            <MenuItem
-              title="From a shapefile"
-              onClick={handleOpenImportFeaturesDialog}
-            >
-              Import one or more features from a shapefile
-            </MenuItem>
-            <MenuItem
-              title="From the web"
-              onClick={handleOpenImportFromWebDialog}
-            >
-              Import one or more features from a web resource
-            </MenuItem>
-            <MenuItem
-              title="From the IUCN Red List of Threatened Species"
-              disabled
-            >
-              From the IUCN Red List of Threatened Species
-            </MenuItem>
-          </Menu>
-
-          {/* <Button
-            startIcon={
-              <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
-            }
-            title="Delete feature"
-            disabled={
-              selectedFeature === undefined ||
-              uiState.loading ||
-              selectedFeature?.created_by === "global admin"
-            }
-            onClick={handleDeleteFeature}
-          >
-            Delete
-          </Button> */}
-        </ButtonGroup>
+        <Button
+          mt={10}
+          variant="contained"
+          startIcon={<Import style={{ height: 20, width: "100%" }} />}
+          title="Create new features from existing data"
+          disabled={uiState.loading}
+          onClick={handleOpenImportFeaturesDialog}
+        >
+          Import
+        </Button>
       ) : (
         <ButtonGroup aria-label="Batch feature controls" fullWidth>
           <Button

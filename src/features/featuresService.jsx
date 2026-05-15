@@ -9,18 +9,20 @@ const ensureFeatureColor = (feature) => {
       feature.color = window.colors[feature.id % window.colors.length];
     } else {
       // otherwise generate a random hex
-      feature.color = '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+      feature.color =
+        "#" +
+        Math.floor(Math.random() * 0xffffff)
+          .toString(16)
+          .padStart(6, "0");
     }
   }
   return feature;
 };
 
-
 export const getPaintProperty = (feature) => {
   // before you call addMapLayer on a feature…
   feature = ensureFeatureColor(feature);
 
-  console.log("feature ", feature);
   if (feature.source !== "Imported shapefile (points)") {
     return {
       "fill-color": feature.color,

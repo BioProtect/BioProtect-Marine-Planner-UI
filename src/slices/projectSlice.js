@@ -116,7 +116,6 @@ export const projectApiSlice = apiSlice.injectEndpoints({
       async onQueryStarted(projectId, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          console.log("data in get Project ", data);
           dispatch(setOwner(data?.project?.user));
           dispatch(setActiveTab("project"));
 

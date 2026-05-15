@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import {
   setAddingRemovingFeatures,
   setSelectedFeatureIds,
@@ -6,7 +5,6 @@ import {
   useGetAllFeaturesQuery,
 } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { useUpdateProjectFeaturesMutation } from "@slices/projectSlice";
 
 import AddToMap from "@mui/icons-material/Visibility";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -18,6 +16,8 @@ import RemoveFromMap from "@mui/icons-material/VisibilityOff";
 import RemoveFromProject from "@mui/icons-material/Remove";
 import ZoomIn from "@mui/icons-material/ZoomIn";
 import { selectCurrentUser } from "@slices/authSlice";
+import { useMemo } from "react";
+import { useUpdateProjectFeaturesMutation } from "@slices/projectSlice";
 
 const FeatureMenu = ({
   anchorEl,
@@ -47,7 +47,6 @@ const FeatureMenu = ({
   }, [allFeatures, selectedFeatureId]);
 
   const handleInfoMenuItemClick = () => {
-    console.log("item clicked...", selectedFeatureId);
     dispatch(
       toggleFeatureD({ dialogName: "featureInfoDialogOpen", isOpen: true }),
     );
@@ -112,7 +111,11 @@ const FeatureMenu = ({
         Feature Properties
       </MenuItem>
 
-      <MenuItem onClick={() => selectedFeature && toggleFeaturePUIDLayer(selectedFeature)}>
+      <MenuItem
+        onClick={() =>
+          selectedFeature && toggleFeaturePUIDLayer(selectedFeature)
+        }
+      >
         <ListItemIcon>
           {selectedFeature?.feature_puid_layer_loaded ? (
             <RemoveFromMap />
@@ -125,7 +128,9 @@ const FeatureMenu = ({
           : "Outline planning units where the feature occurs"}
       </MenuItem>
 
-      <MenuItem onClick={() => selectedFeature && zoomToFeature(selectedFeature)}>
+      <MenuItem
+        onClick={() => selectedFeature && zoomToFeature(selectedFeature)}
+      >
         <ListItemIcon>
           <ZoomIn />
         </ListItemIcon>

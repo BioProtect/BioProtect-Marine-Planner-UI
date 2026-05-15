@@ -22,6 +22,7 @@ export const featureApiSlice = apiSlice.injectEndpoints({
         url: `features?action=delete&feature=${featureName}`,
         method: "GET",
       }),
+      invalidatesTags: [{ type: "Features", id: "LIST" }],
     }),
     exportFeature: builder.query({
       query: () => ({
@@ -98,12 +99,9 @@ const initialState = {
     newFeatureDialogOpen: false,
     featureDialogOpen: false,
     featuresDialogOpen: false,
-    importFeaturePopoverOpen: false,
     importFeaturesDialogOpen: false,
-    newFeaturePopoverOpen: false,
     featureInfoDialogOpen: false,
     featureMenuOpen: false,
-    importFromWebDialogOpen: false
   },
 
 }

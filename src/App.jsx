@@ -90,7 +90,6 @@ import HelpMenu from "./HelpMenu";
 import HexInfoDialog from "./HexInfo/HexInfoDialog";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
-import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
 import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
 import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
@@ -100,7 +99,6 @@ import LoginDialog from "./LoginDialog";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
-import NewFeatureDialog from "@features/NewFeatureDialog";
 import NewPlanningGridDialog from "@planningGrids/NewPlanningGridDialog";
 import NewProjectDialog from "@projects/NewProjectDialog";
 import PlanningGridDialog from "@planningGrids/PlanningGridDialog";
@@ -388,7 +386,6 @@ const App = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const fetchGlobalVariables = async () => {
-      console.log("fetchGlobalVariables.... ");
       dispatch(setLoading(true));
       try {
         setBrew(new classyBrew());
@@ -569,13 +566,10 @@ const App = () => {
 
     // Persist changes to the server if the user is not read-only
     try {
-      console.log("selected features ", selected);
-
       const resp = await updateProjectFeaturesMutation({
         projectId: activeProjectId,
         features: selected,
       }).unwrap();
-      console.log("updateProjectFeaturesMutation resp ", resp);
     } catch (err) {
       patchAllResult?.undo?.();
       // patchProjectResult?.undo?.();
@@ -583,15 +577,6 @@ const App = () => {
     } finally {
       dispatch(
         toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }),
-      );
-      dispatch(
-        toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false }),
-      );
-      dispatch(
-        toggleFeatureD({
-          dialogName: "importFeaturePopoverOpen",
-          isOpen: false,
-        }),
       );
     }
   };
@@ -646,13 +631,11 @@ const App = () => {
       }
 
       const url = new URL(path, server.endpoint).toString();
-      console.log("url ", url);
       dispatch(setLoading(true));
 
       try {
         const { promise } = jsonp(url, { timeout });
         const response = await promise;
-        console.log("response ", response);
 
         if (checkForErrors(response)) {
           // If your checkForErrors returns truthy, throw the error it found
@@ -939,8 +922,6 @@ const App = () => {
   const handleDeleteUser = async (user) => await deleteUser(user);
 
   const loadProjectAndSetup = async (projectId) => {
-    console.log("loadProjectAndSetup ");
-    console.log("projectId ", projectId);
     try {
       await dispatch(switchProject(projectId)).unwrap();
 
@@ -949,8 +930,6 @@ const App = () => {
           forceRefetch: true,
         }),
       ).unwrap();
-      console.log("projectData ", projectData);
-
       await postLoginSetup(projectData);
       return projectData;
     } catch (error) {
@@ -1273,7 +1252,6 @@ const App = () => {
     });
 
     const selected = processedFeatures.filter((f) => f.selected);
-    console.log("selected ", selected);
 
     // update RTKQ cache instead of redux
     dispatch(setAllFeaturesInCache({ features: processedFeatures }));
@@ -1444,7 +1422,6 @@ const App = () => {
 
   //preprocesses a feature using websockets - i.e. intersects it with the planning units grid and writes the intersection results into the database. this will have no server timeout as its running using websockets
   const preprocessFeature = async (featureId) => {
-    console.log("featureId ", featureId);
     try {
       // Switch to the log tab
       const planningGridId = metadata.pu_id;
@@ -1454,7 +1431,6 @@ const App = () => {
         `preprocessFeature?project_id=${activeProjectId}&planning_grid_id=${planningGridId}&feature_id=${featureId}`,
       );
       showMessage(message.info, "info");
-      console.log("message ", message);
       // Update feature with new data
       updateFeature(featureId, {
         preprocessed: true,
@@ -1484,14 +1460,6 @@ const App = () => {
 
   // Uploads a single file to a specific folder - value is the filename
   const uploadFileToFolder = async (value, filename, destFolder) => {
-    console.log(
-      "uploading file with value, filename, destFolder ",
-      value,
-      ", ",
-      filename,
-      ", ",
-      destFolder,
-    );
     dispatch(setLoading(true));
 
     const formData = new FormData();
@@ -1731,7 +1699,6 @@ const App = () => {
         `planning-units?action=data&project_id=${currentProjectId}&h3_index=${h3_index}`,
       );
 
-      console.log("planning unit data ", response);
       const features = response?.data?.features ?? [];
       const puData = response?.data?.pu_data ?? null;
 
@@ -2954,14 +2921,6 @@ const App = () => {
     dispatch(setSelectedFeatureIds(next));
   };
 
-  //starts a digitising session
-  const initialiseDigitising = () => {
-    // Show digitising controls if not already present, mapbox-gl-draw-cold + mapbox-gl-draw-hot
-    if (!map.current.getSource("mapbox-gl-draw-cold")) {
-      map.current.addControl(mapboxDrawControls);
-    }
-  };
-
   //called when the user has drawn a polygon on screen
   const polygonDrawn = (evt) => {
     //open the new feature dialog for the metadata
@@ -3211,9 +3170,7 @@ const App = () => {
     });
     //update the paint property for the layer
     const propId = puLayerIdsRef.current?.propId || "h3_index";
-    console.log("toggleFeaturePUIDLayer response:", JSON.stringify(data));
     const puids = (data.data || []).map(String);
-    console.log("puids:", puids.slice(0, 5), "total:", puids.length);
 
     if (puids.length > 0) {
       const line_color_expression = [
@@ -3330,7 +3287,6 @@ const App = () => {
         `prioritizr-ws?action=run&user=${userId}&project_id=${activeProjectId}&params=${paramsQS}`,
       );
       showMessage(message.info, "info");
-      console.log("message ", message);
 
       // Auto-select the new run so its results render on the map
       // immediately instead of requiring the user to click it manually
@@ -3399,8 +3355,6 @@ const App = () => {
       setCostsLoading(true);
       // fetch from server (or cache)
       const response = await getPuCostsLayer(forceReload);
-      console.log("response ", response);
-      console.log("response?.data ", response?.data);
       const statusLayerId = puLayerIdsRef.current?.statusLayerId;
       if (map.current && statusLayerId && map.current.getLayer(statusLayerId)) {
         map.current.setLayoutProperty(statusLayerId, "visibility", "visible");
@@ -3433,19 +3387,6 @@ const App = () => {
     return response;
   };
 
-  //after clicking cancel in the ImportCostsDialog
-  const deleteCostFileThenClose = async (costname) => {
-    if (costname) {
-      await deleteCost(costname);
-      dispatch(
-        toggleDialog({
-          dialogName: "importCostsDialogOpen",
-          isOpen: true,
-        }),
-      );
-    }
-    return;
-  };
   //adds a cost in application state
   const addCost = (costname) =>
     dispatch(setProjectCosts((prevState) => [...prevState, costname]));
@@ -3694,7 +3635,6 @@ const App = () => {
           metadata={metadata}
           userRole={userData?.role}
           openFeaturesDialog={openFeaturesDialog}
-          initialiseDigitising={initialiseDigitising}
           previewFeature={previewFeature}
           refreshFeatures={refreshFeatures}
           preview={true}
@@ -3702,10 +3642,6 @@ const App = () => {
         {featureState.dialogs.featureDialogOpen ? (
           <FeatureDialog getTilesetMetadata={getMetadata} />
         ) : null}
-        <NewFeatureDialog
-          loading={uiState.loading || uploading}
-          newFeatureCreated={newFeatureCreated}
-        />
         {featureState.dialogs.importFeaturesDialogOpen ? (
           <ImportFeaturesDialog
             importFeatures={importFeatures}
@@ -3728,12 +3664,6 @@ const App = () => {
           planningGridMetadata={planningGridMetadata}
           getTilesetMetadata={getMetadata}
           getProjectList={getProjectList}
-        />
-        {/* CostsDialog removed - merged into CumulativeImpactDialog */}
-        <ImportCostsDialog
-          addCost={addCost}
-          deleteCostFileThenClose={deleteCostFileThenClose}
-          fileUpload={uploadFileToProject}
         />
         <RunPrioritizrDialog
           runPrioitizr={runPrioitizr}
@@ -3798,7 +3728,6 @@ const App = () => {
           <HumanActivitiesDialog
             loading={uiState.loading || uploading}
             metadata={metadata}
-            initialiseDigitising={initialiseDigitising}
             userRole={userData?.role}
             fileUpload={uploadFileToFolder}
             unzipShapefile={unzipShapefile}

@@ -203,7 +203,8 @@ const CumulativeImpactDialog = ({
       <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 1 }}>
         <Tabs value={tabIndex} onChange={(e, v) => setTabIndex(v)}>
           <Tab label="Cost Profiles" />
-          <Tab label="Activities" />
+          <Tab label="Activities and Cumulative Impact" />
+          <Tab label="Upload Raster Cost Profile" />
         </Tabs>
       </Box>
 
@@ -384,6 +385,57 @@ const CumulativeImpactDialog = ({
             </Table>
           </TableContainer>
 
+          <TextField
+            fullWidth
+            value={profileName}
+            onChange={(e) => setProfileName(e.target.value)}
+            label="Cost profile name"
+            variant="outlined"
+            size="small"
+            sx={{ mt: 2 }}
+          />
+
+          <TextField
+            fullWidth
+            value={profileDescription}
+            onChange={(e) => setProfileDescription(e.target.value)}
+            label="Description"
+            variant="outlined"
+            size="small"
+            multiline
+            minRows={2}
+            sx={{ mt: 1 }}
+          />
+
+          <ButtonGroup aria-label="Activity actions" fullWidth sx={{ mt: 2 }}>
+            <Button
+              startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+              title="Upload a new activity"
+              onClick={openHumanActivitiesDialog}
+              disabled={uiState.loading || userRole === "ReadOnly"}
+            >
+              Add Activity
+            </Button>
+
+            <Button
+              startIcon={<FontAwesomeIcon icon={faPlay} />}
+              title={
+                nonePreprocessed
+                  ? "Preprocess features first"
+                  : "Run cumulative impact"
+              }
+              onClick={handleRunCumulativeImpact}
+              disabled={!canRunImpact}
+            >
+              Run Cumulative Impact
+            </Button>
+          </ButtonGroup>
+        </>
+      )}
+
+      {/* ── Upload Raster COst Profile Tab ── */}
+      {tabIndex === 2 && (
+        <>
           <TextField
             fullWidth
             value={profileName}
