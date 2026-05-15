@@ -3,14 +3,10 @@ import {
   faCheckCircle,
   faPlusCircle,
   faTimesCircle,
-  faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
-  featureApiSlice,
-  setSelectedFeatureId,
   setSelectedFeatureIds,
   toggleFeatureD,
-  useDeleteFeatureMutation,
 } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -20,12 +16,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Import from "@mui/icons-material/GetApp";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import useAppSnackbar from "@hooks/useAppSnackbar";
 
 const FeaturesToolbar = ({
   selectAllFeatures,
   _newByDigitising,
-  selectedFeature,
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
@@ -33,11 +27,9 @@ const FeaturesToolbar = ({
 
   const [newAnchorEl, setNewAnchorEl] = useState(null);
   const [importAnchorEl, setImportAnchorEl] = useState(null);
-  const [deleteFeature, { isLoading: isDeleting }] = useDeleteFeatureMutation();
 
   const newOpen = Boolean(newAnchorEl);
   const importOpen = Boolean(importAnchorEl);
-  const { showMessage } = useAppSnackbar();
 
   const handleNewClick = (event) => setNewAnchorEl(event.currentTarget);
   const handleImportClick = (event) => setImportAnchorEl(event.currentTarget);
@@ -75,40 +67,6 @@ const FeaturesToolbar = ({
       toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false })
     );
   };
-
-  // const handleDeleteFeature = async () => {
-  //   if (!selectedFeature) return;
-  //   // check if any projects are using feature
-  //   const projects = await getProjectsForFeature(selectedFeature);
-  //   if (projects?.length) {
-  //     showProjectListDialog(
-  //       projects,
-  //       "Failed to delete planning feature",
-  //       "The feature is used in the following projects"
-  //     );
-  //     showMessage("Feature is used by other projects.", "warning");
-  //     return;
-  //   }
-  //   let patch;
-
-  //   try {
-  //     patch = dispatch(removeFeaturesFromCache({ ids: [selectedFeature.id] }));
-  //     dispatch(
-  //       setSelectedFeatureIds(
-  //         (featureState.selectedFeatureIds || []).filter(
-  //           (id) => id !== selectedFeature.id
-  //         )
-  //       )
-  //     );
-  //     dispatch(setSelectedFeatureId(null));
-  //     // Unwrap to handle the response
-  //     await deleteFeature(selectedFeature.feature_class_name).unwrap();
-  //     showMessage("Feature deleted", "success");
-  //   } catch (err) {
-  //     patch?.undo?.();
-  //     showMessage(`Failed to delete feature due to an error: ${err}`, "error");
-  //   }
-  // };
 
   return (
     <>
@@ -165,21 +123,6 @@ const FeaturesToolbar = ({
               From the IUCN Red List of Threatened Species
             </MenuItem>
           </Menu>
-
-          {/* <Button
-            startIcon={
-              <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
-            }
-            title="Delete feature"
-            disabled={
-              selectedFeature === undefined ||
-              uiState.loading ||
-              selectedFeature?.created_by === "global admin"
-            }
-            onClick={handleDeleteFeature}
-          >
-            Delete
-          </Button> */}
         </ButtonGroup>
       ) : (
         <ButtonGroup aria-label="Batch feature controls" fullWidth>

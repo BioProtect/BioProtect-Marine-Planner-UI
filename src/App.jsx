@@ -90,7 +90,6 @@ import HelpMenu from "./HelpMenu";
 import HexInfoDialog from "./HexInfo/HexInfoDialog";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
-import ImportCostsDialog from "./ImportComponents/ImportCostsDialog";
 import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
 import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
@@ -3406,19 +3405,6 @@ const App = () => {
     return response;
   };
 
-  //after clicking cancel in the ImportCostsDialog
-  const deleteCostFileThenClose = async (costname) => {
-    if (costname) {
-      await deleteCost(costname);
-      dispatch(
-        toggleDialog({
-          dialogName: "importCostsDialogOpen",
-          isOpen: true,
-        }),
-      );
-    }
-    return;
-  };
   //adds a cost in application state
   const addCost = (costname) =>
     dispatch(setProjectCosts((prevState) => [...prevState, costname]));
@@ -3701,12 +3687,6 @@ const App = () => {
           planningGridMetadata={planningGridMetadata}
           getTilesetMetadata={getMetadata}
           getProjectList={getProjectList}
-        />
-        {/* CostsDialog removed - merged into CumulativeImpactDialog */}
-        <ImportCostsDialog
-          addCost={addCost}
-          deleteCostFileThenClose={deleteCostFileThenClose}
-          fileUpload={uploadFileToProject}
         />
         <RunPrioritizrDialog
           runPrioitizr={runPrioitizr}

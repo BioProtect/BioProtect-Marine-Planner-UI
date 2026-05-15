@@ -1,3 +1,7 @@
+import {
+  faMagnifyingGlassPlus,
+  faTrashAlt,
+} from "@fortawesome/free-solid-svg-icons";
 import { getComparator, stableSort } from "../Helpers";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -5,13 +9,17 @@ import AppBarIcon from "../MenuBar/AppBarIcon";
 import BPTableHeadWithSort from "./BPTableHeadWithSort";
 import BPTableTitleWithSearch from "./BPTableTitleWithSearch";
 import Box from "@mui/material/Box";
+import { Button } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import IconButton from "@mui/material/IconButton";
+import MapIcon from "@mui/icons-material/Map";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
-import { faMagnifyingGlassPlus } from "@fortawesome/free-solid-svg-icons";
 
 // Props
 // 1. data (Array, Required)
@@ -199,17 +207,56 @@ const BioprotectTable = (props) => {
                       align="center"
                       sx={{ cursor: "pointer", color: "primary.main" }}
                     >
-                      <AppBarIcon
-                        icon={faMagnifyingGlassPlus}
+                      <IconButton
+                        color="primary"
+                        size="small"
+                        title="Preview this feature"
                         onClick={(e) => {
                           e.stopPropagation(); // don’t also trigger row click
                           props.preview?.(row); // call the preview callback
                         }}
-                        title="Priview this feature"
-                      />
-                      Preview
+                      >
+                        <MapIcon />
+                      </IconButton>
                     </TableCell>
                   )}
+                  {props.deleteRow &&
+                    (() => {
+                      const canDelete = props.canDeleteRow
+                        ? !!props.canDeleteRow(row)
+                        : true;
+                      const reason =
+                        typeof props.deleteRowReason === "function"
+                          ? props.deleteRowReason(row)
+                          : null;
+                      return (
+                        <TableCell
+                          align="center"
+                          sx={{
+                            cursor: canDelete ? "pointer" : "not-allowed",
+                            color: canDelete ? "error.main" : "text.disabled",
+                          }}
+                        >
+                          <IconButton
+                            color="error"
+                            disabled={!canDelete}
+                            size="small"
+                            title={
+                              canDelete
+                                ? "Delete this row"
+                                : reason || "You cannot delete this row"
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!canDelete) return;
+                              props.deleteRow(row);
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      );
+                    })()}
                 </TableRow>
               );
             })}

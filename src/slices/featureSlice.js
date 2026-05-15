@@ -22,6 +22,7 @@ export const featureApiSlice = apiSlice.injectEndpoints({
         url: `features?action=delete&feature=${featureName}`,
         method: "GET",
       }),
+      invalidatesTags: [{ type: "Features", id: "LIST" }],
     }),
     exportFeature: builder.query({
       query: () => ({
