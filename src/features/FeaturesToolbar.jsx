@@ -4,14 +4,7 @@ import {
   faPlusCircle,
   faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
-<<<<<<< HEAD
 import { setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice";
-=======
-import {
-  setSelectedFeatureIds,
-  toggleFeatureD,
-} from "@slices/featureSlice";
->>>>>>> f3cd10d (updates to include runs and activities - though i dont know why activities arent showing - probably because marting not reading them)
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
