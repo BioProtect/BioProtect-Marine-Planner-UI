@@ -28,13 +28,7 @@ import { setSelectedFeatureId } from "../slices/featureSlice";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 
-const FeaturesDialog = ({
-  onOk,
-  metadata,
-  userRole,
-  initialiseDigitising,
-  previewFeature,
-}) => {
+const FeaturesDialog = ({ onOk, metadata, userRole, previewFeature }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const currentUser = useSelector(selectCurrentUser);
@@ -136,11 +130,6 @@ const FeaturesDialog = ({
     return allFeatures.find((f) => f.id === selectedFeatureId) ?? null;
   }, [allFeatures, selectedFeatureId]);
 
-  const _newByDigitising = () => {
-    onOk();
-    initialiseDigitising();
-  };
-
   const addOrRemoveFeature = (feature) => {
     const ids = selectedFeatureIds || [];
     // if the feature is already included remove it, otherwise add it
@@ -150,23 +139,6 @@ const FeaturesDialog = ({
       dispatch(setSelectedFeatureIds([...ids, feature.id]));
     }
   };
-
-  // const showNewFeaturePopover = (event) => {
-  //   setNewFeatureAnchor(event.currentTarget);
-  //   dispatch(
-  //     toggleFeatureD({
-  //       dialogName: "newFeaturePopoverOpen",
-  //       isOpen: true,
-  //     })
-  //   );
-  // };
-
-  // const showImportFeaturePopover = (event) => {
-  //   setImportFeatureAnchor(event.currentTarget);
-  //   dispatch(
-  //     toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: true })
-  //   );
-  // };
 
   const toggleSelectionState = (selectedIds, features, first, last) => {
     const next = [...selectedIds];
@@ -228,12 +200,6 @@ const FeaturesDialog = ({
   const unselectFeature = () => {
     dispatch(setSelectedFeatureId(null));
     dispatch(
-      toggleFeatureD({ dialogName: "importFeaturePopoverOpen", isOpen: false }),
-    );
-    dispatch(
-      toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false }),
-    );
-    dispatch(
       toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }),
     );
   };
@@ -276,12 +242,7 @@ const FeaturesDialog = ({
       title="Features"
       // showSearchBox={true}
       // searchTextChanged={searchTextChanged}
-      actions={
-        <FeaturesToolbar
-          selectAllFeatures={selectAllFeatures}
-          _newByDigitising={_newByDigitising}
-        />
-      }
+      actions={<FeaturesToolbar selectAllFeatures={selectAllFeatures} />}
     >
       <div id="react-features-dialog-table">
         <BioprotectTable

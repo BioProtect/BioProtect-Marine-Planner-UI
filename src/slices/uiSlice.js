@@ -114,7 +114,6 @@ const initialState = {
     importCostsDialogOpen: false,
     helpMenuOpen: false,
     importImpactPopoverOpen: false,
-    importFromWebDialogOpen: false,
     infoPanelOpen: false,
     profileDialogOpen: false,
     registerDialogOpen: false,

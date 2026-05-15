@@ -99,12 +99,9 @@ const initialState = {
     newFeatureDialogOpen: false,
     featureDialogOpen: false,
     featuresDialogOpen: false,
-    importFeaturePopoverOpen: false,
     importFeaturesDialogOpen: false,
-    newFeaturePopoverOpen: false,
     featureInfoDialogOpen: false,
     featureMenuOpen: false,
-    importFromWebDialogOpen: false
   },
 
 }

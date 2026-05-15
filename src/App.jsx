@@ -99,7 +99,6 @@ import LoginDialog from "./LoginDialog";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
-import NewFeatureDialog from "@features/NewFeatureDialog";
 import NewPlanningGridDialog from "@planningGrids/NewPlanningGridDialog";
 import NewProjectDialog from "@projects/NewProjectDialog";
 import PlanningGridDialog from "@planningGrids/PlanningGridDialog";
@@ -578,15 +577,6 @@ const App = () => {
     } finally {
       dispatch(
         toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }),
-      );
-      dispatch(
-        toggleFeatureD({ dialogName: "newFeaturePopoverOpen", isOpen: false }),
-      );
-      dispatch(
-        toggleFeatureD({
-          dialogName: "importFeaturePopoverOpen",
-          isOpen: false,
-        }),
       );
     }
   };
@@ -2931,14 +2921,6 @@ const App = () => {
     dispatch(setSelectedFeatureIds(next));
   };
 
-  //starts a digitising session
-  const initialiseDigitising = () => {
-    // Show digitising controls if not already present, mapbox-gl-draw-cold + mapbox-gl-draw-hot
-    if (!map.current.getSource("mapbox-gl-draw-cold")) {
-      map.current.addControl(mapboxDrawControls);
-    }
-  };
-
   //called when the user has drawn a polygon on screen
   const polygonDrawn = (evt) => {
     //open the new feature dialog for the metadata
@@ -3653,7 +3635,6 @@ const App = () => {
           metadata={metadata}
           userRole={userData?.role}
           openFeaturesDialog={openFeaturesDialog}
-          initialiseDigitising={initialiseDigitising}
           previewFeature={previewFeature}
           refreshFeatures={refreshFeatures}
           preview={true}
@@ -3661,10 +3642,6 @@ const App = () => {
         {featureState.dialogs.featureDialogOpen ? (
           <FeatureDialog getTilesetMetadata={getMetadata} />
         ) : null}
-        <NewFeatureDialog
-          loading={uiState.loading || uploading}
-          newFeatureCreated={newFeatureCreated}
-        />
         {featureState.dialogs.importFeaturesDialogOpen ? (
           <ImportFeaturesDialog
             importFeatures={importFeatures}
@@ -3751,7 +3728,6 @@ const App = () => {
           <HumanActivitiesDialog
             loading={uiState.loading || uploading}
             metadata={metadata}
-            initialiseDigitising={initialiseDigitising}
             userRole={userData?.role}
             fileUpload={uploadFileToFolder}
             unzipShapefile={unzipShapefile}
