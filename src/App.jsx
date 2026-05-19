@@ -2860,6 +2860,78 @@ const App = () => {
     return "Costs created from Cumulative impact";
   };
 
+  // Inspect an uploaded raster sitting in data/tmp/ on the server.
+  // Returns { band_count, dtypes, nodata, bounds, crs_epsg, ... } or null on error.
+  const getRasterBandInfo = async (filename) => {
+    if (!filename) return null;
+    const response = await _get(
+      `getRasterBandInfo?filename=${encodeURIComponent(filename)}`,
+    );
+    if (response?.error) return null;
+    return response?.data ?? null;
+  };
+
+  // Build a cost profile from a pre-uploaded raster (sitting in data/tmp/).
+  // options: { band, stat, normalise, clampNegative, floor, fillStrategy, setActive }
+  const uploadRasterCost = async (
+    filename,
+    profileName,
+    description = "",
+    options = {},
+  ) => {
+    const {
+      band = 1,
+      stat = "weighted_mean",
+      normalise = true,
+      clampNegative = true,
+      floor = 0.001,
+      fillStrategy = "median",
+      setActive = true,
+    } = options;
+
+    dispatch(setLoading(true));
+    startLogging();
+
+    const url =
+      `uploadRasterCost?project_id=${activeProjectId}` +
+      `&filename=${encodeURIComponent(filename)}` +
+      `&profile_name=${encodeURIComponent(profileName || "Raster Cost Profile")}` +
+      `&description=${encodeURIComponent(description)}` +
+      `&band=${band}` +
+      `&stat=${encodeURIComponent(stat)}` +
+      `&normalise=${normalise ? "true" : "false"}` +
+      `&clamp_negative=${clampNegative ? "true" : "false"}` +
+      `&floor=${floor}` +
+      `&fill_strategy=${encodeURIComponent(fillStrategy)}` +
+      `&set_active=${setActive ? "true" : "false"}`;
+
+    const response = await handleWebSocket(url).catch((err) => {
+      console.error("uploadRasterCost WebSocket failed:", err);
+      return { error: `WebSocket error - ${err.message}` };
+    });
+
+    if (!response?.error) {
+      const newProfile = {
+        id: response.cost_profile_id,
+        name: profileName,
+        description,
+        is_default: false,
+        is_active: !!setActive,
+      };
+      const updated = (projState.projectCosts || []).map((p) => ({
+        ...p,
+        is_active: setActive ? false : p.is_active,
+      }));
+      dispatch(setProjectCosts([...updated, newProfile]));
+      if (setActive) {
+        await loadCostsLayer(true);
+      }
+    }
+
+    dispatch(setLoading(false));
+    return response;
+  };
+
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -3721,6 +3793,11 @@ const App = () => {
             deleteCost={deleteCost}
             activateCostProfile={activateCostProfile}
             runCumulativeImpact={runCumulativeImpact}
+            uploadRasterCost={uploadRasterCost}
+            getRasterBandInfo={getRasterBandInfo}
+            fileUpload={uploadFileToFolder}
+            handleWebSocket={handleWebSocket}
+            startLogging={startLogging}
           />
         ) : null}
 

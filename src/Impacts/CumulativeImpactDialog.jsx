@@ -1,37 +1,45 @@
 import {
-  Alert,
-  Box,
-  Button,
-  ButtonGroup,
-  Checkbox,
-  Chip,
-  Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tabs,
-  TextField,
-  Typography,
-} from "@mui/material";
-import React, { useCallback, useEffect, useState } from "react";
-import {
   faCheckCircle,
   faPlay,
   faPlusCircle,
   faTrashAlt,
+  faUpload,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   setActivities,
   setUploadedActivities,
   toggleDialog,
 } from "@slices/uiSlice";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
+import DeleteIcon from "@mui/icons-material/Delete";
+import FileUpload from "../Uploads/FileUpload";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import InputLabel from "@mui/material/InputLabel";
 import MarxanDialog from "../MarxanDialog";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 
 const CumulativeImpactDialog = ({
@@ -40,6 +48,11 @@ const CumulativeImpactDialog = ({
   deleteCost,
   activateCostProfile,
   runCumulativeImpact,
+  uploadRasterCost,
+  getRasterBandInfo,
+  fileUpload,
+  handleWebSocket,
+  startLogging,
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
@@ -59,6 +72,20 @@ const CumulativeImpactDialog = ({
   const [selectedActivityIds, setSelectedActivityIds] = useState([]);
   const [profileName, setProfileName] = useState("");
   const [profileDescription, setProfileDescription] = useState("");
+
+  // Raster cost profile tab (tab 2) state — scoped here so it does not
+  // leak into the activities tab.
+  const [rasterFilename, setRasterFilename] = useState("");
+  const [rasterProfileName, setRasterProfileName] = useState("");
+  const [rasterProfileDescription, setRasterProfileDescription] = useState("");
+  const [rasterBandInfo, setRasterBandInfo] = useState(null);
+  const [rasterBand, setRasterBand] = useState(1);
+  const [rasterStat, setRasterStat] = useState("weighted_mean");
+  const [rasterNormalise, setRasterNormalise] = useState(true);
+  const [rasterClampNegative, setRasterClampNegative] = useState(true);
+  const [rasterFloor, setRasterFloor] = useState(0.001);
+  const [rasterFillStrategy, setRasterFillStrategy] = useState("median");
+  const [rasterSetActive, setRasterSetActive] = useState(true);
 
   const costProfiles = projState.projectCosts || [];
 
@@ -94,7 +121,7 @@ const CumulativeImpactDialog = ({
     if (dialogOpen) {
       setSelectedProfileId(activeProfile?.id ?? null);
     }
-  }, [dialogOpen, activeProfile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dialogOpen, activeProfile?.id]);
 
   useEffect(() => {
     if (dialogOpen && !activitiesLoaded) {
@@ -166,6 +193,60 @@ const CumulativeImpactDialog = ({
     }
   };
 
+  // Probe band count / metadata once a raster has been uploaded.
+  useEffect(() => {
+    let cancelled = false;
+    if (!rasterFilename || !getRasterBandInfo) {
+      setRasterBandInfo(null);
+      return;
+    }
+    (async () => {
+      const info = await getRasterBandInfo(rasterFilename);
+      if (cancelled) return;
+      setRasterBandInfo(info);
+      // Reset band selection to 1 whenever a new raster comes in.
+      setRasterBand(1);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [rasterFilename, getRasterBandInfo]);
+
+  const handleUploadRasterCost = async () => {
+    if (!uploadRasterCost) return;
+    const response = await uploadRasterCost(
+      rasterFilename,
+      rasterProfileName,
+      rasterProfileDescription,
+      {
+        band: rasterBand,
+        stat: rasterStat,
+        normalise: rasterNormalise,
+        clampNegative: rasterClampNegative,
+        floor: rasterFloor,
+        fillStrategy: rasterFillStrategy,
+        setActive: rasterSetActive,
+      },
+    );
+    if (!response?.error) {
+      // Reset tab 2 state, jump back to Cost Profiles list.
+      setRasterFilename("");
+      setRasterProfileName("");
+      setRasterProfileDescription("");
+      setRasterBandInfo(null);
+      setRasterBand(1);
+      setTabIndex(0);
+    }
+  };
+
+  const canUploadRasterCost =
+    !uiState.loading &&
+    rasterFilename !== "" &&
+    rasterProfileName !== "" &&
+    rasterFloor > 0 &&
+    rasterFloor < 1 &&
+    userRole !== "ReadOnly";
+
   const canRunImpact =
     !uiState.loading &&
     selectedActivityIds.length > 0 &&
@@ -179,6 +260,11 @@ const CumulativeImpactDialog = ({
     setSelectedActivityIds([]);
     setProfileName("");
     setProfileDescription("");
+    setRasterFilename("");
+    setRasterProfileName("");
+    setRasterProfileDescription("");
+    setRasterBandInfo(null);
+    setRasterBand(1);
     dispatch(
       toggleDialog({
         dialogName: "cumulativeImpactDialogOpen",
@@ -265,7 +351,8 @@ const CumulativeImpactDialog = ({
             sx={{ mt: 2 }}
           >
             <Button
-              startIcon={<FontAwesomeIcon icon={faCheckCircle} />}
+              color="success"
+              startIcon={<CheckCircleIcon />}
               title="Set selected cost profile as active"
               onClick={handleActivateProfile}
               disabled={
@@ -279,9 +366,8 @@ const CumulativeImpactDialog = ({
             </Button>
 
             <Button
-              startIcon={
-                <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
-              }
+              color="error"
+              startIcon={<DeleteIcon />}
               title="Delete selected cost profile"
               onClick={handleDeleteCost}
               disabled={
@@ -433,13 +519,31 @@ const CumulativeImpactDialog = ({
         </>
       )}
 
-      {/* ── Upload Raster COst Profile Tab ── */}
+      {/* ── Upload Raster Cost Profile Tab ── */}
       {tabIndex === 2 && (
         <>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Upload a preprocessed raster (.tif) to use as the cost layer for
+            this project. Values are sampled per hex with exactextract,
+            log-normalised to [floor, 1] so no hex is ever zero-cost, and saved
+            as a new cost profile.
+          </Alert>
+
+          <FileUpload
+            fileUpload={fileUpload}
+            fileMatch=".tif,.tiff"
+            mandatory={true}
+            filename={rasterFilename}
+            setFilename={setRasterFilename}
+            destFolder="imports"
+            label="Upload Raster (.tif)"
+            style={{ paddingTop: "10px" }}
+          />
+
           <TextField
             fullWidth
-            value={profileName}
-            onChange={(e) => setProfileName(e.target.value)}
+            value={rasterProfileName}
+            onChange={(e) => setRasterProfileName(e.target.value)}
             label="Cost profile name"
             variant="outlined"
             size="small"
@@ -448,8 +552,8 @@ const CumulativeImpactDialog = ({
 
           <TextField
             fullWidth
-            value={profileDescription}
-            onChange={(e) => setProfileDescription(e.target.value)}
+            value={rasterProfileDescription}
+            onChange={(e) => setRasterProfileDescription(e.target.value)}
             label="Description"
             variant="outlined"
             size="small"
@@ -458,27 +562,138 @@ const CumulativeImpactDialog = ({
             sx={{ mt: 1 }}
           />
 
-          <ButtonGroup aria-label="Activity actions" fullWidth sx={{ mt: 2 }}>
-            <Button
-              startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
-              title="Upload a new activity"
-              onClick={openHumanActivitiesDialog}
-              disabled={uiState.loading || userRole === "ReadOnly"}
-            >
-              Add Activity
-            </Button>
+          <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+            {rasterBandInfo && rasterBandInfo.band_count > 1 ? (
+              <FormControl size="small" sx={{ minWidth: 140 }}>
+                <InputLabel id="raster-band-label">Band</InputLabel>
+                <Select
+                  labelId="raster-band-label"
+                  label="Band"
+                  value={rasterBand}
+                  onChange={(e) => setRasterBand(Number(e.target.value))}
+                >
+                  {Array.from(
+                    { length: rasterBandInfo.band_count },
+                    (_, i) => i + 1,
+                  ).map((b) => (
+                    <MenuItem key={b} value={b}>
+                      Band {b}
+                      {rasterBandInfo.dtypes?.[b - 1]
+                        ? ` (${rasterBandInfo.dtypes[b - 1]})`
+                        : ""}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            ) : null}
 
-            <Button
-              startIcon={<FontAwesomeIcon icon={faPlay} />}
-              title={
-                nonePreprocessed
-                  ? "Preprocess features first"
-                  : "Run cumulative impact"
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel id="raster-stat-label">Aggregation</InputLabel>
+              <Select
+                labelId="raster-stat-label"
+                label="Aggregation"
+                value={rasterStat}
+                onChange={(e) => setRasterStat(e.target.value)}
+              >
+                <MenuItem value="weighted_mean">
+                  Area-weighted mean (default)
+                </MenuItem>
+                <MenuItem value="mean">Mean</MenuItem>
+                <MenuItem value="sum">Sum</MenuItem>
+                <MenuItem value="max">Max</MenuItem>
+                <MenuItem value="min">Min</MenuItem>
+                <MenuItem value="median">Median</MenuItem>
+                <MenuItem value="count">Count</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel id="raster-fill-label">
+                Fill uncovered hexes
+              </InputLabel>
+              <Select
+                labelId="raster-fill-label"
+                label="Fill uncovered hexes"
+                value={rasterFillStrategy}
+                onChange={(e) => setRasterFillStrategy(e.target.value)}
+              >
+                <MenuItem value="median">Median observed (default)</MenuItem>
+                <MenuItem value="floor">Floor</MenuItem>
+                <MenuItem value="max">Max (1.0)</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              size="small"
+              type="number"
+              label="Floor"
+              value={rasterFloor}
+              onChange={(e) =>
+                setRasterFloor(parseFloat(e.target.value) || 0.001)
               }
-              onClick={handleRunCumulativeImpact}
-              disabled={!canRunImpact}
+              inputProps={{ step: 0.001, min: 0.0001, max: 0.999 }}
+              sx={{ width: 120 }}
+              helperText="Min cost (>0)"
+            />
+          </Stack>
+
+          <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rasterNormalise}
+                  onChange={(e) => setRasterNormalise(e.target.checked)}
+                />
+              }
+              label="Apply log(X+1) normalisation"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rasterClampNegative}
+                  onChange={(e) => setRasterClampNegative(e.target.checked)}
+                />
+              }
+              label="Clamp negatives to 0"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rasterSetActive}
+                  onChange={(e) => setRasterSetActive(e.target.checked)}
+                />
+              }
+              label="Set as active profile"
+            />
+          </Stack>
+
+          {rasterBandInfo ? (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", mt: 1 }}
             >
-              Run Cumulative Impact
+              Detected {rasterBandInfo.band_count} band
+              {rasterBandInfo.band_count === 1 ? "" : "s"} ·{" "}
+              {rasterBandInfo.width}×{rasterBandInfo.height} px · CRS{" "}
+              {rasterBandInfo.crs_epsg
+                ? `EPSG:${rasterBandInfo.crs_epsg}`
+                : "(non-standard — will be reprojected)"}
+            </Typography>
+          ) : null}
+
+          <ButtonGroup
+            aria-label="Raster cost actions"
+            fullWidth
+            sx={{ mt: 2 }}
+          >
+            <Button
+              startIcon={<FontAwesomeIcon icon={faUpload} />}
+              title="Create a cost profile from the uploaded raster"
+              onClick={handleUploadRasterCost}
+              disabled={!canUploadRasterCost}
+            >
+              Create Cost Profile from Raster
             </Button>
           </ButtonGroup>
         </>
