@@ -1,28 +1,25 @@
 import { Box, Grid, Paper, Stack } from "@mui/material";
-import { setCurrentPUGrid, setPlanningUnitGrids, useListPlanningUnitGridsQuery } from "@slices/planningUnitSlice";
+import {
+  setCurrentPUGrid,
+  setPlanningUnitGrids,
+  useListPlanningUnitGridsQuery,
+} from "@slices/planningUnitSlice";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import SelectMapboxLayer from "../SelectMapboxLayer";
 import Typography from "@mui/material/Typography";
-import {
-  faFileCode
-} from "@fortawesome/free-solid-svg-icons";
+import { faFileCode } from "@fortawesome/free-solid-svg-icons";
 import mapboxgl from "mapbox-gl";
 import { togglePUD } from "@slices/planningUnitSlice";
 
-const PlanningUnitsDialog = ({
-  previewFeature,
-  puMap,
-  setPuMap,
-}) => {
+const PlanningUnitsDialog = ({ previewFeature, puMap, setPuMap }) => {
   const dispatch = useDispatch();
 
   // Reference for the map container div
   const mapContainer = useRef(null);
-  const puState = useSelector((state) => state.planningUnit)
+  const puState = useSelector((state) => state.planningUnit);
   const { data: planningUnitsData } = useListPlanningUnitGridsQuery();
 
   useEffect(() => {
@@ -35,7 +32,6 @@ const PlanningUnitsDialog = ({
       }
     }
   }, [dispatch, planningUnitsData]);
-
 
   // Initialize the Mapbox map once the component is mounted
   useEffect(() => {
@@ -57,14 +53,13 @@ const PlanningUnitsDialog = ({
       togglePUD({
         dialogName: "planningGridsDialogOpen",
         isOpen: false,
-      })
+      }),
     );
   }, []);
 
-
   const changeItem = (event) => dispatch(setCurrentPUGrid(event));
-  const safeSelected = puState.currentPUGrid || puState.planningUnitGrids?.[0]?.tilesetid || "";
-
+  const safeSelected =
+    puState.currentPUGrid || puState.planningUnitGrids?.[0]?.tilesetid || "";
 
   return (
     <Box className="newPUDialogPane" sx={{ p: 2 }}>

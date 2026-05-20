@@ -1,11 +1,4 @@
 import {
-  faCheckCircle,
-  faPlay,
-  faPlusCircle,
-  faTrashAlt,
-  faUpload,
-} from "@fortawesome/free-solid-svg-icons";
-import {
   setActivities,
   setUploadedActivities,
   toggleDialog,
@@ -13,6 +6,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -22,12 +16,13 @@ import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FileUpload from "../Uploads/FileUpload";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import InputLabel from "@mui/material/InputLabel";
 import MarxanDialog from "../MarxanDialog";
 import MenuItem from "@mui/material/MenuItem";
+import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
@@ -495,7 +490,7 @@ const CumulativeImpactDialog = ({
 
           <ButtonGroup aria-label="Activity actions" fullWidth sx={{ mt: 2 }}>
             <Button
-              startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+              startIcon={<AddCircleIcon />}
               title="Upload a new activity"
               onClick={openHumanActivitiesDialog}
               disabled={uiState.loading || userRole === "ReadOnly"}
@@ -504,7 +499,7 @@ const CumulativeImpactDialog = ({
             </Button>
 
             <Button
-              startIcon={<FontAwesomeIcon icon={faPlay} />}
+              startIcon={<PlayCircleIcon />}
               title={
                 nonePreprocessed
                   ? "Preprocess features first"
@@ -688,7 +683,7 @@ const CumulativeImpactDialog = ({
             sx={{ mt: 2 }}
           >
             <Button
-              startIcon={<FontAwesomeIcon icon={faUpload} />}
+              startIcon={<FileUploadIcon />}
               title="Create a cost profile from the uploaded raster"
               onClick={handleUploadRasterCost}
               disabled={!canUploadRasterCost}

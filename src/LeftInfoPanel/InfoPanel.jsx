@@ -11,7 +11,6 @@ import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import CONSTANTS from "../constants";
 import FeaturesTab from "./FeaturesTab";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Loading from "../Loading";
 import Paper from "@mui/material/Paper";
 import PlanningUnitsTab from "./PlanningUnitsTab";

@@ -1,27 +1,22 @@
-import {
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
 import React, { useEffect, useState } from "react";
-import {
-  faCheckCircle,
-  faEraser,
-  faExclamationTriangle,
-  faRedoAlt,
-  faTimesCircle,
-} from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ClearAllIcon from "@mui/icons-material/ClearAll";
 import MarxanDialog from "./MarxanDialog";
+import Paper from "@mui/material/Paper";
+import RedoIcon from "@mui/icons-material/Redo";
+import StopCircleIcon from "@mui/icons-material/StopCircle";
 import Sync from "@mui/icons-material/Sync";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 import ToolbarButton from "./ToolbarButton";
+import Typography from "@mui/material/Typography";
+import WarningIcon from "@mui/icons-material/Warning";
 import { toggleDialog } from "@slices/uiSlice";
 
 const RunLogDialog = ({
@@ -69,24 +64,18 @@ const RunLogDialog = ({
     switch (status) {
       case "Completed":
         return (
-          <FontAwesomeIcon
-            icon={faCheckCircle}
-            style={{ color: "green" }}
-            title={"Run completed"}
-          />
+          <CheckCircleIcon style={{ color: "green" }} title={"Run completed"} />
         );
       case "Stopped":
         return (
-          <FontAwesomeIcon
-            icon={faTimesCircle}
+          <StopCircleIcon
             style={{ color: "darkgray" }}
             title={"Run stopped by the user"}
           />
         );
       case "Killed":
         return (
-          <FontAwesomeIcon
-            icon={faExclamationTriangle}
+          <WarningIcon
             style={{ color: "red" }}
             title={"Run stopped by the operating system"}
           />
@@ -153,7 +142,7 @@ const RunLogDialog = ({
                     (row) =>
                       row.user.includes(searchText) ||
                       row.project.includes(searchText) ||
-                      row.status.includes(searchText)
+                      row.status.includes(searchText),
                   )
                   .map((row) => (
                     <TableRow
@@ -198,13 +187,13 @@ const RunLogDialog = ({
             <ToolbarButton
               show={!unauthorisedMethods.includes("getRunLogs")}
               title="Refresh run logs"
-              icon={<FontAwesomeIcon icon={faRedoAlt} />}
+              icon={<RedoIcon />}
               onClick={refreshRunLogs}
             />
             <ToolbarButton
               show={!unauthorisedMethods.includes("clearRunLogs")}
               title="Clear run logs"
-              icon={<FontAwesomeIcon icon={faEraser} />}
+              icon={<ClearAllIcon />}
               onClick={clearRunLogs}
             />
           </div>

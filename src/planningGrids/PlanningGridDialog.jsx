@@ -8,10 +8,15 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useCallback, useState } from "react";
-import { setProjectList, setProjectListDialogHeading, setProjectListDialogTitle, toggleProjDialog } from "@slices/projectSlice";
+import {
+  setProjectList,
+  setProjectListDialogHeading,
+  setProjectListDialogTitle,
+  toggleProjDialog,
+} from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import LinkIcon from "@mui/icons-material/Link";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
 import { togglePUD } from "@slices/planningUnitSlice";
@@ -38,7 +43,7 @@ const PlanningGridDialog = ({
       togglePUD({
         dialogName: "planningGridDialogOpen",
         isOpen: false,
-      })
+      }),
     );
 
   return (
@@ -123,7 +128,7 @@ const PlanningGridDialog = ({
                         onClick={handleProjectListClick}
                         title="View a list of projects that this planning grid is used in"
                       >
-                        <FontAwesomeIcon icon="external-link-alt" />
+                        <LinkIcon />
                       </IconButton>
                     </TableCell>
                   </TableRow>

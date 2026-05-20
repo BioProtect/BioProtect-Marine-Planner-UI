@@ -1,20 +1,23 @@
-import {
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-  Typography,
-} from "@mui/material";
 import React, { useState } from "react";
-import { setProjectList, setProjectListDialogHeading, setProjectListDialogTitle, toggleProjDialog } from "@slices/projectSlice";
+import {
+  setProjectList,
+  setProjectListDialogHeading,
+  setProjectListDialogTitle,
+  toggleProjDialog,
+} from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BPTableRow from "../BPComponents/BPTableRow";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import LinkIcon from "@mui/icons-material/Link";
 import MapContainer2 from "../MapContainer2";
 import MarxanDialog from "../MarxanDialog";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
 import { getArea } from "../Helpers";
 import { selectCurrentUser } from "@slices/authSlice";
 import { toggleFeatureD } from "@slices/featureSlice";
@@ -27,9 +30,9 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
   const featureDialogs = useSelector((state) => state.feature.dialogs);
   const userData = useSelector(selectCurrentUser);
 
-  const { data: featureProjectsData, isLoading: isFeatureProjectsLoading } = useListFeatureProjectsQuery(featureState.featureMetadata.id);
+  const { data: featureProjectsData, isLoading: isFeatureProjectsLoading } =
+    useListFeatureProjectsQuery(featureState.featureMetadata.id);
   const projects = featureProjectsData?.projects || [];
-
 
   const [expanded, setExpanded] = useState(false);
 
@@ -38,17 +41,22 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
   const fetchProjectList = () => {
     dispatch(setProjectList(projects));
     dispatch(setProjectListDialogHeading("Projects list"));
-    dispatch(setProjectListDialogTitle("The feature is used in the following projects:"));
+    dispatch(
+      setProjectListDialogTitle(
+        "The feature is used in the following projects:",
+      ),
+    );
     dispatch(
       toggleProjDialog({
         dialogName: "projectsListDialogOpen",
         isOpen: true,
-      })
+      }),
     );
-  }
+  };
 
   // Determine unit type and value
-  const isShapefile = featureState.featureMetadata.source === "Imported shapefile";
+  const isShapefile =
+    featureState.featureMetadata.source === "Imported shapefile";
   const amount = isShapefile
     ? getArea(featureState.featureMetadata.area, userData?.report_units, true)
     : featureState.featureMetadata.area;
@@ -59,7 +67,7 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
       toggleFeatureD({
         dialogName: "featureDialogOpen",
         isOpen: false,
-      })
+      }),
     );
 
   return (
@@ -103,10 +111,16 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
                 val1="Created by:"
                 val2={featureState.featureMetadata.created_by}
               />
-              <BPTableRow val1="Source:" val2={featureState.featureMetadata.source} />
+              <BPTableRow
+                val1="Source:"
+                val2={featureState.featureMetadata.source}
+              />
               {expanded && (
                 <>
-                  <BPTableRow val1="ID:" val2={featureState.featureMetadata.id} />
+                  <BPTableRow
+                    val1="ID:"
+                    val2={featureState.featureMetadata.id}
+                  />
                   <BPTableRow
                     val1="guid:"
                     val2={featureState.featureMetadata.feature_class_name}
@@ -118,8 +132,7 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
                   <BPTableRow
                     val1="Projects:"
                     val2={
-                      <FontAwesomeIcon
-                        icon="external-link-alt"
+                      <LinkIcon
                         onClick={fetchProjectList}
                         title="View a list of projects that this feature is used in"
                         style={{ cursor: "pointer", paddingTop: "6px" }}

@@ -1,15 +1,12 @@
-import {
-  faInfoCircle,
-  faQuestionCircle,
-} from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 
 import CONSTANTS from "./constants";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import HelpIcon from "@mui/icons-material/Help";
+import InfoIcon from "@mui/icons-material/Info";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
-import MenuBarListItem from "./MenuBarListItem";
 import MenuItem from "@mui/material/MenuItem";
-import React from "react";
 import { toggleDialog } from "@slices/uiSlice";
 
 const HelpMenu = (props) => {
@@ -60,18 +57,19 @@ const HelpMenu = (props) => {
         },
       }}
     >
-      <MenuBarListItem
-        handleClick={openDocumentation}
-        title="Documentation"
-        icon={faQuestionCircle}
-        text="Documentation"
-      />
-      <MenuBarListItem
-        handleClick={handleOpenAboutDialog}
-        title="About"
-        icon={faInfoCircle}
-        text="About"
-      />
+      <MenuItem onClick={openDocumentation} title="Documentation">
+        <ListItemIcon>
+          <HelpIcon />
+        </ListItemIcon>
+        <ListItemText>Documentation</ListItemText>
+      </MenuItem>
+
+      <MenuItem onClick={handleOpenAboutDialog} title="About">
+        <ListItemIcon>
+          <InfoIcon />
+        </ListItemIcon>
+        <ListItemText>About</ListItemText>
+      </MenuItem>
     </Menu>
   );
 };

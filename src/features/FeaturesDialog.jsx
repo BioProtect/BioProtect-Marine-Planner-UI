@@ -17,7 +17,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import FeaturesToolbar from "./FeaturesToolbar";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { generateTableCols } from "../Helpers";

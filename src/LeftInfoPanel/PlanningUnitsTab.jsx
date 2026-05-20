@@ -11,7 +11,6 @@ import CardContent from "@mui/material/CardContent";
 import CropSquareIcon from "@mui/icons-material/CropSquare";
 import Divider from "@mui/material/Divider";
 import EditIcon from "@mui/icons-material/Edit";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import List from "@mui/material/List";
@@ -110,7 +109,7 @@ const PlanningUnitsTab = ({
     for (const [id, status] of Object.entries(planningUnitStatusMap)) {
       map.current.setFeatureState(
         { source: sourceId, sourceLayer: sourceLayerName, id: String(id) },
-        { status }
+        { status },
       );
     }
     localEditsRef.current = {};
@@ -282,9 +281,7 @@ const PlanningUnitsTab = ({
               <Select
                 labelId="costs-select-label"
                 id="costs-select"
-                value={
-                  costProfiles.find((p) => p.is_active)?.id ?? ""
-                }
+                value={costProfiles.find((p) => p.is_active)?.id ?? ""}
                 disabled={preprocessing || userRole === "ReadOnly"}
                 label="Use cost surface"
                 onChange={(event) => activateCostProfile(event.target.value)}

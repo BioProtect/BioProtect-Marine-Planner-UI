@@ -1,4 +1,3 @@
-import { faLock, faUnlink } from "@fortawesome/free-solid-svg-icons";
 import { selectServer, switchProject } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -11,11 +10,13 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
+import { Link } from "@mui/material";
+import LinkOffIcon from "@mui/icons-material/LinkOff";
+import LockIcon from "@mui/icons-material/Lock";
 import MenuItem from "@mui/material/MenuItem";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import React from "react";
@@ -149,14 +150,12 @@ const LoginDialog = ({ open, loadProjectAndSetup }) => {
                 >
                   <span style={{ display: "flex", alignItems: "center" }}>
                     {item.offline ? (
-                      <FontAwesomeIcon
+                      <LinkOffIcon
                         style={{ height: "12px", marginRight: "8px" }}
-                        icon={faUnlink}
                       />
                     ) : item.corsEnabled ? null : (
-                      <FontAwesomeIcon
+                      <LockIcon
                         style={{ height: "12px", marginRight: "8px" }}
-                        icon={faLock}
                       />
                     )}
                     {text}

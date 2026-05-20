@@ -22,11 +22,17 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 
 import AppBar from "@mui/material/AppBar";
-import AppBarIcon from "./AppBarIcon";
+import ArrowCircleLeftIcon from "@mui/icons-material/ArrowCircleLeft";
+import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
 import Avatar from "@mui/material/Avatar";
 import BioLogo from "../images/bioprotect_some_bkgrnd.png";
 import Box from "@mui/material/Box";
+import BuildIcon from "@mui/icons-material/Build";
 import Button from "@mui/material/Button";
+import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import HelpIcon from "@mui/icons-material/Help";
+import SetMealIcon from "@mui/icons-material/SetMeal";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { selectCurrentUser } from "@slices/authSlice";
@@ -95,16 +101,19 @@ const MenuBar = ({
         >
           <Avatar alt="BioProtect Logo" src={BioLogo} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            <AppBarIcon
-              icon={faFolderOpen}
-              onClick={() => openProjectsDialog()}
-              title="Projects"
-            />
-            <AppBarIcon
-              icon={faFishFins}
+            <Button onClick={() => openProjectsDialog()} sx={{ color: "#fff" }}>
+              <FolderOpenIcon title="Projects" />
+              Projects
+            </Button>
+
+            <Button
               onClick={() => handleOpenFeaturesDialog()}
-              title="Features"
-            />
+              sx={{ color: "#fff" }}
+            >
+              <SetMealIcon title="Features" />
+              Features
+            </Button>
+
             {/* <AppBarIcon
               icon={faThLarge}
               onClick={() => openPlanningGridsDialog()}
@@ -115,41 +124,45 @@ const MenuBar = ({
               onClick={() => openAtlasLayersDialog()}
               title="Atlas Layers"
             /> */}
-            <AppBarIcon
-              icon={faShip}
+            <Button
               onClick={() => openCumulativeImpactDialog()}
-              title="Impact"
-            />
-            <span style={{ width: "16px" }} />
-            <AppBarIcon
-              icon={dialogStates.infoPanelOpen ? faArrowAltCircleLeft : a}
+              sx={{ color: "#fff" }}
+            >
+              <DirectionsBoatIcon title="Costs" />
+              Activities & Costs
+            </Button>
+
+            <Button
               onClick={(e) => togglePanel(e, "infoPanelOpen")}
-              title={
-                dialogStates.infoPanelOpen
-                  ? "Hide the project window"
-                  : "Show the project window"
-              }
-            />
-            <AppBarIcon
-              icon={dialogStates.resultsPanelOpen ? faArrowAltCircleRight : b}
+              sx={{ color: "#fff" }}
+            >
+              <ArrowCircleLeftIcon title="Left Panel" />
+              Toggle Project Window
+            </Button>
+
+            <Button
               onClick={(e) => togglePanel(e, "resultsPanelOpen")}
-              title={
-                dialogStates.resultsPanelOpen
-                  ? "Hide the results window"
-                  : "Show the results window"
-              }
-            />
-            <span style={{ width: "16px" }} />
-            <AppBarIcon
-              icon={faWrench}
-              title={"Tools and analysis"}
+              sx={{ color: "#fff" }}
+            >
+              <ArrowCircleRightIcon title="Results Panel" />
+              Toggle Results Window
+            </Button>
+
+            <Button
               onClick={(e) => handleMenuOpen(e, "toolsMenuOpen")}
-            />
-            <AppBarIcon
-              icon={faQuestionCircle}
-              title={"Help and support"}
+              sx={{ color: "#fff" }}
+            >
+              <BuildIcon title="Tools" />
+              Tools Menu
+            </Button>
+
+            <Button
               onClick={(e) => handleMenuOpen(e, "helpMenuOpen")}
-            />
+              sx={{ color: "#fff" }}
+            >
+              <HelpIcon title="Help" />
+              Help
+            </Button>
           </Typography>
           <Button
             color="inherit"

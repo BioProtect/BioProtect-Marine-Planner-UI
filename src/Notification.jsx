@@ -1,26 +1,15 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-/*
- * Copyright (c) 2020 Andrew Cottam.
- *
- * This file is part of marxanweb/marxan-client
- * (see https://github.com/marxanweb/marxan-client).
- *
- * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
- */
+import CastForEducationIcon from "@mui/icons-material/CastForEducation";
+import CloudOffIcon from "@mui/icons-material/CloudOff";
+import NewspaperIcon from "@mui/icons-material/Newspaper";
 import React from "react";
-import { faChalkboardTeacher } from "@fortawesome/free-solid-svg-icons";
-import { faCloudDownloadAlt } from "@fortawesome/free-solid-svg-icons";
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
-import { faNewspaper } from "@fortawesome/free-solid-svg-icons";
-
+import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 class Notification extends React.Component {
   render() {
     var icon;
     switch (this.props.type) {
       case "Hardware Issue":
         icon = (
-          <FontAwesomeIcon
-            icon={faExclamationTriangle}
+          <ReportProblemIcon
             style={{ color: "red", paddingRight: "5px", fontSize: "18px" }}
           />
         );
@@ -28,8 +17,7 @@ class Notification extends React.Component {
       case "Data Update":
       case "Software Update":
         icon = (
-          <FontAwesomeIcon
-            icon={faCloudDownloadAlt}
+          <CloudOffIcon
             style={{
               color: "rgba(255,0,0,0.7)",
               paddingRight: "5px",
@@ -40,18 +28,14 @@ class Notification extends React.Component {
         break;
       case "Training":
         icon = (
-          <FontAwesomeIcon
-            icon={faChalkboardTeacher}
+          <CastForEducationIcon
             style={{ paddingRight: "5px", fontSize: "18px" }}
           />
         );
         break;
       case "News":
         icon = (
-          <FontAwesomeIcon
-            icon={faNewspaper}
-            style={{ paddingRight: "5px", fontSize: "18px" }}
-          />
+          <NewspaperIcon style={{ paddingRight: "5px", fontSize: "18px" }} />
         );
         break;
       default:

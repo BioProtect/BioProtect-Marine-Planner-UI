@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
 import Box from "@mui/material/Box";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 const TransparencyControl = ({ opacity, changeOpacity }) => {
   const [oldOpacity, setOldOpacity] = useState(0.5);
@@ -37,11 +37,11 @@ const TransparencyControl = ({ opacity, changeOpacity }) => {
       sx={{ width: "100%" }}
     >
       <div className="transparencyControl" title="Click to toggle visibility">
-        <FontAwesomeIcon
-          icon={opacity === 0 ? faEyeSlash : faEye}
-          style={{ color: "gainsboro" }}
-          onClick={toggleLayer}
-        />
+        {opacity === 0 ? (
+          <VisibilityOffIcon onClick={toggleLayer} />
+        ) : (
+          <VisibilityIcon onClick={toggleLayer} />
+        )}
       </div>
       <Box sx={{ flexGrow: 1 }}>
         <Slider
