@@ -23,11 +23,6 @@ const ToolsMenu = (props) => {
     closeDialog();
   }, [props]);
 
-  const openRunLogDialog = useCallback(() => {
-    props.openRunLogDialog();
-    closeDialog();
-  }, [props]);
-
   const openGapAnalysisDialog = useCallback(() => {
     props.openGapAnalysisDialog();
     closeDialog();
@@ -91,19 +86,6 @@ const ToolsMenu = (props) => {
           <ListItemText>Reset database</ListItemText>
         </MenuItem>
       )}
-      <MenuItem
-        onClick={openRunLogDialog}
-        title={
-          props.userRole === "Admin"
-            ? "View Run Log and stop runs"
-            : "View Run Log"
-        }
-      >
-        <ListItemIcon>
-          <DirectionsRunIcon />
-        </ListItemIcon>
-        <ListItemText>Run log</ListItemText>
-      </MenuItem>
       {props.userRole !== "ReadOnly" && (
         <MenuItem
           onClick={openGapAnalysisDialog}

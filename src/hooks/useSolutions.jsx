@@ -183,63 +183,6 @@ const getSsolnSample = (data, sampleSize) => {
 //get all data from the ssoln arrays
 const getSsolnData = (data) => data.flatMap((item) => item[1]);
 
-// Gets the classification and colorbrewer object for doing the rendering
-const classifyData = (data, numClasses, colorCode, classification) => {
-  //get a sample of the data to make the renderer classification
-  const sample = getSsolnSample(data, 1000); //samples dont work
-  // let sample = this.getSsolnData(data); //get all the ssoln data
-  brew.setSeries(sample);
-  const brew = brew;
-  // If the colorCode is opacity then calculate the rgba values dynamically and add them to the color schemes
-  if (colorCode === "opacity") {
-    const { opacity } = brew.colorSchemes;
-
-    //see if we have already created a brew color scheme for opacity with NUMCLASSES
-    if (!opacity || !opacity[projState.renderer.NUMCLASSES]) {
-      const newBrewColorScheme = Array.from(
-        { length: projState.renderer.NUMCLASSES },
-        (_, index) =>
-          `rgba(255,0,136,${(1 / projState.renderer.NUMCLASSES) * (index + 1)})`,
-      );
-      //add the new color scheme
-      if (brew.colorSchemes.opacity === undefined) {
-        brew.colorSchemes.opacity = [];
-      }
-      // Update the Brew color schemes state
-      setBrew((prevState) => ({
-        ...prevState, // Spread the existing state
-        colorSchemes: {
-          ...prevState.colorSchemes, // Use prevState to maintain the existing colorSchemes
-          opacity: {
-            ...prevState.colorSchemes.opacity, // Preserve existing opacity settings
-            [projState.renderer.NUMCLASSES]: newBrewColorScheme, // Add or update the NUMCLASSES key
-          },
-        },
-      }));
-    }
-  }
-  // Set the color code - see the color theory section on Joshua Tanners page here https://github.com/tannerjt/classybrew - for all the available colour codes
-  brew.setColorCode(colorCode);
-  //get the maximum number of colors in this scheme
-  const colorSchemeLength = getMaxNumberOfClasses(brew, colorCode);
-  //check the color scheme supports the passed number of classes
-  if (numClasses > colorSchemeLength) {
-    //set the numClasses to the max for the color scheme
-    numClasses = colorSchemeLength;
-    //reset the renderer
-    dispatch(
-      setRenderer((prevState) => ({
-        ...prevState,
-        NUMCLASSES: finalNumClasses, // Update or add the NUMCLASSES property
-      })),
-    );
-  }
-  //set the number of classes
-  brew.setNumClasses(numClasses);
-  //set the classification method - one of equal_interval, quantile, std_deviation, jenks (default)
-  brew.classify(classification);
-};
-
 //called when the renderer state has been updated - renders the solution and saves the renderer back to the server
 const rendererStateUpdated = async (parameter, value) => {
   renderSolution(runMarxanResponse.ssoln, true);

@@ -109,7 +109,6 @@ const initialState = {
 
     alertDialogOpen: false,
     atlasLayersDialogOpen: false,
-    classificationDialogOpen: false,
     costsDialogOpen: false,
     importCostsDialogOpen: false,
     helpMenuOpen: false,

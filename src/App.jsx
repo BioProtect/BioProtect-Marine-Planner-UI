@@ -79,7 +79,6 @@ import AboutDialog from "./AboutDialog";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import ChangPasswordDialog from "./User/ChangePasswordDialog";
-import ClassificationDialog from "./ClassificationDialog";
 // CostsDialog removed - merged into CumulativeImpactDialog
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
 import FeatureDialog from "@features/FeatureDialog";
@@ -310,7 +309,6 @@ const App = () => {
   const [notifications, setNotifications] = useState([]);
 
   const [preprocessing, setPreprocessing] = useState(false);
-  const [runLogs, setRunLogs] = useState([]);
   const [runParams, setRunParams] = useState([]);
   const [boundaryPenalty, setBoundaryPenalty] = useState(0);
   const [selectedCosts, setSelectedCosts] = useState([]);
@@ -1522,62 +1520,6 @@ const App = () => {
     ["get", attribute],
   ];
   //gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
-  const getPaintProperties = (data, sum, setRenderer) => {
-    // Get the matching puids with different numbers of 'numbers' in the marxan results
-    const fill_color_expression = initialiseFillColorExpression("puid");
-    const fill_outline_color_expression = initialiseFillColorExpression("puid");
-
-    if (data.length > 0) {
-      let color, visibleValue, value;
-      // Create renderer using classybrew library - https://github.com/tannerjt/classybrew
-
-      if (setRenderer) {
-        classifyData(
-          data,
-          Number(renderer.NUMCLASSES),
-          renderer.COLORCODE,
-          renderer.CLASSIFICATION,
-        );
-      }
-
-      //if only the top n classes will be rendered then get the visible value at the boundary
-      visibleValue = getVisibleValue(renderer, brew);
-
-      // the rest service sends the data grouped by the 'number', e.g. [1,[23,34,36,43,98]],[2,[16,19]]
-      data.forEach((row) => {
-        value = row[0];
-        // For each row add the puids and the color to the expression, e.g. [35,36,37],"rgba(255, 0, 136,0.1)"
-        if (sum) {
-          // Multi-value rendering
-          color = brew.getColorInRange(value);
-          updateExpressions(row, value, color, visibleValue, [
-            fillColorExpression,
-            fillOutlineColorExpression,
-          ]);
-        } else {
-          // Single-value rendering
-          fillColorExpression.push(row[1], "rgb(7, 116, 39)");
-          fillOutlineColorExpression.push(row[1], "rgba(150, 150, 150, 0.6)"); // gray outline
-        }
-      });
-
-      // Add default color for missing data
-      fill_color_expression.push("rgba(0,0,0,0)");
-      fill_outline_color_expression.push("rgba(0,0,0,0)");
-    } else {
-      // No data case
-      return {
-        fillColor: "rgba(0, 0, 0, 0)",
-        outlineColor: "rgba(0, 0, 0, 0)",
-      };
-    }
-
-    return {
-      fillColor: fillColorExpression,
-      outlineColor: fillOutlineColorExpression,
-    };
-  };
-
   const renderPuPrioritizrLayer = (freq, totalRuns) => {
     // freq: { h3_index: count } — how many runs each hex was selected in
     // totalRuns: number of selected runs (for normalising intensity)
@@ -3302,12 +3244,6 @@ const App = () => {
   const openUsersDialog = async () =>
     dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: true }));
 
-  const openRunLogDialog = async () => {
-    await getRunLogs();
-    await startPollingRunLogs();
-    setRunLogDialogOpen(true);
-  };
-
   const showProjectListDialog = (listOfProjects, title, heading) => {
     dispatch(setProjectList(listOfProjects));
     dispatch(setProjectListDialogHeading(heading));
@@ -3378,29 +3314,6 @@ const App = () => {
     } catch (error) {
       console.error("Error running Prioirtizr:", error);
       throw error; // Re-throw the error to handle it further up the call stack if needed
-    }
-  };
-
-  //called when the run log dialog opens and starts polling the run log
-  const startPollingRunLogs = async () => {
-    // Function to handle the polling
-    const pollLogs = async () => {
-      try {
-        await getRunLogs();
-      } catch (error) {
-        console.error("Error fetching run logs:", error);
-      }
-    };
-
-    // Start polling at a set interval
-    setRunlogTimer(setInterval(pollLogs, 5000));
-  };
-
-  //returns the log of all of the runs from the server
-  const getRunLogs = async () => {
-    if (!unauthorisedMethods.includes("getRunLogs")) {
-      const response = await _get("getRunLogs");
-      setRunLogs(response.data);
     }
   };
 
@@ -3534,7 +3447,6 @@ const App = () => {
         <ToolsMenu
           menuAnchor={menuAnchor}
           openUsersDialog={openUsersDialog}
-          openRunLogDialog={openRunLogDialog}
           userRole={userData}
           metadata={metadata}
           cleanup={cleanup}
@@ -3644,14 +3556,6 @@ const App = () => {
           <ResultsPanel
             open={uiState.resultsPanelOpen}
             preprocessing={preprocessing}
-            setClassificationDialogOpen={() =>
-              dispatch(
-                toggleDialog({
-                  dialogName: "classificationDialogOpen",
-                  isOpen: true,
-                }),
-              )
-            }
             brew={brew}
             messages={logMessages}
             activeResultsTab={uiState.activeResultsTab}
@@ -3742,32 +3646,8 @@ const App = () => {
           boundaryPenalty={boundaryPenalty}
           setBoundaryPenalty={setBoundaryPenalty}
         />
-        {dialogStates.classificationDialogOpen ? (
-          <ClassificationDialog
-            open={dialogStates.classificationDialogOpen}
-            onOk={() => setClassificationDialogOpen(false)}
-            onCancel={() => setClassificationDialogOpen(false)}
-            renderer={renderer}
-            changeColorCode={changeColorCode}
-            changeRenderer={changeRenderer}
-            changeNumClasses={changeNumClasses}
-            changeShowTopClasses={changeShowTopClasses}
-            summaryStats={summaryStats}
-            brew={brew}
-            dataBreaks={dataBreaks}
-          />
-        ) : null}
+
         <ResetDialog onOk={resetServer} />
-        {/* <RunLogDialog
-            preprocessing={preprocessing}
-            unauthorisedMethods={unauthorisedMethods}
-            runLogs={runLogs}
-            getRunLogs={getRunLogs}
-            clearRunLogs={clearRunLogs}
-            stopMarxan={stopProcess}
-            userRole={userData?.role}
-            runlogTimer={runlogTimer}
-          /> */}
         <ServerDetailsDialog loading={uiState.loading} />
         <AlertDialog />
         <FeatureMenu
