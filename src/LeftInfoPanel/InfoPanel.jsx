@@ -153,8 +153,6 @@ const InfoPanel = (props) => {
   const panelStyle = useMemo(
     () => ({
       top: "60px",
-      width: "300px",
-      height: "300px",
     }),
     [],
   );
@@ -207,6 +205,7 @@ const InfoPanel = (props) => {
     setCurrentTabIndex(tabIndex);
     if (tabIndex === 0) {
       dispatch(setActiveTab("project"));
+      props.setPUTabInactive();
     }
     if (tabIndex === 1) {
       dispatch(setActiveTab("features"));
@@ -217,17 +216,33 @@ const InfoPanel = (props) => {
     }
   };
 
-  const displayStyle = {
-    display: dialogStates.infoPanelOpen ? "block" : "none",
+  const combinedDisplayStyles = {
+    ...panelStyle,
+    // Hide via visibility-style fallback when closed; otherwise preserve the
+    // flex layout from panelStyle (a `display: block` override here would
+    // collapse the column flex container and let the panel grow off-screen).
+    ...(dialogStates.infoPanelOpen ? {} : { display: "none" }),
   };
-  const combinedDisplayStyles = { ...panelStyle, ...displayStyle };
   const titleDisplayStyle = { display: editingProjectName ? "block" : "none" };
   const combinedDisplayStyle = { ...titleStyle, ...titleDisplayStyle };
 
   return (
     <React.Fragment>
       <div className="infoPanel" style={combinedDisplayStyles}>
-        <Paper elevation={2} className="InfoPanelPaper" mb={4}>
+        <Paper
+          elevation={2}
+          className="InfoPanelPaper"
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            // .infoPanel starts at top:60px, .InfoPanelPaper has margin:20px
+            // (CSS class), so total reserved = 60 (top offset) + 20 (top
+            // margin) + 20 (bottom margin) = 100. Cap height so the Paper
+            // plus its margins never push past the viewport.
+            maxHeight: "calc(100vh - 100px)",
+            overflow: "hidden",
+          }}
+        >
           <Paper elevation={2} className="titleBar">
             <span
               onClick={startEditingProjectName}
@@ -252,45 +267,50 @@ const InfoPanel = (props) => {
             <Tab label="Planning units" value={2} />
           </Tabs>
 
-          {currentTabIndex === 0 && (
-            <ProjectTabContent
-              project={props.project}
-              metadata={props.metadata}
-              toggleProjectPrivacy={toggleProjectPrivacy}
-              updateDetails={handleChange}
-            />
-          )}
-          {currentTabIndex === 1 && (
-            <FeaturesTab
-              {...props}
-              leftmargin="10px"
-              maxheight="409px"
-              simple={false}
-              showTargetButton
-              preprocessAllFeatures={preprocessAllFeatures}
-              preprocessFeature={preprocessFeature}
-            />
-          )}
-          {currentTabIndex === 2 && (
-            <PlanningUnitsTab
-              project={props.project}
-              userRole={userData?.role}
-              preprocessing={props.preprocessing}
-              costProfiles={props.costProfiles}
-              activateCostProfile={props.activateCostProfile}
-              map={props.map}
-              onClickRef={props.onClickRef}
-              onContextMenuRef={props.onContextMenuRef}
-              puLayerIdsRef={props.puLayerIdsRef}
-              _post={props._post}
-              puEditing={props.puEditing}
-              setPuEditing={props.setPuEditing}
-              planningUnits={props.planningUnits}
-              metadata={props.metadata}
-            />
-          )}
+          <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+            {currentTabIndex === 0 && (
+              <ProjectTabContent
+                project={props.project}
+                metadata={props.metadata}
+                toggleProjectPrivacy={toggleProjectPrivacy}
+                updateDetails={handleChange}
+              />
+            )}
+            {currentTabIndex === 1 && (
+              <FeaturesTab
+                {...props}
+                leftmargin="10px"
+                maxheight="409px"
+                simple={false}
+                showTargetButton
+                preprocessAllFeatures={preprocessAllFeatures}
+                preprocessFeature={preprocessFeature}
+              />
+            )}
+            {currentTabIndex === 2 && (
+              <PlanningUnitsTab
+                project={props.project}
+                userRole={userData?.role}
+                preprocessing={props.preprocessing}
+                costProfiles={props.costProfiles}
+                activateCostProfile={props.activateCostProfile}
+                map={props.map}
+                onClickRef={props.onClickRef}
+                onContextMenuRef={props.onContextMenuRef}
+                puLayerIdsRef={props.puLayerIdsRef}
+                _post={props._post}
+                puEditing={props.puEditing}
+                setPuEditing={props.setPuEditing}
+                planningUnits={props.planningUnits}
+                metadata={props.metadata}
+                fetchCostProfileActivities={props.fetchCostProfileActivities}
+                toggleActivityLayer={props.toggleActivityLayer}
+                loadedActivityIds={props.loadedActivityIds}
+              />
+            )}
+          </div>
 
-          <Paper>
+          <Paper sx={{ flexShrink: 0 }}>
             <Stack
               direction="row"
               justifyContent="right"

@@ -1930,6 +1930,8 @@ const App = () => {
           inferredType = CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST;
         else if (id.includes("status"))
           inferredType = CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS;
+        else if (id.includes("activity"))
+          inferredType = CONSTANTS.LAYER_TYPE_ACTIVITY;
         else if (id.includes("pu"))
           inferredType = CONSTANTS.LAYER_TYPE_PLANNING_UNITS;
         else if (id.includes("feature_pu"))
@@ -3139,6 +3141,80 @@ const App = () => {
     ],
   );
 
+  // Activity layer visibility map: { [activityId]: true } when loaded
+  const [loadedActivityIds, setLoadedActivityIds] = useState({});
+
+  // Toggles a vector tile layer for an activity's geometry table.
+  // The PostGIS table name is in metadata_activities.activity_name.
+  const toggleActivityLayer = useCallback(
+    (activity) => {
+      if (!map.current) return;
+      const tableName = activity.activity_name;
+      if (!tableName) return;
+
+      const sourceId = `martin_src_${tableName}`;
+      const layerId = `martin_layer_activity_${tableName}`;
+
+      if (map.current.getLayer(layerId)) {
+        removeMapLayer(layerId);
+        if (map.current.getSource(sourceId)) {
+          map.current.removeSource(sourceId);
+        }
+        setLoadedActivityIds((prev) => {
+          const next = { ...prev };
+          delete next[activity.id];
+          return next;
+        });
+        return;
+      }
+
+      const color =
+        Array.isArray(window.colors) && window.colors.length
+          ? window.colors[activity.id % window.colors.length]
+          : "#F5C043";
+
+      if (!map.current.getSource(sourceId)) {
+        map.current.addSource(sourceId, {
+          type: "vector",
+          url: `${tilesUrl}${tableName}`,
+        });
+      }
+
+      addMapLayer({
+        id: layerId,
+        type: "fill",
+        source: sourceId,
+        "source-layer": tableName,
+        layout: { visibility: "visible" },
+        paint: {
+          "fill-color": color,
+          "fill-opacity": CONSTANTS.ACTIVITY_LAYER_OPACITY,
+          "fill-outline-color": "rgba(0,0,0,0.25)",
+        },
+        metadata: {
+          name: activity.activity,
+          type: CONSTANTS.LAYER_TYPE_ACTIVITY,
+          activityId: activity.id,
+          activityName: tableName,
+        },
+      });
+
+      setLoadedActivityIds((prev) => ({ ...prev, [activity.id]: true }));
+    },
+    [tilesUrl],
+  );
+
+  // Fetch the activities that make up a cost profile
+  const fetchCostProfileActivities = useCallback(
+    async (costProfileId) => {
+      if (!costProfileId) return { data: [] };
+      return await _get(
+        `getCostProfileActivities?cost_profile_id=${costProfileId}`,
+      );
+    },
+    [_get],
+  );
+
   //toggles the planning unit feature layer on the map
   const toggleFeaturePUIDLayer = async (feature) => {
     const { sourceId, sourceLayerName } = puLayerIdsRef.current || {};
@@ -3539,6 +3615,9 @@ const App = () => {
             toggleProjectPrivacy={toggleProjectPrivacy}
             toggleFeatureLayer={toggleFeatureLayer}
             toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
+            toggleActivityLayer={toggleActivityLayer}
+            fetchCostProfileActivities={fetchCostProfileActivities}
+            loadedActivityIds={loadedActivityIds}
             useFeatureColors={userData?.USEFEATURECOLORS}
             smallLinearGauge={smallLinearGauge}
             openCostsDialog={openCostsDialog}

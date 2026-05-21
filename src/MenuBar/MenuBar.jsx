@@ -114,12 +114,14 @@ const MenuBar = ({
               Features
             </Button>
 
-            {/* <AppBarIcon
-              icon={faThLarge}
+            <Button
               onClick={() => openPlanningGridsDialog()}
-              title="Planning grids"
-            />
-            <AppBarIcon
+              sx={{ color: "#fff" }}
+            >
+              <DirectionsBoatIcon title="Planning Grids" />
+              Planning Grids
+            </Button>
+            {/* <AppBarIcon
               icon={faGlobeEurope}
               onClick={() => openAtlasLayersDialog()}
               title="Atlas Layers"
@@ -137,7 +139,6 @@ const MenuBar = ({
               sx={{ color: "#fff" }}
             >
               <ArrowCircleLeftIcon title="Left Panel" />
-              Toggle Project Window
             </Button>
 
             <Button
@@ -145,7 +146,6 @@ const MenuBar = ({
               sx={{ color: "#fff" }}
             >
               <ArrowCircleRightIcon title="Results Panel" />
-              Toggle Results Window
             </Button>
 
             <Button
@@ -153,7 +153,6 @@ const MenuBar = ({
               sx={{ color: "#fff" }}
             >
               <BuildIcon title="Tools" />
-              Tools Menu
             </Button>
 
             <Button
@@ -161,7 +160,6 @@ const MenuBar = ({
               sx={{ color: "#fff" }}
             >
               <HelpIcon title="Help" />
-              Help
             </Button>
           </Typography>
           <Button

@@ -229,6 +229,29 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
     ) : null;
   };
 
+  const getActivityLegendItems = () => {
+    let activityLayers = visibleLayers.filter(
+      (layer) => layer.metadata.type === CONSTANTS.LAYER_TYPE_ACTIVITY,
+    );
+    let items = activityLayers.map((layer) => ({
+      fillColor: layer.paint["fill-color"],
+      strokeColor: "lightgray",
+      label: layer.metadata.name,
+    }));
+    items.sort((a, b) =>
+      a.label.toLowerCase() < b.label.toLowerCase() ? -1 : 1,
+    );
+    return items.length ? (
+      <LayerLegend
+        changeOpacity={changeOpacity}
+        layer={{ metadata: { name: "Activities" } }}
+        subLayers={activityLayers}
+        items={items}
+        shape={"square"}
+      />
+    ) : null;
+  };
+
   const getFeaturePUIDLegendItems = () => {
     let featurePUIDLayers = visibleLayers.filter(
       (layer) => layer.metadata.type === CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER,
@@ -271,6 +294,7 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
     >
       {getNonFeatureLegendItems()}
       {getFeatureLegendItems()}
+      {getActivityLegendItems()}
       {getFeaturePUIDLegendItems()}
     </Box>
   );
