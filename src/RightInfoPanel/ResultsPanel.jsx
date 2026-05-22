@@ -13,6 +13,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import IconButton from "@mui/material/IconButton";
 import Log from "./Log";
 import MapLegend from "./MapLegend";
+import PanelHeader from "../BPComponents/PanelHeader";
 import Paper from "@mui/material/Paper";
 import Tab from "@mui/material/Tab";
 import Table from "@mui/material/Table";
@@ -245,28 +246,28 @@ const ResultsPanel = (props) => {
           overflow: "hidden",
         }}
       >
-        <div
-          className="resultsTitle"
-          style={{ display: "flex", alignItems: "center", paddingRight: 6 }}
+        <PanelHeader
+          actions={
+            <Tooltip title="Download PDF report">
+              <span>
+                <Button
+                  size="small"
+                  onClick={handleDownloadPdf}
+                  disabled={pdfLoading}
+                  sx={{
+                    color: "white",
+                    "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" },
+                  }}
+                  endIcon={conditionalEndIcon(pdfLoading)}
+                >
+                  Download PDF
+                </Button>
+              </span>
+            </Tooltip>
+          }
         >
-          <span style={{ flex: 1 }}>Results</span>
-          <Tooltip title="Download PDF report">
-            <span>
-              <Button
-                size="small"
-                onClick={handleDownloadPdf}
-                disabled={pdfLoading}
-                sx={{
-                  color: "white",
-                  "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" },
-                }}
-                endIcon={conditionalEndIcon(pdfLoading)}
-              >
-                Download PDF
-              </Button>
-            </span>
-          </Tooltip>
-        </div>
+          Results
+        </PanelHeader>
 
         <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
           <Tab label="Legend" />

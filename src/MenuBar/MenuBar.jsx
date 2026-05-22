@@ -97,7 +97,11 @@ const MenuBar = ({
     >
       <AppBar position="static">
         <Toolbar
-          sx={{ backgroundColor: "rgb(0, 188, 212)", maxHeight: "60px" }}
+          sx={{
+            color: "primary.contrastText",
+            background: (theme) => theme.palette.brand.barGradient,
+            maxHeight: "60px",
+          }}
         >
           <Avatar alt="BioProtect Logo" src={BioLogo} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>

@@ -21,6 +21,7 @@ import {
   setUploadedActivities,
   toggleDialog,
 } from "@slices/uiSlice";
+import { apiSlice } from "@slices/apiSlice";
 import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
   initialiseServers,
@@ -93,7 +94,7 @@ import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
 import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
-import LoginDialog from "./LoginDialog";
+import LoginPage from "./LoginPage";
 //mapbox imports
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
@@ -984,55 +985,61 @@ const App = () => {
   const handleLogOut = async () => {
     console.log("* * * Logging out... * * *");
 
+    // Close all open dialogs
+    dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
+    dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: false }));
+    dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
+
+    // Reset local state
+    setBrew(new classyBrew());
+    setRunParams([]);
+    setNotifications([]);
+    setFiles({});
+
+    // Reset Redux slices
+    dispatch(setOwner(""));
+    dispatch(setUsers([]));
+    dispatch(setProjects([]));
+    dispatch(setActiveProjectId(null));
+    dispatch(setSelectedFeatureIds([]));
+    dispatch(setSelectedFeatureId(null));
+
+    // Clear local auth FIRST so any refetches triggered by the api reset
+    // (or any in-flight 403s) see isUserLoggedIn=false and skip the
+    // /refresh re-auth path in baseQueryWithReauth.
+    dispatch(logOut()); // from authSlice — clears token + isUserLoggedIn
+
+    // Best-effort server-side session invalidation. Failures here must NOT
+    // block local logout — otherwise an expired session or network hiccup
+    // would trap the user in the app with no way back to the login page.
     try {
-      // Close all open dialogs
-      dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
-      dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: false }));
-      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
-
-      // Reset local state
-      setBrew(new classyBrew());
-      setRunParams([]);
-      setNotifications([]);
-      setMetadata({});
-      setFiles({});
-
-      // Reset Redux slices
-      dispatch(setOwner(""));
-      dispatch(setUsers([]));
-      dispatch(setProjects([]));
-      dispatch(setActiveProjectId(null));
-      dispatch(setSelectedFeatureIds([]));
-      dispatch(setSelectedFeatureId(null));
-
-      // Clear authentication on server first (before resetting local state)
       await logoutUser().unwrap();
-
-      // Clear RTK Query cache
-      dispatch(apiSlice.util.resetApiState());
-
-      // Clear authentication data
-      dispatch(logOut()); // from authSlice
-
-      // Clear cookies manually if needed
-      document.cookie
-        .split(";")
-        .forEach(
-          (c) =>
-            (document.cookie = c
-              .replace(/^ +/, "")
-              .replace(
-                /=.*/,
-                "=;expires=" + new Date().toUTCString() + ";path=/",
-              )),
-        );
-
-      // 6Reset UI
-      showMessage("Successfully logged out", "success");
     } catch (err) {
-      console.error("Logout error:", err);
-      showMessage("Logout failed", "error");
+      console.warn("Server logout failed (continuing with local logout):", err);
     }
+
+    // Clear RTK Query cache so mounted hooks don't paint stale data back in.
+    dispatch(apiSlice.util.resetApiState());
+
+    // Clear cookies manually if needed (won't touch HTTP-only refresh cookie —
+    // the server endpoint above is what invalidates that).
+    document.cookie
+      .split(";")
+      .forEach(
+        (c) =>
+          (document.cookie = c
+            .replace(/^ +/, "")
+            .replace(
+              /=.*/,
+              "=;expires=" + new Date().toUTCString() + ";path=/",
+            )),
+      );
+
+    // Hard reload to abort in-flight queries, drop in-memory caches/closures,
+    // and guarantee a fresh render starting from the LoginPage. Without this
+    // a mounted RTK Query hook could refire against the still-authenticated
+    // server before the LoginPage gate re-evaluates.
+    window.location.reload();
   };
 
   const changeRole = async (user, role) => {
@@ -3512,12 +3519,8 @@ const App = () => {
           ref={mapContainer}
           className="map-container absolute top right left bottom"
         ></div>
-        {token ? null : (
-          <LoginDialog
-            open={!isLoggedIn}
-            loading={uiState.loading}
-            loadProjectAndSetup={loadProjectAndSetup}
-          />
+        {token || isLoggedIn ? null : (
+          <LoginPage loadProjectAndSetup={loadProjectAndSetup} />
         )}
         <ResendPasswordDialog open={dialogStates.resendPasswordDialogOpen} />
         <ToolsMenu

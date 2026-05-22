@@ -12,6 +12,7 @@ import Button from "@mui/material/Button";
 import CONSTANTS from "../constants";
 import FeaturesTab from "./FeaturesTab";
 import Loading from "../Loading";
+import PanelHeader from "../BPComponents/PanelHeader";
 import Paper from "@mui/material/Paper";
 import PlanningUnitsTab from "./PlanningUnitsTab";
 import ProjectTabContent from "./ProjectTab";
@@ -243,14 +244,17 @@ const InfoPanel = (props) => {
             overflow: "hidden",
           }}
         >
-          <Paper elevation={2} className="titleBar">
-            <span
-              onClick={startEditingProjectName}
-              className="projectNameEditBox"
-              title="Click to rename the project"
-            >
-              {props.project?.name || "Untitled project"}
-            </span>
+          <PanelHeader>
+            {editingProjectName ? null : (
+              <span
+                onClick={startEditingProjectName}
+                className="projectNameEditBox"
+                title="Click to rename the project"
+                style={{ cursor: "pointer" }}
+              >
+                {props.project?.name || "Untitled project"}
+              </span>
+            )}
             <input
               id="projectName"
               ref={projectNameRef}
@@ -259,7 +263,7 @@ const InfoPanel = (props) => {
               onKeyDown={handleKeyPress}
               onBlur={handleBlur}
             />
-          </Paper>
+          </PanelHeader>
 
           <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
             <Tab label="Project" value={0} disabled={!!puState.puEditing} />
