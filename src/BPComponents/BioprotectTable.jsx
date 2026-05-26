@@ -5,14 +5,12 @@ import {
 import { getComparator, stableSort } from "../Helpers";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import AppBarIcon from "../MenuBar/AppBarIcon";
 import BPTableHeadWithSort from "./BPTableHeadWithSort";
 import BPTableTitleWithSearch from "./BPTableTitleWithSearch";
 import Box from "@mui/material/Box";
 import { Button } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import IconButton from "@mui/material/IconButton";
 import MapIcon from "@mui/icons-material/Map";
 import Table from "@mui/material/Table";

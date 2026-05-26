@@ -10,12 +10,11 @@ import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import FeaturesList from "./FeaturesList";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import LayersIcon from "@mui/icons-material/Layers";
+import SettingsSuggestIcon from "@mui/icons-material/SettingsSuggest";
 import Stack from "@mui/material/Stack";
+import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import Typography from "@mui/material/Typography";
-import { faCrosshairs } from "@fortawesome/free-solid-svg-icons";
-import { faGears } from "@fortawesome/free-solid-svg-icons";
-import { faLayerGroup } from "@fortawesome/free-solid-svg-icons";
 import { toggleDialog } from "@slices/uiSlice";
 
 const FeaturesTab = ({
@@ -76,7 +75,7 @@ const FeaturesTab = ({
                   }),
                 )
               }
-              startIcon={<FontAwesomeIcon icon={faCrosshairs} size="xs" />}
+              startIcon={<TrackChangesIcon />}
               sx={btnSx}
             >
               Targets
@@ -86,7 +85,7 @@ const FeaturesTab = ({
               variant="contained"
               onClick={() => handleOpenFeaturesDialog()}
               title="Add/remove features from the project"
-              startIcon={<FontAwesomeIcon icon={faLayerGroup} size="xs" />}
+              startIcon={<LayersIcon />}
               sx={btnSx}
             >
               Add/Remove
@@ -96,7 +95,7 @@ const FeaturesTab = ({
               variant="contained"
               onClick={() => handlePreprocessAllFeatures()}
               title="Preprocess all features"
-              startIcon={<FontAwesomeIcon icon={faGears} size="xs" />}
+              startIcon={<SettingsSuggestIcon />}
               sx={btnSx}
             >
               Preprocess

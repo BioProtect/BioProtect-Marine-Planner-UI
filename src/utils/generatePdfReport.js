@@ -96,7 +96,7 @@ export async function generatePdfReport({
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(255, 255, 255);
-  doc.text("BioProtect MSP Report", TEAL_X + 4, y + 8);
+  doc.text("BioProtect Marine Planner Report", TEAL_X + 4, y + 8);
 
   const projectName = project?.name
     ? (metadata?.description
@@ -268,6 +268,46 @@ export async function generatePdfReport({
     return yRef + lines.length * LINE_H;
   };
 
+  // Feature bullet — name on line 1, target/achieved/status on line 2.
+  // Colour the status line green when every run met the target, red when none
+  // did, and amber for partial success.
+  const featureItem = (feat, x, yRef) => {
+    const label =
+      feat.alias || `Feature ${feat.feature_unique_id ?? feat.id ?? ""}`;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...DARK);
+    const nameLines = doc.splitTextToSize(`• ${label}`, COL_W - 3);
+    doc.text(nameLines, x + 2, yRef);
+    let nextY = yRef + nameLines.length * LINE_H;
+
+    const target = feat.target_value != null ? Number(feat.target_value) : null;
+    const achieved = feat.achieved != null ? Number(feat.achieved) : null;
+    const runCount = Number(feat.runCount ?? 0);
+    const metCount = Number(feat.metCount ?? 0);
+
+    const parts = [];
+    if (target != null) parts.push(`target ${target}%`);
+    if (achieved != null) parts.push(`got ${achieved.toFixed(1)}%`);
+    if (runCount > 0) parts.push(`${metCount}/${runCount} runs met`);
+
+    if (parts.length > 0) {
+      let color = GREY;
+      if (runCount > 0) {
+        if (metCount === runCount) color = [21, 128, 61];      // green
+        else if (metCount === 0) color = [185, 28, 28];        // red
+        else color = [161, 98, 7];                             // amber
+      }
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.8);
+      doc.setTextColor(...color);
+      const statusLines = doc.splitTextToSize(parts.join(" · "), COL_W - 6);
+      doc.text(statusLines, x + 5, nextY);
+      nextY += statusLines.length * (LINE_H - 0.6);
+    }
+    return nextY + 0.5;
+  };
+
   let yAct = y;
   let yFeatL = y;
   let yFeatR = y;
@@ -308,9 +348,7 @@ export async function generatePdfReport({
       if (isLeft && yFeatL > yLimit) return;
       if (!isLeft && yFeatR > yLimit) return;
 
-      const name = feat.name || `Feature ${feat.feature_unique_id ?? ""}`;
-      const target = feat.target_value != null ? ` (${feat.target_value}%)` : "";
-      const newY = bulletItem(name + target, x, isLeft ? yFeatL : yFeatR);
+      const newY = featureItem(feat, x, isLeft ? yFeatL : yFeatR);
 
       if (isLeft) yFeatL = newY;
       else yFeatR = newY;

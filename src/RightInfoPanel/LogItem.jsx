@@ -1,15 +1,11 @@
-import {
-  faArrowAltCircleRight,
-  faCheckCircle,
-  faExclamationTriangle,
-} from "@fortawesome/free-solid-svg-icons";
-
+import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
 import Box from "@mui/material/Box";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CheckIcon from "@mui/icons-material/Check";
 import { Chip } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Typography from "@mui/material/Typography";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 const LogItem = ({ message, preprocessing, className }) => {
   const hasError = Object.prototype.hasOwnProperty.call(message, "error");
@@ -18,32 +14,32 @@ const LogItem = ({ message, preprocessing, className }) => {
     <Box className={className} sx={{ display: "flex", flexWrap: "wrap" }}>
       {/* Preprocessing complete */}
       {message.status === "Finished" && !hasError && (
-        <FontAwesomeIcon
-          icon={faCheckCircle}
-          style={{ color: "green", marginRight: "6px" }}
+        <Box
+          sx={{ display: "flex", alignItems: "center", color: "success.main" }}
         >
-          Preprocessing completed
-        </FontAwesomeIcon>
+          <CheckCircleIcon sx={{ mr: 0.75 }} />
+          <Typography variant="body2">Preprocessing completed</Typography>
+        </Box>
       )}
 
       {/* Upload complete */}
       {message.status === "UploadComplete" && (
-        <FontAwesomeIcon
-          icon={faArrowAltCircleRight}
-          style={{ color: "green", marginRight: "6px" }}
+        <Box
+          sx={{ display: "flex", alignItems: "center", color: "error.main" }}
         >
-          Upload Complete
-        </FontAwesomeIcon>
+          <ArrowCircleRightIcon sx={{ mr: 0.75 }} />
+          <Typography variant="body2">Upload Complete</Typography>
+        </Box>
       )}
 
       {/* Error */}
       {hasError && (
-        <FontAwesomeIcon
-          icon={faExclamationTriangle}
-          style={{ color: "red", marginRight: "6px" }}
+        <Box
+          sx={{ display: "flex", alignItems: "center", color: "error.main" }}
         >
-          {message.info}
-        </FontAwesomeIcon>
+          <WarningAmberIcon sx={{ mr: 0.75 }} />
+          <Typography variant="body2">{message.info}</Typography>
+        </Box>
       )}
 
       {/* Message */}

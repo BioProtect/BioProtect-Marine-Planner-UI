@@ -21,6 +21,7 @@ import {
   setUploadedActivities,
   toggleDialog,
 } from "@slices/uiSlice";
+import { apiSlice } from "@slices/apiSlice";
 import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
   initialiseServers,
@@ -79,7 +80,6 @@ import AboutDialog from "./AboutDialog";
 import AlertDialog from "./AlertDialog";
 import AtlasLayersDialog from "./AtlasLayersDialog";
 import ChangPasswordDialog from "./User/ChangePasswordDialog";
-import ClassificationDialog from "./ClassificationDialog";
 // CostsDialog removed - merged into CumulativeImpactDialog
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
 import FeatureDialog from "@features/FeatureDialog";
@@ -94,7 +94,7 @@ import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
 import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
-import LoginDialog from "./LoginDialog";
+import LoginPage from "./LoginPage";
 //mapbox imports
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
@@ -310,7 +310,6 @@ const App = () => {
   const [notifications, setNotifications] = useState([]);
 
   const [preprocessing, setPreprocessing] = useState(false);
-  const [runLogs, setRunLogs] = useState([]);
   const [runParams, setRunParams] = useState([]);
   const [boundaryPenalty, setBoundaryPenalty] = useState(0);
   const [selectedCosts, setSelectedCosts] = useState([]);
@@ -986,55 +985,61 @@ const App = () => {
   const handleLogOut = async () => {
     console.log("* * * Logging out... * * *");
 
+    // Close all open dialogs
+    dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
+    dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: false }));
+    dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
+
+    // Reset local state
+    setBrew(new classyBrew());
+    setRunParams([]);
+    setNotifications([]);
+    setFiles({});
+
+    // Reset Redux slices
+    dispatch(setOwner(""));
+    dispatch(setUsers([]));
+    dispatch(setProjects([]));
+    dispatch(setActiveProjectId(null));
+    dispatch(setSelectedFeatureIds([]));
+    dispatch(setSelectedFeatureId(null));
+
+    // Clear local auth FIRST so any refetches triggered by the api reset
+    // (or any in-flight 403s) see isUserLoggedIn=false and skip the
+    // /refresh re-auth path in baseQueryWithReauth.
+    dispatch(logOut()); // from authSlice — clears token + isUserLoggedIn
+
+    // Best-effort server-side session invalidation. Failures here must NOT
+    // block local logout — otherwise an expired session or network hiccup
+    // would trap the user in the app with no way back to the login page.
     try {
-      // Close all open dialogs
-      dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
-      dispatch(toggleDialog({ dialogName: "resultsPanelOpen", isOpen: false }));
-      dispatch(toggleDialog({ dialogName: "infoPanelOpen", isOpen: false }));
-
-      // Reset local state
-      setBrew(new classyBrew());
-      setRunParams([]);
-      setNotifications([]);
-      setMetadata({});
-      setFiles({});
-
-      // Reset Redux slices
-      dispatch(setOwner(""));
-      dispatch(setUsers([]));
-      dispatch(setProjects([]));
-      dispatch(setActiveProjectId(null));
-      dispatch(setSelectedFeatureIds([]));
-      dispatch(setSelectedFeatureId(null));
-
-      // Clear authentication on server first (before resetting local state)
       await logoutUser().unwrap();
-
-      // Clear RTK Query cache
-      dispatch(apiSlice.util.resetApiState());
-
-      // Clear authentication data
-      dispatch(logOut()); // from authSlice
-
-      // Clear cookies manually if needed
-      document.cookie
-        .split(";")
-        .forEach(
-          (c) =>
-            (document.cookie = c
-              .replace(/^ +/, "")
-              .replace(
-                /=.*/,
-                "=;expires=" + new Date().toUTCString() + ";path=/",
-              )),
-        );
-
-      // 6Reset UI
-      showMessage("Successfully logged out", "success");
     } catch (err) {
-      console.error("Logout error:", err);
-      showMessage("Logout failed", "error");
+      console.warn("Server logout failed (continuing with local logout):", err);
     }
+
+    // Clear RTK Query cache so mounted hooks don't paint stale data back in.
+    dispatch(apiSlice.util.resetApiState());
+
+    // Clear cookies manually if needed (won't touch HTTP-only refresh cookie —
+    // the server endpoint above is what invalidates that).
+    document.cookie
+      .split(";")
+      .forEach(
+        (c) =>
+          (document.cookie = c
+            .replace(/^ +/, "")
+            .replace(
+              /=.*/,
+              "=;expires=" + new Date().toUTCString() + ";path=/",
+            )),
+      );
+
+    // Hard reload to abort in-flight queries, drop in-memory caches/closures,
+    // and guarantee a fresh render starting from the LoginPage. Without this
+    // a mounted RTK Query hook could refire against the still-authenticated
+    // server before the LoginPage gate re-evaluates.
+    window.location.reload();
   };
 
   const changeRole = async (user, role) => {
@@ -1522,62 +1527,6 @@ const App = () => {
     ["get", attribute],
   ];
   //gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
-  const getPaintProperties = (data, sum, setRenderer) => {
-    // Get the matching puids with different numbers of 'numbers' in the marxan results
-    const fill_color_expression = initialiseFillColorExpression("puid");
-    const fill_outline_color_expression = initialiseFillColorExpression("puid");
-
-    if (data.length > 0) {
-      let color, visibleValue, value;
-      // Create renderer using classybrew library - https://github.com/tannerjt/classybrew
-
-      if (setRenderer) {
-        classifyData(
-          data,
-          Number(renderer.NUMCLASSES),
-          renderer.COLORCODE,
-          renderer.CLASSIFICATION,
-        );
-      }
-
-      //if only the top n classes will be rendered then get the visible value at the boundary
-      visibleValue = getVisibleValue(renderer, brew);
-
-      // the rest service sends the data grouped by the 'number', e.g. [1,[23,34,36,43,98]],[2,[16,19]]
-      data.forEach((row) => {
-        value = row[0];
-        // For each row add the puids and the color to the expression, e.g. [35,36,37],"rgba(255, 0, 136,0.1)"
-        if (sum) {
-          // Multi-value rendering
-          color = brew.getColorInRange(value);
-          updateExpressions(row, value, color, visibleValue, [
-            fillColorExpression,
-            fillOutlineColorExpression,
-          ]);
-        } else {
-          // Single-value rendering
-          fillColorExpression.push(row[1], "rgb(7, 116, 39)");
-          fillOutlineColorExpression.push(row[1], "rgba(150, 150, 150, 0.6)"); // gray outline
-        }
-      });
-
-      // Add default color for missing data
-      fill_color_expression.push("rgba(0,0,0,0)");
-      fill_outline_color_expression.push("rgba(0,0,0,0)");
-    } else {
-      // No data case
-      return {
-        fillColor: "rgba(0, 0, 0, 0)",
-        outlineColor: "rgba(0, 0, 0, 0)",
-      };
-    }
-
-    return {
-      fillColor: fillColorExpression,
-      outlineColor: fillOutlineColorExpression,
-    };
-  };
-
   const renderPuPrioritizrLayer = (freq, totalRuns) => {
     // freq: { h3_index: count } — how many runs each hex was selected in
     // totalRuns: number of selected runs (for normalising intensity)
@@ -1988,6 +1937,8 @@ const App = () => {
           inferredType = CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST;
         else if (id.includes("status"))
           inferredType = CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS;
+        else if (id.includes("activity"))
+          inferredType = CONSTANTS.LAYER_TYPE_ACTIVITY;
         else if (id.includes("pu"))
           inferredType = CONSTANTS.LAYER_TYPE_PLANNING_UNITS;
         else if (id.includes("feature_pu"))
@@ -2860,6 +2811,89 @@ const App = () => {
     return "Costs created from Cumulative impact";
   };
 
+  // Inspect an uploaded raster sitting in data/tmp/ on the server.
+  // Returns { band_count, dtypes, nodata, bounds, crs_epsg, ... } or null on error.
+  // NOT wrapped in useCallback because (a) loadCostsLayer is declared later
+  // in this file, and putting later-declared functions in a useCallback
+  // deps array hits a TDZ ReferenceError, and (b) the dialog uses a
+  // useRef-based per-filename guard to prevent effect re-fires regardless
+  // of this function's identity.
+  const getRasterBandInfo = async (filename) => {
+    if (!filename) return null;
+    try {
+      const response = await _get(
+        `getRasterBandInfo?filename=${encodeURIComponent(filename)}`,
+      );
+      if (response?.error) return null;
+      return response?.data ?? null;
+    } catch (err) {
+      console.warn("getRasterBandInfo failed:", err);
+      return null;
+    }
+  };
+
+  // Build a cost profile from a pre-uploaded raster (sitting in data/tmp/).
+  // options: { band, stat, normalise, floor, fillStrategy, setActive }
+  // Negative pixel values are always clamped to floor server-side; that
+  // is not a user-configurable option because negatives are invalid for
+  // a cost layer.
+  const uploadRasterCost = async (
+    filename,
+    profileName,
+    description = "",
+    options = {},
+  ) => {
+    const {
+      band = 1,
+      stat = "mean",
+      normalise = true,
+      floor = 0.001,
+      fillStrategy = "median",
+      setActive = true,
+    } = options;
+
+    dispatch(setLoading(true));
+    startLogging();
+
+    const url =
+      `uploadRasterCost?project_id=${activeProjectId}` +
+      `&filename=${encodeURIComponent(filename)}` +
+      `&profile_name=${encodeURIComponent(profileName || "Raster Cost Profile")}` +
+      `&description=${encodeURIComponent(description)}` +
+      `&band=${band}` +
+      `&stat=${encodeURIComponent(stat)}` +
+      `&normalise=${normalise ? "true" : "false"}` +
+      `&floor=${floor}` +
+      `&fill_strategy=${encodeURIComponent(fillStrategy)}` +
+      `&set_active=${setActive ? "true" : "false"}`;
+
+    const response = await handleWebSocket(url).catch((err) => {
+      console.error("uploadRasterCost WebSocket failed:", err);
+      return { error: `WebSocket error - ${err.message}` };
+    });
+
+    if (!response?.error) {
+      const newProfile = {
+        id: response.cost_profile_id,
+        name: profileName,
+        description,
+        is_default: false,
+        is_active: !!setActive,
+      };
+      const updated = (projState.projectCosts || []).map((p) => ({
+        ...p,
+        is_active: setActive ? false : p.is_active,
+      }));
+      dispatch(setProjectCosts([...updated, newProfile]));
+      if (setActive) {
+        await loadCostsLayer(true);
+      }
+    }
+
+    dispatch(setLoading(false));
+    return response;
+  };
+
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -3125,6 +3159,80 @@ const App = () => {
     ],
   );
 
+  // Activity layer visibility map: { [activityId]: true } when loaded
+  const [loadedActivityIds, setLoadedActivityIds] = useState({});
+
+  // Toggles a vector tile layer for an activity's geometry table.
+  // The PostGIS table name is in metadata_activities.activity_name.
+  const toggleActivityLayer = useCallback(
+    (activity) => {
+      if (!map.current) return;
+      const tableName = activity.activity_name;
+      if (!tableName) return;
+
+      const sourceId = `martin_src_${tableName}`;
+      const layerId = `martin_layer_activity_${tableName}`;
+
+      if (map.current.getLayer(layerId)) {
+        removeMapLayer(layerId);
+        if (map.current.getSource(sourceId)) {
+          map.current.removeSource(sourceId);
+        }
+        setLoadedActivityIds((prev) => {
+          const next = { ...prev };
+          delete next[activity.id];
+          return next;
+        });
+        return;
+      }
+
+      const color =
+        Array.isArray(window.colors) && window.colors.length
+          ? window.colors[activity.id % window.colors.length]
+          : "#F5C043";
+
+      if (!map.current.getSource(sourceId)) {
+        map.current.addSource(sourceId, {
+          type: "vector",
+          url: `${tilesUrl}${tableName}`,
+        });
+      }
+
+      addMapLayer({
+        id: layerId,
+        type: "fill",
+        source: sourceId,
+        "source-layer": tableName,
+        layout: { visibility: "visible" },
+        paint: {
+          "fill-color": color,
+          "fill-opacity": CONSTANTS.ACTIVITY_LAYER_OPACITY,
+          "fill-outline-color": "rgba(0,0,0,0.25)",
+        },
+        metadata: {
+          name: activity.activity,
+          type: CONSTANTS.LAYER_TYPE_ACTIVITY,
+          activityId: activity.id,
+          activityName: tableName,
+        },
+      });
+
+      setLoadedActivityIds((prev) => ({ ...prev, [activity.id]: true }));
+    },
+    [tilesUrl],
+  );
+
+  // Fetch the activities that make up a cost profile
+  const fetchCostProfileActivities = useCallback(
+    async (costProfileId) => {
+      if (!costProfileId) return { data: [] };
+      return await _get(
+        `getCostProfileActivities?cost_profile_id=${costProfileId}`,
+      );
+    },
+    [_get],
+  );
+
   //toggles the planning unit feature layer on the map
   const toggleFeaturePUIDLayer = async (feature) => {
     const { sourceId, sourceLayerName } = puLayerIdsRef.current || {};
@@ -3230,12 +3338,6 @@ const App = () => {
   const openUsersDialog = async () =>
     dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: true }));
 
-  const openRunLogDialog = async () => {
-    await getRunLogs();
-    await startPollingRunLogs();
-    setRunLogDialogOpen(true);
-  };
-
   const showProjectListDialog = (listOfProjects, title, heading) => {
     dispatch(setProjectList(listOfProjects));
     dispatch(setProjectListDialogHeading(heading));
@@ -3306,29 +3408,6 @@ const App = () => {
     } catch (error) {
       console.error("Error running Prioirtizr:", error);
       throw error; // Re-throw the error to handle it further up the call stack if needed
-    }
-  };
-
-  //called when the run log dialog opens and starts polling the run log
-  const startPollingRunLogs = async () => {
-    // Function to handle the polling
-    const pollLogs = async () => {
-      try {
-        await getRunLogs();
-      } catch (error) {
-        console.error("Error fetching run logs:", error);
-      }
-    };
-
-    // Start polling at a set interval
-    setRunlogTimer(setInterval(pollLogs, 5000));
-  };
-
-  //returns the log of all of the runs from the server
-  const getRunLogs = async () => {
-    if (!unauthorisedMethods.includes("getRunLogs")) {
-      const response = await _get("getRunLogs");
-      setRunLogs(response.data);
     }
   };
 
@@ -3451,18 +3530,13 @@ const App = () => {
           ref={mapContainer}
           className="map-container absolute top right left bottom"
         ></div>
-        {token ? null : (
-          <LoginDialog
-            open={!isLoggedIn}
-            loading={uiState.loading}
-            loadProjectAndSetup={loadProjectAndSetup}
-          />
+        {token || isLoggedIn ? null : (
+          <LoginPage loadProjectAndSetup={loadProjectAndSetup} />
         )}
         <ResendPasswordDialog open={dialogStates.resendPasswordDialogOpen} />
         <ToolsMenu
           menuAnchor={menuAnchor}
           openUsersDialog={openUsersDialog}
-          openRunLogDialog={openRunLogDialog}
           userRole={userData}
           metadata={metadata}
           cleanup={cleanup}
@@ -3555,6 +3629,9 @@ const App = () => {
             toggleProjectPrivacy={toggleProjectPrivacy}
             toggleFeatureLayer={toggleFeatureLayer}
             toggleFeaturePUIDLayer={toggleFeaturePUIDLayer}
+            toggleActivityLayer={toggleActivityLayer}
+            fetchCostProfileActivities={fetchCostProfileActivities}
+            loadedActivityIds={loadedActivityIds}
             useFeatureColors={userData?.USEFEATURECOLORS}
             smallLinearGauge={smallLinearGauge}
             openCostsDialog={openCostsDialog}
@@ -3572,14 +3649,6 @@ const App = () => {
           <ResultsPanel
             open={uiState.resultsPanelOpen}
             preprocessing={preprocessing}
-            setClassificationDialogOpen={() =>
-              dispatch(
-                toggleDialog({
-                  dialogName: "classificationDialogOpen",
-                  isOpen: true,
-                }),
-              )
-            }
             brew={brew}
             messages={logMessages}
             activeResultsTab={uiState.activeResultsTab}
@@ -3670,32 +3739,8 @@ const App = () => {
           boundaryPenalty={boundaryPenalty}
           setBoundaryPenalty={setBoundaryPenalty}
         />
-        {dialogStates.classificationDialogOpen ? (
-          <ClassificationDialog
-            open={dialogStates.classificationDialogOpen}
-            onOk={() => setClassificationDialogOpen(false)}
-            onCancel={() => setClassificationDialogOpen(false)}
-            renderer={renderer}
-            changeColorCode={changeColorCode}
-            changeRenderer={changeRenderer}
-            changeNumClasses={changeNumClasses}
-            changeShowTopClasses={changeShowTopClasses}
-            summaryStats={summaryStats}
-            brew={brew}
-            dataBreaks={dataBreaks}
-          />
-        ) : null}
+
         <ResetDialog onOk={resetServer} />
-        {/* <RunLogDialog
-            preprocessing={preprocessing}
-            unauthorisedMethods={unauthorisedMethods}
-            runLogs={runLogs}
-            getRunLogs={getRunLogs}
-            clearRunLogs={clearRunLogs}
-            stopMarxan={stopProcess}
-            userRole={userData?.role}
-            runlogTimer={runlogTimer}
-          /> */}
         <ServerDetailsDialog loading={uiState.loading} />
         <AlertDialog />
         <FeatureMenu
@@ -3721,6 +3766,11 @@ const App = () => {
             deleteCost={deleteCost}
             activateCostProfile={activateCostProfile}
             runCumulativeImpact={runCumulativeImpact}
+            uploadRasterCost={uploadRasterCost}
+            getRasterBandInfo={getRasterBandInfo}
+            fileUpload={uploadFileToFolder}
+            handleWebSocket={handleWebSocket}
+            startLogging={startLogging}
           />
         ) : null}
 

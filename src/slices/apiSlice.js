@@ -20,6 +20,12 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
   if (result?.error?.originalStatus === 403) {
+    // Don't try to refresh if the user just logged out — otherwise an
+    // HTTP-only refresh cookie would silently re-authenticate them.
+    if (!api.getState().auth.isUserLoggedIn) {
+      return result;
+    }
+
     const refreshResult = await baseQuery("/refresh", api, extraOptions);
 
     if (refreshResult?.data) {

@@ -1,28 +1,24 @@
-import {
-  faFileCode,
-  faPlusCircle,
-  faTrashAlt,
-} from "@fortawesome/free-solid-svg-icons";
-
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
+import DeleteIcon from "@mui/icons-material/Delete";
 import ExportIcon from "@mui/icons-material/Publish";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ImportIcon from "@mui/icons-material/GetApp";
 import React from "react";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 const PlanningGridsToolbar = (props) => {
   return (
     <ButtonGroup aria-label="Basic button group">
       <Button
-        startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+        startIcon={<AddCircleIcon />}
         title="New planning grid"
         onClick={props.handleNew}
       >
         New
       </Button>
       <Button
-        startIcon={<FontAwesomeIcon icon={faFileCode} />}
+        startIcon={<UploadFileIcon />}
         title="Import from simple Shapefile"
         onClick={props.handleNewMarine}
       >
@@ -49,9 +45,7 @@ const PlanningGridsToolbar = (props) => {
       )}
       {props.unauthorisedMethods.includes("deletePlanningUnitGrid") ? null : (
         <Button
-          startIcon={
-            <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
-          }
+          startIcon={<DeleteIcon />}
           title="Delete planning grid"
           disabled={
             !props.selectedPlanningGrid ||

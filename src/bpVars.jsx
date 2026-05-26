@@ -181,6 +181,7 @@ export const CONSTANTS = {
   LAYER_TYPE_PROTECTED_AREAS: "pas",
   LAYER_TYPE_FEATURE_LAYER: "feature",
   LAYER_TYPE_FEATURE_PU_LAYER: "feature_puid",
+  LAYER_TYPE_ACTIVITY: "activity",
   //planning unit statuses
   PU_STATUS_DEFAULT: {
     fillColor: "none",
@@ -204,6 +205,7 @@ export const CONSTANTS = {
   WDPA_FILL_LAYER_OPACITY: 0.2,
   FEATURE_LAYER_OPACITY: 0.9,
   FEATURE_PLANNING_GRID_LAYER_OPACITY: 0.9,
+  ACTIVITY_LAYER_OPACITY: 0.55,
   RESULTS_LAYER_OPACITY: 0.8,
   COST_COLORS: [
     "rgba(255,255,204,0.8)",

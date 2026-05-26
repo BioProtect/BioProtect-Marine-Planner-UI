@@ -1,15 +1,11 @@
 import React, { useState } from "react";
-import {
-  faCheckCircle,
-  faPlusCircle,
-  faTimesCircle,
-} from "@fortawesome/free-solid-svg-icons";
 import { setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import ClearAllIcon from "@mui/icons-material/ClearAll";
 import Import from "@mui/icons-material/GetApp";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -55,14 +51,14 @@ const FeaturesToolbar = ({ selectAllFeatures }) => {
       ) : (
         <ButtonGroup aria-label="Batch feature controls" fullWidth>
           <Button
-            startIcon={<FontAwesomeIcon icon={faTimesCircle} />}
+            startIcon={<ClearAllIcon />}
             title="Clear all features"
             onClick={() => dispatch(setSelectedFeatureIds([]))}
           >
             Clear all
           </Button>
           <Button
-            startIcon={<FontAwesomeIcon icon={faCheckCircle} />}
+            startIcon={<CheckBoxIcon />}
             title="Select all features"
             onClick={selectAllFeatures}
           >

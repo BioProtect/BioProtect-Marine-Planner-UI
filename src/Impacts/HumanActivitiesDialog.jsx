@@ -7,14 +7,13 @@ import {
 } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import FileUpload from "../Uploads/FileUpload";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../MarxanDialog";
 import TextField from "@mui/material/TextField";
-import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { generateTableCols } from "../Helpers";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 
@@ -171,7 +170,7 @@ const HumanActivitiesDialog = (props) => {
       {stepIndex === 1 && (
         <ButtonGroup aria-label="Import type" fullWidth>
           <Button
-            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+            startIcon={<AddCircleIcon />}
             title="Import from a raster (.tif) file"
             disabled={uiState.loading}
             onClick={() => selectUploadType("raster")}
@@ -179,7 +178,7 @@ const HumanActivitiesDialog = (props) => {
             Import from Raster
           </Button>
           <Button
-            startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+            startIcon={<AddCircleIcon />}
             title="Import from a zipped shapefile (.zip)"
             disabled={uiState.loading}
             onClick={() => selectUploadType("shapefile")}

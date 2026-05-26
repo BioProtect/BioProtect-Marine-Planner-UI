@@ -1,17 +1,24 @@
 import { faEraser, faLock, faSave } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import ActivityListItem from "./ActivityListItem";
+import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import CONSTANTS from "../constants"; // Ensure this path is correct
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
 import CropSquareIcon from "@mui/icons-material/CropSquare";
 import Divider from "@mui/material/Divider";
 import EditIcon from "@mui/icons-material/Edit";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import List from "@mui/material/List";
@@ -42,6 +49,9 @@ const PlanningUnitsTab = ({
   setPuEditing,
   planningUnits,
   metadata,
+  fetchCostProfileActivities,
+  toggleActivityLayer,
+  loadedActivityIds,
 }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
@@ -59,6 +69,67 @@ const PlanningUnitsTab = ({
 
   // track edits locally not in state to help with rendering. save in state on save.
   const localEditsRef = useRef({}); // { h3_index: status }
+
+  // ── Activities for the active cost profile ────────────────────────────────
+  const activeProfile = (costProfiles || []).find((p) => p.is_active);
+
+  // Local selected profile id — drives BOTH the dropdown value and the
+  // activities list. Updates immediately on user click so the UI responds
+  // without waiting for the backend roundtrip in activateCostProfile.
+  const [selectedProfileId, setSelectedProfileId] = useState(
+    activeProfile?.id ?? "",
+  );
+
+  // Keep in sync if the active profile changes from outside (e.g. another
+  // dialog activates a profile, or initial load).
+  useEffect(() => {
+    if (activeProfile?.id != null && activeProfile.id !== selectedProfileId) {
+      setSelectedProfileId(activeProfile.id);
+    }
+  }, [activeProfile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCostProfileChange = (newId) => {
+    setSelectedProfileId(newId);
+    activateCostProfile?.(newId);
+  };
+
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [activitiesError, setActivitiesError] = useState(null);
+
+  // Stable ref to the fetcher so re-renders from _get → dispatch don't trigger
+  // an infinite re-fetch loop.
+  const fetchRef = useRef(fetchCostProfileActivities);
+  useEffect(() => {
+    fetchRef.current = fetchCostProfileActivities;
+  }, [fetchCostProfileActivities]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!selectedProfileId || !fetchRef.current) {
+      setActivities([]);
+      return;
+    }
+    setActivitiesLoading(true);
+    setActivitiesError(null);
+    (async () => {
+      try {
+        const resp = await fetchRef.current(selectedProfileId);
+        if (cancelled) return;
+        setActivities(resp?.data ?? []);
+      } catch (err) {
+        if (!cancelled) {
+          setActivitiesError(err?.message || "Failed to load activities");
+          setActivities([]);
+        }
+      } finally {
+        if (!cancelled) setActivitiesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProfileId, project?.id]);
 
   const startPuEditSession = (e) => {
     dispatch(setShowPlanningGrid(true));
@@ -110,7 +181,7 @@ const PlanningUnitsTab = ({
     for (const [id, status] of Object.entries(planningUnitStatusMap)) {
       map.current.setFeatureState(
         { source: sourceId, sourceLayer: sourceLayerName, id: String(id) },
-        { status }
+        { status },
       );
     }
     localEditsRef.current = {};
@@ -184,83 +255,85 @@ const PlanningUnitsTab = ({
     <div>
       <Card sx={{ minWidth: 275 }}>
         <CardContent>
-          <Stack spacing={2}>
-            <Typography variant="h5" component="div">
+          <Stack spacing={1}>
+            <Typography variant="h6" component="div">
               Planning Grid
             </Typography>
 
-            <Typography variant="body1" component="div">
-              <span className="description">{metadata.pu_alias}</span>
+            <Typography variant="body2" component="p" color="text.secondary">
+              {metadata.pu_alias}
             </Typography>
 
             <Divider />
 
-            <Typography variant="h5" component="div">
+            <Typography variant="h6" component="div">
               Planning Unit Statuses
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
               {puEditing
                 ? "Click on a planning unit to change its status"
                 : "Mannually edit planning unit statuses"}
             </Typography>
 
-            <Stack spacing={2}>
+            <Stack>
               {/* Top controls */}
-              <Stack direction="row" spacing={2} alignItems="center">
-                {/* Text + Edit Button */}
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ width: "100%" }}
+              {/* Text + Edit Button */}
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ width: "100%" }}
+              >
+                <ButtonGroup
+                  variant="outlined"
+                  aria-label="Basic button group"
+                  size="medium"
                 >
-                  <ButtonGroup
+                  {" "}
+                  <Button
                     variant="outlined"
-                    aria-label="Basic button group"
+                    onClick={handlePUEditingClick}
+                    size="medium"
+                    endIcon={puEditing ? <SaveIcon /> : <EditIcon />}
                   >
-                    {" "}
+                    {puEditing ? "Save" : "Edit"}
+                  </Button>
+                  {puEditing && (
                     <Button
+                      size="medium"
                       variant="outlined"
-                      onClick={handlePUEditingClick}
-                      endIcon={puEditing ? <SaveIcon /> : <EditIcon />}
+                      onClick={clearManualEdits}
+                      endIcon={<RestoreIcon />}
                     >
-                      {puEditing ? "Save" : "Edit"}
+                      Clear Edits
                     </Button>
-                    {puEditing && (
-                      <Button
-                        variant="outlined"
-                        onClick={clearManualEdits}
-                        endIcon={<RestoreIcon />}
-                      >
-                        Clear Edits
-                      </Button>
-                    )}
-                  </ButtonGroup>
-                </Stack>
+                  )}
+                </ButtonGroup>
               </Stack>
 
               <List
+                dense={true}
                 sx={{
                   width: "100%",
                   maxWidth: 360,
                   bgcolor: "background.paper",
                 }}
               >
-                <ListItem>
+                <ListItem dense={true}>
                   <ListItemAvatar>
                     <CropSquareIcon sx={{ color: "##96969600" }} />
                   </ListItemAvatar>
                   <ListItemText primary="Default" />
                 </ListItem>
 
-                <ListItem>
+                <ListItem dense={true}>
                   <ListItemAvatar>
                     <SquareIcon sx={{ color: "#3f3fbf" }} />
                   </ListItemAvatar>
                   <ListItemText primary="Locked In" />
                 </ListItem>
 
-                <ListItem>
+                <ListItem dense={true}>
                   <ListItemAvatar>
                     <SquareIcon sx={{ color: "#bf3f3f" }} />
                   </ListItemAvatar>
@@ -271,7 +344,7 @@ const PlanningUnitsTab = ({
 
             <Divider />
 
-            <Typography variant="h5" component="div">
+            <Typography variant="h6" component="div">
               Costs
             </Typography>
 
@@ -282,12 +355,12 @@ const PlanningUnitsTab = ({
               <Select
                 labelId="costs-select-label"
                 id="costs-select"
-                value={
-                  costProfiles.find((p) => p.is_active)?.id ?? ""
-                }
+                value={selectedProfileId}
                 disabled={preprocessing || userRole === "ReadOnly"}
                 label="Use cost surface"
-                onChange={(event) => activateCostProfile(event.target.value)}
+                onChange={(event) =>
+                  handleCostProfileChange(event.target.value)
+                }
               >
                 {(costProfiles ?? []).map((profile) => (
                   <MenuItem value={profile.id} key={profile.id}>
@@ -296,6 +369,111 @@ const PlanningUnitsTab = ({
                 ))}
               </Select>
             </FormControl>
+
+            <Accordion
+              disableGutters
+              elevation={0}
+              sx={{
+                border: "1px solid #e0ecec",
+                borderRadius: "8px",
+                "&:before": { display: "none" },
+              }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                sx={{
+                  minHeight: 40,
+                  "& .MuiAccordionSummary-content": { my: 0.5 },
+                }}
+              >
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ flex: 1 }}
+                >
+                  <Typography sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
+                    Activities
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ ml: "auto" }}
+                  >
+                    {selectedProfileId ? `${activities.length}` : "—"}
+                  </Typography>
+                </Stack>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 1, pt: 0 }}>
+                {!selectedProfileId && (
+                  <Alert severity="info" sx={{ fontSize: "0.8rem" }}>
+                    Activate a cost profile to see its activities.
+                  </Alert>
+                )}
+
+                {selectedProfileId && activitiesLoading && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      py: 2,
+                    }}
+                  >
+                    <CircularProgress size={20} />
+                  </Box>
+                )}
+
+                {selectedProfileId && activitiesError && (
+                  <Alert severity="error" sx={{ fontSize: "0.8rem" }}>
+                    {activitiesError}
+                  </Alert>
+                )}
+
+                {selectedProfileId &&
+                  !activitiesLoading &&
+                  !activitiesError &&
+                  activities.length === 0 && (
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ textAlign: "center", py: 1.5 }}
+                    >
+                      No activities associated with this profile.
+                    </Typography>
+                  )}
+
+                {selectedProfileId && activities.length > 0 && (
+                  <List
+                    sx={{
+                      maxHeight: "40vh",
+                      overflowY: "none",
+                      px: 0,
+                      py: 0,
+                    }}
+                  >
+                    {activities.map((activity) => {
+                      const isActive = !!loadedActivityIds?.[activity.id];
+                      const color =
+                        Array.isArray(window.colors) && window.colors.length
+                          ? window.colors[activity.id % window.colors.length]
+                          : "#F5C043";
+                      return (
+                        <ActivityListItem
+                          key={`activity-${activity.id}`}
+                          activity={activity}
+                          isActive={isActive}
+                          layerColor={color}
+                          onClick={(evt, a) => {
+                            evt.stopPropagation();
+                            toggleActivityLayer?.(a);
+                          }}
+                        />
+                      );
+                    })}
+                  </List>
+                )}
+              </AccordionDetails>
+            </Accordion>
           </Stack>
         </CardContent>
       </Card>

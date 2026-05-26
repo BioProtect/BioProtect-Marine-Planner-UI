@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from "react";
 
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
+import DeleteIcon from "@mui/icons-material/Delete";
 import Export from "@mui/icons-material/Publish";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
@@ -28,13 +29,14 @@ const ProjectsToolbar = (props) => {
 
   const newProject = useCallback(() => {
     dispatch(
-      toggleProjDialog({ dialogName: "newProjectDialogOpen", isOpen: true })
+      toggleProjDialog({ dialogName: "newProjectDialogOpen", isOpen: true }),
     );
   }, []);
 
-
   const style = (method) => {
-    display: props.unauthorisedMethods.includes(method) ? "none" : "inline-block";
+    display: props.unauthorisedMethods.includes(method)
+      ? "none"
+      : "inline-block";
   };
 
   return (
@@ -45,7 +47,7 @@ const ProjectsToolbar = (props) => {
     >
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
         <Button
-          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+          startIcon={<AddCircleIcon />}
           title="New project"
           onClick={() => newProject()}
         >
@@ -80,9 +82,7 @@ const ProjectsToolbar = (props) => {
         )}
         {props.unauthorisedMethods.includes("deleteProject") ? null : (
           <Button
-            startIcon={
-              <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
-            }
+            startIcon={<DeleteIcon style={{ height: "20px", width: "20px" }} />}
             title="Delete project"
             disabled={!props.selectedProject || props.loading}
             onClick={props.handleDelete}

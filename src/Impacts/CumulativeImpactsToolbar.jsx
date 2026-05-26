@@ -1,9 +1,10 @@
-import { faCircle, faPlusCircle } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import ClearAllIcon from "@mui/icons-material/ClearAll";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { toggleDialog } from "@slices/uiSlice";
 
 const CumulativeImpactsToolbar = ({
@@ -17,14 +18,17 @@ const CumulativeImpactsToolbar = ({
   const uiState = useSelector((state) => state.ui);
   const openCumulativeImpactStepper = () =>
     dispatch(
-      toggleDialog({ dialogName: "uploadedActivitiesDialogOpen", isOpen: true })
+      toggleDialog({
+        dialogName: "uploadedActivitiesDialogOpen",
+        isOpen: true,
+      }),
     );
 
   return (
     <div>
       <ButtonGroup aria-label="Basic button group" fullWidth={true}>
         <Button
-          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+          startIcon={<AddCircleIcon />}
           title="New CI function"
           onClick={openHumanActivitiesDialog}
         >
@@ -32,7 +36,7 @@ const CumulativeImpactsToolbar = ({
         </Button>
 
         <Button
-          startIcon={<FontAwesomeIcon icon={faPlusCircle} />}
+          startIcon={<AddCircleIcon />}
           title="View uploaded activities"
           onClick={() => openCumulativeImpactStepper()}
           disabled={uiState.loading}
@@ -42,7 +46,7 @@ const CumulativeImpactsToolbar = ({
 
         {/* <Button
           startIcon={
-            <FontAwesomeIcon icon={faTrashAlt} color="rgb(255, 64, 129)" />
+            <DeleteIcon color="rgb(255, 64, 129)" />
           }
           title="Delete feature"
           onClick={deleteImpact}
@@ -57,7 +61,7 @@ const CumulativeImpactsToolbar = ({
         </Button> */}
 
         <Button
-          startIcon={<FontAwesomeIcon icon={faCircle} />}
+          startIcon={<ClearAllIcon />}
           title="Clear all Impact layers"
           // onClick={clearAllImpacts}
           disabled={!selectedProject || uiState.loading}
