@@ -8,7 +8,6 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Box from "@mui/material/Box";
 import FeatureListItem from "./FeatureListItem";
-import FeatureProgressDemo from "./FeatureProgressDemo";
 import IconButton from "@mui/material/IconButton";
 import LinearGauge from "./LinearGauge";
 import List from "@mui/material/List";

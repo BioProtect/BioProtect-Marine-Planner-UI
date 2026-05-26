@@ -3,7 +3,7 @@ import {
   setUploadedActivities,
   toggleDialog,
 } from "@slices/uiSlice";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -75,9 +75,8 @@ const CumulativeImpactDialog = ({
   const [rasterProfileDescription, setRasterProfileDescription] = useState("");
   const [rasterBandInfo, setRasterBandInfo] = useState(null);
   const [rasterBand, setRasterBand] = useState(1);
-  const [rasterStat, setRasterStat] = useState("weighted_mean");
+  const [rasterStat, setRasterStat] = useState("mean");
   const [rasterNormalise, setRasterNormalise] = useState(true);
-  const [rasterClampNegative, setRasterClampNegative] = useState(true);
   const [rasterFloor, setRasterFloor] = useState(0.001);
   const [rasterFillStrategy, setRasterFillStrategy] = useState("median");
   const [rasterSetActive, setRasterSetActive] = useState(true);
@@ -189,12 +188,27 @@ const CumulativeImpactDialog = ({
   };
 
   // Probe band count / metadata once a raster has been uploaded.
+  //
+  // Hard-guard against effect-loops: we track the last filename we already
+  // fetched for in a ref, and short-circuit if it matches. Even if the
+  // effect re-fires (StrictMode double-invoke, parent re-renders that
+  // change a captured prop's identity, dialog remount, etc.) the network
+  // request only goes out once per actual filename change. This is what
+  // stopped the login flash where getRasterBandInfo was firing in a
+  // tight loop with incrementing JSONP callback IDs.
+  const lastProbedFilenameRef = useRef("");
   useEffect(() => {
     let cancelled = false;
     if (!rasterFilename || !getRasterBandInfo) {
       setRasterBandInfo(null);
+      lastProbedFilenameRef.current = "";
       return;
     }
+    if (lastProbedFilenameRef.current === rasterFilename) {
+      // Already fetched info for this filename; do not re-issue.
+      return;
+    }
+    lastProbedFilenameRef.current = rasterFilename;
     (async () => {
       const info = await getRasterBandInfo(rasterFilename);
       if (cancelled) return;
@@ -205,7 +219,8 @@ const CumulativeImpactDialog = ({
     return () => {
       cancelled = true;
     };
-  }, [rasterFilename, getRasterBandInfo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rasterFilename]);
 
   const handleUploadRasterCost = async () => {
     if (!uploadRasterCost) return;
@@ -217,7 +232,6 @@ const CumulativeImpactDialog = ({
         band: rasterBand,
         stat: rasterStat,
         normalise: rasterNormalise,
-        clampNegative: rasterClampNegative,
         floor: rasterFloor,
         fillStrategy: rasterFillStrategy,
         setActive: rasterSetActive,
@@ -310,10 +324,13 @@ const CumulativeImpactDialog = ({
                     onClick={() => toggleProfileSelection(profile.id)}
                     sx={{ cursor: "pointer" }}
                   >
-                    <TableCell padding="checkbox">
+                    <TableCell
+                      padding="checkbox"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={selectedProfileId === profile.id}
-                        onChange={(e) => toggleProfileSelection(profile.id, e)}
+                        onChange={() => toggleProfileSelection(profile.id)}
                       />
                     </TableCell>
                     <TableCell>{profile.name}</TableCell>
@@ -436,12 +453,13 @@ const CumulativeImpactDialog = ({
                     hover
                     sx={{ cursor: "pointer" }}
                   >
-                    <TableCell padding="checkbox">
+                    <TableCell
+                      padding="checkbox"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={selectedActivityIds.includes(activity.id)}
-                        onChange={(e) =>
-                          toggleActivitySelection(activity.id, e)
-                        }
+                        onChange={() => toggleActivitySelection(activity.id)}
                       />
                     </TableCell>
                     <TableCell>{activity.activity}</TableCell>
@@ -590,15 +608,14 @@ const CumulativeImpactDialog = ({
                 value={rasterStat}
                 onChange={(e) => setRasterStat(e.target.value)}
               >
-                <MenuItem value="weighted_mean">
-                  Area-weighted mean (default)
-                </MenuItem>
-                <MenuItem value="mean">Mean</MenuItem>
+                <MenuItem value="mean">Mean (default)</MenuItem>
                 <MenuItem value="sum">Sum</MenuItem>
                 <MenuItem value="max">Max</MenuItem>
                 <MenuItem value="min">Min</MenuItem>
                 <MenuItem value="median">Median</MenuItem>
-                <MenuItem value="count">Count</MenuItem>
+                <MenuItem value="stdev">Std. deviation</MenuItem>
+                <MenuItem value="count">Coverage count</MenuItem>
+                <MenuItem value="variety">Distinct values</MenuItem>
               </Select>
             </FormControl>
 
@@ -641,15 +658,6 @@ const CumulativeImpactDialog = ({
                 />
               }
               label="Apply log(X+1) normalisation"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={rasterClampNegative}
-                  onChange={(e) => setRasterClampNegative(e.target.checked)}
-                />
-              }
-              label="Clamp negatives to 0"
             />
             <FormControlLabel
               control={

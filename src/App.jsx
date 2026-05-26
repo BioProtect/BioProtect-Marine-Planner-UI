@@ -2813,17 +2813,30 @@ const App = () => {
 
   // Inspect an uploaded raster sitting in data/tmp/ on the server.
   // Returns { band_count, dtypes, nodata, bounds, crs_epsg, ... } or null on error.
+  // NOT wrapped in useCallback because (a) loadCostsLayer is declared later
+  // in this file, and putting later-declared functions in a useCallback
+  // deps array hits a TDZ ReferenceError, and (b) the dialog uses a
+  // useRef-based per-filename guard to prevent effect re-fires regardless
+  // of this function's identity.
   const getRasterBandInfo = async (filename) => {
     if (!filename) return null;
-    const response = await _get(
-      `getRasterBandInfo?filename=${encodeURIComponent(filename)}`,
-    );
-    if (response?.error) return null;
-    return response?.data ?? null;
+    try {
+      const response = await _get(
+        `getRasterBandInfo?filename=${encodeURIComponent(filename)}`,
+      );
+      if (response?.error) return null;
+      return response?.data ?? null;
+    } catch (err) {
+      console.warn("getRasterBandInfo failed:", err);
+      return null;
+    }
   };
 
   // Build a cost profile from a pre-uploaded raster (sitting in data/tmp/).
-  // options: { band, stat, normalise, clampNegative, floor, fillStrategy, setActive }
+  // options: { band, stat, normalise, floor, fillStrategy, setActive }
+  // Negative pixel values are always clamped to floor server-side; that
+  // is not a user-configurable option because negatives are invalid for
+  // a cost layer.
   const uploadRasterCost = async (
     filename,
     profileName,
@@ -2832,9 +2845,8 @@ const App = () => {
   ) => {
     const {
       band = 1,
-      stat = "weighted_mean",
+      stat = "mean",
       normalise = true,
-      clampNegative = true,
       floor = 0.001,
       fillStrategy = "median",
       setActive = true,
@@ -2851,7 +2863,6 @@ const App = () => {
       `&band=${band}` +
       `&stat=${encodeURIComponent(stat)}` +
       `&normalise=${normalise ? "true" : "false"}` +
-      `&clamp_negative=${clampNegative ? "true" : "false"}` +
       `&floor=${floor}` +
       `&fill_strategy=${encodeURIComponent(fillStrategy)}` +
       `&set_active=${setActive ? "true" : "false"}`;
