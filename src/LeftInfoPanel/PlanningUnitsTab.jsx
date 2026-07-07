@@ -25,6 +25,8 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
+import LockIcon from "@mui/icons-material/Lock";
+import LockOpenIcon from "@mui/icons-material/LockOpen";
 import MenuItem from "@mui/material/MenuItem";
 import RestoreIcon from "@mui/icons-material/Restore";
 import SaveIcon from "@mui/icons-material/Save";
@@ -42,7 +44,6 @@ const PlanningUnitsTab = ({
   activateCostProfile,
   map,
   onClickRef,
-  onContextMenuRef,
   puLayerIdsRef,
   _post,
   puEditing,
@@ -69,6 +70,12 @@ const PlanningUnitsTab = ({
 
   // track edits locally not in state to help with rendering. save in state on save.
   const localEditsRef = useRef({}); // { h3_index: status }
+
+  // currently box/click selected planning units, pending a status action
+  const selectedIdsRef = useRef(new Set());
+  const [selectionCount, setSelectionCount] = useState(0);
+  const boxSelectRef = useRef({ start: null }); // in-progress drag-select
+  const boxSelectHandlersRef = useRef(null); // canvas listeners, for cleanup
 
   // ── Activities for the active cost profile ────────────────────────────────
   const activeProfile = (costProfiles || []).find((p) => p.is_active);
@@ -131,6 +138,34 @@ const PlanningUnitsTab = ({
     };
   }, [selectedProfileId, project?.id]);
 
+  // clears any selected feature-state + the selection ref/count, without touching status
+  const clearSelection = () => {
+    const { sourceId, sourceLayerName } = puLayerIdsRef.current || {};
+    if (sourceId) {
+      selectedIdsRef.current.forEach((puid) => {
+        map.current.setFeatureState(
+          { source: sourceId, sourceLayer: sourceLayerName, id: String(puid) },
+          { selected: false },
+        );
+      });
+    }
+    selectedIdsRef.current.clear();
+    setSelectionCount(0);
+  };
+
+  const applyStatusToSelection = (status) => {
+    const { sourceId, sourceLayerName } = puLayerIdsRef.current;
+    selectedIdsRef.current.forEach((puid) => {
+      map.current.setFeatureState(
+        { source: sourceId, sourceLayer: sourceLayerName, id: String(puid) },
+        { status, selected: false },
+      );
+      localEditsRef.current[puid] = status;
+    });
+    selectedIdsRef.current.clear();
+    setSelectionCount(0);
+  };
+
   const startPuEditSession = (e) => {
     dispatch(setShowPlanningGrid(true));
     map.current.getCanvas().style.cursor = "crosshair";
@@ -139,11 +174,74 @@ const PlanningUnitsTab = ({
       console.warn("No PU layer ID available yet");
       return;
     }
-    onClickRef.current = (e) => updatePlanningUnitStatus(e, "change");
-    onContextMenuRef.current = (e) => updatePlanningUnitStatus(e, "reset");
+    const { sourceId, sourceLayerName } = puLayerIdsRef.current;
 
+    onClickRef.current = (e) => {
+      const features = map.current.queryRenderedFeatures(e.point, {
+        layers: [puLayerId],
+      });
+      if (!features.length) return;
+      const feature = features[0];
+      const puid =
+        feature.properties.h3_index || feature.properties.puid || feature.id;
+      if (!puid) return;
+
+      const featureRef = { source: sourceId, sourceLayer: sourceLayerName, id: String(puid) };
+      const nowSelected = !selectedIdsRef.current.has(puid);
+      map.current.setFeatureState(featureRef, { selected: nowSelected });
+      if (nowSelected) {
+        selectedIdsRef.current.add(puid);
+      } else {
+        selectedIdsRef.current.delete(puid);
+      }
+      setSelectionCount(selectedIdsRef.current.size);
+    };
     map.current.on("click", puLayerId, onClickRef.current);
-    map.current.on("contextmenu", puLayerId, onContextMenuRef.current);
+
+    // drag-paint select: while dragging, select whatever PU is directly under
+    // the cursor (a brush, not a bounding box) - lets you trace an irregular
+    // patch of hexes precisely instead of grabbing everything in a rectangle.
+    const canvas = map.current.getCanvas();
+    const selectAtPoint = (evt) => {
+      const features = map.current.queryRenderedFeatures(
+        [evt.offsetX, evt.offsetY],
+        { layers: [puLayerId] },
+      );
+      let changed = false;
+      features.forEach((feature) => {
+        const puid =
+          feature.properties.h3_index || feature.properties.puid || feature.id;
+        if (!puid || selectedIdsRef.current.has(puid)) return;
+        selectedIdsRef.current.add(puid);
+        map.current.setFeatureState(
+          { source: sourceId, sourceLayer: sourceLayerName, id: String(puid) },
+          { selected: true },
+        );
+        changed = true;
+      });
+      if (changed) setSelectionCount(selectedIdsRef.current.size);
+    };
+    const onMouseDown = (evt) => {
+      if (evt.button !== 0) return;
+      boxSelectRef.current.start = [evt.offsetX, evt.offsetY];
+      map.current.dragPan.disable();
+    };
+    const onMouseMove = (evt) => {
+      if (!boxSelectRef.current.start) return;
+      selectAtPoint(evt);
+    };
+    const onMouseUp = () => {
+      boxSelectRef.current.start = null;
+      map.current.dragPan.enable();
+    };
+
+    canvas.addEventListener("mousedown", onMouseDown);
+    canvas.addEventListener("mousemove", onMouseMove);
+    // bound to window, not canvas: releasing the mouse outside the map
+    // (e.g. over the side panel) must still end the drag, or dragPan stays
+    // disabled for the rest of the session.
+    window.addEventListener("mouseup", onMouseUp);
+    boxSelectHandlersRef.current = { onMouseDown, onMouseMove, onMouseUp };
   };
 
   const stopPuEditSession = (e) => {
@@ -159,10 +257,15 @@ const PlanningUnitsTab = ({
       map.current.off("click", puLayerId, onClickRef.current);
       onClickRef.current = null;
     }
-    if (onContextMenuRef.current) {
-      map.current.off("contextmenu", puLayerId, onContextMenuRef.current);
-      onContextMenuRef.current = null;
+    if (boxSelectHandlersRef.current) {
+      const canvas = map.current.getCanvas();
+      const { onMouseDown, onMouseMove, onMouseUp } = boxSelectHandlersRef.current;
+      canvas.removeEventListener("mousedown", onMouseDown);
+      canvas.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      boxSelectHandlersRef.current = null;
     }
+    clearSelection();
     updateProjectPus();
   };
 
@@ -185,6 +288,7 @@ const PlanningUnitsTab = ({
       );
     }
     localEditsRef.current = {};
+    clearSelection();
   };
 
   const updateProjectPus = async () => {
@@ -216,41 +320,6 @@ const PlanningUnitsTab = ({
     await _post("planning-units?action=update", formData);
   };
 
-  const updatePlanningUnitStatus = (e, mode = "change") => {
-    const puLayerId = puLayerIdsRef.current?.puLayerId;
-    if (!map.current?.getLayer(puLayerId)) return;
-
-    const features = map.current.queryRenderedFeatures(e.point, {
-      layers: [puLayerId],
-    });
-    if (!features.length) return;
-
-    const feature = features[0];
-    const puid =
-      feature.properties.h3_index || feature.properties.puid || feature.id;
-    if (!puid) return;
-
-    // Determine current & next status
-    const featureRef = {
-      source: puLayerIdsRef.current.sourceId,
-      sourceLayer: puLayerIdsRef.current.sourceLayerName,
-      id: String(puid),
-    };
-    const currentState = map.current.getFeatureState(featureRef);
-    const currentStatus = [0, 1, 2].includes(currentState?.status)
-      ? currentState.status
-      : 0;
-
-    const nextStatus = mode === "reset" ? 0 : (currentStatus + 1) % 3;
-    if (currentStatus === nextStatus) return;
-
-    // Update feature state for instant visual feedback
-    map.current.setFeatureState(featureRef, { status: nextStatus });
-
-    // Track locally
-    localEditsRef.current[puid] = nextStatus;
-  };
-
   return (
     <div>
       <Card sx={{ minWidth: 275 }}>
@@ -271,7 +340,7 @@ const PlanningUnitsTab = ({
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {puEditing
-                ? "Click on a planning unit to change its status"
+                ? "Click, or drag a box, to select planning units — then apply a status"
                 : "Mannually edit planning unit statuses"}
             </Typography>
 
@@ -310,6 +379,43 @@ const PlanningUnitsTab = ({
                   )}
                 </ButtonGroup>
               </Stack>
+
+              {puEditing && (
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ width: "100%", mt: 1 }}
+                >
+                  <ButtonGroup
+                    variant="outlined"
+                    size="medium"
+                    disabled={selectionCount === 0}
+                  >
+                    <Button
+                      onClick={() => applyStatusToSelection(1)}
+                      endIcon={<LockIcon />}
+                    >
+                      Lock In
+                    </Button>
+                    <Button
+                      onClick={() => applyStatusToSelection(2)}
+                      endIcon={<LockIcon />}
+                    >
+                      Lock Out
+                    </Button>
+                    <Button
+                      onClick={() => applyStatusToSelection(0)}
+                      endIcon={<LockOpenIcon />}
+                    >
+                      Unlock
+                    </Button>
+                  </ButtonGroup>
+                  <Typography variant="caption" color="text.secondary">
+                    {selectionCount} selected
+                  </Typography>
+                </Stack>
+              )}
 
               <List
                 dense={true}

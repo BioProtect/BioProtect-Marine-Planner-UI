@@ -2137,6 +2137,7 @@ const App = () => {
     const costsLayerId = `martin_layer_costs_${puLayerName}`;
     const puLayerId = `martin_layer_pu_${puLayerName}`;
     const statusLayerId = `martin_layer_status_${puLayerName}`;
+    const selectionLayerId = `martin_layer_selection_${puLayerName}`;
     // Store layer and source IDs in a ref for later use
     puLayerIdsRef.current = {
       sourceId,
@@ -2144,6 +2145,7 @@ const App = () => {
       costsLayerId,
       puLayerId,
       statusLayerId,
+      selectionLayerId,
       sourceLayerName: puLayerName,
       propId: "h3_index",
     };
@@ -2156,7 +2158,7 @@ const App = () => {
       });
     }
 
-    [resultsLayerId, costsLayerId, puLayerId, statusLayerId].forEach(
+    [resultsLayerId, costsLayerId, puLayerId, statusLayerId, selectionLayerId].forEach(
       (layerId) => {
         if (map.current.getLayer(layerId)) {
           map.current.removeLayer(layerId);
@@ -2248,7 +2250,35 @@ const App = () => {
           "rgba(191, 63, 63, 1)",
           "rgba(150,150,150,0)", // default
         ],
+        "fill-outline-color": "rgba(0, 0, 0, 0)",
         "fill-opacity": 0.8,
+      },
+    });
+
+    // selection highlight - a dedicated line layer so the border can be made
+    // thick/bold, which a fill layer's fill-outline-color can't do (mapbox
+    // caps it at a hairline regardless of value).
+    addMapLayer({
+      id: selectionLayerId,
+      metadata: {
+        name: "Planning Unit Selection",
+        type: CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS,
+      },
+      minzoom: 0,
+      maxzoom: 24,
+      type: "line",
+      source: sourceId,
+      layout: { visibility: "none" },
+      "source-layer": puLayerName,
+      paint: {
+        "line-color": "rgba(0, 230, 255, 1)",
+        "line-width": 3,
+        "line-opacity": [
+          "case",
+          ["==", ["feature-state", "selected"], true],
+          1,
+          0,
+        ],
       },
     });
     //set the result layer in app state so that it can update the Legend component and its opacity control
@@ -3438,6 +3468,11 @@ const App = () => {
       if (map.current && statusLayerId && map.current.getLayer(statusLayerId)) {
         map.current.setLayoutProperty(statusLayerId, "visibility", "visible");
         map.current.setLayerZoomRange(statusLayerId, 0, 24);
+      }
+      const selectionLayerId = puLayerIdsRef.current?.selectionLayerId;
+      if (map.current && selectionLayerId && map.current.getLayer(selectionLayerId)) {
+        map.current.setLayoutProperty(selectionLayerId, "visibility", "visible");
+        map.current.setLayerZoomRange(selectionLayerId, 0, 24);
       }
       // cache in Redux
       dispatch(setCostData(response));
