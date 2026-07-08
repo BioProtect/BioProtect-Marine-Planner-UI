@@ -184,8 +184,8 @@ export const CONSTANTS = {
   LAYER_TYPE_ACTIVITY: "activity",
   //planning unit statuses
   PU_STATUS_DEFAULT: {
-    fillColor: "none",
-    strokeColor: "lightgray",
+    fillColor: "white",
+    strokeColor: "gray",
     label: "Default",
   },
   PU_STATUS_LOCKED_IN: {
@@ -194,8 +194,8 @@ export const CONSTANTS = {
     label: "Locked in",
   },
   PU_STATUS_LOCKED_OUT: {
-    fillColor: "none",
-    strokeColor: "red",
+    fillColor: "rgba(191, 63, 63, 1)",
+    strokeColor: "transparent",
     label: "Locked out",
   },
   //layer default styles

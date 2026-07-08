@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 
-import Hexagon from "react-hexagon";
+import HexagonIcon from "@mui/icons-material/Hexagon";
+import HexagonOutlinedIcon from "@mui/icons-material/HexagonOutlined";
 import { Stack } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import TransparencyControl from "../TransparencyControl";
 import Typography from "@mui/material/Typography";
 
 const LayerLegend = (props) => {
+  console.log("props ", props);
   const [opacity, setOpacity] = useState(0);
 
   /**
@@ -58,17 +60,33 @@ const LayerLegend = (props) => {
     //iterate through the items in this layers legend. get a unique key
     //if the legend is showing a range in values then put in a horizontal separator between the items
     return props.items.map((item, index) => {
+      console.log("item, index ", item, index);
       const key = `legend_${props.layer?.id ?? "static"}_${index}`;
       return (
         <div key={key} style={{ display: props.range ? "inline" : "block" }}>
-          <Hexagon
-            className={"hexLegendItem"}
-            style={{
-              fill: item.fillColor,
-              stroke: item.strokeColor,
-              strokeWidth: 30,
-            }}
-          />
+          <span
+            className="hexLegendItem"
+            style={{ position: "relative", display: "inline-block" }}
+          >
+            <HexagonIcon
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                color: item.fillColor,
+              }}
+            />
+            <HexagonOutlinedIcon
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                color: item.strokeColor,
+              }}
+            />
+          </span>
           <div
             style={{
               display: "inline-flex",
@@ -91,7 +109,7 @@ const LayerLegend = (props) => {
   ) : (
     renderItems()
   );
-
+  console.log(" items i need to be looking at - ", items);
   return (
     <>
       <Stack direction="row" pl={1} alignItems="center" spacing={1}>
