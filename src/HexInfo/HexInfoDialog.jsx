@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CONSTANTS from "../constants";
+import CONSTANTS from "../bpVars.jsx";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import CloseIcon from "@mui/icons-material/Close";
 import Fade from "@mui/material/Fade";
@@ -176,7 +176,10 @@ const HexInfoDialog = ({ xy, metadata }) => {
                           </Typography>
                           <span
                             className="hexLegendItem"
-                            style={{ position: "relative", display: "inline-block" }}
+                            style={{
+                              position: "relative",
+                              display: "inline-block",
+                            }}
                           >
                             <HexagonIcon
                               style={{

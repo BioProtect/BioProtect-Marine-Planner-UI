@@ -1,7 +1,3 @@
-import {
-  faMagnifyingGlassPlus,
-  faTrashAlt,
-} from "@fortawesome/free-solid-svg-icons";
 import { getComparator, stableSort } from "../Helpers";
 import { useEffect, useMemo, useRef, useState } from "react";
 

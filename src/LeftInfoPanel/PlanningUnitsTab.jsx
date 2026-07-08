@@ -1,4 +1,3 @@
-import { faEraser, faLock, faSave } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -11,7 +10,7 @@ import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
-import CONSTANTS from "../constants"; // Ensure this path is correct
+import CONSTANTS from "../bpVars.jsx"; // Ensure this path is correct
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";

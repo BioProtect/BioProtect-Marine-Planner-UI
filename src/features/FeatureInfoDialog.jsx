@@ -9,12 +9,12 @@ import {
   Typography,
 } from "@mui/material";
 import { getArea, isNumber, isValidTargetValue } from "../Helpers";
+import { toggleFeatureD, useGetAllFeaturesQuery } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-import CONSTANTS from "../constants";
+import CONSTANTS from "../bpVars.jsx";
 import MarxanDialog from "../MarxanDialog";
 import { selectCurrentUser } from "@slices/authSlice";
-import { toggleFeatureD, useGetAllFeaturesQuery } from "@slices/featureSlice";
 
 const FeatureInfoDialog = ({ updateFeature }) => {
   const dispatch = useDispatch();
@@ -73,8 +73,8 @@ const FeatureInfoDialog = ({ updateFeature }) => {
 
   const getAreaHTML = (rowKey, value) => {
     const color =
-      currentFeature.protected_area <
-        currentFeature.target_area && rowKey === "Area protected"
+      currentFeature.protected_area < currentFeature.target_area &&
+      rowKey === "Area protected"
         ? "red"
         : "rgba(0, 0, 0, 0.6)";
 
@@ -86,7 +86,14 @@ const FeatureInfoDialog = ({ updateFeature }) => {
 
     return (
       <div
-        title={getArea(value, userData?.report_units, false, 6, true, sourceUnits)}
+        title={getArea(
+          value,
+          userData?.report_units,
+          false,
+          6,
+          true,
+          sourceUnits,
+        )}
         style={{ color }}
       >
         {getArea(value, userData?.report_units, true, 3, true, sourceUnits)}
@@ -221,9 +228,7 @@ const FeatureInfoDialog = ({ updateFeature }) => {
           key="k9"
           size="small"
           className={
-            currentFeature.old_version
-              ? "infoTableOldVersion"
-              : "infoTable"
+            currentFeature.old_version ? "infoTableOldVersion" : "infoTable"
           }
         >
           <TableHead>

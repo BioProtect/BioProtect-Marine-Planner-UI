@@ -35,7 +35,6 @@ export default defineConfig({
       "@mui/material/Popper",
       "@mui/material/Tooltip",
       "@mui/material/styles",
-      "@mui/system",
       "@mui/styled-engine",
       "@emotion/react",
       "@emotion/styled",

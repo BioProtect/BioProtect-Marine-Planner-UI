@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 
-import CONSTANTS from "./constants";
+import CONSTANTS from "./bpVars.jsx";
 import HelpIcon from "@mui/icons-material/Help";
 import InfoIcon from "@mui/icons-material/Info";
 import ListItemIcon from "@mui/material/ListItemIcon";
