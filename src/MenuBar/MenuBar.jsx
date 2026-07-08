@@ -1,21 +1,5 @@
 import React, { useCallback, useState } from "react";
 import {
-  faArrowAltCircleLeft as a,
-  faArrowAltCircleRight as b,
-  faArrowAltCircleLeft,
-  faArrowAltCircleRight,
-  faBookOpen,
-  faFishFins,
-  faFolderOpen,
-  faGlobeEurope,
-  faLayerGroup,
-  faQuestionCircle,
-  faShip,
-  faStar,
-  faThLarge,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
-import {
   setAddingRemovingFeatures,
   toggleFeatureD,
 } from "@slices/featureSlice";

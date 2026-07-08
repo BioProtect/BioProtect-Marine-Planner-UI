@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { faLock, faShareAlt } from "@fortawesome/free-solid-svg-icons";
 import {
   featureApiSlice,
   setSelectedFeatureId,
@@ -9,7 +8,7 @@ import { setActiveTab, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
-import CONSTANTS from "../constants";
+import CONSTANTS from "../bpVars.jsx";
 import FeaturesTab from "./FeaturesTab";
 import Loading from "../Loading";
 import PanelHeader from "../BPComponents/PanelHeader";

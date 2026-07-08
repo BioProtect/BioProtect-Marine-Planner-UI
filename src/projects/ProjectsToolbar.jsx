@@ -9,8 +9,6 @@ import FileCopyIcon from "@mui/icons-material/FileCopy";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
-import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { toggleProjDialog } from "@slices/projectSlice";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";

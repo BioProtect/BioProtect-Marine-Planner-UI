@@ -1,4 +1,4 @@
-import CONSTANTS from "../constants";
+import CONSTANTS from "../bpVars.jsx";
 
 // wherever you first load your features, or right before styling them,
 // you can “seed” each feature with a color if it’s missing:

@@ -10,7 +10,6 @@ import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import SelectMapboxLayer from "../SelectMapboxLayer";
 import Typography from "@mui/material/Typography";
-import { faFileCode } from "@fortawesome/free-solid-svg-icons";
 import mapboxgl from "mapbox-gl";
 import { togglePUD } from "@slices/planningUnitSlice";
 

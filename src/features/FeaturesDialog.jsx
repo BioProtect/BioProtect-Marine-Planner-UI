@@ -18,7 +18,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import FeaturesToolbar from "./FeaturesToolbar";
 import MarxanDialog from "../MarxanDialog";
-import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { generateTableCols } from "../Helpers";
 import jsonp from "jsonp-promise";
 import { selectCurrentUser } from "@slices/authSlice";
