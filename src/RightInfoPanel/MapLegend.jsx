@@ -86,7 +86,7 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
           items={[
             {
               fillColor: runCount > 1 ? "#41ab5d" : "#004529",
-              strokeColor: "lightgray",
+              strokeColor: "transparent",
               label: "Selected planning units",
             },
           ]}

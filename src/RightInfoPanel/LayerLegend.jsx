@@ -125,7 +125,6 @@ const LayerLegend = (props) => {
       </Stack>
       <Stack spacing={1} p={1} sx={{ maxHeight: "100vh", overflowY: "auto" }}>
         {items}
-        <p>hello</p>
       </Stack>
     </>
   );
