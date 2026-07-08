@@ -15,11 +15,12 @@ import CONSTANTS from "../constants"; // Ensure this path is correct
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
-import CropSquareIcon from "@mui/icons-material/CropSquare";
 import Divider from "@mui/material/Divider";
 import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FormControl from "@mui/material/FormControl";
+import HexagonIcon from "@mui/icons-material/Hexagon";
+import HexagonOutlinedIcon from "@mui/icons-material/HexagonOutlined";
 import InputLabel from "@mui/material/InputLabel";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -31,7 +32,6 @@ import MenuItem from "@mui/material/MenuItem";
 import RestoreIcon from "@mui/icons-material/Restore";
 import SaveIcon from "@mui/icons-material/Save";
 import Select from "@mui/material/Select";
-import SquareIcon from "@mui/icons-material/Square";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { setShowPlanningGrid } from "@slices/planningUnitSlice";
@@ -186,7 +186,11 @@ const PlanningUnitsTab = ({
         feature.properties.h3_index || feature.properties.puid || feature.id;
       if (!puid) return;
 
-      const featureRef = { source: sourceId, sourceLayer: sourceLayerName, id: String(puid) };
+      const featureRef = {
+        source: sourceId,
+        sourceLayer: sourceLayerName,
+        id: String(puid),
+      };
       const nowSelected = !selectedIdsRef.current.has(puid);
       map.current.setFeatureState(featureRef, { selected: nowSelected });
       if (nowSelected) {
@@ -259,7 +263,8 @@ const PlanningUnitsTab = ({
     }
     if (boxSelectHandlersRef.current) {
       const canvas = map.current.getCanvas();
-      const { onMouseDown, onMouseMove, onMouseUp } = boxSelectHandlersRef.current;
+      const { onMouseDown, onMouseMove, onMouseUp } =
+        boxSelectHandlersRef.current;
       canvas.removeEventListener("mousedown", onMouseDown);
       canvas.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
@@ -393,29 +398,37 @@ const PlanningUnitsTab = ({
                     disabled={selectionCount === 0}
                   >
                     <Button
+                      size="medium"
+                      variant="outlined"
                       onClick={() => applyStatusToSelection(1)}
                       endIcon={<LockIcon />}
                     >
                       Lock In
                     </Button>
                     <Button
+                      size="medium"
+                      variant="outlined"
                       onClick={() => applyStatusToSelection(2)}
                       endIcon={<LockIcon />}
                     >
                       Lock Out
                     </Button>
                     <Button
+                      size="medium"
+                      variant="outlined"
                       onClick={() => applyStatusToSelection(0)}
                       endIcon={<LockOpenIcon />}
                     >
                       Unlock
                     </Button>
                   </ButtonGroup>
-                  <Typography variant="caption" color="text.secondary">
-                    {selectionCount} selected
-                  </Typography>
                 </Stack>
               )}
+              <Stack>
+                <Typography variant="caption" color="text.secondary">
+                  {selectionCount} selected
+                </Typography>
+              </Stack>
 
               <List
                 dense={true}
@@ -427,21 +440,21 @@ const PlanningUnitsTab = ({
               >
                 <ListItem dense={true}>
                   <ListItemAvatar>
-                    <CropSquareIcon sx={{ color: "##96969600" }} />
+                    <HexagonOutlinedIcon sx={{ color: "##96969600" }} />
                   </ListItemAvatar>
                   <ListItemText primary="Default" />
                 </ListItem>
 
                 <ListItem dense={true}>
                   <ListItemAvatar>
-                    <SquareIcon sx={{ color: "#3f3fbf" }} />
+                    <HexagonIcon sx={{ color: "#3f3fbf" }} />
                   </ListItemAvatar>
                   <ListItemText primary="Locked In" />
                 </ListItem>
 
                 <ListItem dense={true}>
                   <ListItemAvatar>
-                    <SquareIcon sx={{ color: "#bf3f3f" }} />
+                    <HexagonIcon sx={{ color: "#bf3f3f" }} />
                   </ListItemAvatar>
                   <ListItemText primary="Locked Out" />
                 </ListItem>

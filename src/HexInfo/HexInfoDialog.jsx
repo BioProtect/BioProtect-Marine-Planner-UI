@@ -9,7 +9,8 @@ import ClickAwayListener from "@mui/material/ClickAwayListener";
 import CloseIcon from "@mui/icons-material/Close";
 import Fade from "@mui/material/Fade";
 import { HexInfoFeatureRow } from "./HexInfoFeatureRow";
-import Hexagon from "react-hexagon";
+import HexagonIcon from "@mui/icons-material/Hexagon";
+import HexagonOutlinedIcon from "@mui/icons-material/HexagonOutlined";
 import Paper from "@mui/material/Paper";
 import Popper from "@mui/material/Popper";
 import Table from "@mui/material/Table";
@@ -173,14 +174,29 @@ const HexInfoDialog = ({ xy, metadata }) => {
                           <Typography variant="body2" fontWeight={500}>
                             {puStatus.label}
                           </Typography>
-                          <Hexagon
-                            className={"hexLegendItem"}
-                            style={{
-                              fill: puStatus.fillColor,
-                              stroke: puStatus.strokeColor,
-                              strokeWidth: 30,
-                            }}
-                          />
+                          <span
+                            className="hexLegendItem"
+                            style={{ position: "relative", display: "inline-block" }}
+                          >
+                            <HexagonIcon
+                              style={{
+                                position: "absolute",
+                                inset: 0,
+                                width: "100%",
+                                height: "100%",
+                                color: puStatus.fillColor,
+                              }}
+                            />
+                            <HexagonOutlinedIcon
+                              style={{
+                                position: "absolute",
+                                inset: 0,
+                                width: "100%",
+                                height: "100%",
+                                color: puStatus.strokeColor,
+                              }}
+                            />
+                          </span>
                         </Box>
                       </Box>
                     </Box>

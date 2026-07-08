@@ -117,6 +117,11 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
     } else {
       layers = visibleLayers;
     }
+    // ponytail: selection-highlight layer shares LAYER_TYPE_PLANNING_UNITS_STATUS
+    // with the status layer but shouldn't get its own legend entry
+    layers = layers.filter(
+      (layer) => layer.metadata?.name !== "Planning Unit Selection",
+    );
     return layers.map((layer) => {
       //get a unique key create the legend for non-feature layers
       let key = "legend_" + layer.id;

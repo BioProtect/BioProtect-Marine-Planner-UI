@@ -1,5 +1,9 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  useGetFeatureRepresentationQuery,
+  useListPrioritizrRunsQuery,
+} from "@slices/prioritizrApiSlice";
 
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -10,6 +14,8 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CircularProgress from "@mui/material/CircularProgress";
 import DownloadIcon from "@mui/icons-material/Download";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import HexagonIcon from "@mui/icons-material/Hexagon";
+import HexagonOutlinedIcon from "@mui/icons-material/HexagonOutlined";
 import IconButton from "@mui/material/IconButton";
 import Log from "./Log";
 import MapLegend from "./MapLegend";
@@ -32,10 +38,6 @@ import { setActiveResultsTab } from "@slices/uiSlice";
 import { toggleRun } from "@slices/prioritizrSlice";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useGetAllFeaturesQuery } from "@slices/featureSlice";
-import {
-  useGetFeatureRepresentationQuery,
-  useListPrioritizrRunsQuery,
-} from "@slices/prioritizrApiSlice";
 
 // YlGn colormap stops matching the map layer
 const YLGN_STOPS = [
@@ -256,8 +258,7 @@ const ResultsPanel = (props) => {
         // fall back to a sensible default if the header is missing.
         const cd = resp.headers.get("Content-Disposition") || "";
         const match = cd.match(/filename="?([^"]+)"?/);
-        const filename =
-          match?.[1] || `project_${projectId}_runs_${fmt}.zip`;
+        const filename = match?.[1] || `project_${projectId}_runs_${fmt}.zip`;
 
         const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement("a");
