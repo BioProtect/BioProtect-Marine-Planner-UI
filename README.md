@@ -1,47 +1,73 @@
-# marxan-client
-See also [marxan-server](https://gitlab.insight-centre.org/caltig/marxan-server).  
+# BioProtect
+
+Web client for BioProtect, a spatial conservation planning tool built on Marxan. Built with React, Vite, MUI, Redux Toolkit and Mapbox GL.
+
+See also the companion server: [marxan-server](https://gitlab.insight-centre.org/caltig/marxan-server).
 
 ## Architecture
-![marxan-client architecture](architecture_client.png)
+![BioProtect client architecture](architecture_client.png)
+
+## Requirements
+- Node.js (see `package.json` for dependency versions)
+- A Mapbox account (for map tiles and geocoding)
+- A running instance of the [server](https://gitlab.insight-centre.org/caltig/marxan-server) (or set `VITE_API_BASE_URL` to a remote one)
+
+## Setup
+```
+git clone <this-repo>
+cd frontend
+npm install
+```
+
+Create a `.env` file in the project root with:
+```
+VITE_MAPBOX_TOKEN=<mapbox secret token>
+VITE_MAPBOX_PUBLIC_TOKEN=<mapbox public token>
+VITE_API_BASE_URL=<url of the marxan-server instance, e.g. http://localhost>
+```
+
+## Development
+```
+npm start
+```
+Runs the Vite dev server at http://localhost:4500 and opens it in the browser.
+
+## Scripts
+- `npm start` - run the dev server
+- `npm run build` - build for production into `build/`
+- `npm run serve` - preview the production build locally
+- `npm test` - run the test suite (Vitest)
+- `npm run test:coverage` - run tests with coverage
+- `npm run deploy` - build and publish `build/` to GitHub Pages
+
+## Project structure
+Key path aliases (see `vite.config.ts`): `@slices`, `@planningGrids`, `@projects`, `@features`, `@navbars`, `@images`, `@hooks`, `@config`, `@store`, `@utils`, all resolving under `src/`.
+
+Notable areas under `src/`:
+- `LeftInfoPanel/`, `RightInfoPanel/`, `MenuBar/` - main app panels
+- `planningGrids/`, `projects/`, `features/` - domain data views
+- `HexInfo/` - planning unit inspection popover
+- `slices/` - Redux Toolkit state
 
 ## Deployment
-Git clone into the web root directory (e.g. for Apache2 on Ubuntu - /var/www/html).  
+
+### Docker
+A standalone Docker image is provided, intended to run behind an nginx-fronted deployment alongside a `marxan-server` instance and database.
+
+Build:
 ```
-git clone https://gitlab.insight-centre.org/caltig/marxan-client.git
+docker build -t bioprotect-client:latest .
 ```
-The Marxan Client will be available at the following address:  
-https://\<host>:8080/index.html  
 
+Run:
+```
+docker run -dp 5000:80 --name bioprotect-client bioprotect-client:latest
+```
+- `-d` - detached mode
+- `-p 5000:80` - maps local port 5000 to the container's exposed port 80
+- `--name` - names the container
 
-## DOCKER   
-This is a standalone Docker image intended to be used with a standalone marxan-server image and a local database, though the database can be changed by updating the relevant env/dat files. 
+The image builds the app with Node, then serves the static `build/` output via nginx (see `nginx.conf`).
 
-The Dockerfile contained uses the node:alpine base image.  
-The instructions in the dockfile copy the package.json to the image, and then install them. 
-There might be some errors with `node-gyp` but these do not seem to have any effect on the running of the app as far as I can tell. 
-The app is then built. 
-
-The image then uses the nginx image to run and host the app. 
-The built app is copied over to the nginx immage to the default html folder.  
-PORT 80 is exposed and nginx is started.  
-
-
-To build the image go into the `marxan-client/` folder and run:  
-`docker build -t repo_name:image_name .`  
-This instruction builds an image using the tag option (`-t`). This gives the image a name in the format `repo_name:image_name`. If you dont provide an image_name it will default to `latest`  
-The final part of the command is the path to the directory we want to build from. Given we are in the directory we want to build from we use `.`  
-
-example:  
-`docker build -t openmarxclient:test .`
-
-Docker build options can be found here: https://docs.docker.com/engine/reference/commandline/build/
-
-### Linux
-The command for running the docker container is:  
-`docker run -dp 5000:80 --name omc openmarxclient:update`  
-This runs the docker container.  
- - `-d` is detatched mode, so you can use your terminal afterwards  
- - `-p` is the port command. In this instance we are using PORT 5000 on our local machine and matching that to PORT 80 in the docker image. The Dockerfile exposes port 80 so thats the port our container is expecting to run on. The marxan-server image is set to run on PORT 80 locally so we use PORT 5000 to run the client (or any port that you would like) 
- - you can combine `-d` and `-p` together into `-dp`  
- - `--name` gives the container a name of your choice to make interacting with the container easier.  
- - The final item is the name of the image you want to start the container from. 
+## License
+See [LICENSE](LICENSE).
