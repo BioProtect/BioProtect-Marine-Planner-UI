@@ -1,6 +1,12 @@
 # Code Review: `newLock` vs `main` — BioProtect Frontend
 
-Scope reviewed: ~96 changed files; focused on `src/` source changes. Standards applied: `CLAUDE.md` and `src/AGENTS.md`.
+Two independent review passes were run against this branch (merge-base `5846fed`, 26 commits, 96 files, +4677/−5750). Standards applied: `CLAUDE.md` and `src/AGENTS.md`. **Pass 1** is below; **Pass 2** (a second, more focused sweep of the planning-unit editing feature) follows after it. The two agree on the RTK Query / logout / JSONP issues; Pass 2 additionally elevates the "Clear Edits" stale-state bug to Critical and adds several findings not in Pass 1 (notably the phantom `puEditing` guard, the missing selection-layer teardown, and the cross-project ref bleed). Read both.
+
+---
+
+# Pass 1
+
+Scope reviewed: ~96 changed files; focused on `src/` source changes.
 
 ---
 
@@ -115,3 +121,124 @@ Every fallback branch always executes: activities always get `#F5C043`, and `Fea
 ## Overall assessment
 
 This is a large, mostly-healthy branch: UI modernisation (theme, login page, panels), a genuinely improved select-then-apply PU editing model, and useful new export features. The blocking concerns before merge are the three High items: the raw `fetch` GIS download (documented invariant violation that also breaks token refresh), the logout ordering bug (server session may never be invalidated), and new endpoints routed through the legacy JSONP helper instead of RTK Query. The Medium items around PU-edit save error handling/stale state (M1/M2) should also be addressed since planning-unit locking is the headline feature of this branch; the rest are polish.
+
+---
+
+# Pass 2
+
+A second sweep focused on the headline select-then-apply planning-unit editing feature. Severity numbering is independent of Pass 1 (Pass 2's C1 corresponds to Pass 1's M1, raised to Critical; Pass 2's H2 ≈ Pass 1's M2; Pass 2's M3 ≈ Pass 1's H1+H3).
+
+---
+
+## Critical
+
+### C1. "Clear Edits" after a save can silently revert saved planning-unit statuses on the server
+`src/LeftInfoPanel/PlanningUnitsTab.jsx:286-296` (`clearManualEdits`), `:298-325` (`updateProjectPus`), `:273` (`stopPuEditSession`)
+
+Three compounding defects:
+1. `updateProjectPus` POSTs via legacy `_post("planning-units?action=update")` but never invalidates/patches the RTKQ `getProject` cache, so the `planningUnits` prop (from `projectResp.planning_units`, `App.jsx:194`) stays **stale** after a save. Violates the AGENTS.md pattern "patch the RTKQ cache via featureCacheActions/rtkqCacheHelpers rather than refetching or holding a duplicate copy."
+2. `localEditsRef` is never cleared after a successful save.
+3. `clearManualEdits` repaints from `planningUnitStatusMap`, which is built from that stale cache.
+
+Failure scenario: Edit → lock in hexes → Save (server updated, cache not). Edit again → click **Clear Edits** (`localEditsRef = {}`, map repainted to pre-save state) → Save. `updateProjectPus` now posts the stale `planningUnits[1]`/`planningUnits[2]` lists with zero local edits — the server is reverted to its pre-first-save state with no warning. Silent data loss.
+
+**Fix:** after a successful POST, patch the `getProject` cache's `planning_units` (or `refetchProject()`), and clear `localEditsRef`. Better: make this an RTKQ mutation with `invalidatesTags` on the project (see M3).
+
+Related sub-bug: `clearManualEdits` only resets feature-state for ids present in `planningUnitStatusMap`. A hex that was **default (status 0)** and locally edited is not in that map, so its painted status is never reset — "Clear Edits" visibly fails for exactly the most common edit. Iterate `Object.keys(localEditsRef.current)` and reset each to `planningUnitStatusMap[id] ?? 0`.
+
+---
+
+## High
+
+### H1. Tab-switch guard reads a Redux field that doesn't exist → edit-session listeners leak and left-drag panning breaks permanently
+`src/LeftInfoPanel/InfoPanel.jsx:268-269, 339` vs `src/App.jsx:253` and `src/slices/planningUnitSlice.js`
+
+`InfoPanel` disables the Project/Features tabs and the Run button with `puState.puEditing`, but `planningUnitSlice` has **no `puEditing` field** — the real flag is local `useState` in `App.jsx:253`. `puState.puEditing` is always `undefined`, so the tabs are never disabled and the user can switch tabs mid-edit-session.
+
+When that happens, `PlanningUnitsTab` unmounts and — because it has **no unmount cleanup effect** — the `mousedown`/`mousemove` canvas listeners and the window `mouseup` listener from `startPuEditSession` (`PlanningUnitsTab.jsx:241-247`) leak permanently. `boxSelectHandlersRef` dies with the component instance, so even returning to the tab and clicking "Save" can never remove them (`stopPuEditSession:263-271` finds `boxSelectHandlersRef.current === null` in the new instance). Consequences for the rest of the session:
+- every left-button `mousedown` on the map disables `dragPan` (`onMouseDown:227-231`) → left-drag panning is dead app-wide;
+- every mouse move while a button is down keeps painting `selected: true` feature-state onto hexes outside any edit session;
+- `App.jsx` `puEditing` stays `true`, so the remounted tab shows "Save" for a session that no longer exists.
+
+**Fix (two parts):** (a) add a `useEffect(() => () => { /* remove listeners, re-enable dragPan, reset cursor */ }, [])` cleanup in `PlanningUnitsTab`; (b) move `puEditing` into `planningUnitSlice` as the single source of truth — this also satisfies the AGENTS.md anti-pattern rule "Don't add new state or handlers to App.jsx if they can live in a slice."
+
+### H2. Click-select and drag-paint fight each other on micro-drags — clicking a hex often no-ops
+`src/LeftInfoPanel/PlanningUnitsTab.jsx:178-201` (click toggle) vs `:208-235` (drag paint)
+
+Mapbox fires `click` after `mouseup` unless cursor movement exceeded `clickTolerance` (default 3 px). For a normal click with 1–2 px of jitter: `mousemove` fires → `selectAtPoint` **adds** the hex; then `click` fires → the toggle sees `selectedIdsRef.current.has(puid)` and **removes** it. Net result: clicking a hex intermittently does nothing, depending on sub-3-pixel hand jitter. Presents as "selection is flaky."
+
+**Fix:** set a `didPaint = false` flag in `onMouseDown`, set it `true` in `selectAtPoint` when anything is added, and skip the toggle in the click handler when `didPaint` is true.
+
+### H3. Save is fire-and-forget; failed saves exit edit mode as if they succeeded
+`src/LeftInfoPanel/PlanningUnitsTab.jsx:272-273`
+
+`stopPuEditSession` calls `clearSelection()` (silently discarding any selected-but-unapplied hexes) then `updateProjectPus()` without `await` or `.catch()`. `_post` rethrows after its snackbar (`App.jsx:688-692`), so this produces an unhandled promise rejection, and the UI has already left edit mode with the edited statuses painted on the map — even though the server was never updated. There is also no success feedback and the POST fires on every Save click even with zero edits.
+
+**Fix:** `await` it, keep the session open (or offer retry) on failure, skip the POST when `Object.keys(localEditsRef.current).length === 0`, and show a success snackbar via `useAppSnackbar`.
+
+---
+
+## Medium
+
+### M1. Asymmetric early-returns leave the edit session half-started / half-stopped
+`src/LeftInfoPanel/PlanningUnitsTab.jsx:168-175, 250-255`
+
+`startPuEditSession` dispatches `setShowPlanningGrid(true)` and sets the crosshair cursor **before** bailing when `puLayerId` is missing, and `handlePUEditingClick:276-284` has already set `puEditing = true`. The button now says "Save" for a session with no listeners; clicking it hits `stopPuEditSession`'s own early-return (`:252-255`), which bails **before** resetting the cursor or calling cleanup — the crosshair cursor sticks forever. Do the `puLayerId` guard first, before any state/cursor mutation, and don't flip `puEditing` until the session actually started.
+
+Also: `setShowPlanningGrid` is dispatched here but nothing consumes `showPlanningGrid` (only the slice definition at `planningUnitSlice.js:41,71` and a commented-out block in `InfoPanel.jsx:184-187`) — both dispatches are dead code. Selection-layer visibility is actually driven by `loadCostsLayer` (`App.jsx:3472-3476`), so if `getPuCostsLayer` throws when the PU tab opens, the cyan selection borders are invisible for the whole edit session while selection still "works" invisibly. Consider making the edit session itself show the selection layer.
+
+### M2. `removePlanningGridLayers(puLayerName)` targeted path misses the new selection layer → `removeSource` will throw
+`src/App.jsx:2320-2328`
+
+`layersToRemove` lists results/costs/pu/status but not `martin_layer_selection_${puLayerName}` (added in e54abb5). `removeMapSource` (`App.jsx:2396`, no guard/try-catch) then throws "Source ... cannot be removed while layer ... is using it." The targeted branch is currently dead (the only call site, `:2093`, passes no argument) but it's a landmine for the next caller. Add the selection layer id to the list.
+
+### M3. New endpoints bypass RTK Query — invariant violation, and downloads bypass the 403→refresh reauth
+- `src/RightInfoPanel/ResultsPanel.jsx` (GIS export, `handleDownloadGis`): raw `fetch` with a manually attached Bearer header. Explicitly violates CLAUDE.md/AGENTS.md ("All HTTP goes through RTK Query... Never call fetch directly"). Concrete failure: an expired access token 403s and the download just fails, instead of going through the `baseQueryWithReauth` `/refresh` path every other request gets. A blob download can still be an injected RTKQ endpoint with `responseHandler: (r) => r.blob()`.
+- New endpoints routed through legacy `_get` (JSONP) / `_post`: `planning-units?action=update` (`PlanningUnitsTab.jsx:324`), `getCostProfileActivities` (`App.jsx:3256-3263`), `getRasterBandInfo` (`App.jsx:2854`), `setActiveCostProfile` (`App.jsx:3510`), `planning-units?action=get-cost-layer` (`App.jsx:3498`). AGENTS.md: "New endpoint: add it to the relevant domain slice with `apiSlice.injectEndpoints`." Note also that `setActiveCostProfile` and the raster-cost flow are **state-mutating GETs over JSONP** — no CSRF protection and JSONP executes server-returned script; worth migrating these first.
+
+### M4. `handleDownloadPdf` has `try/finally` with no `catch`
+`src/RightInfoPanel/ResultsPanel.jsx` (PDF handler)
+
+Any error (canvas capture, jsPDF, image decode) becomes an unhandled rejection; the user sees the spinner stop with no explanation. Add a `catch` that calls `showMessage`.
+
+### M5. `localEditsRef` and selection survive project switches
+`src/LeftInfoPanel/PlanningUnitsTab.jsx:71-77`
+
+Neither `localEditsRef` nor `selectedIdsRef` is reset when `project?.id` changes (the component doesn't remount on project switch). Unsaved edits from project A can be merged into project B's `updateProjectPus` payload. Add an effect keyed on `project?.id` that resets both refs, `selectionCount`, and (if active) tears down the edit session.
+
+### M6. Crash risk: `Object.entries(planningUnits)` with undefined prop
+`src/LeftInfoPanel/PlanningUnitsTab.jsx:60-68` — `planningUnits` is `projectResp?.planning_units` (`App.jsx:194`), which is `undefined` until the project query resolves. If the PU tab is mounted at that moment, `Object.entries(undefined)` throws and takes the panel down. Guard with `planningUnits ?? {}` (same for `applyStatusToSelection:156` and `clearManualEdits:287`, which destructure `puLayerIdsRef.current` without the null-guard `clearSelection` has).
+
+---
+
+## Low
+
+- `PlanningUnitsTab.jsx:442` — `sx={{ color: "##96969600" }}`: double `#`, invalid color; the "Default" legend hexagon renders in the inherited color, not the intended transparent grey.
+- `PlanningUnitsTab.jsx:567` — `overflowY: "none"` is not a valid CSS value (want `"auto"`/`"hidden"`); long activity lists will overflow the 40vh box.
+- `PlanningUnitsTab.jsx:346-348` — helper text says "drag a box" but the interaction is a brush (the commit message itself says "not a bounding box"); also typo "Mannually". `InfoPanel.jsx:343` — "Run Prioitizr" typo (user-facing button).
+- `App.jsx:421-423` — unmount cleanup calls `map.off("click", CONSTANTS.PU_LAYER_NAME, ...)` but the handler is registered on the dynamic id `martin_layer_pu_${name}` (`PlanningUnitsTab.jsx:202`); the off() is a silent no-op. Harmless today (App unmount ≈ page teardown) but misleading.
+- `theme.js:60-62` — `shape: { radius: 10 }` is a silent no-op; MUI reads `shape.borderRadius`.
+- `index.html:44-46` — FontAwesome 5.0.10 CSS is still loaded from CDN even though the branch removed all FontAwesome packages (commit e9cb2cb); dead external request, drop it.
+- `PlanningUnitsTab.jsx:13` — `CONSTANTS` import is unused.
+- `window.colors` palette indexing is now duplicated in four places (`PlanningUnitsTab.jsx:575`, `FeaturesList.jsx:131`, `App.jsx:3220`, `featuresService.jsx:8`) — extract a `getPaletteColor(id)` util; global `window` state is fragile.
+- No tests were added anywhere on a ~4700-line branch; the select-then-apply set logic (`updateProjectPus` merge) is pure and eminently unit-testable with Vitest.
+
+---
+
+## Invariant compliance summary (Pass 2)
+
+| Invariant | Status |
+|---|---|
+| ES modules; JSX only in `.jsx` | Pass (`theme.js`, `generatePdfReport.js` are JSX-free) |
+| Path aliases, no deep relative chains | Pass for new code (`@utils` alias added to `vite.config.ts`; the one `../../MarxanDialog` in ServerDetailsDialog pre-dates the branch) |
+| All HTTP via RTK Query in `apiSlice.js` | **Violated** by new code (M3) |
+| MUI 5 + `@mui/icons-material` over inline SVGs | Pass — FontAwesome fully removed; remaining inline SVGs (LoginPage contours, WaveOverlay) are decorative artwork, not icons |
+| Reauth logout guard preserved | Pass — the branch *adds* the documented guard (`apiSlice.js:23-27`) |
+| Dialog visibility via `uiSlice` | Pass |
+| Cache patching over duplicate slice copies | **Violated** by the PU-status save path (C1) |
+
+---
+
+## Verdict (Pass 2)
+
+**Not merge-ready.** The headline select-then-apply feature is a genuine UX improvement and the window-bound `mouseup` correctly fixes the released-outside-canvas case it targets, but the feature has one silent server-side data-loss path (C1), a listener/dragPan leak reachable through an ineffective guard (H1), and a flaky-click interaction bug (H2). C1, H1, H2 and H3 should be fixed before merge; M1–M6 are strongly recommended in the same pass since they all touch the same code. The rest of the branch (theme, PDF report, logout hardening, slice cleanups, FontAwesome removal) is in good shape.
