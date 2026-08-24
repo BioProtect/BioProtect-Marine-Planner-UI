@@ -75,9 +75,11 @@ const BioprotectTable = (props) => {
 
   // Normalize the incoming `selected` into a Set of IDs for fast lookup.
   const selectedIdSet = useMemo(() => {
-    const sel = props.selected || [];
-    // supports array of IDs or array of objects with .id
-    return new Set(sel.map((s) => (typeof s === "object" ? s.id : s)));
+    // ponytail: drop nullish entries - a [undefined] selection used to match
+    // every row whose .id was also undefined (i.e. all of them)
+    const sel = (props.selected || []).filter((s) => s != null);
+    // supports array of IDs, or objects with .id (falling back to identity)
+    return new Set(sel.map((s) => (typeof s === "object" ? (s.id ?? s) : s)));
   }, [props.selected]);
 
   const handleRequestSort = (event, property) => {
@@ -133,7 +135,7 @@ const BioprotectTable = (props) => {
     props.updateSelectionIds && props.updateSelectionIds([]);
   };
 
-  const isSelected = (row) => selectedIdSet.has(row.id);
+  const isSelected = (row) => selectedIdSet.has(row.id ?? row);
 
   return (
     <Box sx={{ width: "100%" }}>
