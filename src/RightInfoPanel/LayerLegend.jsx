@@ -8,7 +8,6 @@ import TransparencyControl from "../TransparencyControl";
 import Typography from "@mui/material/Typography";
 
 const LayerLegend = (props) => {
-  console.log("props ", props);
   const [opacity, setOpacity] = useState(0);
 
   /**
@@ -60,7 +59,6 @@ const LayerLegend = (props) => {
     //iterate through the items in this layers legend. get a unique key
     //if the legend is showing a range in values then put in a horizontal separator between the items
     return props.items.map((item, index) => {
-      console.log("item, index ", item, index);
       const key = `legend_${props.layer?.id ?? "static"}_${index}`;
       return (
         <div key={key} style={{ display: props.range ? "inline" : "block" }}>
@@ -109,7 +107,6 @@ const LayerLegend = (props) => {
   ) : (
     renderItems()
   );
-  console.log(" items i need to be looking at - ", items);
   return (
     <>
       <Stack direction="row" pl={1} alignItems="center" spacing={1}>

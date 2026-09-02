@@ -11,7 +11,6 @@ import {
 import {
   addToImportLog,
   clearImportLog,
-  removeImportLogMessage,
   setActiveResultsTab,
   setActiveTab,
   setBasemap,
@@ -717,78 +716,15 @@ const App = () => {
     [dispatch],
   );
 
-  // removes a message from the log by matching on pid and status or just status
-  // update the messages state - filter previous messages state by pid and status
-  const removeMessageFromLog = useCallback(
-    (status, pid) => {
-      const matchText = status;
-      dispatch(removeImportLogMessage(matchText));
-    },
-    [dispatch],
-  );
-
-  //logs the message if necessary - this removes duplicates
-  const logMessage = useCallback(
-    (message) => {
-      if (!message || typeof message.status !== "string") return;
-
-      const timestampedMessage = {
-        ...message,
-        time: new Date().toLocaleTimeString(),
-      };
-
-      const handleSocketClosedUnexpectedly = () => {
-        dispatch(
-          addToImportLog({
-            method: message.method,
-            status: "Finished",
-            error: "The WebSocket connection closed unexpectedly",
-            time: timestampedMessage.time,
-          }),
-        );
-        dispatch(removeImportLogMessage("Preprocessing"));
-        setPid(0);
-      };
-
-      const handlePidMessage = () => {
-        const existingMessages = uiState.importLog.filter(
-          (_message) => _message.pid === message.pid,
-        );
-        const latestStatus = existingMessages.at(-1)?.status;
-
-        if (!existingMessages.length || message.status !== latestStatus) {
-          if (message.status === "Finished") {
-            dispatch(removeImportLogMessage("RunningQuery"));
-          }
-          dispatch(addToImportLog(timestampedMessage));
-        }
-      };
-      const handleGeneralMessage = () => {
-        const allowDuplicates = ["RunningMarxan", "Started", "Finished"];
-        if (!allowDuplicates.includes(message.status)) {
-          dispatch(removeImportLogMessage(message.status));
-        }
-        dispatch(addToImportLog(timestampedMessage));
-      };
-
-      if (message.status === "SocketClosedUnexpectedly") {
-        handleSocketClosedUnexpectedly();
-      } else if ("pid" in message) {
-        handlePidMessage();
-      } else {
-        handleGeneralMessage();
-      }
-    },
-    [dispatch, uiState.importLog],
-  );
-
+  // NB: useWebSocketHandler takes exactly these four. It owns its own
+  // logMessage/removeMessageFromLog; passing those in here shifted every
+  // argument along by one, so newFeatureCreated was being invoked as setPid
+  // and imported features never made it into the UI.
   const startWebSocket = useWebSocketHandler(
     checkForErrors,
-    logMessage,
     setPreprocessing,
     setPid,
     newFeatureCreated,
-    removeMessageFromLog,
   );
 
   const handleWebSocket = async (url) => {

@@ -28,6 +28,14 @@ export const prioritizrApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
+    deletePrioritizrRun: builder.mutation({
+      query: (runId) => ({
+        url: `prioritizr?action=delete-run&run-id=${runId}`,
+        method: "POST",
+      }),
+      invalidatesTags: [{ type: "PrioritizrRun", id: "LIST" }],
+    }),
+
     // runIds: sorted number[] — stable cache key, averaged on the server
     getFeatureRepresentation: builder.query({
       query: (runIds) =>
@@ -44,4 +52,5 @@ export const {
   useGetPrioritizrRunQuery,
   useGetPrioritizrRunResultsQuery,
   useGetFeatureRepresentationQuery,
+  useDeletePrioritizrRunMutation,
 } = prioritizrApiSlice;

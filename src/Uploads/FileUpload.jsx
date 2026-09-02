@@ -10,7 +10,6 @@ import useAppSnackbar from "@hooks/useAppSnackbar";
 // FileUpload component refactored to use React 18 and MUI 5
 const FileUpload = (props) => {
   const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(false);
   const id = `upload-${props.filename}`;
