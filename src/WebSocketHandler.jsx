@@ -13,21 +13,69 @@ const useWebSocketHandler = (
 ) => {
   const dispatch = useDispatch();
   const activeProjectId = useSelector((state) => state.project.activeProjectId);
+  const importLog = useSelector((state) => state.ui.importLog);
   const websocketEndpoint = useSelector(
     (state) => state.project.bpServer.websocketEndpoint,
   );
   const { showMessage } = useAppSnackbar();
 
+  // Logs a message, collapsing repeats so the import log doesn't fill up with
+  // identical "Preprocessing" lines. This moved here from App.jsx, which used to
+  // pass it in - the argument list had drifted out of alignment and it was
+  // silently landing on setPreprocessing instead.
   const logMessage = useCallback(
-    (msg) => {
-      dispatch(
-        addToImportLog({
-          ...msg,
-          time: new Date().toLocaleTimeString(),
-        }),
-      );
+    (message) => {
+      if (!message || typeof message.status !== "string") return;
+
+      const timestampedMessage = {
+        ...message,
+        time: new Date().toLocaleTimeString(),
+      };
+
+      const handleSocketClosedUnexpectedly = () => {
+        dispatch(
+          addToImportLog({
+            method: message.method,
+            status: "Finished",
+            error: "The WebSocket connection closed unexpectedly",
+            time: timestampedMessage.time,
+          }),
+        );
+        dispatch(removeImportLogMessage("Preprocessing"));
+        setPid(0);
+      };
+
+      const handlePidMessage = () => {
+        const existingMessages = (importLog || []).filter(
+          (_message) => _message.pid === message.pid,
+        );
+        const latestStatus = existingMessages.at(-1)?.status;
+
+        if (!existingMessages.length || message.status !== latestStatus) {
+          if (message.status === "Finished") {
+            dispatch(removeImportLogMessage("RunningQuery"));
+          }
+          dispatch(addToImportLog(timestampedMessage));
+        }
+      };
+
+      const handleGeneralMessage = () => {
+        const allowDuplicates = ["RunningMarxan", "Started", "Finished"];
+        if (!allowDuplicates.includes(message.status)) {
+          dispatch(removeImportLogMessage(message.status));
+        }
+        dispatch(addToImportLog(timestampedMessage));
+      };
+
+      if (message.status === "SocketClosedUnexpectedly") {
+        handleSocketClosedUnexpectedly();
+      } else if ("pid" in message) {
+        handlePidMessage();
+      } else {
+        handleGeneralMessage();
+      }
     },
-    [dispatch],
+    [dispatch, importLog, setPid],
   );
 
   const removeMessageFromLog = useCallback(
