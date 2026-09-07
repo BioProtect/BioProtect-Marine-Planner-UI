@@ -20,7 +20,7 @@ import Select from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { selectServer } from "@slices/projectSlice";
+import { selectServer, toggleProjDialog } from "@slices/projectSlice";
 import { setCredentials } from "@slices/authSlice";
 import styled from "@emotion/styled";
 import useAppSnackbar from "@hooks/useAppSnackbar";
@@ -170,7 +170,17 @@ const LoginPage = ({ loadProjectAndSetup }) => {
           userData: response.userData,
         }),
       );
-      await loadProjectAndSetup(response.project.id);
+      // ponytail: new users have no project yet; send them to New Project
+      if (response.project) {
+        await loadProjectAndSetup(response.project.id);
+      } else {
+        dispatch(
+          toggleProjDialog({
+            dialogName: "newProjectDialogOpen",
+            isOpen: true,
+          }),
+        );
+      }
       dispatch(setLoading(false));
       setUsername("");
       setPassword("");
