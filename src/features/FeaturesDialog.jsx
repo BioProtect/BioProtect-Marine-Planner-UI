@@ -164,9 +164,13 @@ const FeaturesDialog = ({ onOk, metadata, userRole, previewFeature }) => {
 
   const clickRow = (event, row) => {
     if (!row || row.index === undefined) return;
-    addOrRemoveFeature(row);
 
     if (addingRemovingFeatures) {
+      // Only toggle project membership in add/remove mode. Browsing the list
+      // (opened from the main menu) must not silently add features: OK takes
+      // the else branch below and never persists, so they showed up in the
+      // info panel and preprocessed but never reached project_features.
+      addOrRemoveFeature(row);
       if (event.shiftKey && previousRow) {
         const nextIds = getFeaturesBetweenRows(previousRow, row);
         dispatch(setSelectedFeatureIds(nextIds));
