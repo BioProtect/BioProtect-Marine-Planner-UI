@@ -147,6 +147,22 @@ const HexInfoDialog = ({ xy, metadata }) => {
                         }}
                       >
                         <Typography variant="body2" color="text.secondary">
+                          Area
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {puInfo.area_km2 != null
+                            ? `${puInfo.area_km2.toFixed(2)} km²`
+                            : "-"}
+                        </Typography>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="text.secondary">
                           Cost
                         </Typography>
                         <Typography variant="body2" fontWeight={500}>
