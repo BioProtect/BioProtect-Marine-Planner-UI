@@ -35,6 +35,14 @@ import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Tooltip from "@mui/material/Tooltip";
+import {
+  useDeleteCostRasterMutation,
+  useListCostRastersQuery,
+  useSetCostRasterVisibilityMutation,
+} from "@slices/costRasterSlice";
 import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 
 const CumulativeImpactDialog = ({
@@ -44,6 +52,7 @@ const CumulativeImpactDialog = ({
   activateCostProfile,
   runCumulativeImpact,
   uploadRasterCost,
+  createCostProfileFromRaster,
   getRasterBandInfo,
   fileUpload,
   handleWebSocket,
@@ -80,6 +89,22 @@ const CumulativeImpactDialog = ({
   const [rasterFloor, setRasterFloor] = useState(0.001);
   const [rasterFillStrategy, setRasterFillStrategy] = useState("median");
   const [rasterSetActive, setRasterSetActive] = useState(true);
+  const [rasterExactSampling, setRasterExactSampling] = useState(false);
+
+  // Raster source: a fresh upload, or a raster that was extracted earlier
+  // and whose file is long gone (only its per-hex values survive).
+  const [rasterSource, setRasterSource] = useState("upload");
+  const [selectedRasterId, setSelectedRasterId] = useState(null);
+
+  const activeProjectId = projState.activeProjectId;
+  const { data: rasterLibraryResp, refetch: refetchRasters } =
+    useListCostRastersQuery(activeProjectId, {
+      skip: tabIndex !== 2 || !activeProjectId,
+    });
+  const cachedRasters = rasterLibraryResp?.data ?? [];
+  const [setRasterVisibility] = useSetCostRasterVisibilityMutation();
+  const [deleteCostRaster] = useDeleteCostRasterMutation();
+  const selectedRaster = cachedRasters.find((r) => r.id === selectedRasterId);
 
   const costProfiles = projState.projectCosts || [];
 
@@ -235,6 +260,7 @@ const CumulativeImpactDialog = ({
         floor: rasterFloor,
         fillStrategy: rasterFillStrategy,
         setActive: rasterSetActive,
+        sampling: rasterExactSampling ? "exact" : "auto",
       },
     );
     if (!response?.error) {
@@ -248,9 +274,53 @@ const CumulativeImpactDialog = ({
     }
   };
 
+  // Reuse a raster that was extracted earlier - no upload, no raster IO.
+  const handleCreateFromCachedRaster = async () => {
+    if (!createCostProfileFromRaster || !selectedRasterId) return;
+    const response = await createCostProfileFromRaster(
+      selectedRasterId,
+      rasterProfileName,
+      rasterProfileDescription,
+      {
+        normalise: rasterNormalise,
+        floor: rasterFloor,
+        fillStrategy: rasterFillStrategy,
+        setActive: rasterSetActive,
+      },
+    );
+    if (!response?.error) {
+      setSelectedRasterId(null);
+      setRasterProfileName("");
+      setRasterProfileDescription("");
+      setTabIndex(0);
+    }
+  };
+
+  const handleToggleRasterVisibility = async (raster) => {
+    await setRasterVisibility({
+      rasterId: raster.id,
+      visibility: raster.visibility === "shared" ? "private" : "shared",
+    });
+    refetchRasters();
+  };
+
+  const handleDeleteCachedRaster = async (raster) => {
+    await deleteCostRaster(raster.id);
+    if (selectedRasterId === raster.id) setSelectedRasterId(null);
+    refetchRasters();
+  };
+
   const canUploadRasterCost =
     !uiState.loading &&
     rasterFilename !== "" &&
+    rasterProfileName !== "" &&
+    rasterFloor > 0 &&
+    rasterFloor < 1 &&
+    userRole !== "ReadOnly";
+
+  const canUseCachedRaster =
+    !uiState.loading &&
+    selectedRasterId != null &&
     rasterProfileName !== "" &&
     rasterFloor > 0 &&
     rasterFloor < 1 &&
@@ -539,19 +609,156 @@ const CumulativeImpactDialog = ({
             Upload a preprocessed raster (.tif) to use as the cost layer for
             this project. Values are sampled per hex with exactextract,
             log-normalised to [floor, 1] so no hex is ever zero-cost, and saved
-            as a new cost profile.
+            as a new cost profile. The raster is sampled against every planning
+            hex it covers — all areas and resolutions — then deleted, so you can
+            reuse it later without uploading it again.
           </Alert>
 
-          <FileUpload
-            fileUpload={fileUpload}
-            fileMatch=".tif,.tiff"
-            mandatory={true}
-            filename={rasterFilename}
-            setFilename={setRasterFilename}
-            destFolder="imports"
-            label="Upload Raster (.tif)"
-            style={{ paddingTop: "10px" }}
-          />
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={rasterSource}
+            onChange={(e, v) => v && setRasterSource(v)}
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value="upload">Upload a raster</ToggleButton>
+            <ToggleButton value="library">
+              Reuse an extracted raster ({cachedRasters.length})
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          {rasterSource === "upload" ? (
+            <FileUpload
+              fileUpload={fileUpload}
+              fileMatch=".tif,.tiff"
+              mandatory={true}
+              filename={rasterFilename}
+              setFilename={setRasterFilename}
+              destFolder="imports"
+              label="Upload Raster (.tif)"
+              style={{ paddingTop: "10px" }}
+            />
+          ) : cachedRasters.length === 0 ? (
+            <Alert severity="warning">
+              No extracted rasters available yet. Upload one and it will appear
+              here for every future project.
+            </Alert>
+          ) : (
+            <TableContainer sx={{ maxHeight: 220 }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="checkbox" />
+                    <TableCell>Raster</TableCell>
+                    <TableCell align="right">Covers this project</TableCell>
+                    <TableCell align="center">Visibility</TableCell>
+                    <TableCell align="center" />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {cachedRasters.map((r) => (
+                    <TableRow
+                      key={r.id}
+                      hover
+                      selected={r.id === selectedRasterId}
+                      onClick={() => setSelectedRasterId(r.id)}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          size="small"
+                          checked={r.id === selectedRasterId}
+                          onChange={() => setSelectedRasterId(r.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {r.name}
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block" }}
+                        >
+                          band {r.band} · {r.stat} ·{" "}
+                          {(r.hex_count ?? 0).toLocaleString()} hexes cached
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        {r.project_total
+                          ? `${r.project_coverage_pct}% (${(
+                              r.project_covered ?? 0
+                            ).toLocaleString()})`
+                          : "—"}
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip
+                          title={
+                            r.is_owner
+                              ? "Click to change who can reuse this raster"
+                              : "Shared with you by another user"
+                          }
+                        >
+                          <span>
+                            <Chip
+                              size="small"
+                              label={r.visibility}
+                              color={
+                                r.visibility === "shared"
+                                  ? "primary"
+                                  : "default"
+                              }
+                              variant={
+                                r.visibility === "shared"
+                                  ? "filled"
+                                  : "outlined"
+                              }
+                              disabled={!r.is_owner}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (r.is_owner)
+                                  handleToggleRasterVisibility(r);
+                              }}
+                            />
+                          </span>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell align="center">
+                        {r.is_owner && userRole !== "ReadOnly" ? (
+                          <Button
+                            size="small"
+                            color="error"
+                            startIcon={<DeleteIcon />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCachedRaster(r);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+
+          {rasterSource === "library" && selectedRaster ? (
+            <Alert
+              severity={
+                selectedRaster.project_total &&
+                selectedRaster.project_coverage_pct === 0
+                  ? "error"
+                  : "info"
+              }
+              sx={{ mt: 1 }}
+            >
+              {selectedRaster.project_total &&
+              selectedRaster.project_coverage_pct === 0
+                ? "This raster has no cached values for this project's hexes — it may not reach this area, or not at this resolution. Re-upload it to extend coverage."
+                : `Band ${selectedRaster.band} and ${selectedRaster.stat} are baked into the cached values. Normalisation below is applied fresh for this project.`}
+            </Alert>
+          ) : null}
 
           <TextField
             fullWidth
@@ -576,7 +783,9 @@ const CumulativeImpactDialog = ({
           />
 
           <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-            {rasterBandInfo && rasterBandInfo.band_count > 1 ? (
+            {rasterSource === "upload" &&
+            rasterBandInfo &&
+            rasterBandInfo.band_count > 1 ? (
               <FormControl size="small" sx={{ minWidth: 140 }}>
                 <InputLabel id="raster-band-label">Band</InputLabel>
                 <Select
@@ -600,7 +809,15 @@ const CumulativeImpactDialog = ({
               </FormControl>
             ) : null}
 
-            <FormControl size="small" sx={{ minWidth: 180 }}>
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: 180,
+                // band + aggregation are fixed at extraction time; a cached
+                // raster already has them baked into its stored values.
+                display: rasterSource === "upload" ? undefined : "none",
+              }}
+            >
               <InputLabel id="raster-stat-label">Aggregation</InputLabel>
               <Select
                 labelId="raster-stat-label"
@@ -668,9 +885,24 @@ const CumulativeImpactDialog = ({
               }
               label="Set as active profile"
             />
+            {rasterSource === "upload" ? (
+              <Tooltip title="By default, resolutions whose hexes sit inside a single pixel are read with a fast centroid lookup, which gives the same value as the area-weighted mean. Tick this to force exactextract everywhere — much slower, but it blends pixels for hexes straddling a boundary.">
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={rasterExactSampling}
+                      onChange={(e) =>
+                        setRasterExactSampling(e.target.checked)
+                      }
+                    />
+                  }
+                  label="Force exact zonal stats (slow)"
+                />
+              </Tooltip>
+            ) : null}
           </Stack>
 
-          {rasterBandInfo ? (
+          {rasterSource === "upload" && rasterBandInfo ? (
             <Typography
               variant="caption"
               color="text.secondary"
@@ -690,14 +922,25 @@ const CumulativeImpactDialog = ({
             fullWidth
             sx={{ mt: 2 }}
           >
-            <Button
-              startIcon={<FileUploadIcon />}
-              title="Create a cost profile from the uploaded raster"
-              onClick={handleUploadRasterCost}
-              disabled={!canUploadRasterCost}
-            >
-              Create Cost Profile from Raster
-            </Button>
+            {rasterSource === "upload" ? (
+              <Button
+                startIcon={<FileUploadIcon />}
+                title="Extract the uploaded raster, cache it, and build a cost profile"
+                onClick={handleUploadRasterCost}
+                disabled={!canUploadRasterCost}
+              >
+                Create Cost Profile from Raster
+              </Button>
+            ) : (
+              <Button
+                startIcon={<AddCircleIcon />}
+                title="Build a cost profile from the cached values - no upload needed"
+                onClick={handleCreateFromCachedRaster}
+                disabled={!canUseCachedRaster}
+              >
+                Create Cost Profile from Cached Raster
+              </Button>
+            )}
           </ButtonGroup>
         </>
       )}

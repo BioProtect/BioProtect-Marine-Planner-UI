@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import MarxanDialog from "../MarxanDialog";
 import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
+import { resolutionLabel } from "../bpVars.jsx";
 import { selectCurrentUserId } from "@slices/authSlice";
 import { toggleProjDialog } from "@slices/projectSlice";
 import { useListProjectsQuery } from "@slices/projectSlice";
@@ -28,7 +29,14 @@ const ProjectsDialog = ({
   const { data: projectsResp = {}, isFetching } = useListProjectsQuery(userId, {
     skip: !userId,
   });
-  const projects = projectsResp.projects ?? [];
+  const projects = useMemo(
+    () =>
+      (projectsResp.projects ?? []).map((p) => ({
+        ...p,
+        resolution: resolutionLabel(p.resolution),
+      })),
+    [projectsResp.projects],
+  );
   const activeProjectId = useSelector((state) => state.project.activeProjectId);
   const [selectedProjectId, setSelectedProjectId] = useState(activeProjectId);
   const project = projects.find((p) => p.id === selectedProjectId);
@@ -91,6 +99,7 @@ const ProjectsDialog = ({
     { id: "name", label: "name" },
     { id: "description", label: "description" },
     { id: "createdate", label: "created date" },
+    { id: "resolution", label: "resolution" },
   ];
 
   const tableColumns = ["Admin", "ReadOnly"].includes(userRole)
