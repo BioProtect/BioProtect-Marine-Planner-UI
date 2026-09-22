@@ -22,6 +22,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import MarxanDialog from "../MarxanDialog.jsx";
 import PlanningUnitsDialog from "@planningGrids/PlanningUnitsDialog";
 import ProjectFeaturesTable from "@projects/ProjectFeaturesTable";
+import { RESOLUTIONS } from "../bpVars.jsx";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import SelectCostFeatures from "../SelectCostFeatures.jsx";
@@ -73,12 +74,7 @@ const NewProjectDialog = ({
   // upload - create grid inputs
   const [planningGridName, setPlanningGridName] = useState("");
   const [resolution, setResolution] = useState(7);
-  const resolutionOptions = [
-    { label: "Basin resolution (36 km²)", value: 6 },
-    { label: "Regional resolution (5 km²)", value: 7 },
-    { label: "Mid Regional Local resolution (0.7 km²)", value: 8 },
-    { label: "Local resolution (0.1 km²)", value: 9 },
-  ];
+  const resolutionOptions = RESOLUTIONS;
 
   // upload progress - continue automatically
   const [waitingForUpload, setWaitingForUpload] = useState(false);

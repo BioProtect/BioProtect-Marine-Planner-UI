@@ -272,13 +272,13 @@ export const bootstrapProject = createAsyncThunk(
 
       dispatch(setActiveProjectId(projId));
       dispatch(
-        projectApiSlice.endpoints.getProject.initiate(projectId, {
+        projectApiSlice.endpoints.getProject.initiate(projId, {
           // keep it in cache, don't create extra subscriptions in components
           subscribe: false,
           forceRefetch: true,
         })
       );
-      return projectId;
+      return projId;
     } catch (e) {
       return rejectWithValue(e?.message ?? String(e));
     }

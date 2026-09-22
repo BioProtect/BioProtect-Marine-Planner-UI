@@ -48,6 +48,7 @@ export const apiSlice = createApi({
     "ProjectList",
     "PrioritizrRun",
     "PrioritizrResults",
+    "CostRaster",
   ],
   endpoints: (builder) => ({}),
 });

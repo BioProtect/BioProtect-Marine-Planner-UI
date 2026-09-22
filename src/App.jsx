@@ -48,6 +48,7 @@ import {
   selectCurrentUserId,
   selectIsUserLoggedIn,
 } from "@slices/authSlice";
+import { useCreateProfileFromRasterMutation } from "@slices/costRasterSlice";
 import {
   setDigitisedFeatures,
   setFeatureMetadata,
@@ -248,6 +249,7 @@ const App = () => {
   }, [allFeatures]);
   const [triggerListFeaturePUs] = featureApiSlice.useLazyListFeaturePUsQuery();
   const [updateProjectFeaturesMutation] = useUpdateProjectFeaturesMutation();
+  const [createProfileFromRaster] = useCreateProfileFromRasterMutation();
 
   const [puEditing, setPuEditing] = useState(false);
   const puEditingRef = useRef(puEditing);
@@ -865,11 +867,13 @@ const App = () => {
           forceRefetch: true,
         }),
       ).unwrap();
+      // the server answers errors with 200 + {error, trace}, so unwrap() won't throw
+      if (projectData?.error) throw new Error(projectData.error);
       await postLoginSetup(projectData);
       return projectData;
     } catch (error) {
       console.error("Failed to load project:", error);
-      showMessage("Error loading project", "error");
+      showMessage(`Error loading project: ${error.message || error}`, "error");
     }
   };
 
@@ -2816,6 +2820,7 @@ const App = () => {
       floor = 0.001,
       fillStrategy = "median",
       setActive = true,
+      sampling = "auto",
     } = options;
 
     dispatch(setLoading(true));
@@ -2831,7 +2836,8 @@ const App = () => {
       `&normalise=${normalise ? "true" : "false"}` +
       `&floor=${floor}` +
       `&fill_strategy=${encodeURIComponent(fillStrategy)}` +
-      `&set_active=${setActive ? "true" : "false"}`;
+      `&set_active=${setActive ? "true" : "false"}` +
+      `&sampling=${encodeURIComponent(sampling)}`;
 
     const response = await handleWebSocket(url).catch((err) => {
       console.error("uploadRasterCost WebSocket failed:", err);
@@ -2858,6 +2864,66 @@ const App = () => {
 
     dispatch(setLoading(false));
     return response;
+  };
+
+  // Build a cost profile from a raster that was extracted earlier. The
+  // raster file is long gone; this reads the cached per-hex values, so it
+  // is a plain REST call with no progress to stream.
+  // options: { normalise, floor, fillStrategy, setActive }
+  const createCostProfileFromRaster = async (
+    rasterId,
+    profileName,
+    description = "",
+    options = {},
+  ) => {
+    const {
+      normalise = true,
+      floor = 0.001,
+      fillStrategy = "median",
+      setActive = true,
+    } = options;
+
+    dispatch(setLoading(true));
+    try {
+      const response = await createProfileFromRaster({
+        raster_id: rasterId,
+        project_id: activeProjectId,
+        profile_name: profileName || "Raster Cost Profile",
+        description,
+        normalise,
+        floor,
+        fill_strategy: fillStrategy,
+        set_active: setActive,
+      }).unwrap();
+
+      // the server answers errors with 200 + {error}
+      if (response?.error) {
+        showMessage(response.error, "error");
+        return response;
+      }
+
+      const newProfile = {
+        id: response.cost_profile_id,
+        name: profileName,
+        description,
+        is_default: false,
+        is_active: !!setActive,
+      };
+      const updated = (projState.projectCosts || []).map((p) => ({
+        ...p,
+        is_active: setActive ? false : p.is_active,
+      }));
+      dispatch(setProjectCosts([...updated, newProfile]));
+      if (setActive) await loadCostsLayer(true);
+      showMessage(response.info, "success");
+      return response;
+    } catch (err) {
+      const msg = err?.message || String(err);
+      showMessage(`Failed to create cost profile: ${msg}`, "error");
+      return { error: msg };
+    } finally {
+      dispatch(setLoading(false));
+    }
   };
 
   // ----------------------------------------------------------------------------------------------- //
@@ -3738,6 +3804,7 @@ const App = () => {
             activateCostProfile={activateCostProfile}
             runCumulativeImpact={runCumulativeImpact}
             uploadRasterCost={uploadRasterCost}
+            createCostProfileFromRaster={createCostProfileFromRaster}
             getRasterBandInfo={getRasterBandInfo}
             fileUpload={uploadFileToFolder}
             handleWebSocket={handleWebSocket}
