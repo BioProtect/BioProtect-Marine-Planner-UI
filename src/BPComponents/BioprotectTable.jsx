@@ -96,7 +96,7 @@ const BioprotectTable = (props) => {
 
     const filteredResult = props.data.filter((row) =>
       props.searchColumns.some((column) =>
-        row[column].toString().toLowerCase().includes(lowerCaseQuery),
+        String(row[column] ?? "").toLowerCase().includes(lowerCaseQuery),
       ),
     );
     return stableSort(filteredResult, getComparator(order, orderBy));
