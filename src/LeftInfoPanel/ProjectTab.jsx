@@ -50,6 +50,12 @@ const ProjectTabContent = ({
                 </span>
               )}
             </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {metadata.pu_count?.toLocaleString() ?? "-"} hexes ·{" "}
+              {metadata.area_km2 != null
+                ? `${Math.round(metadata.area_km2).toLocaleString()} km²`
+                : "-"}
+            </Typography>
             <Typography variant="h5" component="div">
               Created
             </Typography>
