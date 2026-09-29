@@ -1,4 +1,3 @@
-import ImportFromWebDialog from "../ImportComponents/ImportFromWebDialog";
 import { apiSlice } from "./apiSlice";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -6,15 +5,24 @@ export const featureApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getFeature: builder.query({
       query: (id) => ({
-        url: `features?action=get&unique_id=${id}`,
+        url: `features?action=get&id=${id}`,
         method: "GET",
       }),
+      providesTags: (result, err, id) => [{ type: "Features", id }],
+    }),
+    getAllFeatures: builder.query({
+      query: () => ({
+        url: `features?action=get-all`,
+        method: "GET",
+      }),
+      providesTags: (result) => [{ type: "Features", id: "LIST" }],
     }),
     deleteFeature: builder.mutation({
       query: (featureName) => ({
-        url: `features?action=delete&feature_name=${featureName}`,
+        url: `features?action=delete&feature=${featureName}`,
         method: "GET",
       }),
+      invalidatesTags: [{ type: "Features", id: "LIST" }],
     }),
     exportFeature: builder.query({
       query: () => ({
@@ -24,22 +32,30 @@ export const featureApiSlice = apiSlice.injectEndpoints({
     }),
     listFeatureProjects: builder.query({
       query: (featureId) => ({
-        url: `features?action=list_projects&feature_class_id=${featureId}`,
+        url: `features?action=list-projects&feature-id=${featureId}`,
         method: "GET",
       }),
     }),
     listFeaturePUs: builder.query({
-      query: (user, project, featureId) => ({
-        url: `features?action=planning_units&user=${user}&project=${project}&unique_id=${featureId}`,
+      query: ({ projectId, featureId }) => ({
+        url: `features?action=planning-units&project_id=${projectId}&id=${featureId}`,
         method: "GET",
       }),
     }),
 
+
     createFeatureFromLinestring: builder.mutation({
       query: ({ id, data }) => ({
-        url: `features?action=create_from_linestring`,
+        url: `features?action=create-from-linestring`,
         method: "POST",
         body: { id, ...data },
+      }),
+    }),
+
+    getSensitivities: builder.mutation({
+      query: () => ({
+        url: `features?action=get-sensitivities`,
+        method: "GET",
       }),
     }),
 
@@ -48,37 +64,44 @@ export const featureApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetFeatureQuery,
+  useGetAllFeaturesQuery,
   useDeleteFeatureMutation,
   useExportFeatureQuery,
   useListFeatureProjectsQuery,
   useListFeaturePUsQuery,
   useCreateFeatureFromLinestringMutation,
+  useGetSensitivitiesMutation,
+  useLazyListFeaturePUsQuery,
 } = featureApiSlice;
 
 
 const initialState = {
+  // client-only workflow + UI state
   digitisedFeatures: [],
   addingRemovingFeatures: false,
-  allFeatures: [], //all of the interest features in the metadata_interest_features table
-  currentFeature: {},
-  featureMetadata: {},
-  identifiedFeatures: [],
-  selectedFeature: {},
+
+  // selection should be ids, not whole objects
+  selectedFeatureId: null,
   selectedFeatureIds: [],
+
+  // uploads / UI
   featureFilename: "",
-  featureProjects: [],
-  featurePlanningUnits: [],
   createdFeatureInfo: {},
+
+  // { [featureId]: partialUpdates }
+  overridesById: {},
+
+  featurePlanningUnits: [],
+
+  featureMetadata: {},
+
   dialogs: {
     newFeatureDialogOpen: false,
     featureDialogOpen: false,
     featuresDialogOpen: false,
-    importFeaturePopoverOpen: false,
     importFeaturesDialogOpen: false,
-    newFeaturePopoverOpen: false,
     featureInfoDialogOpen: false,
     featureMenuOpen: false,
-    importFromWebDialogOpen: false
   },
 
 }
@@ -91,29 +114,14 @@ const featureSlice = createSlice({
     setAddingRemovingFeatures(state, action) {
       state.addingRemovingFeatures = action.payload;
     },
-    setAllFeatures(state, action) {
-      state.allFeatures = action.payload;
-    },
-    setCurrentFeature(state, action) {
-      state.currentFeature = action.payload;
-    },
-    setFeatureMetadata(state, action) {
-      state.featureMetadata = action.payload;
-    },
-    setIdentifiedFeatures(state, action) {
-      state.identifiedFeatures = action.payload;
-    },
-    setSelectedFeature(state, action) {
-      state.selectedFeature = action.payload;
+    setSelectedFeatureId(state, action) {
+      state.selectedFeatureId = action.payload;
     },
     setSelectedFeatureIds(state, action) {
       state.selectedFeatureIds = action.payload;
     },
     setFeatureFilename(state, action) {
       state.featureFilename = action.payload;
-    },
-    setFeatureProjects(state, action) {
-      state.featureProjects = action.payload;
     },
     setCreatedFeatureInfo(state, action) {
       state.createdFeatureInfo = action.payload;
@@ -124,7 +132,9 @@ const featureSlice = createSlice({
     setDigitisedFeatures(state, action) {
       state.digitisedFeatures = action.payload;
     },
-
+    setFeatureMetadata(state, action) {
+      state.featureMetadata = action.payload;
+    },
     toggleFeatureD(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogs[dialogName] = isOpen;
@@ -134,16 +144,12 @@ const featureSlice = createSlice({
 
 export const {
   setAddingRemovingFeatures,
-  setAllFeatures,
-  setCurrentFeature,
-  setFeatureMetadata,
-  setFeatureProjects,
-  setIdentifiedFeatures,
-  setSelectedFeature,
+  setSelectedFeatureId,
   setSelectedFeatureIds,
   setFeatureFilename,
   setCreatedFeatureInfo,
   setFeaturePlanningUnits,
+  setFeatureMetadata,
   toggleFeatureD,
   setDigitisedFeatures,
 } = featureSlice.actions;

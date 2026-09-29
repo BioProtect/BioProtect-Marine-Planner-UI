@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -9,25 +9,36 @@ import {
   Typography,
 } from "@mui/material";
 import { getArea, isNumber, isValidTargetValue } from "../Helpers";
+import { toggleFeatureD, useGetAllFeaturesQuery } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-import CONSTANTS from "../constants";
+import CONSTANTS from "../bpVars.jsx";
 import MarxanDialog from "../MarxanDialog";
 import { selectCurrentUser } from "@slices/authSlice";
-import { toggleFeatureD } from "@slices/featureSlice";
 
 const FeatureInfoDialog = ({ updateFeature }) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
-  const featureState = useSelector((state) => state.feature);
   const userData = useSelector(selectCurrentUser);
+  const featureDialogs = useSelector((s) => s.feature.dialogs);
+  const selectedFeatureId = useSelector(
+    (state) => state.feature.selectedFeatureId,
+  );
+
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+
+  const currentFeature = useMemo(() => {
+    if (selectedFeatureId == null) return null;
+    return allFeatures.find((f) => f.id === selectedFeatureId) ?? null;
+  }, [allFeatures, selectedFeatureId]);
 
   const closeDialog = () =>
     dispatch(
       toggleFeatureD({
         dialogName: "featureInfoDialogOpen",
         isOpen: false,
-      })
+      }),
     );
 
   const updateFeatureValue = useCallback(
@@ -38,12 +49,12 @@ const FeatureInfoDialog = ({ updateFeature }) => {
         (key === "spf" && isNumber(value))
       ) {
         const updatedProps = { [key]: value };
-        updateFeature(featureState.currentFeature, updatedProps);
+        updateFeature(selectedFeatureId, updatedProps);
       } else {
         alert("Invalid value");
       }
     },
-    [featureState.currentFeature, updateFeature]
+    [selectedFeatureId, updateFeature],
   );
 
   const onKeyDown = useCallback(
@@ -53,7 +64,7 @@ const FeatureInfoDialog = ({ updateFeature }) => {
         closeDialog(); // Close the dialog
       }
     },
-    [updateFeatureValue, closeDialog]
+    [updateFeatureValue, closeDialog],
   );
 
   const getHTML = (value, title = "") => (
@@ -62,17 +73,30 @@ const FeatureInfoDialog = ({ updateFeature }) => {
 
   const getAreaHTML = (rowKey, value) => {
     const color =
-      featureState.currentFeature.protected_area < featureState.currentFeature.target_area &&
-        rowKey === "Area protected"
+      currentFeature.protected_area < currentFeature.target_area &&
+      rowKey === "Area protected"
         ? "red"
         : "rgba(0, 0, 0, 0.6)";
 
+    // "Total area" comes from metadata_interest_features._area (m²).
+    // "Planning grid area" / "Target area" / "Area protected" come from
+    // feature_preprocessing.pu_area and derived values, now stored in
+    // km² app-wide — tell getArea() to treat those as km² input.
+    const sourceUnits = rowKey === "Total area" ? "m2" : "km2";
+
     return (
       <div
-        title={getArea(value, userData.report_units, false, 6)}
+        title={getArea(
+          value,
+          userData?.report_units,
+          false,
+          6,
+          true,
+          sourceUnits,
+        )}
         style={{ color }}
       >
-        {getArea(value, userData.report_units, true)}
+        {getArea(value, userData?.report_units, true, 3, true, sourceUnits)}
       </div>
     );
   };
@@ -92,16 +116,16 @@ const FeatureInfoDialog = ({ updateFeature }) => {
         return row.value === "" || row.value === null
           ? getHTML("Not available", "The feature was not uploaded to Mapbox")
           : getHTML(
-            row.value,
-            "The feature was uploaded to Mapbox with this identifier"
-          );
+              row.value,
+              "The feature was uploaded to Mapbox with this identifier",
+            );
 
       case "Total area":
         return row.value === -1
           ? getHTML(
-            "Not calculated",
-            "Total areas are not available for imported projects"
-          )
+              "Not calculated",
+              "Total areas are not available for imported projects",
+            )
           : getAreaHTML(row.key, row.value);
 
       case "Total":
@@ -109,7 +133,7 @@ const FeatureInfoDialog = ({ updateFeature }) => {
 
       case "Target percent":
       case "Species Penalty Factor":
-        return userData.role === "ReadOnly" ? (
+        return userData?.role === "ReadOnly" ? (
           <Typography>{row.value}</Typography>
         ) : (
           <div
@@ -119,13 +143,13 @@ const FeatureInfoDialog = ({ updateFeature }) => {
             onBlur={(e) =>
               updateFeatureValue(
                 row.key === "Target percent" ? "target_value" : "spf",
-                e
+                e,
               )
             }
             onKeyDown={(e) =>
               onKeyDown(
                 row.key === "Target percent" ? "target_value" : "spf",
-                e
+                e,
               )
             }
           >
@@ -136,13 +160,13 @@ const FeatureInfoDialog = ({ updateFeature }) => {
       case "Preprocessed":
         return row.value
           ? getHTML(
-            "Yes",
-            "The feature has been intersected with the planning units"
-          )
+              "Yes",
+              "The feature has been intersected with the planning units",
+            )
           : getHTML(
-            "No",
-            "The feature has not yet been intersected with the planning units"
-          );
+              "No",
+              "The feature has not yet been intersected with the planning units",
+            );
 
       case "Planning grid area":
       case "Target area":
@@ -164,46 +188,48 @@ const FeatureInfoDialog = ({ updateFeature }) => {
     }
   };
 
-  if (!featureState.currentFeature) {
+  if (!currentFeature) {
     return null;
   }
 
-  const isOldVersion = featureState.currentFeature.old_version;
+  const isOldVersion = currentFeature.old_version;
   // Select the appropriate feature properties based on the source
   const featureProperties =
-    featureState.currentFeature.source === "Imported shapefile"
+    currentFeature.source === "Imported shapefile"
       ? CONSTANTS.FEATURE_PROPERTIES_POLYGONS
       : CONSTANTS.FEATURE_PROPERTIES_POINTS;
 
   // Filter the items based on version compatibility
-  const filteredProperties = featureProperties.filter((item) =>
-    (isOldVersion && item.showForOld) || (!isOldVersion && item.showForNew)
+  const filteredProperties = featureProperties.filter(
+    (item) =>
+      (isOldVersion && item.showForOld) || (!isOldVersion && item.showForNew),
   );
 
   // Map the filtered items to the desired structure
   const data = filteredProperties.map((item) => ({
     key: item.key,
-    value: featureState.currentFeature[item.name],
+    value: currentFeature[item.name],
     hint: item.hint,
   }));
 
-
   return (
     <MarxanDialog
-      open={featureState.dialogs.featureInfoDialogOpen}
+      open={featureDialogs.featureInfoDialogOpen}
       loading={uiState.loading}
       onOk={() => closeDialog()}
       onCancel={() => closeDialog()}
       title="Properties"
-    // contentWidth={380}
-    // offsetX={135}
-    // offsetY={250}
+      // contentWidth={380}
+      // offsetX={135}
+      // offsetY={250}
     >
       <TableContainer>
         <Table
           key="k9"
           size="small"
-          className={featureState.currentFeature.old_version ? "infoTableOldVersion" : "infoTable"}
+          className={
+            currentFeature.old_version ? "infoTableOldVersion" : "infoTable"
+          }
         >
           <TableHead>
             <TableRow>

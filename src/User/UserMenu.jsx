@@ -1,22 +1,21 @@
-import {
-  faCog,
-  faEdit,
-  faSignOut,
-  faUserLock,
-} from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 
+import EditIcon from "@mui/icons-material/Edit";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import LogoutIcon from "@mui/icons-material/Logout";
 import Menu from "@mui/material/Menu";
-import MenuBarListItem from "../MenuBarListItem";
+import MenuItem from "@mui/material/MenuItem";
+import PasswordIcon from "@mui/icons-material/Password";
 import React from "react";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { toggleDialog } from "@slices/uiSlice";
 
-const UserMenu = (props) => {
+const UserMenu = ({ menuAnchor, logout }) => {
   const dispatch = useDispatch();
   const projectState = useSelector((state) => state.project);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const userState = useSelector((state) => state.user);
-
 
   const closeDialog = () =>
     dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
@@ -24,13 +23,13 @@ const UserMenu = (props) => {
   const handleChangePassword = () => {
     dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
     dispatch(
-      toggleDialog({ dialogName: "changePasswordDialogOpen", isOpen: true })
+      toggleDialog({ dialogName: "changePasswordDialogOpen", isOpen: true }),
     );
   };
 
   const openUserSettingsDialog = () => {
     dispatch(
-      toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: true })
+      toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: true }),
     );
     dispatch(toggleDialog({ dialogName: "userMenuOpen", isOpen: false }));
   };
@@ -43,7 +42,7 @@ const UserMenu = (props) => {
   return (
     <Menu
       open={dialogStates.userMenuOpen}
-      anchorEl={props.menuAnchor}
+      anchorEl={menuAnchor}
       onClose={closeDialog}
       PaperProps={{
         elevation: 0,
@@ -72,31 +71,30 @@ const UserMenu = (props) => {
         },
       }}
     >
-      <MenuBarListItem
-        handleClick={openUserSettingsDialog}
-        title="Settings"
-        icon={faCog}
-        text="Settings"
-      />
-      <MenuBarListItem
-        handleClick={openProfileDialog}
-        title="Profile"
-        icon={faEdit}
-        text="Profile"
-      />
-
-      <MenuBarListItem
-        handleClick={handleChangePassword}
-        title="Change password"
-        icon={faUserLock}
-        text="Change password"
-      />
-      <MenuBarListItem
-        handleClick={props.logout}
-        title="Log out"
-        icon={faSignOut}
-        text="Log out"
-      />
+      <MenuItem onClick={openUserSettingsDialog} title="Settings">
+        <ListItemIcon>
+          <SettingsIcon />
+        </ListItemIcon>
+        <ListItemText>Settings</ListItemText>
+      </MenuItem>
+      <MenuItem onClick={openProfileDialog} title="Profile">
+        <ListItemIcon>
+          <EditIcon />
+        </ListItemIcon>
+        <ListItemText>Profile</ListItemText>
+      </MenuItem>
+      <MenuItem onClick={handleChangePassword} title="Change password">
+        <ListItemIcon>
+          <PasswordIcon />
+        </ListItemIcon>
+        <ListItemText>Change password</ListItemText>
+      </MenuItem>
+      <MenuItem onClick={logout} title="Log out">
+        <ListItemIcon>
+          <LogoutIcon />
+        </ListItemIcon>
+        <ListItemText>Log out</ListItemText>
+      </MenuItem>
     </Menu>
   );
 };

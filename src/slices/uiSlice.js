@@ -94,6 +94,8 @@ const initialState = {
   uploadedActivities: [],
   selectedActivity: "",
 
+  owner: "",
+
   fileUploadResponse: null,
 
   dialogStates: {
@@ -101,29 +103,27 @@ const initialState = {
 
     activitiesDialogOpen: false,
     cumulativeImpactDialogOpen: false,
-    humanActivitiesDialogOpen: false,
-    importedActivitiesDialogOpen: false,
+    uploadedActivitiesDialogOpen: false,
     openImportImpactsDialog: false,
 
 
     alertDialogOpen: false,
     atlasLayersDialogOpen: false,
-    changePasswordDialogOpen: false,
-    classificationDialogOpen: false,
     costsDialogOpen: false,
     importCostsDialogOpen: false,
     helpMenuOpen: false,
     importImpactPopoverOpen: false,
-    importFromWebDialogOpen: false,
     infoPanelOpen: false,
     profileDialogOpen: false,
     registerDialogOpen: false,
     resendPasswordDialogOpen: false,
+    changePasswordDialogOpen: false,
+
     resetDialogOpen: false,
     resultsPanelOpen: false,
     runLogDialogOpen: false,
+    runPrioritizrDialogOpen: false,
     serverDetailsDialogOpen: false,
-    settingsDialogOpen: false,
     shareableLinkDialogOpen: false,
     targetDialogOpen: false,
     updateWDPADialogOpen: false,
@@ -153,9 +153,6 @@ const uiSlice = createSlice({
     setActiveResultsTab(state, action) {
       state.activeResultsTab = action.payload;
     },
-    setSelectedFeatureIds(state, action) {
-      state.selectedFeatureIds = action.payload;
-    },
     toggleDialog(state, action) {
       const { dialogName, isOpen } = action.payload;
       state.dialogStates[dialogName] = isOpen;
@@ -169,6 +166,10 @@ const uiSlice = createSlice({
     setLoading(state, action) {
       state.loading = action.payload;
     },
+    setOwner(state, action) {
+      state.owner = action.payload;
+    },
+
     setSelectedActivity(state, action) {
       state.selectedActivity = action.payload;
     },
@@ -183,11 +184,6 @@ const uiSlice = createSlice({
     },
     removeImportLogMessage: (state, action) => {
       const matchText = action.payload;
-      state.importLog = state.importLog.filter((msg) =>
-        typeof msg === "string"
-          ? !msg.includes(matchText)
-          : !(msg.info && msg.info.includes(matchText))
-      );
     },
     clearImportLog: (state) => {
       state.importLog = [];
@@ -202,7 +198,6 @@ export const {
   setBasemaps,
   setActiveTab,
   setActiveResultsTab,
-  setSelectedFeatureIds,
   toggleProjectDialog,
   toggleDialog,
   setActivities,
@@ -214,5 +209,6 @@ export const {
   addToImportLog,
   removeImportLogMessage,
   clearImportLog,
+  setOwner,
 } = uiSlice.actions;
 export default uiSlice.reducer;

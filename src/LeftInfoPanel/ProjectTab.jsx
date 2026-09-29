@@ -10,13 +10,12 @@ import { useState } from "react";
 
 const ProjectTabContent = ({
   toggleProjectPrivacy,
-  owner,
-  updateDetails
+  updateDetails,
+  metadata,
+  project,
 }) => {
   const userData = useSelector(selectCurrentUser);
-  const projState = useSelector((state) => state.project);
-  const metadata = projState.projectData.metadata
-  const project = projState.projectData.project
+  const uiState = useSelector((state) => state.ui);
   const [editing, setEditing] = useState(false);
   const handleChange = (e) => {
     setEditing(false);
@@ -27,7 +26,6 @@ const ProjectTabContent = ({
       <Card sx={{ minWidth: 275 }}>
         <CardContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-
             <Typography variant="h5" component="div">
               Description
             </Typography>
@@ -35,7 +33,7 @@ const ProjectTabContent = ({
               {editing ? (
                 <TextField
                   id="descriptionEdit"
-                  variant="standard"               // clean underline style
+                  variant="standard" // clean underline style
                   value={project.description}
                   autoFocus
                   onChange={(e) => handleChange(e.target.value)}
@@ -52,20 +50,33 @@ const ProjectTabContent = ({
                 </span>
               )}
             </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {metadata.pu_count?.toLocaleString() ?? "-"} hexes ·{" "}
+              {metadata.area_km2 != null
+                ? `${Math.round(metadata.area_km2).toLocaleString()} km²`
+                : "-"}
+            </Typography>
             <Typography variant="h5" component="div">
               Created
             </Typography>
 
             <Typography variant="body2">
-              <span className="createDate">  {new Date(metadata.createdate.split(".")[0] + "Z").toLocaleString()}</span>
+              <span className="createDate">
+                {" "}
+                {new Date(
+                  metadata.createdate.split(".")[0] + "Z"
+                ).toLocaleString()}
+              </span>
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {userData.username !== owner && (
+              {userData?.username !== uiState.owner && (
                 <span className="tabTitle tabTitleTopMargin">Created by</span>
               )}
               <br />
-              {userData.username !== owner && (
-                <span className="createDate">{owner || userData.username}</span>
+              {userData?.username !== uiState.owner && (
+                <span className="createDate">
+                  {uiState.owner || userData?.username}
+                </span>
               )}
             </Typography>
           </Box>

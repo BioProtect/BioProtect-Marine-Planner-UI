@@ -21,42 +21,49 @@ export const getMaxNumberOfClasses = (brew, colorCode) => {
   return Math.max(...numbers);
 };
 
-export const getArea = (value, units, asHtml, sf = 3, addCommas = true) => {
-  // Define the scale based on units
-  const scales = {
-    m2: 1,
-    Ha: 0.0001,
-    Km2: 0.000001,
-  };
+export const getArea = (
+  value,
+  units = "Km2",
+  asHtml = false,
+  sf = 3,
+  addCommas = true,
+  sourceUnits = "m2"
+) => {
+  if (value == null || Number.isNaN(value))
+    return asHtml ? <span>—</span> : "—";
 
-  const scale = scales[units] || 1; // Default to scale of 1 if units are not matched
-  let formattedValue = (value * scale).toPrecision(sf);
+  const u = String(units || "Km2").toLowerCase();
+  const src = String(sourceUnits || "m2").toLowerCase();
+
+  // Scale factor m² -> target unit
+  const toM2 = { m2: 1, ha: 10000, km2: 1000000 };
+  const fromM2 = { m2: 1, ha: 0.0001, km2: 0.000001 };
+
+  const valueInM2 = value * (toM2[src] ?? 1);
+  const scale = fromM2[u] ?? fromM2["km2"];
+  const converted = valueInM2 * scale;
+  const roundSig = (num, sig) => {
+    if (num === 0) return 0;
+    const p = Math.ceil(Math.log10(Math.abs(num)));
+    const f = Math.pow(10, sig - p);
+    return Math.round(num * f) / f;
+  };
+  const n = roundSig(converted, sf);
 
   // Add commas if needed
-  if (addCommas && Number(formattedValue) > 1000) {
-    formattedValue = formattedValue
-      .toString()
-      .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  }
+  const fmt = (num) =>
+    addCommas
+      ? Number(num).toLocaleString(undefined, {
+          maximumFractionDigits: Math.max(0, sf),
+        })
+      : String(num);
 
-  // Format units with superscript for squared units
-  const formattedUnits = units.includes("2") ? (
-    <span>
-      {units.replace("2", "")}
-      <sup>2</sup>
-    </span>
-  ) : (
-    <span>{units}</span>
-  );
+  const unitLabel = u === "m2" ? "m²" : u === "ha" ? "ha" : "km²";
+  const text = `${fmt(n)} ${unitLabel}`;
 
-  // Return formatted value as HTML or plain text
-  return asHtml ? (
-    <span>
-      {formattedValue} {formattedUnits}
-    </span>
-  ) : (
-    `${formattedValue} ${units}`
-  );
+  if (!asHtml) return text;
+  // For JSX contexts (like your Typography) return a span:
+  return <span>{text}</span>;
 };
 
 //zooms the passed map to the passed bounds

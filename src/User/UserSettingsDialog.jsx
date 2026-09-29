@@ -24,19 +24,19 @@ const UserSettingsDialog = (props) => {
   const [options, setOptions] = useState({});
   const userData = useSelector(selectCurrentUser);
 
-
   const setOption = (key, value) => {
     setSaveEnabled(true);
     setOptions((prevOptions) => {
       const newOptions = { ...prevOptions, [key]: value };
-      console.log("newOptions ", newOptions);
       props.saveOptions(newOptions);
       return newOptions;
     });
   };
 
   const changeBasemap = (event) => {
-    const basemap = uiState.basemaps.find((item) => item.name === event.target.value);
+    const basemap = uiState.basemaps.find(
+      (item) => item.name === event.target.value,
+    );
     dispatch(setBasemap(basemap));
     setOption("BASEMAP", basemap.name);
     props.loadBasemap(basemap);
@@ -59,8 +59,14 @@ const UserSettingsDialog = (props) => {
       {...props}
       maxWidth="md"
       showCancelButton={false}
-      onOk={() => dispatch(toggleDialog({ dialogName: "userSettingsDialogOpen", isOpen: false }))}
-      helpLink={"user.html#user-settings"}
+      onOk={() =>
+        dispatch(
+          toggleDialog({
+            dialogName: "userSettingsDialogOpen",
+            isOpen: false,
+          }),
+        )
+      }
       title="Settings"
     >
       <div key="k14">
@@ -91,7 +97,7 @@ const UserSettingsDialog = (props) => {
           <FormLabel id="reportUnitType-label">Area Units</FormLabel>
           <RadioGroup
             aria-labelledby="reportUnitType-label"
-            value={userData.report_units}
+            value={userData?.report_units}
             name="reportUnitType"
             onChange={setReportUnit}
           >
@@ -106,7 +112,7 @@ const UserSettingsDialog = (props) => {
           <FormControlLabel
             control={
               <Checkbox
-                checked={userData.use_feature_colors}
+                checked={userData?.use_feature_colors}
                 onChange={toggleUseFeatureColors}
               />
             }
@@ -114,7 +120,7 @@ const UserSettingsDialog = (props) => {
           />
         </FormGroup>
       </div>
-    </MarxanDialog >
+    </MarxanDialog>
   );
 };
 

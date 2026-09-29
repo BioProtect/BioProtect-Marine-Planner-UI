@@ -1,21 +1,25 @@
-import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, Typography, toggleButtonClasses } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { setUsers, useListUsersQuery } from "@slices/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import DeleteIcon from "@mui/icons-material/Delete";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import MarxanTable from "../MarxanTable";
-import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Typography from "@mui/material/Typography";
+import toggleButtonClasses from "@mui/material/ToggleButton/toggleButtonClasses";
 import { toggleDialog } from "@slices/uiSlice";
 
 const USER_ROLES = ["User", "ReadOnly", "Admin"];
 
-const UsersDialog = ({
-  open,
-  loading,
-  changeRole,
-  deleteUser,
-}) => {
+const UsersDialog = ({ open, loading, changeRole, deleteUser }) => {
   const dispatch = useDispatch();
   const [searchText, setSearchText] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
@@ -57,7 +61,7 @@ const UsersDialog = ({
       a.slice(0, 2),
       a.slice(9, 11),
       a.slice(12, 14),
-      a.slice(15, 17)
+      a.slice(15, 17),
     );
     const dateB = new Date(
       b.slice(6, 8),
@@ -65,12 +69,13 @@ const UsersDialog = ({
       b.slice(0, 2),
       b.slice(9, 11),
       b.slice(12, 14),
-      b.slice(15, 17)
+      b.slice(15, 17),
     );
     return dateA - dateB;
   };
 
-  const closeDialog = () => dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: false }))
+  const closeDialog = () =>
+    dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: false }));
 
   return (
     <Dialog open={open} onClose={closeDialog} maxWidth="lg" fullWidth>
@@ -100,7 +105,7 @@ const UsersDialog = ({
                 Header: "Role",
                 accessor: "ROLE",
                 width: 180,
-                Cell: ({ row }) => (
+                Cell: ({ row }) =>
                   row.original.user === "guest" ? (
                     <Typography>ReadOnly</Typography>
                   ) : (
@@ -117,8 +122,7 @@ const UsersDialog = ({
                         </MenuItem>
                       ))}
                     </Select>
-                  )
-                ),
+                  ),
               },
               {
                 Header: "Date",
@@ -131,8 +135,7 @@ const UsersDialog = ({
             getTrProps={(row) => ({
               style: {
                 backgroundColor:
-                  row.original.user ===
-                    (selectedUser && selectedUser.user)
+                  row.original.user === (selectedUser && selectedUser.user)
                     ? "aliceblue"
                     : "",
               },
@@ -144,7 +147,7 @@ const UsersDialog = ({
         <Button
           variant="contained"
           color="secondary"
-          startIcon={<FontAwesomeIcon icon={faTrashAlt} />}
+          startIcon={<DeleteIcon />}
           disabled={
             !selectedUser ||
             loading ||
@@ -155,7 +158,11 @@ const UsersDialog = ({
         >
           Delete User
         </Button>
-        <Button onClick={() => closeDialog()} variant="contained" color="primary">
+        <Button
+          onClick={() => closeDialog()}
+          variant="contained"
+          color="primary"
+        >
           Close
         </Button>
       </DialogActions>

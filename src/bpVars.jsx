@@ -74,19 +74,28 @@ export const FEATURE_PROPERTIES_CORE = [
 export const INITIAL_VARS = {
   CLIENT_VERSION: "v1.0.8",
   SERVER_VERSION: "v1.0.8",
-  MARXAN_SERVERS: [
-    {
-      name: "Beta test",
-      port: 443,
-      host: "andrewcottam.com",
-      protocol: "https:",
-      description:
-        "Playground for trying features and analyses. All projects will be deleted at the end.",
-      type: "remote",
-      project: "geeImageServer",
-      zone: "europe-west6-a",
-      instanceName: "marxan-test-server",
-    },
+  BP_SERVERS: [
+    // {
+    //   name: "Beta test",
+    //   port: 443,
+    //   host: "andrewcottam.com",
+    //   protocol: "https:",
+    //   description:
+    //     "Playground for trying features and analyses. All projects will be deleted at the end.",
+    //   type: "remote",
+    //   project: "geeImageServer",
+    //   zone: "europe-west6-a",
+    //   instanceName: "bioprotect-test-server",
+    // },
+    // {
+    //   name: "Bioprotect",
+    //   protocol: window.location.protocol,
+    //   host: window.location.hostname,
+    //   port: "",
+    //   description: "Biprotect test server",
+    //   type: "remote",
+    //   instanceName: "bioprotect-test-server",
+    // },
   ],
   WDPA: {
     latest_version: "February 2023",
@@ -134,6 +143,17 @@ export const INITIAL_VARS = {
     },
   ],
 };
+// H3 resolutions offered for planning grids
+export const RESOLUTIONS = [
+  { label: "Basin resolution (36 km²)", value: 6 },
+  { label: "Regional resolution (5 km²)", value: 7 },
+  { label: "Mid Regional Local resolution (0.7 km²)", value: 8 },
+  { label: "Local resolution (0.1 km²)", value: 9 },
+];
+
+export const resolutionLabel = (res) =>
+  RESOLUTIONS.find((r) => r.value === Number(res))?.label ?? "-";
+
 export const CONSTANTS = {
   DOCS_ROOT: "https://docs.marxanweb.org/",
   ERRORS_PAGE: "https://docs.marxanweb.org/errors.html",
@@ -158,13 +178,13 @@ export const CONSTANTS = {
   SHAPES: ["Hexagon", "Square"],
   AREAKM2S: [10, 20, 30, 40, 50, 100],
   //layer source names
-  WDPA_SOURCE_NAME: "marxan_wdpa_source",
+  WDPA_SOURCE_NAME: "bioprotect_wdpa_source",
   //layer names
-  PU_LAYER_NAME: "marxan_pu_layer", //layer showing the planning units
-  STATUS_LAYER_NAME: "marxan_pu_status_layer", //layer showing the status of planning units
-  COSTS_LAYER_NAME: "marxan_pu_costs_layer", //layer showing the cost of planning units
-  RESULTS_LAYER_NAME: "marxan_pu_results_layer", //layer for either the sum of solutions or the individual solutions
-  WDPA_LAYER_NAME: "marxan_wdpa_polygon_layer", //layer showing the protected areas from the WDPA
+  PU_LAYER_NAME: "bioprotect_pu_layer", //layer showing the planning units
+  STATUS_LAYER_NAME: "bioprotect_pu_status_layer", //layer showing the status of planning units
+  COSTS_LAYER_NAME: "bioprotect_pu_costs_layer", //layer showing the cost of planning units
+  RESULTS_LAYER_NAME: "bioprotect_pu_results_layer", //layer for either the sum of solutions or the individual solutions
+  WDPA_LAYER_NAME: "bioprotect_wdpa_polygon_layer", //layer showing the protected areas from the WDPA
   LAYER_TYPE_SUMMED_SOLUTIONS: "summed_solutions",
   LAYER_TYPE_PLANNING_UNITS: "pus",
   LAYER_TYPE_PLANNING_UNITS_COST: "cost",
@@ -172,10 +192,11 @@ export const CONSTANTS = {
   LAYER_TYPE_PROTECTED_AREAS: "pas",
   LAYER_TYPE_FEATURE_LAYER: "feature",
   LAYER_TYPE_FEATURE_PU_LAYER: "feature_puid",
+  LAYER_TYPE_ACTIVITY: "activity",
   //planning unit statuses
   PU_STATUS_DEFAULT: {
-    fillColor: "none",
-    strokeColor: "lightgray",
+    fillColor: "white",
+    strokeColor: "gray",
     label: "Default",
   },
   PU_STATUS_LOCKED_IN: {
@@ -184,17 +205,18 @@ export const CONSTANTS = {
     label: "Locked in",
   },
   PU_STATUS_LOCKED_OUT: {
-    fillColor: "none",
-    strokeColor: "red",
+    fillColor: "rgba(191, 63, 63, 1)",
+    strokeColor: "transparent",
     label: "Locked out",
   },
   //layer default styles
   PU_LAYER_OPACITY: 0.6,
-  PU_COSTS_LAYER_OPACITY: 0.1,
+  PU_COSTS_LAYER_OPACITY: 0.3,
   STATUS_LAYER_LINE_WIDTH: 1.5,
   WDPA_FILL_LAYER_OPACITY: 0.2,
   FEATURE_LAYER_OPACITY: 0.9,
   FEATURE_PLANNING_GRID_LAYER_OPACITY: 0.9,
+  ACTIVITY_LAYER_OPACITY: 0.55,
   RESULTS_LAYER_OPACITY: 0.8,
   COST_COLORS: [
     "rgba(255,255,204,0.8)",
@@ -208,7 +230,7 @@ export const CONSTANTS = {
     "rgba(128,0,38,0.8)",
   ],
   UNIFORM_COST_NAME: "Equal area",
-  //an array of feature property information that is used in the Feature Information dialog box - showForOld sets whether that property is shown for old versions of marxan
+  //an array of feature property information that is used in the Feature Information dialog box - showForOld sets whether that property is shown for old versions of bioprotect
   FEATURE_PROPERTIES_POLYGONS: FEATURE_PROPERTIES_CORE.concat([
     {
       name: "area",

@@ -10,12 +10,11 @@ import React, { useState } from "react";
 
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import ExploreIcon from "@mui/icons-material/Explore";
 import MarxanDialog from "./MarxanDialog";
 import Notification from "./Notification";
+import SyncIcon from "@mui/icons-material/Sync";
 import ToolbarButton from "./ToolbarButton";
-import { faDraftingCompass } from "@fortawesome/free-solid-svg-icons";
-import { faSync } from "@fortawesome/free-solid-svg-icons";
 
 const Welcome = (props) => {
   const [checked, setChecked] = useState(true);
@@ -68,7 +67,7 @@ const Welcome = (props) => {
             <div className={"task"}>
               <div className={"taskItem"}>
                 <ToolbarButton
-                  icon={<FontAwesomeIcon icon={faDraftingCompass} />}
+                  icon={<ExploreIcon />}
                   title={"Design a protected area network"}
                   onClick={() => openNewProjectDialog()}
                   className={"resetNotifications"}
@@ -77,7 +76,7 @@ const Welcome = (props) => {
               </div>
               <div className={"taskItem"}>
                 <ToolbarButton
-                  icon={<FontAwesomeIcon icon={faDraftingCompass} />}
+                  icon={<ExploreIcon />}
                   title={"Extend a protected area network"}
                   onClick={() => openNewProjectDialog()}
                   className={"resetNotifications"}
@@ -88,7 +87,7 @@ const Welcome = (props) => {
               </div>
               <div className={"taskItem"}>
                 <ToolbarButton
-                  icon={<FontAwesomeIcon icon={faDraftingCompass} />}
+                  icon={<ExploreIcon />}
                   title={"Do a gap analysis"}
                   onClick={() => openNewProjectDialog()}
                   className={"resetNotifications"}
@@ -98,7 +97,7 @@ const Welcome = (props) => {
             </div>
             <div style={{ verticalAlign: "middle" }}>
               <Button
-                icon={<FontAwesomeIcon icon={faSync} />}
+                icon={<SyncIcon />}
                 title={"Reset notifications"}
                 onClick={props.resetNotifications}
                 style={{

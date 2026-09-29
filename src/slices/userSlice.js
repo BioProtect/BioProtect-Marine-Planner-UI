@@ -23,10 +23,10 @@ export const userApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     updateUser: builder.mutation({
-      query: ({ id, user }) => ({
+      query: (formData) => ({
         url: `users?action=update`,
         method: "POST",
-        body: { id, ...user },
+        body: formData,   // can now accept FormData
       }),
     }),
     deleteUser: builder.mutation({
@@ -47,32 +47,6 @@ export const userApiSlice = apiSlice.injectEndpoints({
         method: "GET",
       }),
     }),
-
-
-    // CODE FOR USING USER IDS AND A DATABASE - NOT FULLY IMPLEMENTED YET 
-    // getUser: builder.query({
-    //   query: () => "getUser",
-    // }),
-    // createUser: builder.mutation({
-    //   query: (user) => ({
-    //     url: "users",
-    //     method: "POST",
-    //     body: user,
-    //   }),
-    // }),
-    // updateUser: builder.mutation({
-    //   query: ({ id, user }) => ({
-    //     url: `users/${id}`,
-    //     method: "PUT",
-    //     body: user,
-    //   }),
-    // }),
-    // deleteUser: builder.mutation({
-    //   query: (id) => ({
-    //     url: `users/${id}`,
-    //     method: "DELETE",
-    //   }),
-    // }),
   }),
 })
 

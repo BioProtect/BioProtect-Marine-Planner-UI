@@ -48,19 +48,6 @@ body {
   padding-bottom: 7px !important;
 }
 
-.resultsTitle {
-  padding-top: 15px;
-  padding-bottom: 1px;
-  padding-left: 20px;
-  font-family: Roboto, sans-serif;
-  background-color: rgb(0, 188, 212);
-  border: 0px;
-  color: white;
-  font-size: 20px;
-  font-weight: 400;
-  position: static;
-}
-
 .lowerToolbar {
   padding: 8px;
   height: 41px;
@@ -280,13 +267,15 @@ table input {
 
 .projectNameEditBox {
   z-index: 1000000;
-  font-family: Roboto, sans-serif;
-  background-color: rgb(0, 188, 212);
+  font-family: inherit;
+  background-color: transparent;
   border: 0px;
-  color: white;
+  color: inherit;
   font-size: 20px;
   font-weight: 400;
   position: static;
+  width: 100%;
+  outline: none;
 }
 
 .descriptionEditBox {
@@ -464,13 +453,6 @@ input:-webkit-autofill {
   -ms-animation-iteration-count: infinite;
   -ms-animation-timing-function: linear;
   -o-transition: rotate(3600deg);
-}
-
-.titleBar {
-  background-color: rgb(0, 188, 212) !important;
-  vertical-align: middle;
-  padding-left: 20px;
-  padding-top: 14px;
 }
 
 /*style for editable cells in ReactTables*/

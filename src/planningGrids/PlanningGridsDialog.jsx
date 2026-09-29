@@ -6,6 +6,7 @@ import {
   toggleProjectDialog,
 } from "@slices/uiSlice";
 import { setPlanningUnitGrids, togglePUD, useListPlanningUnitGridsQuery } from "@slices/planningUnitSlice";
+import { useGetProjectQuery } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
@@ -20,6 +21,11 @@ const PlanningGridsDialog = (props) => {
   const [searchText, setSearchText] = useState("");
   const [selectedPlanningGrid, setSelectedPlanningGrid] = useState(undefined);
   const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitGridsQuery();
+  const activeProjectId = useSelector((state) => state.project.activeProjectId);
+  const { data: projectResp } = useGetProjectQuery(activeProjectId, {
+    skip: activeProjectId == null,
+  });
+  const activeGridAlias = projectResp?.metadata?.PLANNING_UNIT_NAME;
 
   useEffect(() => {
     if (planningUnitsData) {
@@ -27,6 +33,18 @@ const PlanningGridsDialog = (props) => {
     }
   }, [dispatch, planningUnitsData]);
 
+
+  // preselect the project's own planning grid whenever the dialog opens
+  useEffect(() => {
+    if (!puState.dialogs.planningGridsDialogOpen) return;
+    setSelectedPlanningGrid(
+      puState.planningUnitGrids.find((g) => g.alias === activeGridAlias)
+    );
+  }, [
+    puState.dialogs.planningGridsDialogOpen,
+    puState.planningUnitGrids,
+    activeGridAlias,
+  ]);
 
   const closeDialog = useCallback(() => {
     setSelectedPlanningGrid(undefined);
@@ -182,7 +200,7 @@ const PlanningGridsDialog = (props) => {
             "description",
             "created_by",
           ]}
-          selected={[selectedPlanningGrid] || []}
+          selected={selectedPlanningGrid ? [selectedPlanningGrid] : []}
           updateSelection={changePlanningGrid}
           clickRow={clickRow}
         />

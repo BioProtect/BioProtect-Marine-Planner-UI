@@ -16,6 +16,9 @@ export default defineConfig({
       "@navbars": path.resolve(__dirname, "./src/navbars"),
       "@images": path.resolve(__dirname, "./src/images"),
       "@hooks": path.resolve(__dirname, "./src/hooks"),
+      "@config": path.resolve(__dirname, "./src/config"),
+      "@store": path.resolve(__dirname, "./src/store"),
+      "@utils": path.resolve(__dirname, "./src/utils"),
       // You can add more aliases as needed
     },
   },
@@ -24,6 +27,18 @@ export default defineConfig({
     open: true,
     // this sets a default port to 4500
     port: 4500,
+  },
+  optimizeDeps: {
+    include: [
+      "@mui/material",
+      "@mui/material/Box",
+      "@mui/material/Popper",
+      "@mui/material/Tooltip",
+      "@mui/material/styles",
+      "@mui/styled-engine",
+      "@emotion/react",
+      "@emotion/styled",
+    ],
   },
   build: {
     outDir: "build",

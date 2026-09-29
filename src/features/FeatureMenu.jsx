@@ -1,22 +1,26 @@
-import React, { useCallback, useState } from "react";
+import {
+  setAddingRemovingFeatures,
+  setSelectedFeatureIds,
+  toggleFeatureD,
+  useGetAllFeaturesQuery,
+} from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import AddToMap from "@mui/icons-material/Visibility";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
-import MenuItemWithButton from "../MenuItemWithButton";
-import Popover from "@mui/material/Popover";
+import MenuItem from "@mui/material/MenuItem";
 import Preprocess from "@mui/icons-material/Autorenew";
 import Properties from "@mui/icons-material/ErrorOutline";
 import RemoveFromMap from "@mui/icons-material/VisibilityOff";
 import RemoveFromProject from "@mui/icons-material/Remove";
 import ZoomIn from "@mui/icons-material/ZoomIn";
-import { generateTableCols } from "../Helpers";
 import { selectCurrentUser } from "@slices/authSlice";
-import { toggleFeatureD } from "@slices/featureSlice";
+import { useMemo } from "react";
+import { useUpdateProjectFeaturesMutation } from "@slices/projectSlice";
 
 const FeatureMenu = ({
   anchorEl,
-  removeFromProject,
   toggleFeatureLayer,
   toggleFeaturePUIDLayer,
   zoomToFeature,
@@ -24,107 +28,125 @@ const FeatureMenu = ({
   preprocessing,
 }) => {
   const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const featureState = useSelector((state) => state.feature);
-  const userData = useSelector(selectCurrentUser);
+  const [updateProjectFeatures] = useUpdateProjectFeaturesMutation();
+  const activeProjectId = useSelector((state) => state.project.activeProjectId);
+  const selectedFeatureId = useSelector(
+    (state) => state.feature.selectedFeatureId,
+  );
+  const selectedFeatureIds = useSelector(
+    (state) => state.feature.selectedFeatureIds,
+  );
+  const featureDialogs = useSelector((s) => s.feature.dialogs);
+
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+
+  const selectedFeature = useMemo(() => {
+    if (selectedFeatureId == null) return null;
+    return allFeatures.find((f) => f.id === selectedFeatureId) ?? null;
+  }, [allFeatures, selectedFeatureId]);
 
   const handleInfoMenuItemClick = () => {
     dispatch(
-      toggleFeatureD({ dialogName: "featureInfoDialogOpen", isOpen: true })
+      toggleFeatureD({ dialogName: "featureInfoDialogOpen", isOpen: true }),
     );
     closeDialog();
   };
 
-  const closeDialog = () =>
+  const removeFeature = async () => {
+    const ids = selectedFeatureIds || [];
+    if (!ids.includes(selectedFeatureId)) return;
+
+    // Toggle off map layers for the removed feature
+    if (selectedFeature?.feature_layer_loaded) {
+      toggleFeatureLayer(selectedFeature);
+    }
+    if (selectedFeature?.feature_puid_layer_loaded) {
+      toggleFeaturePUIDLayer(selectedFeature);
+    }
+
+    const remainingIds = ids.filter((id) => id !== selectedFeatureId);
+    dispatch(setSelectedFeatureIds(remainingIds));
     dispatch(
-      toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false })
+      toggleFeatureD({
+        dialogName: "featureMenuOpen",
+        isOpen: false,
+      }),
     );
+
+    const remainingFeatures = allFeatures.filter((f) =>
+      remainingIds.includes(f.id),
+    );
+    try {
+      await updateProjectFeatures({
+        projectId: activeProjectId,
+        features: remainingFeatures,
+      }).unwrap();
+    } catch (err) {
+      console.error("Failed to persist feature removal:", err);
+      dispatch(setSelectedFeatureIds(ids));
+    }
+  };
+
+  const closeDialog = () =>
+    dispatch(toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false }));
   return (
     <Menu
-      open={featureState.dialogs.featureMenuOpen}
+      open={featureDialogs.featureMenuOpen}
       anchorEl={anchorEl}
       onClose={() => closeDialog()}
       onMouseLeave={closeDialog}
     >
-      <MenuItemWithButton
-        leftIcon={<Properties style={{ margin: "1px" }} />}
-        onClick={() => handleInfoMenuItemClick()}
+      <MenuItem onClick={() => removeFeature()}>
+        <ListItemIcon>
+          <RemoveFromProject />
+        </ListItemIcon>
+        Remove from Project
+      </MenuItem>
+
+      <MenuItem onClick={() => handleInfoMenuItemClick()}>
+        <ListItemIcon>
+          <Properties />
+        </ListItemIcon>
+        Feature Properties
+      </MenuItem>
+
+      <MenuItem
+        onClick={() =>
+          selectedFeature && toggleFeaturePUIDLayer(selectedFeature)
+        }
       >
-        Properties
-      </MenuItemWithButton>
-      <MenuItemWithButton
-        leftIcon={<RemoveFromProject style={{ margin: "1px" }} />}
-        style={{
-          display:
-            uiState.currentFeature?.old_version || userData.role === "ReadOnly"
-              ? "none"
-              : "block",
-        }}
-        onClick={() => removeFromProject(uiState.currentFeature)}
-      >
-        Remove from project
-      </MenuItemWithButton>
-      <MenuItemWithButton
-        leftIcon={
-          uiState.currentFeature?.feature_layer_loaded ? (
-            <RemoveFromMap style={{ margin: "1px" }} />
+        <ListItemIcon>
+          {selectedFeature?.feature_puid_layer_loaded ? (
+            <RemoveFromMap />
           ) : (
-            <AddToMap style={{ margin: "1px" }} />
-          )
-        }
-        style={{
-          display: uiState.currentFeature?.tilesetid ? "block" : "none",
-        }}
-        onClick={() => toggleFeatureLayer(uiState.currentFeature)}
-      >
-        {uiState.currentFeature?.feature_layer_loaded
-          ? "Remove from map"
-          : "Add to map"}
-      </MenuItemWithButton>
-      <MenuItemWithButton
-        leftIcon={
-          uiState.currentFeature?.feature_puid_layer_loaded ? (
-            <RemoveFromMap style={{ margin: "1px" }} />
-          ) : (
-            <AddToMap style={{ margin: "1px" }} />
-          )
-        }
-        onClick={() => toggleFeaturePUIDLayer(uiState.currentFeature)}
-        disabled={
-          !(
-            uiState.currentFeature?.preprocessed &&
-            uiState.currentFeature.occurs_in_planning_grid
-          )
-        }
-      >
-        {uiState.currentFeature?.feature_puid_layer_loaded
+            <AddToMap />
+          )}
+        </ListItemIcon>
+        {selectedFeature?.feature_puid_layer_loaded
           ? "Remove planning unit outlines"
           : "Outline planning units where the feature occurs"}
-      </MenuItemWithButton>
-      <MenuItemWithButton
-        leftIcon={<ZoomIn style={{ margin: "1px" }} />}
-        style={{
-          display: uiState.currentFeature?.extent ? "block" : "none",
-        }}
-        onClick={() => zoomToFeature(uiState.currentFeature)}
+      </MenuItem>
+
+      <MenuItem
+        onClick={() => selectedFeature && zoomToFeature(selectedFeature)}
       >
-        Zoom to feature extent
-      </MenuItemWithButton>
-      <MenuItemWithButton
-        leftIcon={<Preprocess style={{ margin: "1px" }} />}
-        style={{
-          display:
-            uiState.currentFeature?.old_version || userData.role === "ReadOnly"
-              ? "none"
-              : "block",
-        }}
-        onClick={() => preprocessSingleFeature(uiState.currentFeature)}
-        disabled={uiState.currentFeature?.preprocessed || preprocessing}
+        <ListItemIcon>
+          <ZoomIn />
+        </ListItemIcon>
+        Zoom to Feature
+      </MenuItem>
+
+      <MenuItem
+        onClick={() => preprocessSingleFeature(selectedFeatureId)}
+        // {/*disabled={selectedFeatureId?.preprocessed || preprocessing}*/}
       >
-        Pre-process
-      </MenuItemWithButton>
+        <ListItemIcon>
+          <Preprocess />
+        </ListItemIcon>
+        Preprocess Feature
+      </MenuItem>
     </Menu>
-    // </Popover>
   );
 };
 

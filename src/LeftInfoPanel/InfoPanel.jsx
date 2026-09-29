@@ -1,13 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { faLock, faShareAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  featureApiSlice,
+  setSelectedFeatureId,
+  toggleFeatureD,
+} from "@slices/featureSlice";
 import { setActiveTab, toggleDialog } from "@slices/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import Button from "@mui/material/Button";
-import CONSTANTS from "../constants";
+import CONSTANTS from "../bpVars.jsx";
 import FeaturesTab from "./FeaturesTab";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Loading from "../Loading";
+import PanelHeader from "../BPComponents/PanelHeader";
 import Paper from "@mui/material/Paper";
 import PlanningUnitsTab from "./PlanningUnitsTab";
 import ProjectTabContent from "./ProjectTab";
@@ -16,6 +20,7 @@ import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { selectCurrentUser } from "@slices/authSlice";
+import { setProjectCosts } from "@slices/projectSlice";
 
 const activeTabArr = ["project", "features", "planning_units"];
 
@@ -23,14 +28,13 @@ const InfoPanel = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
-  const puState = useSelector((state) => state.planningUnit)
+  const puState = useSelector((state) => state.planningUnit);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const userData = useSelector(selectCurrentUser);
 
   const [editingProjectName, setEditingProjectName] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
 
-  const [showPlanningGrid, setShowPlanningGrid] = useState(true);
   const [showProtectedAreas, setShowProtectedAreas] = useState(false);
   const [showCosts, setShowCosts] = useState(false);
   const [showStatuses, setShowStatuses] = useState(true);
@@ -39,9 +43,16 @@ const InfoPanel = (props) => {
   const projectNameRef = useRef(null);
   const descriptionEditRef = useRef(null);
 
+  // get project features (selectedIds) and get all features. Then filter all features down by selectedIds
+  const selectedIds = useSelector((s) => s.feature.selectedFeatureIds);
+  const { data: allFeaturesResp } =
+    featureApiSlice.endpoints.getAllFeatures.useQuery();
+  const allFeatures = allFeaturesResp?.data ?? [];
+  const projectFeatures = allFeatures.filter((f) => selectedIds.includes(f.id));
+
   useEffect(() => {
     if (editingProjectName && projectNameRef.current) {
-      projectNameRef.current.value = projState.projectData.name;
+      projectNameRef.current.value = props.project?.name;
       projectNameRef.current.focus();
     }
 
@@ -52,7 +63,7 @@ const InfoPanel = (props) => {
   }, [
     editingProjectName,
     editingDescription,
-    projState.projectData,
+    props.project,
     props.metadata.DESCRIPTION,
   ]);
 
@@ -61,6 +72,43 @@ const InfoPanel = (props) => {
       setCurrentTabIndex(activeTabArr.indexOf(uiState.activeTab));
     }
   }, []);
+
+  //preprocess synchronously, i.e. one after another
+  const preprocessAllFeatures = async () => {
+    for (const feature of projectFeatures) {
+      if (!feature.preprocessed) {
+        await preprocessFeature(feature);
+      }
+    }
+  };
+
+  const preprocessFeature = async (feature) => {
+    const project_id = props.project?.id;
+    const pu_id = props.project?.planning_unit_id;
+    const planning_grid_name = props.metadata;
+    try {
+      // Switch to the log tab
+      dispatch(setActiveTab("log"));
+
+      // Call the WebSocket
+      const url = `preprocessFeature?project_id=${project_id}&feature_id=${feature.id}&planning_grid_id=${pu_id}&feature_class_name=${feature.feature_class_name}`;
+
+      const message = await props.handleWebSocket(url);
+
+      // Update feature with new data
+      props.updateFeature(feature.id, {
+        preprocessed: true,
+        pu_count: Number(message.pu_count),
+        pu_area: Number(message.pu_area),
+        occurs_in_planning_grid: Number(message.pu_count) > 0,
+      });
+
+      return message;
+    } catch (error) {
+      console.error("Error preprocessing feature:", error);
+      throw error; // Re-throw the error to handle it further up the call stack if needed
+    }
+  };
 
   const handleKeyPress = (e) => {
     if (e.nativeEvent.keyCode === 13 || e.nativeEvent.keyCode === 27) {
@@ -81,13 +129,13 @@ const InfoPanel = (props) => {
   };
 
   const startEditingProjectName = () => {
-    if (projState.projectData) {
+    if (props.project) {
       setEditingProjectName(true);
     }
   };
 
   const startEditingDescription = () => {
-    if (projState.projectData && userData.role !== "ReadOnly") {
+    if (props.project) {
       setEditingDescription(true);
     }
   };
@@ -100,15 +148,13 @@ const InfoPanel = (props) => {
       width: "365px",
       border: "1px lightgray solid",
     }),
-    []
+    [],
   );
   const panelStyle = useMemo(
     () => ({
       top: "60px",
-      width: "300px",
-      height: "400px",
     }),
-    []
+    [],
   );
   const iconStyle = useMemo(
     () => ({
@@ -118,7 +164,7 @@ const InfoPanel = (props) => {
       marginBottom: "2px",
       marginRight: "5px",
     }),
-    []
+    [],
   );
 
   const handleChange = (e) => {
@@ -128,35 +174,6 @@ const InfoPanel = (props) => {
       : props.renameDescription(e.target.value);
   };
 
-  const startStopPuEditSession = () =>
-    puState.puEditing ? stopPuEditSession() : startPuEditSession();
-
-  const startPuEditSession = () => {
-    setShowPlanningGrid(true);
-    props.startPuEditSession();
-  };
-
-  const stopPuEditSession = () => {
-    setShowPlanningGrid(false);
-    props.stopPuEditSession();
-  };
-
-  const changeIucnCategory = (event) => {
-    props.changeIucnCategory(CONSTANTS.IUCN_CATEGORIES[event.target.value]);
-  };
-  const changeCostname = (event) => {
-    const costname = event.target.value;
-    if (costname === "Custom..") {
-      // dispatch(toggleDialog({ dialogName: "costsDialogOpen", isOpen: true }));
-
-      props.openCostsDialog();
-    } else {
-      props.changeCostname(costname).then(() => {
-        props.loadCostsLayer(true);
-      });
-    }
-  };
-
   const toggleProjectPrivacy = (evt, isInputChecked) => {
     const checkedString = isInputChecked ? "True" : "False";
     props.toggleProjectPrivacy(checkedString);
@@ -164,10 +181,10 @@ const InfoPanel = (props) => {
 
   const stopProcess = () => props.stopProcess(props.pid);
 
-  const togglePlanningUnits = (event, isInputChecked) => {
-    setShowPlanningGrid(!showPlanningGrid);
-    props.togglePULayer(isInputChecked);
-  };
+  // const togglePlanningUnits = (event, isInputChecked) => {
+  //   setShowPlanningGrid(!showPlanningGrid);
+  //   props.togglePULayer(isInputChecked);
+  // };
 
   const toggleProtectedAreas = (event, isInputChecked) => {
     setShowProtectedAreas(!showProtectedAreas);
@@ -188,6 +205,7 @@ const InfoPanel = (props) => {
     setCurrentTabIndex(tabIndex);
     if (tabIndex === 0) {
       dispatch(setActiveTab("project"));
+      props.setPUTabInactive();
     }
     if (tabIndex === 1) {
       dispatch(setActiveTab("features"));
@@ -198,46 +216,53 @@ const InfoPanel = (props) => {
     }
   };
 
-  let costnames = props.costnames ? [...props.costnames, "Custom.."] : [];
-  const displayStyle = {
-    display: dialogStates.infoPanelOpen ? "block" : "none",
+  const combinedDisplayStyles = {
+    ...panelStyle,
+    // Hide via visibility-style fallback when closed; otherwise preserve the
+    // flex layout from panelStyle (a `display: block` override here would
+    // collapse the column flex container and let the panel grow off-screen).
+    ...(dialogStates.infoPanelOpen ? {} : { display: "none" }),
   };
-  const combinedDisplayStyles = { ...panelStyle, ...displayStyle };
   const titleDisplayStyle = { display: editingProjectName ? "block" : "none" };
   const combinedDisplayStyle = { ...titleStyle, ...titleDisplayStyle };
 
-
-  return projState.projectData ? (
+  return (
     <React.Fragment>
       <div className="infoPanel" style={combinedDisplayStyles}>
-        <Paper elevation={2} className="InfoPanelPaper" mb={4}>
-
-          <Paper elevation={2} className="titleBar">
-            {userData.role === "ReadOnly" ? (
-              <span className="projectNameEditBox" title={`${projState.projectData.project.name} (Read-only)`}>
-                <FontAwesomeIcon style={iconStyle} icon={faLock} />
-                {projState.projectData.project.name}
-              </span>
-            ) : (
+        <Paper
+          elevation={2}
+          className="InfoPanelPaper"
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            // .infoPanel starts at top:60px, .InfoPanelPaper has margin:20px
+            // (CSS class), so total reserved = 60 (top offset) + 20 (top
+            // margin) + 20 (bottom margin) = 100. Cap height so the Paper
+            // plus its margins never push past the viewport.
+            maxHeight: "calc(100vh - 100px)",
+            overflow: "hidden",
+          }}
+        >
+          <PanelHeader>
+            {editingProjectName ? null : (
               <span
                 onClick={startEditingProjectName}
                 className="projectNameEditBox"
                 title="Click to rename the project"
+                style={{ cursor: "pointer" }}
               >
-                {projState.projectData.project.name || "Untitled project"}
+                {props.project?.name || "Untitled project"}
               </span>
             )}
-            {userData.role !== "ReadOnly" && (
-              <input
-                id="projectName"
-                ref={projectNameRef}
-                style={combinedDisplayStyle}
-                className="projectNameEditBox"
-                onKeyDown={handleKeyPress}
-                onBlur={handleBlur}
-              />
-            )}
-          </Paper>
+            <input
+              id="projectName"
+              ref={projectNameRef}
+              style={combinedDisplayStyle}
+              className="projectNameEditBox"
+              onKeyDown={handleKeyPress}
+              onBlur={handleBlur}
+            />
+          </PanelHeader>
 
           <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
             <Tab label="Project" value={0} disabled={!!puState.puEditing} />
@@ -245,85 +270,84 @@ const InfoPanel = (props) => {
             <Tab label="Planning units" value={2} />
           </Tabs>
 
-          {currentTabIndex === 0 && (
-            <ProjectTabContent
-              toggleProjectPrivacy={toggleProjectPrivacy}
-              owner={props.owner}
-              updateDetails={handleChange}
-            />
-          )}
-          {currentTabIndex === 1 && (
-            <FeaturesTab
-              {...props}
-              leftmargin="10px"
-              maxheight="409px"
-              simple={false}
-              showTargetButton />
-          )}
-          {currentTabIndex === 2 && (
-            <PlanningUnitsTab
-              {...props}
-              userRole={userData.role}
-              startStopPuEditSession={startStopPuEditSession}
+          <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+            {currentTabIndex === 0 && (
+              <ProjectTabContent
+                project={props.project}
+                metadata={props.metadata}
+                toggleProjectPrivacy={toggleProjectPrivacy}
+                updateDetails={handleChange}
+              />
+            )}
+            {currentTabIndex === 1 && (
+              <FeaturesTab
+                {...props}
+                leftmargin="10px"
+                maxheight="409px"
+                simple={false}
+                showTargetButton
+                preprocessAllFeatures={preprocessAllFeatures}
+                preprocessFeature={preprocessFeature}
+              />
+            )}
+            {currentTabIndex === 2 && (
+              <PlanningUnitsTab
+                project={props.project}
+                userRole={userData?.role}
+                preprocessing={props.preprocessing}
+                costProfiles={props.costProfiles}
+                activateCostProfile={props.activateCostProfile}
+                map={props.map}
+                onClickRef={props.onClickRef}
+                onContextMenuRef={props.onContextMenuRef}
+                puLayerIdsRef={props.puLayerIdsRef}
+                _post={props._post}
+                puEditing={props.puEditing}
+                setPuEditing={props.setPuEditing}
+                planningUnits={props.planningUnits}
+                metadata={props.metadata}
+                fetchCostProfileActivities={props.fetchCostProfileActivities}
+                toggleActivityLayer={props.toggleActivityLayer}
+                loadedActivityIds={props.loadedActivityIds}
+              />
+            )}
+          </div>
 
-            />
-          )}
-
-          <Paper>
-            <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" pb={2} pt={2}>
-              {projState.bpServer.type === "remote" && (
-                <Button
-                  variant="contained"
-                  startIcon={<FontAwesomeIcon icon={faShareAlt} />}
-                  title="Get a shareable link to this project"
-                  onClick={props.getShareableLink}
-                  key="shareableLinkButton"
-                >
-                  Share
-                </Button>
-              )}
-
+          <Paper sx={{ flexShrink: 0 }}>
+            <Stack
+              direction="row"
+              justifyContent="right"
+              alignItems="right"
+              pb={2}
+              pt={2}
+              px={2}
+            >
               <Button
                 variant="contained"
-                startIcon={<Settings style={{ height: "20px", width: "20px" }} />}
-                title="Run Settings"
-                onClick={() => dispatch(toggleDialog({ dialogName: "settingsDialogOpen", isOpen: true }))}
-                key="openSettingsButton"
+                title="Click to run this project"
+                onClick={() =>
+                  dispatch(
+                    toggleDialog({
+                      dialogName: "runPrioritizrDialogOpen",
+                      isOpen: true,
+                    }),
+                  )
+                }
+                disabled={
+                  props.preprocessing ||
+                  projectFeatures.length === 0 ||
+                  puState.puEditing
+                }
+                key="runButton"
               >
-                Settings
+                Run Prioitizr
               </Button>
-
-              {userData.role !== "ReadOnly" && (
-                <>
-                  <Button
-                    variant="contained"
-                    title="Click to stop the current run"
-                    onClick={props.stopProcess}
-                    disabled={props.pid === 0}
-                    key="stopRunButton"
-                  >
-                    Stop
-                  </Button>
-                  <Button
-                    variant="contained"
-                    title="Click to run this project"
-                    onClick={props.runMarxan}
-                    disabled={props.preprocessing || projState.projectFeatures.length === 0 || puState.puEditing}
-                    key="runButton"
-                  >
-                    Run
-                  </Button>
-                </>
-              )}
             </Stack>
           </Paper>
         </Paper>
       </div>
     </React.Fragment>
-  ) : (
-    <Loading />
   );
-
 };
 
 export default InfoPanel;

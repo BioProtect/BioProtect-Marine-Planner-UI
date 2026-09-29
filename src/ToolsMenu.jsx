@@ -1,15 +1,15 @@
 import React, { useCallback, useState } from "react";
-import {
-  faBroom,
-  faChartBar,
-  faHistory,
-  faRunning,
-  faUsers,
-} from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 
+import AssessmentIcon from "@mui/icons-material/Assessment";
+import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
+import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
+import GroupIcon from "@mui/icons-material/Group";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import ManageHistoryIcon from "@mui/icons-material/ManageHistory";
 import Menu from "@mui/material/Menu";
-import MenuBarListItem from "./MenuBarListItem";
+import MenuItem from "@mui/material/MenuItem";
 import { toggleDialog } from "@slices/uiSlice";
 
 const ToolsMenu = (props) => {
@@ -20,11 +20,6 @@ const ToolsMenu = (props) => {
 
   const openUsersDialog = useCallback(() => {
     props.openUsersDialog();
-    closeDialog();
-  }, [props]);
-
-  const openRunLogDialog = useCallback(() => {
-    props.openRunLogDialog();
     closeDialog();
   }, [props]);
 
@@ -76,51 +71,44 @@ const ToolsMenu = (props) => {
       }}
     >
       {props.userRole === "Admin" && (
-        <MenuBarListItem
-          handleClick={openUsersDialog}
-          title="Manage Users"
-          icon={faUsers}
-          text="Users"
-        />
+        <MenuItem onClick={openUsersDialog} title="Manage Users">
+          <ListItemIcon>
+            <GroupIcon />
+          </ListItemIcon>
+          <ListItemText>Users</ListItemText>
+        </MenuItem>
       )}
       {props.userRole === "Admin" && projectState.bpServer.enable_reset && (
-        <MenuBarListItem
-          handleClick={openResetDialog}
-          title="Reset database"
-          icon={faHistory}
-          text="Reset"
-        />
+        <MenuItem onClick={openResetDialog} title="Reset database">
+          <ListItemIcon>
+            <ManageHistoryIcon />
+          </ListItemIcon>
+          <ListItemText>Reset database</ListItemText>
+        </MenuItem>
       )}
-      <MenuBarListItem
-        handleClick={openRunLogDialog}
-        title={
-          props.userRole === "Admin"
-            ? "View Run Log and stop runs"
-            : "View Run Log"
-        }
-        icon={faRunning}
-        text="Run log"
-      />
       {props.userRole !== "ReadOnly" && (
-        <MenuBarListItem
-          handleClick={openGapAnalysisDialog}
-          title="Gap Analysis"
-          icon={faChartBar}
-          text={
+        <MenuItem
+          onClick={openGapAnalysisDialog}
+          title={
             props.metadata.pu_country === null
               ? "Gap Analysis (not available)"
               : "Gap Analysis"
           }
           disabled={props.metadata.pu_country === null}
-        />
+        >
+          <ListItemIcon>
+            <AssessmentIcon />
+          </ListItemIcon>
+          <ListItemText>Gap Analysis</ListItemText>
+        </MenuItem>
       )}
       {props.userRole === "Admin" && (
-        <MenuBarListItem
-          handleClick={props.cleanup}
-          title="Cleanup server"
-          icon={faBroom}
-          text="Cleanup server"
-        />
+        <MenuItem onClick={props.cleanup} title="Cleanup server">
+          <ListItemIcon>
+            <CleaningServicesIcon />
+          </ListItemIcon>
+          <ListItemText>Cleanup server</ListItemText>
+        </MenuItem>
       )}
     </Menu>
   );

@@ -1,23 +1,19 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  descendingComparator,
-  getComparator,
-  objInArray,
-  stableSort,
-} from "../Helpers";
-import { useDispatch, useSelector } from "react-redux";
+import { getComparator, stableSort } from "../Helpers";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import AppBarIcon from "../MenuBar/AppBarIcon";
 import BPTableHeadWithSort from "./BPTableHeadWithSort";
 import BPTableTitleWithSearch from "./BPTableTitleWithSearch";
 import Box from "@mui/material/Box";
+import { Button } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
+import MapIcon from "@mui/icons-material/Map";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
-import { faMagnifyingGlassPlus } from "@fortawesome/free-solid-svg-icons";
 
 // Props
 // 1. data (Array, Required)
@@ -40,11 +36,50 @@ const BioprotectTable = (props) => {
   const [orderBy, setOrderBy] = useState("category");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const parseCreatedAt = (value) => {
+    if (!value) return null;
+    const [d, m, y, ...rest] = value.replace(" ", "/").split("/");
+    const [hh, mm, ss] = rest[0].split(":");
+    const year = 2000 + Number(y); // "20" -> 2020
+    return new Date(
+      year,
+      Number(m) - 1,
+      Number(d),
+      Number(hh),
+      Number(mm),
+      Number(ss),
+    );
+  };
+
+  const descendingComparator = (a, b, orderBy) => {
+    if (orderBy === "creation_date") {
+      const aDate = parseCreatedAt(a[orderBy]);
+      const bDate = parseCreatedAt(b[orderBy]);
+      const aTs = aDate ? aDate.getTime() : 0;
+      const bTs = bDate ? bDate.getTime() : 0;
+      if (bTs < aTs) return -1;
+      if (bTs > aTs) return 1;
+      return 0;
+    }
+
+    // existing generic logic for other fields
+    if (b[orderBy] < a[orderBy]) return -1;
+    if (b[orderBy] > a[orderBy]) return 1;
+    return 0;
+  };
+
+  const getComparator = (order, orderBy) =>
+    order === "desc"
+      ? (a, b) => descendingComparator(a, b, orderBy)
+      : (a, b) => -descendingComparator(a, b, orderBy);
+
   // Normalize the incoming `selected` into a Set of IDs for fast lookup.
   const selectedIdSet = useMemo(() => {
-    const sel = props.selected || [];
-    // supports array of IDs or array of objects with .id
-    return new Set(sel.map((s) => (typeof s === "object" ? s.id : s)));
+    // ponytail: drop nullish entries - a [undefined] selection used to match
+    // every row whose .id was also undefined (i.e. all of them)
+    const sel = (props.selected || []).filter((s) => s != null);
+    // supports array of IDs, or objects with .id (falling back to identity)
+    return new Set(sel.map((s) => (typeof s === "object" ? (s.id ?? s) : s)));
   }, [props.selected]);
 
   const handleRequestSort = (event, property) => {
@@ -61,16 +96,11 @@ const BioprotectTable = (props) => {
 
     const filteredResult = props.data.filter((row) =>
       props.searchColumns.some((column) =>
-        row[column].toString().toLowerCase().includes(lowerCaseQuery)
-      )
+        String(row[column] ?? "").toLowerCase().includes(lowerCaseQuery),
+      ),
     );
     return stableSort(filteredResult, getComparator(order, orderBy));
   }, [searchQuery, props.data, order, orderBy]);
-
-  // Let parent know what rows are visible (useful for shift-select logic)
-  // useEffect(() => {
-  //   props.dataFiltered && props.dataFiltered(filteredData);
-  // }, [filteredData, props.dataFiltered]);
 
   const lastSent = useRef([]);
   useEffect(() => {
@@ -105,26 +135,7 @@ const BioprotectTable = (props) => {
     props.updateSelectionIds && props.updateSelectionIds([]);
   };
 
-  // should really be item in Object because were checking an obj. poor naming by me.
-  // const isSelected = (objToCheck) => {
-  //   if (!props.selected || props.selected.length === 0) return false;
-
-  //   if (props.isProject) {
-  //     return objToCheck.id === props.selected[0]?.id;
-  //   }
-  //   return objInArray(objToCheck, props.selected);
-  // };
-  // Unified selected check (IDs set)
-  const isSelected = (row) => selectedIdSet.has(row.id);
-
-  // const visibleRows = useMemo(
-  //   () => stableSort(filteredData, getComparator(order, orderBy)),
-  //   [props.data, order, orderBy]
-  // );
-  // const visibleRows = useMemo(
-  //   () => stableSort(filteredData, getComparator(order, orderBy)),
-  //   [filteredData, order, orderBy]
-  // );
+  const isSelected = (row) => selectedIdSet.has(row.id ?? row);
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -187,22 +198,61 @@ const BioprotectTable = (props) => {
                       {row[column.id]}
                     </TableCell>
                   ))}
-                  {(props.preview) && (
+                  {props.preview && (
                     <TableCell
                       align="center"
                       sx={{ cursor: "pointer", color: "primary.main" }}
-
                     >
-                      <AppBarIcon
-                        icon={faMagnifyingGlassPlus}
+                      <IconButton
+                        color="primary"
+                        size="small"
+                        title="Preview this feature"
                         onClick={(e) => {
-                          e.stopPropagation();         // don’t also trigger row click
-                          props.preview?.(row);        // call the preview callback
+                          e.stopPropagation(); // don’t also trigger row click
+                          props.preview?.(row); // call the preview callback
                         }}
-                        title="Priview this feature"
-                      />
-                      Preview
-                    </TableCell>)}
+                      >
+                        <MapIcon />
+                      </IconButton>
+                    </TableCell>
+                  )}
+                  {props.deleteRow &&
+                    (() => {
+                      const canDelete = props.canDeleteRow
+                        ? !!props.canDeleteRow(row)
+                        : true;
+                      const reason =
+                        typeof props.deleteRowReason === "function"
+                          ? props.deleteRowReason(row)
+                          : null;
+                      return (
+                        <TableCell
+                          align="center"
+                          sx={{
+                            cursor: canDelete ? "pointer" : "not-allowed",
+                            color: canDelete ? "error.main" : "text.disabled",
+                          }}
+                        >
+                          <IconButton
+                            color="error"
+                            disabled={!canDelete}
+                            size="small"
+                            title={
+                              canDelete
+                                ? "Delete this row"
+                                : reason || "You cannot delete this row"
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!canDelete) return;
+                              props.deleteRow(row);
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      );
+                    })()}
                 </TableRow>
               );
             })}

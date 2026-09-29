@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 
 import { Box } from "@mui/material";
+import { getTilesBaseUrl } from "@config/api";
 import mapboxgl from "mapbox-gl";
 import { zoomToBounds } from "./Helpers";
 
@@ -12,18 +13,18 @@ const getTableName = (tilesetid) => {
 };
 
 const MapContainer2 = ({
-  planningGridMetadata,              // expects { tilesetid: "bioprotect.f_0539..." } or "f_0539..."
+  planningGridMetadata, // expects { tilesetid: "bioprotect.f_0539..." } or "f_0539..."
   color = "rgba(255, 0, 0, 0.4)",
   outlineColor = "rgba(255, 0, 0, 0.5)",
-  martinBase = "http://localhost:3000/",
+  martinBase = getTilesBaseUrl(),
 }) => {
   const mapEl = useRef(null);
 
-  console.log("planningGridMetadata ", planningGridMetadata);
-
   useEffect(() => {
     const tilesetid = planningGridMetadata?.tilesetid;
-    const tableName = getTableName(tilesetid);
+    const tableName = tilesetid
+      ? getTableName(tilesetid)
+      : planningGridMetadata?.feature_class_name;
     if (!tableName) return;
 
     const map = new mapboxgl.Map({
@@ -35,11 +36,8 @@ const MapContainer2 = ({
     });
 
     const sourceId = `martin_src_${tableName}`;
-    console.log("sourceId ", sourceId);
     const layerId = `martin_layer_${tableName}`;
-    console.log("layerId ", layerId);
     const tileJSON = new URL(tableName, martinBase).toString();
-    console.log("tileJSON ", tileJSON);
 
     const onLoad = async () => {
       // 1) Source via TileJSON URL (no manual tiles array needed)
@@ -69,7 +67,6 @@ const MapContainer2 = ({
       // 3) Optional: fetch TileJSON once to fit bounds
       try {
         const tj = await (await fetch(tileJSON)).json();
-        console.log("tj ", tj);
         if (Array.isArray(tj.bounds) && tj.bounds.length === 4) {
           const sw = [tj.bounds[0], tj.bounds[1]]; // [minLng, minLat]
           const ne = [tj.bounds[2], tj.bounds[3]]; // [maxLng, maxLat]
@@ -86,7 +83,7 @@ const MapContainer2 = ({
     };
 
     if (map.loaded()) {
-      onLoad()
+      onLoad();
     } else {
       map.on("load", onLoad);
     }
@@ -95,14 +92,20 @@ const MapContainer2 = ({
       try {
         map.off("load", onLoad);
         map.remove();
-      } catch { }
+      } catch {}
     };
   }, [planningGridMetadata?.tilesetid, color, outlineColor, martinBase]);
 
   return (
     <Box
       ref={mapEl}
-      sx={{ width: 500, height: 300, mt: "50px", ml: "24px", position: "relative" }}
+      sx={{
+        width: 500,
+        height: 300,
+        mt: "50px",
+        ml: "24px",
+        position: "relative",
+      }}
     />
   );
 };

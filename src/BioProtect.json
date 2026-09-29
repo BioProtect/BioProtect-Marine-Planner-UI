@@ -66,7 +66,7 @@
       "provider": "local"
     }
   ],
-  "MARXAN_SERVERS": [
+  "BP_SERVERS": [
     {
       "name": "SPREP Regional Hub, Samoa",
       "port": 8080,

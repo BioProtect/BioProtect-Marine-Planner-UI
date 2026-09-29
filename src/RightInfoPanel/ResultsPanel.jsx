@@ -1,288 +1,338 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  useGetFeatureRepresentationQuery,
+  useListPrioritizrRunsQuery,
+} from "@slices/prioritizrApiSlice";
 
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Clipboard from "@mui/icons-material/Assignment";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Log from "../Log";
+import CircularProgress from "@mui/material/CircularProgress";
+import DownloadIcon from "@mui/icons-material/Download";
+import Log from "./Log";
 import MapLegend from "./MapLegend";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import PanelHeader from "../BPComponents/PanelHeader";
 import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Sync from "@mui/icons-material/Sync";
+import RunsTab from "./RunsTab";
 import Tab from "@mui/material/Tab";
-import Table from "@mui/material/Table";
 import Tabs from "@mui/material/Tabs";
-import { faEraser } from "@fortawesome/free-solid-svg-icons";
-import { useSelector } from "react-redux";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { generatePdfReport } from "@utils/generatePdfReport";
+import { getApiBaseUrl } from "@config/api";
+import { setActiveResultsTab } from "@slices/uiSlice";
+import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 
-let runtime = 0;
-const activeTabArr = ["legend", "solutions", "log"];
+const TAB_VALUES = ["legend", "runs", "log"];
 
 const ResultsPanel = (props) => {
-  const uiState = useSelector((state) => state.ui);
+  const { map, project, projectFeatures, metadata } = props;
+  const { showMessage } = useAppSnackbar();
 
-  const [showClipboard, setShowClipboard] = useState(false);
-  const [selectedSolution, setSelectedSolution] = useState(undefined);
-  const [runtimeStr, setRuntimeStr] = useState("00:00s");
-  const [timer, setTimer] = useState(null);
-  const [currentTabIndex, setCurrentTabIndex] = useState(
-    activeTabArr.indexOf(props.activeResultsTab) || 0
-  );
+  const dispatch = useDispatch();
+  const { dialogStates, importLog, activeResultsTab, uploadedActivities } =
+    useSelector((state) => state.ui);
+  const projectId = useSelector((s) => s.project.activeProjectId);
+  const selectedRunIds = useSelector((s) => s.prioritizr.selectedRunIds);
 
-
-  const prevProps = useRef();
-  useEffect(() => {
-    prevProps.current = props;
+  const { data: runsResp } = useListPrioritizrRunsQuery(projectId, {
+    skip: !projectId,
   });
+  const runs = runsResp?.data ?? [];
 
-  useEffect(() => {
-    const objDiv = document.getElementById("log");
-    if (objDiv) objDiv.scrollTop = objDiv.scrollHeight;
+  // Feature name lookup (project features may not carry `name`)
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
+  const allFeatures = allFeaturesResp?.data ?? [];
 
-    if (props.solutions !== prevProps.solutions) {
-      resetSolution(); // Unselect a solution
+  // Per-feature achieved % from the selected Prioritizr runs (mirrors
+  // FeaturesList.jsx — same stable sort so the RTK Query cache hits).
+  const sortedRunIds = useMemo(
+    () => [...selectedRunIds].sort((a, b) => a - b),
+    [selectedRunIds],
+  );
+  const { data: reprResp } = useGetFeatureRepresentationQuery(sortedRunIds, {
+    skip: sortedRunIds.length === 0,
+  });
+  const reprByFeatureUniqueId = useMemo(() => {
+    if (sortedRunIds.length === 0 || !reprResp?.data) return {};
+    return Object.fromEntries(
+      reprResp.data.map((r) => {
+        const pct = r.represented_percent;
+        const perRun =
+          Array.isArray(r.per_run) && r.per_run.length > 0
+            ? r.per_run.map((p) => p.represented_percent)
+            : [pct];
+        return [r.feature_unique_id, { achieved: pct, perRun }];
+      }),
+    );
+  }, [reprResp, sortedRunIds]);
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // PDF report download
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (selectedRunIds.length === 0) {
+      showMessage(
+        "Please select at least one run to include in the report.",
+        "error",
+      );
+      return;
     }
+    setPdfLoading(true);
 
-    if (props.preprocessing && !prevProps.preprocessing) {
-      startTimer();
+    try {
+      // Capture map canvas (requires preserveDrawingBuffer: true on the map)
+      let mapImageDataUrl = null;
+      if (map?.current) {
+        map.current.triggerRepaint();
+        await new Promise((resolve) => map.current.once("render", resolve));
+        mapImageDataUrl = map.current.getCanvas().toDataURL("image/png");
+      }
+
+      // Gather the selected run objects (for display names in the PDF)
+      const selectedRuns = runs.filter((r) => selectedRunIds.includes(r.id));
+
+      // Enrich features with alias (from getAllFeatures — `name` is the
+      // auto-generated table name, `alias` is the human label) and the
+      // achieved / target-met data from the selected runs. Target met =
+      // number of selected runs whose represented_percent >= target_value.
+      const featureAliasById = new Map(
+        allFeatures.map((f) => [f.id ?? f.feature_unique_id, f.alias]),
+      );
+      const prettify = (s) => (s ? String(s).replace(/_/g, " ") : s);
+      const enrichedFeatures = (projectFeatures ?? []).map((f) => {
+        const uid = f.feature_unique_id ?? f.id;
+        const repr = reprByFeatureUniqueId[uid] ?? null;
+        const perRun = repr?.perRun ?? null;
+        const target = Number(f.target_value ?? 0);
+        const metCount =
+          perRun != null ? perRun.filter((p) => p >= target).length : 0;
+        const alias = f.alias ?? featureAliasById.get(uid) ?? null;
+        return {
+          ...f,
+          alias: prettify(alias),
+          achieved: repr?.achieved ?? null,
+          metCount,
+          runCount: perRun?.length ?? 0,
+        };
+      });
+
+      await generatePdfReport({
+        project,
+        metadata,
+        features: enrichedFeatures,
+        activities: uploadedActivities ?? [],
+        selectedRuns,
+        mapImageDataUrl,
+      });
+    } finally {
+      setPdfLoading(false);
     }
+  }, [
+    map,
+    project,
+    metadata,
+    projectFeatures,
+    allFeatures,
+    reprByFeatureUniqueId,
+    uploadedActivities,
+    runs,
+    selectedRunIds,
+  ]);
 
-    if (!props.preprocessing && prevProps.preprocessing) {
-      stopTimer();
-    }
-  }, [props, prevProps]);
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // GIS data download (shapefile or geopackage, zipped with sidecar CSVs)
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  const [gisLoading, setGisLoading] = useState(false);
+  const [gisAnchor, setGisAnchor] = useState(null);
+  const authToken = useSelector((s) => s.auth?.token);
 
-  const strPadLeft = (string, pad, length) => {
-    return (new Array(length + 1).join(pad) + string).slice(-length);
+  const handleDownloadGis = useCallback(
+    async (fmt) => {
+      setGisAnchor(null);
+      if (selectedRunIds.length === 0) {
+        showMessage(
+          "Please select at least one run to include in the export.",
+          "error",
+        );
+        return;
+      }
+      if (!projectId) return;
+
+      setGisLoading(true);
+      try {
+        const url =
+          `${getApiBaseUrl()}prioritizr?action=export-runs` +
+          `&project-id=${projectId}` +
+          `&run-ids=${selectedRunIds.join(",")}` +
+          `&format=${fmt}`;
+
+        const headers = {};
+        if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+
+        const resp = await fetch(url, {
+          method: "GET",
+          credentials: "include",
+          headers,
+        });
+        if (!resp.ok) {
+          // Server sends JSON on error
+          let msg = `Download failed (${resp.status})`;
+          try {
+            const j = await resp.json();
+            if (j?.error) msg = j.error;
+          } catch {
+            /* not JSON — keep generic message */
+          }
+          throw new Error(msg);
+        }
+        const blob = await resp.blob();
+
+        // Prefer the filename the server sent in Content-Disposition;
+        // fall back to a sensible default if the header is missing.
+        const cd = resp.headers.get("Content-Disposition") || "";
+        const match = cd.match(/filename="?([^"]+)"?/);
+        const filename = match?.[1] || `project_${projectId}_runs_${fmt}.zip`;
+
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        showMessage(err.message || "Download failed", "error");
+      } finally {
+        setGisLoading(false);
+      }
+    },
+    [projectId, selectedRunIds, authToken, showMessage],
+  );
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  const currentTabIndex = Math.max(0, TAB_VALUES.indexOf(activeResultsTab));
+  const handleTabChange = (_e, idx) =>
+    dispatch(setActiveResultsTab(TAB_VALUES[idx] ?? "legend"));
+
+  const conditionalEndIcon = (loading) => {
+    return loading ? (
+      <CircularProgress size={18} sx={{ color: "white" }} />
+    ) : (
+      <DownloadIcon fontSize="small" />
+    );
   };
 
-  const startTimer = () => {
-    runtime = 0;
-    const newTimer = setInterval(() => {
-      const minutes = Math.floor(runtime / 60);
-      const seconds = runtime - minutes * 60;
-      const finalTime =
-        strPadLeft(minutes, "0", 2) + ":" + strPadLeft(seconds, "0", 2);
-      setRuntimeStr(finalTime);
-      runtime += 1;
-    }, 1000);
-    setTimer(newTimer);
-  };
-
-  const stopTimer = () => {
-    clearInterval(timer);
-    setTimer(null);
-  };
-
-  const loadSolution = (solution) => {
-    props.loadSolution(solution, props.owner);
-  };
-
-  const resetSolution = () => {
-    if (selectedSolution) changeSolution(undefined);
-  };
-
-  const changeSolution = (solution) => {
-    setSelectedSolution(solution);
-    if (solution) loadSolution(solution.Run_Number);
-  };
-
-  const mouseEnter = () => {
-    setShowClipboard(true);
-  };
-
-  const mouseLeave = (event) => {
-    if (event.relatedTarget.id !== "buttonsDiv") setShowClipboard(false);
-  };
-
-  const selectText = (node) => {
-    node = document.getElementById(node);
-    if (document.body.createTextRange) {
-      const range = document.body.createTextRange();
-      range.moveToElementText(node);
-      range.select();
-    } else if (window.getSelection) {
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.selectNodeContents(node);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    } else {
-      console.warn("Could not select text in node: Unsupported browser.");
-    }
-  };
-
-  const copyLog = (evt) => {
-    selectText("log");
-    evt.target.focus();
-    document.execCommand("copy");
-  };
-
-  const handleTabChange = (evt, tabIndex) => {
-    setCurrentTabIndex(tabIndex);
-    props.setActiveTab(activeTabArr[tabIndex]);
-  };
-
-  const panelStyle = useMemo(() => ({
-    top: "60px",
-    width: "300px",
-    height: "400px",
-    position: "absolute",
-    right: "140px",
-  }), [])
-
-  const displayStyle = {
-    display: uiState.dialogStates.resultsPanelOpen ? "block" : "none",
-  };
-
-  const combinedDisplayStyles = { ...panelStyle, ...displayStyle };
-
+  if (!dialogStates.resultsPanelOpen) return null;
 
   return (
-    <React.Fragment>
-      <div className="resultsPanel" style={combinedDisplayStyles}>
-        <Paper elevation={2} className="ResultsPanelPaper" mb={4}>
-          <div className="resultsTitle">Results</div>
-          <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
-            <Tab
-              label="Legend"
-              value={0}
-              disabled={props.puEditing ? true : false}
-            />
-            <Tab
-              label="Solutions"
-              value={1}
-              disabled={props.puEditing ? true : false}
-            />
-            <Tab label="Log" value={2} />
-          </Tabs>
+    <div
+      className="resultsPanel"
+      style={{
+        position: "absolute",
+        right: "60px",
+        top: "80px",
+        width: "400px",
+        maxHeight: "calc(100vh - 120px)",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Paper
+        elevation={2}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          maxHeight: "100%",
+          overflow: "hidden",
+        }}
+      >
+        <PanelHeader
+          actions={
+            <Box sx={{ display: "flex", gap: 0.5 }}>
+              <Tooltip title="Download PDF report">
+                <span>
+                  <Button
+                    size="small"
+                    onClick={handleDownloadPdf}
+                    disabled={pdfLoading}
+                    sx={{
+                      color: "white",
+                      "&:hover": {
+                        backgroundColor: "rgba(255,255,255,0.15)",
+                      },
+                    }}
+                    endIcon={conditionalEndIcon(pdfLoading)}
+                  >
+                    PDF
+                  </Button>
+                </span>
+              </Tooltip>
+              <Tooltip title="Download GIS data (shapefile or geopackage) for the selected runs">
+                <span>
+                  <Button
+                    size="small"
+                    onClick={(e) => setGisAnchor(e.currentTarget)}
+                    disabled={gisLoading}
+                    sx={{
+                      color: "white",
+                      "&:hover": {
+                        backgroundColor: "rgba(255,255,255,0.15)",
+                      },
+                    }}
+                    endIcon={conditionalEndIcon(gisLoading)}
+                  >
+                    GIS
+                  </Button>
+                </span>
+              </Tooltip>
+              <Menu
+                anchorEl={gisAnchor}
+                open={Boolean(gisAnchor)}
+                onClose={() => setGisAnchor(null)}
+              >
+                <MenuItem onClick={() => handleDownloadGis("shp")}>
+                  Shapefile (.zip)
+                </MenuItem>
+                <MenuItem onClick={() => handleDownloadGis("gpkg")}>
+                  GeoPackage (.gpkg in .zip)
+                </MenuItem>
+              </Menu>
+            </Box>
+          }
+        >
+          Results
+        </PanelHeader>
+
+        <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
+          <Tab label="Legend" />
+          <Tab label="Runs" />
+          <Tab label="Log" />
+        </Tabs>
+
+        <div style={{ overflow: "auto", flex: 1 }}>
           {currentTabIndex === 0 && (
-            <div className="legendTab">
-              <MapLegend {...props} brew={props.brew} />
-            </div>
-          )}
-          {currentTabIndex === 1 && (
-            <div
-              id="solutionsPanel"
-              style={{ display: !props.processing ? "block" : "none" }}
-            >
-              {props.solutions && props.solutions.length > 0 ? (
-                <Table
-                  data={props.solutions}
-                  columns={[
-                    {
-                      Header: "Run",
-                      accessor: "Run_Number",
-                      width: 40,
-                      headerStyle: { textAlign: "left" },
-                    },
-                    {
-                      Header: "Score",
-                      accessor: "Score",
-                      width: 80,
-                      headerStyle: { textAlign: "left" },
-                    },
-                    {
-                      Header: "Cost",
-                      accessor: "Cost",
-                      width: 80,
-                      headerStyle: { textAlign: "left" },
-                    },
-                    {
-                      Header: "Planning Units",
-                      accessor: "Planning_Units",
-                      width: 50,
-                      headerStyle: { textAlign: "left" },
-                    },
-                    {
-                      Header: "Missing Values",
-                      accessor: "Missing_Values",
-                      width: 105,
-                      headerStyle: { textAlign: "left" },
-                    },
-                  ]}
-                  getTrProps={(state, rowInfo) => ({
-                    onClick: () => changeSolution(rowInfo.original),
-                    style: {
-                      background:
-                        rowInfo.original.Run_Number ===
-                          (selectedSolution && selectedSolution.Run_Number)
-                          ? "aliceblue"
-                          : "",
-                    },
-                    title: "Click to show on the map",
-                  })}
-                  showPagination={false}
-                  minRows={0}
-                  pageSize={props.solutions.length}
-                  noDataText=""
-                  className="solutions_infoTable -highlight"
-                />
-              ) : null}
-            </div>
-          )}
-          {currentTabIndex === 2 && (
-            <div
-              style={{
-                display: props.userRole === "ReadOnly" ? "none" : "block",
-              }}
-            >
-              <Log
-                messages={uiState.importLog}
-                id="log"
-                mouseEnter={mouseEnter}
-                mouseLeave={mouseLeave}
-                preprocessing={props.preprocessing}
-              />
-              <Stack
-                direction="row"
-                spacing={1}
-                justifyContent="center"
-                alignItems="center"
-                pb={2}
-                pt={2}
-              >
-                <Button
-                  variant="contained"
-                  startIcon={
-                    <Clipboard style={{ height: "20px", width: "20px" }} />
-                  }
-                  title="Copy to clipboard"
-                  onClick={copyLog}
-                  show={showClipboard}
-                />
-                <Button
-                  variant="contained"
-                  startIcon={<FontAwesomeIcon icon={faEraser} />}
-                  title="Clear log"
-                  onClick={props.clearLog}
-                  show={showClipboard}
-                />
-              </Stack>
-              <div
-                className="runtime"
-                style={{ display: props.preprocessing ? "block" : "none" }}
-              >
-                Runtime: {runtimeStr}s
-              </div>
-            </div>
+            <MapLegend
+              changeOpacity={props.changeOpacity}
+              visibleLayers={props.visibleLayers}
+              costsLoading={props.costsLoading}
+              brew={props.brew}
+            />
           )}
 
-          <div
-            className="processingDiv"
-            style={{ display: props.preprocessing ? "block" : "none" }}
-            title="Processing.."
-          >
-            <Paper elevation={2}>
-              <div className="processingText"></div>
-              <Sync
-                className="spin processingSpin"
-                style={{ color: "rgb(255, 64, 129)" }}
-              />
-            </Paper>
-          </div>
-        </Paper>
-      </div>
-    </React.Fragment>
+          {currentTabIndex === 1 && <RunsTab />}
+
+          {currentTabIndex === 2 && <Log messages={importLog} />}
+        </div>
+      </Paper>
+    </div>
   );
 };
 

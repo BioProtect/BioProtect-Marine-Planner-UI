@@ -10,22 +10,29 @@ import {
   TableHead,
   TableRow,
   Tooltip,
-  Typography
+  Typography,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { setSelectedFeatureIds } from "@slices/featureSlice";
+import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 import { useMemo } from "react";
 
 function ProjectFeaturesTable() {
   const dispatch = useDispatch();
-  const { allFeatures = [], selectedFeatureIds = [] } = useSelector((s) => s.feature);
-
-  const selected = useMemo(
-    () => allFeatures.filter((f) => selectedFeatureIds.includes(f.id)),
-    [allFeatures, selectedFeatureIds]
+  const selectedFeatureIds = useSelector(
+    (state) => state.feature.selectedFeatureIds,
   );
+
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+
+  const selected = useMemo(() => {
+    const ids = selectedFeatureIds ?? [];
+    return allFeatures.filter((f) => ids.includes(f.id));
+  }, [allFeatures, selectedFeatureIds]);
+
   const toggleOne = (id) => {
     const next = selectedFeatureIds.includes(id)
       ? selectedFeatureIds.filter((x) => x !== id)
@@ -49,7 +56,14 @@ function ProjectFeaturesTable() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 1,
+        }}
+      >
         <Typography variant="h6" sx={{ fontSize: 16, fontWeight: 600 }}>
           Selected features
         </Typography>
@@ -57,7 +71,9 @@ function ProjectFeaturesTable() {
           <Typography variant="body2" color="text.secondary">
             {selected.length} selected
           </Typography>
-          <Button size="small" onClick={clearAll}>Clear all</Button>
+          <Button size="small" onClick={clearAll}>
+            Clear all
+          </Button>
         </Box>
       </Box>
       <Divider sx={{ mb: 1 }} />
@@ -67,14 +83,27 @@ function ProjectFeaturesTable() {
           <TableRow>
             <TableCell>Alias</TableCell>
             <TableCell>Description</TableCell>
-            <TableCell width={56} align="right">Remove</TableCell>
+            <TableCell width={56} align="right">
+              Remove
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {selected.map((row) => (
             <TableRow key={row.id} hover>
-              <TableCell sx={{ maxWidth: 250, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.alias}</TableCell>
-              <TableCell sx={{ textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <TableCell
+                sx={{
+                  maxWidth: 250,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {row.alias}
+              </TableCell>
+              <TableCell
+                sx={{ textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              >
                 {row.description}
               </TableCell>
               <TableCell align="right">

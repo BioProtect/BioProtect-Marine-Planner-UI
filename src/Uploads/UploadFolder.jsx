@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFolder } from "@fortawesome/free-solid-svg-icons";
+import DriveFolderUploadIcon from "@mui/icons-material/DriveFolderUpload";
 
 const UploadFolder = ({ label, filesListed }) => {
   const [folderUploadText, setFolderUploadText] = useState("");
@@ -37,8 +36,7 @@ const UploadFolder = ({ label, filesListed }) => {
         <div className="uploadFileFieldIcon">
           <div style={{ display: "inline-flex" }}>
             <label htmlFor="folderSelector">
-              <FontAwesomeIcon
-                icon={faFolder}
+              <DriveFolderUploadIcon
                 title="Click to select a Marxan project folder"
                 style={{ cursor: "pointer", display: "inline-flex" }}
               />

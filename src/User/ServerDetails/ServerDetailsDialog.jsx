@@ -1,16 +1,13 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-} from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MarxanDialog from "../../MarxanDialog";
 import React from "react";
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableRow from "@mui/material/TableRow";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { toggleDialog } from "@slices/uiSlice";
 
 const ServerDetailsDialog = ({ loading, newWDPAVersion }) => {
@@ -27,27 +24,22 @@ const ServerDetailsDialog = ({ loading, newWDPAVersion }) => {
       <React.Fragment>
         <div style={{ float: "left" }}>{cellInfo.value}</div>
         {cellInfo.key === "Disk space" && (
-          <FontAwesomeIcon
-            icon={faExclamationTriangle}
-            title={"Disk space running low"}
-          />
+          <WarningAmberIcon title={"Disk space running low"} />
         )}
         {newServerSoftware && (
-          <FontAwesomeIcon
-            icon={faExclamationTriangle}
+          <WarningAmberIcon
             title={`A new version of Marxan Server is available - ${uiState.registry.SERVER_VERSION}`}
           />
         )}
         {cellInfo.key === "WDPA version" && (
-          <FontAwesomeIcon
-            icon={faExclamationTriangle}
+          <WarningAmberIcon
             title={"A new version of the WDPA is available - click for details"}
             onClick={() =>
               dispatch(
                 toggleDialog({
                   dialogName: "updateWDPADialogOpen",
                   isOpen: true,
-                })
+                }),
               )
             }
           />
@@ -58,34 +50,34 @@ const ServerDetailsDialog = ({ loading, newWDPAVersion }) => {
 
   const data = server
     ? [
-      { key: "Name", value: server.name },
-      { key: "Description", value: server.description },
-      { key: "Host", value: server.host },
-      { key: "System", value: server.system },
-      { key: "Processors", value: server.processor_count },
-      { key: "Disk space", value: server.disk_space },
-      { key: "RAM", value: server.ram },
-      {
-        key: "Marxan Server version",
-        value: server.server_version,
-      },
-      { key: "WDPA version", value: server.wdpa_version },
-      {
-        key: "Planning grid units limit",
-        value: server.planning_grid_units_limit,
-      },
-      {
-        key: "Shutdown",
-        value: server.shutdowntime
-          ? new Date(server.shutdowntime).toLocaleString()
-          : "Never",
-      },
-    ]
+        { key: "Name", value: server.name },
+        { key: "Description", value: server.description },
+        { key: "Host", value: server.host },
+        { key: "System", value: server.system },
+        { key: "Processors", value: server.processor_count },
+        { key: "Disk space", value: server.disk_space },
+        { key: "RAM", value: server.ram },
+        {
+          key: "Marxan Server version",
+          value: server.server_version,
+        },
+        { key: "WDPA version", value: server.wdpa_version },
+        {
+          key: "Planning grid units limit",
+          value: server.planning_grid_units_limit,
+        },
+        {
+          key: "Shutdown",
+          value: server.shutdowntime
+            ? new Date(server.shutdowntime).toLocaleString()
+            : "Never",
+        },
+      ]
     : [];
 
   const closeDialog = () =>
     dispatch(
-      toggleDialog({ dialogName: "serverDetailsDialogOpen", isOpen: false })
+      toggleDialog({ dialogName: "serverDetailsDialogOpen", isOpen: false }),
     );
 
   return (
