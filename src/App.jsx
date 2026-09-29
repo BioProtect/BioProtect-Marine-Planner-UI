@@ -20,7 +20,6 @@ import {
   setUploadedActivities,
   toggleDialog,
 } from "@slices/uiSlice";
-import { apiSlice } from "@slices/apiSlice";
 import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
   initialiseServers,
@@ -48,7 +47,6 @@ import {
   selectCurrentUserId,
   selectIsUserLoggedIn,
 } from "@slices/authSlice";
-import { useCreateProfileFromRasterMutation } from "@slices/costRasterSlice";
 import {
   setDigitisedFeatures,
   setFeatureMetadata,
@@ -118,6 +116,7 @@ import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
 //@mui/material components and icons
 import { addFeatureAttributes } from "@features/featureUtils";
+import { apiSlice } from "@slices/apiSlice";
 import classyBrew from "classybrew";
 import { featureApiSlice } from "@slices/featureSlice";
 /*global fetch*/
@@ -135,6 +134,7 @@ import { setSelectedRuns } from "@slices/prioritizrSlice";
 import store from "@store/store";
 /*eslint-disable no-unused-vars*/
 import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useCreateProfileFromRasterMutation } from "@slices/costRasterSlice";
 import useFeatureNotifications from "@hooks/useFeatureNotifications";
 import { useSnackbar } from "notistack";
 import useWebSocketHandler from "./WebSocketHandler";
@@ -2098,13 +2098,17 @@ const App = () => {
       });
     }
 
-    [resultsLayerId, costsLayerId, puLayerId, statusLayerId, selectionLayerId].forEach(
-      (layerId) => {
-        if (map.current.getLayer(layerId)) {
-          map.current.removeLayer(layerId);
-        }
-      },
-    );
+    [
+      resultsLayerId,
+      costsLayerId,
+      puLayerId,
+      statusLayerId,
+      selectionLayerId,
+    ].forEach((layerId) => {
+      if (map.current.getLayer(layerId)) {
+        map.current.removeLayer(layerId);
+      }
+    });
 
     //add the planning units costs layer
     addMapLayer({
@@ -3137,7 +3141,6 @@ const App = () => {
       const tableName = feature.tilesetid
         ? feature.tilesetid.split(".")[1]
         : feature.feature_class_name;
-      console.log("feature ", feature);
       const sourceId = `martin_src_${tableName}`;
       const layerId = `martin_layer_${tableName}`;
       const tileJSON = `${tilesUrl}${tableName}`;
@@ -3145,7 +3148,12 @@ const App = () => {
       if (map.current.getLayer(layerId)) {
         removeMapLayer(layerId);
         map.current.removeSource(sourceId);
-        updateFeature(feature.id, { feature_layer_loaded: false });
+        dispatch(
+          setOneFeatureInCache({
+            id: feature.id,
+            patch: { feature_layer_loaded: false },
+          }),
+        );
       } else {
         // 1) make sure the vector‐tile source is added
         if (!map.current.getSource(sourceId)) {
@@ -3174,7 +3182,12 @@ const App = () => {
         };
 
         addMapLayer(mapLayer, beforeLayer);
-        updateFeature(feature.id, { feature_layer_loaded: true });
+        dispatch(
+          setOneFeatureInCache({
+            id: feature.id,
+            patch: { feature_layer_loaded: true },
+          }),
+        );
         // Helper function tozom to layer to see if its working
         // zoomToLayer(tileJSON)
       }
@@ -3182,7 +3195,7 @@ const App = () => {
     [
       map,
       tilesUrl,
-      updateFeature,
+      dispatch,
       removeMapLayer,
       addMapLayer,
       getLayers,
@@ -3281,7 +3294,12 @@ const App = () => {
 
     if (map.current.getLayer(layerName)) {
       removeMapLayer(layerName);
-      updateFeature(feature.id, { feature_puid_layer_loaded: false });
+      dispatch(
+        setOneFeatureInCache({
+          id: feature.id,
+          patch: { feature_puid_layer_loaded: false },
+        }),
+      );
       return;
     }
     //get the planning units where the feature occurs
@@ -3328,7 +3346,12 @@ const App = () => {
     }
     //show the layer
     showLayer(layerName);
-    updateFeature(feature.id, { feature_puid_layer_loaded: true });
+    dispatch(
+      setOneFeatureInCache({
+        id: feature.id,
+        patch: { feature_puid_layer_loaded: true },
+      }),
+    );
   };
 
   //zooms to a features extent
@@ -3472,8 +3495,16 @@ const App = () => {
         map.current.setLayerZoomRange(statusLayerId, 0, 24);
       }
       const selectionLayerId = puLayerIdsRef.current?.selectionLayerId;
-      if (map.current && selectionLayerId && map.current.getLayer(selectionLayerId)) {
-        map.current.setLayoutProperty(selectionLayerId, "visibility", "visible");
+      if (
+        map.current &&
+        selectionLayerId &&
+        map.current.getLayer(selectionLayerId)
+      ) {
+        map.current.setLayoutProperty(
+          selectionLayerId,
+          "visibility",
+          "visible",
+        );
         map.current.setLayerZoomRange(selectionLayerId, 0, 24);
       }
       // cache in Redux
