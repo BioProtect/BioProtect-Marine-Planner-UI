@@ -23,3 +23,8 @@ export function getTilesBaseUrl() {
     ? "http://localhost:3000/" // dev: talk to Martin directly
     : window.location.origin + "/tiles/"; // prod: Nginx proxy
 }
+
+// One Martin function source serves every planning grid (server/db/functions/grid_tiles.sql)
+export function getGridTilesUrl(gridName) {
+  return `${getTilesBaseUrl()}grid_tiles?layer=${encodeURIComponent(gridName)}`;
+}

@@ -10,6 +10,8 @@ import { useGetProjectQuery } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
+import ConfirmDeleteDialog from "../BPComponents/ConfirmDeleteDialog";
+import { selectCurrentUser } from "@slices/authSlice";
 import MarxanDialog from "../MarxanDialog";
 import PlanningGridsToolbar from "./PlanningGridsToolbar";
 
@@ -20,6 +22,12 @@ const PlanningGridsDialog = (props) => {
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const [searchText, setSearchText] = useState("");
   const [selectedPlanningGrid, setSelectedPlanningGrid] = useState(undefined);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const currentUser = useSelector(selectCurrentUser);
+  // only the user who created a grid may delete it - the server enforces this too
+  const canDelete =
+    !!currentUser?.username &&
+    selectedPlanningGrid?.created_by === currentUser.username;
   const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitGridsQuery();
   const activeProjectId = useSelector((state) => state.project.activeProjectId);
   const { data: projectResp } = useGetProjectQuery(activeProjectId, {
@@ -57,7 +65,9 @@ const PlanningGridsDialog = (props) => {
   }, []);
 
   const handleDelete = useCallback(() => {
-    props.deletePlanningGrid(selectedPlanningGrid.feature_class_name);
+    setConfirmDeleteOpen(false);
+    // the list rows carry the grid's name as tilesetid
+    props.deletePlanningGrid(selectedPlanningGrid.tilesetid);
     setSelectedPlanningGrid(undefined);
   }, [props, selectedPlanningGrid]);
 
@@ -82,11 +92,10 @@ const PlanningGridsDialog = (props) => {
   }, [props, closeDialog]);
 
   const exportPlanningGrid = useCallback(() => {
-    props
-      .exportPlanningGrid(selectedPlanningGrid.feature_class_name)
-      .then((url) => {
-        window.location = url;
-      });
+    // the list rows carry the grid's name as tilesetid
+    props.exportPlanningGrid(selectedPlanningGrid.tilesetid).then((url) => {
+      if (url) window.location = url;
+    });
     closeDialog();
   }, [props, selectedPlanningGrid, closeDialog]);
 
@@ -125,8 +134,9 @@ const PlanningGridsDialog = (props) => {
     setSearchText(value);
   }, []);
 
-  const clickRow = (event, rowInfo) => {
-    changePlanningGrid(event, rowInfo.planningGrid);
+  // the table passes the clicked row itself
+  const clickRow = (event, row) => {
+    changePlanningGrid(event, row);
   };
 
   const columns = [
@@ -183,7 +193,8 @@ const PlanningGridsDialog = (props) => {
           openImportDialog={() => openImportDialog()}
           loading={props.loading}
           exportPlanningGrid={() => exportPlanningGrid()}
-          handleDelete={() => handleDelete()}
+          handleDelete={() => setConfirmDeleteOpen(true)}
+          canDelete={canDelete}
           selectedPlanningGrid={selectedPlanningGrid}
         />
       }
@@ -205,6 +216,19 @@ const PlanningGridsDialog = (props) => {
           clickRow={clickRow}
         />
       </div>
+      <ConfirmDeleteDialog
+        open={confirmDeleteOpen && !!selectedPlanningGrid}
+        title="Delete planning grid?"
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDelete}
+      >
+        <p>Are you sure you want to delete the planning grid</p>
+        <b>{selectedPlanningGrid?.alias}?</b>
+        <p>
+          This removes the grid and its cells and cannot be undone. A grid
+          that is used by a project cannot be deleted.
+        </p>
+      </ConfirmDeleteDialog>
     </MarxanDialog>
   );
 };

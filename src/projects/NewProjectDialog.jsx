@@ -19,6 +19,7 @@ import FeaturesDialog from "@features/FeaturesDialog";
 import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import LinearProgress from "@mui/material/LinearProgress";
 import MarxanDialog from "../MarxanDialog.jsx";
 import PlanningUnitsDialog from "@planningGrids/PlanningUnitsDialog";
 import ProjectFeaturesTable from "@projects/ProjectFeaturesTable";
@@ -32,6 +33,7 @@ import Typography from "@mui/material/Typography";
 import { selectCurrentUserId } from "@slices/authSlice";
 import { setAddingRemovingFeatures } from "../slices/featureSlice.js";
 import { setCurrentPUGrid } from "../slices/planningUnitSlice.js";
+import { setLoading } from "@slices/uiSlice";
 import useAppSnackbar from "@hooks/useAppSnackbar";
 import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 import { useMemo } from "react";
@@ -78,6 +80,10 @@ const NewProjectDialog = ({
 
   // upload progress - continue automatically
   const [waitingForUpload, setWaitingForUpload] = useState(false);
+  // latest progress message while a grid is being created, otherwise null
+  const [gridStatus, setGridStatus] = useState(null);
+  // true from clicking Finish until the new project has been created and loaded
+  const [creating, setCreating] = useState(false);
   const [createProject, { isLoading, isError }] = useCreateProjectMutation();
   const { createPlanningGridViaWebSocket } = usePlanningGridWebSocket();
   const { showMessage } = useAppSnackbar();
@@ -145,6 +151,8 @@ const NewProjectDialog = ({
         spf_values: proj.features.map(() => 40),
       };
       const response = await createProject(payload).unwrap();
+      // Server errors come back as HTTP 200 with an error field
+      if (response.error) throw new Error(response.error);
       showMessage(response.info, "success");
       dispatch(
         toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
@@ -160,6 +168,7 @@ const NewProjectDialog = ({
 
   //creates a new planning grid unit
   const createPlanningUnitGrid = () => {
+    setGridStatus("Starting...");
     createPlanningGridViaWebSocket(
       {
         shapefile_path: fileUploadResponse.file_path,
@@ -168,10 +177,9 @@ const NewProjectDialog = ({
         resolution: resolution,
       },
       {
-        onUpdate: (msg) => {
-          showMessage(msg);
-        },
+        onUpdate: (msg) => setGridStatus(msg),
         onSuccess: async (result) => {
+          setGridStatus(null);
           if (result?.status === "error" || result?.error) {
             showMessage(
               result?.error || "Failed to create planning grid",
@@ -179,7 +187,6 @@ const NewProjectDialog = ({
             );
             return;
           }
-          showMessage(result?.info || "Planning grid created");
 
           const updated = await refetchPlanningUnitGrids();
           const grids = updated?.data?.planning_unit_grids || [];
@@ -190,15 +197,13 @@ const NewProjectDialog = ({
 
             if (newGrid?.tilesetid) {
               dispatch(setCurrentPUGrid(newGrid.tilesetid));
-              showMessage("Planning grid uploaded", "success");
               setWaitingForUpload(true);
               return;
             }
           }
         },
-        onError: (errMsg) => {
-          showMessage(`❌ ${errMsg}`, "error");
-        },
+        // the hook has already shown the error
+        onError: () => setGridStatus(null),
       },
     );
   };
@@ -233,14 +238,25 @@ const NewProjectDialog = ({
   };
 
   const handleCreateNewProject = async () => {
+    if (creating) return; // ignore repeat clicks on Finish
+    setCreating(true);
+    dispatch(setLoading(true));
     projectWasCreatedRef.current = true;
-    await createNewProject({
-      name,
-      description,
-      planning_grid_name: currentPUGrid,
-      features: selectedFeatureIds,
-    });
-    closeDialog();
+    try {
+      await createNewProject({
+        name,
+        description,
+        planning_grid_name: currentPUGrid,
+        features: selectedFeatureIds,
+      });
+      closeDialog();
+    } catch {
+      // createNewProject has already shown the error; stay on the dialog
+      projectWasCreatedRef.current = false;
+    } finally {
+      setCreating(false);
+      dispatch(setLoading(false));
+    }
   };
 
   const closeDialog = () => {
@@ -263,7 +279,7 @@ const NewProjectDialog = ({
     <div>
       <Button
         variant="outlined"
-        disabled={stepIndex === 0}
+        disabled={stepIndex === 0 || creating}
         onClick={handlePrev}
       >
         Back
@@ -276,10 +292,15 @@ const NewProjectDialog = ({
         disabled={
           (stepIndex === 0 &&
             (name === "" || description === "" || puGrid === "")) ||
-          (stepIndex === 1 && !currentPUGrid)
+          (stepIndex === 1 && !currentPUGrid) ||
+          creating
         }
       >
-        {stepIndex === steps.length - 1 ? "Finish" : "Next"}
+        {creating
+          ? "Creating project…"
+          : stepIndex === steps.length - 1
+            ? "Finish"
+            : "Next"}
       </Button>
     </div>
   );
@@ -389,10 +410,20 @@ const NewProjectDialog = ({
             <Button
               variant="outlined"
               onClick={handleCreateNewPlanningGrid}
-              disabled={!fileUploadResponse?.file || !planningGridName}
+              disabled={
+                !fileUploadResponse?.file || !planningGridName || !!gridStatus
+              }
             >
               Create planning grid
             </Button>
+            {gridStatus && (
+              <Box>
+                <LinearProgress />
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {gridStatus}
+                </Typography>
+              </Box>
+            )}
           </Box>
         )}
 

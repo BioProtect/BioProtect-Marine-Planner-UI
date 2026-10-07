@@ -60,6 +60,7 @@ const PlanningGridDialog = ({
         <MapContainer2
           planningGridMetadata={planningGridMetadata}
           getTilesetMetadata={getTilesetMetadata}
+          isGrid
         />
         <Box mt={3}>
           <Table>

@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from "react";
 
 import { Box } from "@mui/material";
-import { getTilesBaseUrl } from "@config/api";
+import { getGridTilesUrl, getTilesBaseUrl } from "@config/api";
 import mapboxgl from "mapbox-gl";
-import { zoomToBounds } from "./Helpers";
+import { envelopeToBounds } from "./Helpers";
 
 const getTableName = (tilesetid) => {
   // supports "schema.table" or "table"
@@ -17,6 +17,7 @@ const MapContainer2 = ({
   color = "rgba(255, 0, 0, 0.4)",
   outlineColor = "rgba(255, 0, 0, 0.5)",
   martinBase = getTilesBaseUrl(),
+  isGrid = false, // planning grids come from the shared grid_tiles function source
 }) => {
   const mapEl = useRef(null);
 
@@ -37,7 +38,9 @@ const MapContainer2 = ({
 
     const sourceId = `martin_src_${tableName}`;
     const layerId = `martin_layer_${tableName}`;
-    const tileJSON = new URL(tableName, martinBase).toString();
+    const tileJSON = isGrid
+      ? getGridTilesUrl(tableName)
+      : new URL(tableName, martinBase).toString();
 
     const onLoad = async () => {
       // 1) Source via TileJSON URL (no manual tiles array needed)
@@ -64,12 +67,14 @@ const MapContainer2 = ({
         });
       }
 
-      // 3) Optional: fetch TileJSON once to fit bounds
+      // 3) Optional: fit bounds - grids from their envelope, others from TileJSON
       try {
-        const tj = await (await fetch(tileJSON)).json();
-        if (Array.isArray(tj.bounds) && tj.bounds.length === 4) {
-          const sw = [tj.bounds[0], tj.bounds[1]]; // [minLng, minLat]
-          const ne = [tj.bounds[2], tj.bounds[3]]; // [maxLng, maxLat]
+        const bounds = isGrid
+          ? envelopeToBounds(planningGridMetadata.envelope)
+          : (await (await fetch(tileJSON)).json()).bounds;
+        if (Array.isArray(bounds) && bounds.length === 4) {
+          const sw = [bounds[0], bounds[1]]; // [minLng, minLat]
+          const ne = [bounds[2], bounds[3]]; // [maxLng, maxLat]
 
           // Ensure it runs once the style is ready and canvas is laid out
           map.once("idle", () => {

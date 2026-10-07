@@ -47,12 +47,7 @@ const PlanningGridsToolbar = (props) => {
         <Button
           startIcon={<DeleteIcon />}
           title="Delete planning grid"
-          disabled={
-            !props.selectedPlanningGrid ||
-            props.loading ||
-            (props.selectedPlanningGrid &&
-              props.selectedPlanningGrid.created_by === "global admin")
-          }
+          disabled={!props.canDelete || props.loading}
           onClick={props.handleDelete}
         >
           Delete

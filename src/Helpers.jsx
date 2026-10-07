@@ -7,6 +7,21 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 import React from "react";
+import wellknown from "wellknown";
+
+// [minLng, minLat, maxLng, maxLat] from a WKT MultiPolygon envelope, or null
+export const envelopeToBounds = (wkt) => {
+  const ring = wkt && wellknown.parse(wkt)?.coordinates?.[0]?.[0];
+  if (!ring) return null;
+  const lngs = ring.map((p) => p[0]);
+  const lats = ring.map((p) => p[1]);
+  return [
+    Math.min(...lngs),
+    Math.min(...lats),
+    Math.max(...lngs),
+    Math.max(...lats),
+  ];
+};
 // returns a boolean if it is a valid number
 export const isNumber = (str) => /^\d+$/.test(str);
 

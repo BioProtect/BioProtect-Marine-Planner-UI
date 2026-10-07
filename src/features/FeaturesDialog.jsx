@@ -63,9 +63,11 @@ const FeaturesDialog = ({ onOk, metadata, userRole, previewFeature }) => {
       if (!feature) return false;
       if (feature.created_by === "global admin") return false;
       if (isAdmin) return true;
-      return !!currentUser?.name && feature.created_by === currentUser.name;
+      return (
+        !!currentUser?.username && feature.created_by === currentUser.username
+      );
     },
-    [isAdmin, currentUser?.name],
+    [isAdmin, currentUser?.username],
   );
 
   const deleteRowReason = useCallback(
@@ -74,12 +76,12 @@ const FeaturesDialog = ({ onOk, metadata, userRole, previewFeature }) => {
       if (feature.created_by === "global admin") {
         return "System features cannot be deleted";
       }
-      if (!isAdmin && feature.created_by !== currentUser?.name) {
+      if (!isAdmin && feature.created_by !== currentUser?.username) {
         return "You can only delete features you created";
       }
       return null;
     },
-    [isAdmin, currentUser?.name],
+    [isAdmin, currentUser?.username],
   );
 
   const closeDeleteConfirm = () => {

@@ -37,6 +37,7 @@ import {
   switchProject,
   toggleProjDialog,
   useGetProjectQuery,
+  useDeleteProjectMutation,
   useRenameProjectMutation,
   useUpdateProjectFeaturesMutation,
 } from "@slices/projectSlice";
@@ -58,10 +59,10 @@ import {
   useListFeaturePUsQuery,
 } from "@slices/featureSlice";
 import {
+  planningUnitApiSlice,
   setIdentifyPlanningUnits,
   togglePUD,
   useDeletePlanningUnitGridMutation,
-  useExportPlanningUnitGridQuery,
   useListPlanningUnitGridsQuery,
 } from "@slices/planningUnitSlice";
 import {
@@ -122,7 +123,7 @@ import { featureApiSlice } from "@slices/featureSlice";
 /*global fetch*/
 /*global URLSearchParams*/
 /*global AbortController*/
-import { getTilesBaseUrl } from "@config/api";
+import { getApiBaseUrl, getGridTilesUrl, getTilesBaseUrl } from "@config/api";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from "jsonp-promise";
@@ -138,7 +139,7 @@ import { useCreateProfileFromRasterMutation } from "@slices/costRasterSlice";
 import useFeatureNotifications from "@hooks/useFeatureNotifications";
 import { useSnackbar } from "notistack";
 import useWebSocketHandler from "./WebSocketHandler";
-import { zoomToBounds } from "./Helpers";
+import { envelopeToBounds, zoomToBounds } from "./Helpers";
 
 import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -196,6 +197,10 @@ const App = () => {
   const costNames = projectResp?.costnames ?? [];
   const costProfiles = projectResp?.costProfiles ?? [];
   const [renameProjectMutation] = useRenameProjectMutation();
+  const [deleteProjectMutation] = useDeleteProjectMutation();
+  const [deletePlanningUnitGridMutation] = useDeletePlanningUnitGridMutation();
+  const [triggerExportPlanningGrid] =
+    planningUnitApiSlice.useLazyExportPlanningUnitGridQuery();
 
   // Refs for Map so state isnt stale.
   const featuresRef = useRef(projectFeatures);
@@ -1236,34 +1241,38 @@ const App = () => {
   };
 
   //REST call to delete a specific project
-  const deleteProject = async (user, proj, silent = false) => {
+  const deleteProject = async (projectId) => {
+    dispatch(setLoading(true));
     try {
-      // Make the request to delete the project
-      // const response = await _get(`deleteProject?user=${user}&project=${proj}`); - old
-      const response = await _get(
-        `projects?action=delete&user=${user}&project=${proj}`,
-      );
+      // The server only allows the project's owner to delete it
+      const response = await deleteProjectMutation(projectId).unwrap();
+      // Server errors come back as HTTP 200 with an error field
+      if (response.error) throw new Error(response.error);
 
       // Fetch the updated list of projects
       await getProjects();
 
-      // Show a snackbar message, but allow it to be silent if specified
-      showMessage(response.info, "info", silent);
+      showMessage(response.info, "info");
 
       // Check if the deleted project is the current one
-      if (response.project === project) {
+      if (projectId === activeProjectId) {
         showMessage(
           "Current project deleted - loading first available",
           "success",
         );
-        const nextProject = projState.projects.find((p) => p.name !== project);
+        const nextProject = projState.projects.find((p) => p.id !== projectId);
         if (nextProject) {
           await dispatch(switchProject(nextProject.id)).unwrap();
         }
       }
     } catch (error) {
       console.error("Error deleting project:", error);
-      showMessage("Error deleting project:", "error");
+      showMessage(
+        `Error deleting project: ${error?.data?.error || error?.message || ""}`,
+        "error",
+      );
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
@@ -2024,11 +2033,19 @@ const App = () => {
 
   const changePlanningGrid = async (puLayerName) => {
     try {
-      // Fetch tile metadata from Martin tile server
-      const response = await fetch(`${tilesUrl}${puLayerName}`);
-      if (!response.ok) throw new Error("Failed to fetch tileset metadata");
-      const data = await response.json();
-      console.log("data - check if there are bounds to zoom to -  ", data);
+      // Grids share one Martin function source, whose TileJSON has no per-grid
+      // bounds, so they come from the grid's stored envelope instead
+      const { planning_unit_grids = [] } = await dispatch(
+        planningUnitApiSlice.endpoints.listPlanningUnitGrids.initiate(undefined, {
+          subscribe: false,
+        }),
+      ).unwrap();
+      const grid = planning_unit_grids.find((g) => g.tilesetid === puLayerName);
+      if (!grid) throw new Error(`Planning grid '${puLayerName}' was not found`);
+      const data = {
+        name: puLayerName,
+        bounds: envelopeToBounds(grid.envelope),
+      };
       // Remove any existing PU-related layers and sources
       removePlanningGridLayers();
       // Add layers for the new planning unit grid
@@ -2093,7 +2110,7 @@ const App = () => {
     if (!map.current.getSource(sourceId)) {
       map.current.addSource(sourceId, {
         type: "vector",
-        url: `${tilesUrl}${puLayerName}`,
+        url: getGridTilesUrl(puLayerName),
         promoteId: "h3_index", // treat each hex id as its unique feature id - helps with rendering
       });
     }
@@ -2466,44 +2483,49 @@ const App = () => {
     }
   };
 
-  //deletes a planning unit grid
+  //deletes a planning unit grid - the server only allows this for the user who
+  //created it, and only when no project uses it. silent is used to roll back
+  //failed imports of planning grids
   const deletePlanningUnitGrid = async (feature_class_name, silent = false) => {
-    if (silent) {
-      //used to roll back failed imports of planning grids
-      await deletePlanningGrid(feature_class_name, true);
-    } else {
-      //get a list of the projects for the planning grid
-      const projects = await getProjectsForPlanningGrid(feature_class_name);
-      //if the planning grid is not being used then delete it
-      if (projects.length === 0) {
-        await deletePlanningGrid(feature_class_name, false);
-      } else {
-        //show the projects list dialog
-        showProjectListDialog(
-          projects,
-          "Failed to delete planning grid",
-          "The planning grid is used in the following projects",
+    // show the loading gif: deleting a large grid's cells takes a while
+    if (!silent) dispatch(setLoading(true));
+    try {
+      const response =
+        await deletePlanningUnitGridMutation(feature_class_name).unwrap();
+      // Server errors come back as HTTP 200 with an error field
+      if (response.error) throw new Error(response.error);
+      showMessage(response.info, "info", silent);
+    } catch (error) {
+      console.error("Error deleting planning grid:", error);
+      if (!silent) {
+        showMessage(
+          `Error deleting planning grid: ${error?.data?.error || error?.message || ""}`,
+          "error",
         );
       }
+    } finally {
+      if (!silent) dispatch(setLoading(false));
     }
   };
 
-  //deletes a planning grid
-  const deletePlanningGrid = async (feature_class_name, silent) => {
-    const response =
-      await useDeletePlanningUnitGridMutation(feature_class_name);
-    //update the planning unit grids
-
-    showMessage(response.info, "info", silent);
-  };
-
   //exports a planning grid to a zipped shapefile
+  //returns the download url, or null if the export failed
   const exportPlanningGrid = async (featureName) => {
+    dispatch(setLoading(true));
     try {
-      const response = await useExportPlanningUnitGridQuery(featureName);
-      return `${bioprotectServer.endpoint} exports / ${response.filename} `;
+      const response = await triggerExportPlanningGrid(featureName).unwrap();
+      // Server errors come back as HTTP 200 with an error field
+      if (response.error) throw new Error(response.error);
+      return `${getApiBaseUrl()}exports/${response.filename}`;
     } catch (error) {
-      throw new Error("Failed to export planning grid");
+      console.error("Error exporting planning grid:", error);
+      showMessage(
+        `Failed to export planning grid: ${error?.data?.error || error?.message || ""}`,
+        "error",
+      );
+      return null;
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
