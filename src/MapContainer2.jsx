@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from "react";
 
 import { Box } from "@mui/material";
-import { getGridTilesUrl, getTilesBaseUrl } from "@config/api";
+import { getGridTilesUrl, getLayerTilesUrl } from "@config/api";
 import mapboxgl from "mapbox-gl";
-import { envelopeToBounds } from "./Helpers";
+import { boxToBounds, envelopeToBounds } from "./Helpers";
 
 const getTableName = (tilesetid) => {
   // supports "schema.table" or "table"
@@ -16,8 +16,7 @@ const MapContainer2 = ({
   planningGridMetadata, // expects { tilesetid: "bioprotect.f_0539..." } or "f_0539..."
   color = "rgba(255, 0, 0, 0.4)",
   outlineColor = "rgba(255, 0, 0, 0.5)",
-  martinBase = getTilesBaseUrl(),
-  isGrid = false, // planning grids come from the shared grid_tiles function source
+  isGrid = false, // planning grid (grid_tiles source) rather than a feature (layer_tiles)
 }) => {
   const mapEl = useRef(null);
 
@@ -40,7 +39,7 @@ const MapContainer2 = ({
     const layerId = `martin_layer_${tableName}`;
     const tileJSON = isGrid
       ? getGridTilesUrl(tableName)
-      : new URL(tableName, martinBase).toString();
+      : getLayerTilesUrl(tableName);
 
     const onLoad = async () => {
       // 1) Source via TileJSON URL (no manual tiles array needed)
@@ -67,11 +66,12 @@ const MapContainer2 = ({
         });
       }
 
-      // 3) Optional: fit bounds - grids from their envelope, others from TileJSON
+      // 3) Optional: fit bounds from the stored envelope (grids) or extent
+      // (features) - a function source's TileJSON has no per-layer bounds
       try {
         const bounds = isGrid
           ? envelopeToBounds(planningGridMetadata.envelope)
-          : (await (await fetch(tileJSON)).json()).bounds;
+          : boxToBounds(planningGridMetadata.extent);
         if (Array.isArray(bounds) && bounds.length === 4) {
           const sw = [bounds[0], bounds[1]]; // [minLng, minLat]
           const ne = [bounds[2], bounds[3]]; // [maxLng, maxLat]
@@ -99,7 +99,7 @@ const MapContainer2 = ({
         map.remove();
       } catch {}
     };
-  }, [planningGridMetadata?.tilesetid, color, outlineColor, martinBase]);
+  }, [planningGridMetadata?.tilesetid, color, outlineColor]);
 
   return (
     <Box

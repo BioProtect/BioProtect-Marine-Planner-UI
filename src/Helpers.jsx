@@ -9,6 +9,13 @@
 import React from "react";
 import wellknown from "wellknown";
 
+// [minLng, minLat, maxLng, maxLat] from a PostGIS "BOX(minx miny,maxx maxy)"
+// string (the extent column of features and activities), or null
+export const boxToBounds = (box) => {
+  const nums = String(box ?? "").match(/-?\d+(\.\d+)?(e-?\d+)?/gi);
+  return nums?.length === 4 ? nums.map(Number) : null;
+};
+
 // [minLng, minLat, maxLng, maxLat] from a WKT MultiPolygon envelope, or null
 export const envelopeToBounds = (wkt) => {
   const ring = wkt && wellknown.parse(wkt)?.coordinates?.[0]?.[0];

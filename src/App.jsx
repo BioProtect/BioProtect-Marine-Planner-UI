@@ -123,7 +123,11 @@ import { featureApiSlice } from "@slices/featureSlice";
 /*global fetch*/
 /*global URLSearchParams*/
 /*global AbortController*/
-import { getApiBaseUrl, getGridTilesUrl, getTilesBaseUrl } from "@config/api";
+import {
+  getApiBaseUrl,
+  getGridTilesUrl,
+  getLayerTilesUrl,
+} from "@config/api";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from "jsonp-promise";
@@ -335,7 +339,6 @@ const App = () => {
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
   const [runlogTimer, setRunlogTimer] = useState(0);
   const [addToProject, setAddToProject] = useState(false);
-  const tilesUrl = getTilesBaseUrl();
   const mapContainer = useRef(null);
   const map = useRef(import.meta.hot ? window._mapInstance : null);
   const puLayerIdsRef = useRef({
@@ -3165,7 +3168,7 @@ const App = () => {
         : feature.feature_class_name;
       const sourceId = `martin_src_${tableName}`;
       const layerId = `martin_layer_${tableName}`;
-      const tileJSON = `${tilesUrl}${tableName}`;
+      const tileJSON = getLayerTilesUrl(tableName);
 
       if (map.current.getLayer(layerId)) {
         removeMapLayer(layerId);
@@ -3216,7 +3219,6 @@ const App = () => {
     },
     [
       map,
-      tilesUrl,
       dispatch,
       removeMapLayer,
       addMapLayer,
@@ -3261,7 +3263,7 @@ const App = () => {
       if (!map.current.getSource(sourceId)) {
         map.current.addSource(sourceId, {
           type: "vector",
-          url: `${tilesUrl}${tableName}`,
+          url: getLayerTilesUrl(tableName),
         });
       }
 
@@ -3286,7 +3288,7 @@ const App = () => {
 
       setLoadedActivityIds((prev) => ({ ...prev, [activity.id]: true }));
     },
-    [tilesUrl],
+    [],
   );
 
   // Fetch the activities that make up a cost profile
