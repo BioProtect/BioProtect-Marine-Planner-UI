@@ -10,7 +10,8 @@ export const usePlanningGridWebSocket = () => {
 
   const createPlanningGridViaWebSocket = useCallback(
     (
-      { shapefile_path, alias, description, resolution },
+      // { shapefile_path | geojson, alias, description, resolution }
+      params,
       { onUpdate, onSuccess, onError },
     ) => {
       // SOME AWFUL SHITE GOING ON HERE WITH SERVERS
@@ -20,13 +21,12 @@ export const usePlanningGridWebSocket = () => {
       // const socket = new WebSocket("ws://0.0.0.0:8080/server/createPlanningUnitGrid"); // Adjust if needed
       const socket = new WebSocket(getWsBaseUrl() + "createPlanningUnitGrid");
       socketRef.current = socket;
+      // set once the server has reported success or an error
+      let finished = false;
 
       socket.onopen = () => {
-        socket.send(
-          JSON.stringify({ shapefile_path, alias, description, resolution }),
-        );
-        showMessage("🟢 Upload started...", "info");
-        onUpdate?.("🟢 Upload started...");
+        socket.send(JSON.stringify(params));
+        onUpdate?.("🟢 Starting...");
       };
 
       socket.onmessage = (event) => {
@@ -35,6 +35,7 @@ export const usePlanningGridWebSocket = () => {
 
           // Hard error
           if (msg.error) {
+            finished = true;
             showMessage(msg.error, "error");
             onError?.(msg.error);
             socket.close();
@@ -43,6 +44,7 @@ export const usePlanningGridWebSocket = () => {
 
           // Grid already exists → ask user
           if (msg.type === "grid_exists") {
+            finished = true;
             showMessage(msg.info, "info");
             onSuccess?.(msg); // treat like success
             socket.close();
@@ -51,6 +53,7 @@ export const usePlanningGridWebSocket = () => {
 
           // Explicit success
           if (msg.success === true) {
+            finished = true;
             if (msg.info) showMessage(msg.info, "success");
             onUpdate?.(msg.info ?? "✅ Done");
             onSuccess?.(msg);
@@ -58,10 +61,9 @@ export const usePlanningGridWebSocket = () => {
             return;
           }
 
-          // Progress/info messages
+          // Progress messages go to the caller to display, not to toasts
           if (msg.info) {
             onUpdate?.(msg.info);
-            showMessage(msg.info);
             return;
           }
 
@@ -69,6 +71,7 @@ export const usePlanningGridWebSocket = () => {
           onUpdate?.(JSON.stringify(msg));
         } catch (e) {
           const errMsg = "⚠️ Malformed message from server";
+          finished = true;
           showMessage(errMsg, "error");
           onError?.(errMsg);
           socket.close();
@@ -78,13 +81,19 @@ export const usePlanningGridWebSocket = () => {
       socket.onerror = (error) => {
         console.error("WebSocket error:", error);
         const errMsg = "🚨 WebSocket connection failed";
+        finished = true;
         showMessage(errMsg, "error");
         onError?.(errMsg);
       };
 
       socket.onclose = () => {
-        showMessage("🧹 WebSocket closed");
-        console.log("🧹 WebSocket closed");
+        // Closed with no result: tell the caller so it isn't left waiting
+        if (!finished) {
+          const errMsg =
+            "Connection closed before the planning grid was created";
+          showMessage(errMsg, "error");
+          onError?.(errMsg);
+        }
       };
     },
     [],

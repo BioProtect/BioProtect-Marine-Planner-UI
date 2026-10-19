@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import BioprotectTable from "../BPComponents/BioprotectTable";
+import ConfirmDeleteDialog from "../BPComponents/ConfirmDeleteDialog";
 import MarxanDialog from "../MarxanDialog";
 import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
@@ -40,6 +41,7 @@ const ProjectsDialog = ({
   const activeProjectId = useSelector((state) => state.project.activeProjectId);
   const [selectedProjectId, setSelectedProjectId] = useState(activeProjectId);
   const project = projects.find((p) => p.id === selectedProjectId);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   useEffect(() => {
     setSelectedProjectId(activeProjectId);
@@ -58,7 +60,8 @@ const ProjectsDialog = ({
 
   const handleDeleteProject = useCallback(() => {
     if (!project) return;
-    deleteProject(project.user, project.name);
+    setConfirmDeleteOpen(false);
+    deleteProject(project.id);
   }, [project]);
 
   const handleCloneProject = useCallback(() => {
@@ -133,7 +136,8 @@ const ProjectsDialog = ({
             loading={loading}
             exportProject={handleExportProject}
             cloneProject={handleCloneProject}
-            handleDelete={() => handleDeleteProject()}
+            handleDelete={() => setConfirmDeleteOpen(true)}
+            canDelete={project?.role === "owner"}
           />
         }
       >
@@ -151,6 +155,19 @@ const ProjectsDialog = ({
             preview={false}
           />
         </div>
+        <ConfirmDeleteDialog
+          open={confirmDeleteOpen && !!project}
+          title="Delete project?"
+          onCancel={() => setConfirmDeleteOpen(false)}
+          onConfirm={handleDeleteProject}
+        >
+          <p>Are you sure you want to delete the project</p>
+          <b>{project?.name}?</b>
+          <p>
+            This removes its planning units, cost profiles, runs and results,
+            and cannot be undone. Features and planning grids are not deleted.
+          </p>
+        </ConfirmDeleteDialog>
       </MarxanDialog>
     );
   } else {

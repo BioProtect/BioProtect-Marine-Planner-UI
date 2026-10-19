@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import { getTilesBaseUrl } from "@config/api";
+import { getGridTilesUrl } from "@config/api";
 import wellknown from "wellknown";
 
 const SelectMapboxLayer = ({
@@ -87,7 +87,7 @@ const SelectMapboxLayer = ({
   const addLayerToMap = async (tilesetid) => {
     const sourceId = `martin_src_${tilesetid}`;
     const layerId = `martin_layer_pu_${tilesetid}`;
-    const tileUrl = `${getTilesBaseUrl()}${tilesetid}`; // Replace with your actual Martin endpoint
+    const tileUrl = getGridTilesUrl(tilesetid);
 
     // Remove existing layer if it exists
     // Remove previous layers

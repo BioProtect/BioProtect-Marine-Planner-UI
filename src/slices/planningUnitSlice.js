@@ -6,7 +6,7 @@ export const planningUnitApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     deletePlanningUnitGrid: builder.mutation({
       query: (featureName) => ({
-        url: `planning-units?action=delete&feature_name=${featureName}`,
+        url: `planning-units?action=delete&planning_grid_name=${featureName}`,
         method: "GET",
       }),
       invalidatesTags: ["PlanningUnitGrids"],

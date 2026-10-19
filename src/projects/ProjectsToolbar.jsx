@@ -82,7 +82,7 @@ const ProjectsToolbar = (props) => {
           <Button
             startIcon={<DeleteIcon style={{ height: "20px", width: "20px" }} />}
             title="Delete project"
-            disabled={!props.selectedProject || props.loading}
+            disabled={!props.canDelete || props.loading}
             onClick={props.handleDelete}
           >
             Delete
