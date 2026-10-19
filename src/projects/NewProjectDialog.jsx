@@ -15,6 +15,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
+import DrawPlanningGridMap from "@planningGrids/DrawPlanningGridMap";
 import FeaturesDialog from "@features/FeaturesDialog";
 import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
@@ -70,7 +71,8 @@ const NewProjectDialog = ({
   const [description, setDescription] = useState("");
 
   // planning grid choice
-  const [puGrid, setPuGrid] = useState(""); // 'upload' | 'select'
+  const [puGrid, setPuGrid] = useState(""); // 'upload' | 'select' | 'draw'
+  const [drawnArea, setDrawnArea] = useState(null); // FeatureCollection when puGrid === 'draw'
   const [puMap, setPuMap] = useState(null);
 
   // upload - create grid inputs
@@ -171,9 +173,13 @@ const NewProjectDialog = ({
     setGridStatus("Starting...");
     createPlanningGridViaWebSocket(
       {
-        shapefile_path: fileUploadResponse.file_path,
+        ...(puGrid === "draw"
+          ? { geojson: drawnArea, description: "Grid drawn on the map" }
+          : {
+              shapefile_path: fileUploadResponse.file_path,
+              description: "Grid created from uploaded shapefile",
+            }),
         alias: planningGridName,
-        description: `Grid created from uploaded shapefile`,
         resolution: resolution,
       },
       {
@@ -225,11 +231,7 @@ const NewProjectDialog = ({
 
   const handleCreateNewPlanningGrid = async () => {
     try {
-      const resp = await createPlanningUnitGrid(
-        fileUploadResponse.file,
-        planningGridName,
-        resolution,
-      );
+      const resp = await createPlanningUnitGrid();
       return resp;
     } catch (error) {
       console.error("Error creating planning grid:", error);
@@ -351,8 +353,8 @@ const NewProjectDialog = ({
                 Planning Grid Options
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Upload a shapefile to create a new planning grid or select one
-                that already exists.
+                Upload a shapefile or draw an area to create a new planning
+                grid, or select one that already exists.
               </Typography>
               <RadioGroup
                 name="pu-grid-options"
@@ -365,6 +367,11 @@ const NewProjectDialog = ({
                   label="Upload a shapefile"
                 />
                 <FormControlLabel
+                  value="draw"
+                  control={<Radio />}
+                  label="Draw on map (land is removed)"
+                />
+                <FormControlLabel
                   value="select"
                   control={<Radio />}
                   label="Select from existing planning grids"
@@ -374,17 +381,27 @@ const NewProjectDialog = ({
           </FormControl>
         )}
 
-        {/* STEP 1 — Upload OR Select existing */}
-        {stepIndex === 1 && puGrid === "upload" && (
+        {/* STEP 1 — Upload, Draw OR Select existing */}
+        {stepIndex === 1 && (puGrid === "upload" || puGrid === "draw") && (
           <Box display="flex" flexDirection="column" gap={2}>
-            <FileUpload
-              loading={uiLoading}
-              fileUpload={fileUpload}
-              fileMatch=".zip"
-              mandatory
-              destFolder="data/tmp"
-              label="Shapefile (.zip)"
-            />
+            {puGrid === "upload" ? (
+              <FileUpload
+                loading={uiLoading}
+                fileUpload={fileUpload}
+                fileMatch=".zip"
+                mandatory
+                destFolder="data/tmp"
+                label="Shapefile (.zip)"
+              />
+            ) : (
+              <>
+                <Typography variant="body2" color="text.secondary">
+                  Click to add points, double-click to finish. Hexagons whose
+                  centre is on land are removed.
+                </Typography>
+                <DrawPlanningGridMap onChange={setDrawnArea} />
+              </>
+            )}
             <TextField
               label="Planning grid name"
               fullWidth
@@ -411,7 +428,9 @@ const NewProjectDialog = ({
               variant="outlined"
               onClick={handleCreateNewPlanningGrid}
               disabled={
-                !fileUploadResponse?.file || !planningGridName || !!gridStatus
+                !(puGrid === "draw" ? drawnArea : fileUploadResponse?.file) ||
+                !planningGridName ||
+                !!gridStatus
               }
             >
               Create planning grid

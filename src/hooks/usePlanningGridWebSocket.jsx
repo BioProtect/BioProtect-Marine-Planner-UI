@@ -10,7 +10,8 @@ export const usePlanningGridWebSocket = () => {
 
   const createPlanningGridViaWebSocket = useCallback(
     (
-      { shapefile_path, alias, description, resolution },
+      // { shapefile_path | geojson, alias, description, resolution }
+      params,
       { onUpdate, onSuccess, onError },
     ) => {
       // SOME AWFUL SHITE GOING ON HERE WITH SERVERS
@@ -24,9 +25,7 @@ export const usePlanningGridWebSocket = () => {
       let finished = false;
 
       socket.onopen = () => {
-        socket.send(
-          JSON.stringify({ shapefile_path, alias, description, resolution }),
-        );
+        socket.send(JSON.stringify(params));
         onUpdate?.("🟢 Starting...");
       };
 
