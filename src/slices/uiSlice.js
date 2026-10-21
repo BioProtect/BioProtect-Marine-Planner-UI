@@ -108,7 +108,7 @@ const initialState = {
 
 
     alertDialogOpen: false,
-    atlasLayersDialogOpen: false,
+    referenceLayersDialogOpen: false,
     costsDialogOpen: false,
     importCostsDialogOpen: false,
     helpMenuOpen: false,

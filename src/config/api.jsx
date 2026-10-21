@@ -30,6 +30,12 @@ export function getLayerTilesUrl(tableName) {
   return `${getTilesBaseUrl()}layer_tiles?layer=${encodeURIComponent(tableName)}`;
 }
 
+// WDPA reference layer (server/db/functions/wdpa_tiles.sql). A tiles template
+// rather than a TileJSON url, so the source can carry the WDPA attribution.
+export function getWdpaTilesTemplate() {
+  return `${getTilesBaseUrl()}wdpa_tiles/{z}/{x}/{y}`;
+}
+
 // One Martin function source serves every planning grid (server/db/functions/grid_tiles.sql)
 export function getGridTilesUrl(gridName) {
   return `${getTilesBaseUrl()}grid_tiles?layer=${encodeURIComponent(gridName)}`;

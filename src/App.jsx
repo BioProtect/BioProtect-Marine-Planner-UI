@@ -77,7 +77,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import AboutDialog from "./AboutDialog";
 import AlertDialog from "./AlertDialog";
-import AtlasLayersDialog from "./AtlasLayersDialog";
+import ReferenceLayersDialog from "./ReferenceLayersDialog";
 import ChangPasswordDialog from "./User/ChangePasswordDialog";
 // CostsDialog removed - merged into CumulativeImpactDialog
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
@@ -303,7 +303,6 @@ const App = () => {
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [pid, setPid] = useState("");
   const [allImpacts, setAllImpacts] = useState([]);
-  const [atlasLayers, setAtlasLayers] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
   const [countries, setCountries] = useState([]);
   const [files, setFiles] = useState({});
@@ -1838,9 +1837,27 @@ const App = () => {
             .filter(Boolean);
         }
 
+        ///////////////////////////////////////////
+        // WDPA reference layer (view only)
+        ///////////////////////////////////////////
+        let protectedAreas = [];
+        if (
+          map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME) &&
+          map.current.getLayoutProperty(CONSTANTS.WDPA_LAYER_NAME, "visibility") ===
+            "visible"
+        ) {
+          const hits = map.current.queryRenderedFeatures(e.point, {
+            layers: [CONSTANTS.WDPA_LAYER_NAME],
+          });
+          // an area comes back once per subdivided piece and per tile
+          const byId = new Map(hits.map((f) => [f.properties.wdpaid, f.properties]));
+          protectedAreas = [...byId.values()];
+        }
+
         dispatch(
           setIdentifyPlanningUnits({
             identifiedFeatures,
+            protectedAreas,
           }),
         );
 
@@ -2575,18 +2592,6 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
-  const openAtlasLayersDialog = async () => {
-    dispatch(setLoading(true));
-    if (atlasLayers.length < 1) {
-      const data = await getAtlasLayers();
-      setAtlasLayers(data);
-    }
-    dispatch(
-      toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true }),
-    );
-    dispatch(setLoading(false));
-  };
-
   const openCumulativeImpactDialog = async () => {
     dispatch(setLoading(true));
     if (uiState.allImpacts.length < 1) {
@@ -2603,55 +2608,6 @@ const App = () => {
   const getImpacts = async () => {
     const response = await _get("getAllImpacts");
     setAllImpacts(response.data);
-  };
-
-  const addSource = async (sourceName, tileUrl) => {
-    map.current.addSource(sourceName, {
-      type: "raster",
-      tiles: [tileUrl],
-      tileSize: 256,
-    });
-  };
-
-  const addLayer = async (sourceName) => {
-    if (!map.current || map.current.getLayer(sourceName)) return;
-
-    map.current.addLayer({
-      id: sourceName,
-      type: "raster",
-      source: sourceName,
-      layout: {
-        visibility: "none",
-      },
-    });
-
-    updateLegend();
-  };
-
-  const getAtlasLayers = async () => {
-    try {
-      const response = await fetch(
-        bioprotectServer.endpoint + "getAtlasLayers",
-        {
-          credentials: "include",
-        },
-      );
-      const data = await response.json();
-      const parsedData = data.map(JSON.parse);
-
-      for (const layer of parsedData) {
-        const sourceName = layer.layer;
-        const tileUrl = `http://www.atlas-horizon2020.eu/gs/ows?layers=${sourceName}&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox - epsg - 3857}`;
-
-        // Add the source and layer to the map
-        await addSource(sourceName, tileUrl);
-        await addLayer(sourceName);
-      }
-
-      return parsedData;
-    } catch (error) {
-      console.error("Failed to fetch and add Atlas layers:", error);
-    }
   };
 
   const openCostsDialog = async () => {
@@ -3848,8 +3804,8 @@ const App = () => {
           showCancelButton={true}
           updateTargetValueForFeatures={updateTargetValueForFeatures}
         />
-        {dialogStates.atlasLayersDialogOpen ? (
-          <AtlasLayersDialog map={map} atlasLayers={atlasLayers} />
+        {dialogStates.referenceLayersDialogOpen ? (
+          <ReferenceLayersDialog map={map} />
         ) : null}
 
         {dialogStates.cumulativeImpactDialogOpen ? (
@@ -3886,7 +3842,6 @@ const App = () => {
           openProjectsDialog={openProjectsDialog}
           openPlanningGridsDialog={openPlanningGridsDialog}
           openCumulativeImpactDialog={openCumulativeImpactDialog}
-          openAtlasLayersDialog={openAtlasLayersDialog}
           setMenuAnchor={setMenuAnchor}
         />
       </React.Fragment>

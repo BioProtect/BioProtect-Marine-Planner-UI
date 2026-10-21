@@ -8,6 +8,7 @@ import CONSTANTS from "../bpVars.jsx";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import CloseIcon from "@mui/icons-material/Close";
 import Fade from "@mui/material/Fade";
+import Link from "@mui/material/Link";
 import { HexInfoFeatureRow } from "./HexInfoFeatureRow";
 import HexagonIcon from "@mui/icons-material/Hexagon";
 import HexagonOutlinedIcon from "@mui/icons-material/HexagonOutlined";
@@ -30,6 +31,8 @@ const HexInfoDialog = ({ xy, metadata }) => {
   const { hexInfoDialogOpen } = useSelector((s) => s.planningUnit.dialogs);
   const puInfo = identifyPlanningUnits?.puData;
   const puFeatures = identifyPlanningUnits?.features || [];
+  // WDPA areas under the click, when that reference layer is on
+  const protectedAreas = identifyPlanningUnits?.protectedAreas || [];
 
   const virtualAnchor = useMemo(
     () =>
@@ -285,6 +288,63 @@ const HexInfoDialog = ({ xy, metadata }) => {
                       </Box>
                     )}
                   </Box>
+
+                  {/* Protected Areas Section (WDPA reference layer) */}
+                  {protectedAreas.length > 0 && (
+                    <Box
+                      sx={{
+                        border: "1px solid #eee",
+                        borderRadius: 2,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          px: 1.5,
+                          py: 0.8,
+                          borderBottom: "1px solid #eee",
+                          bgcolor: "grey.50",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Protected areas
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          WDPA
+                        </Typography>
+                      </Box>
+                      {protectedAreas.map((pa) => (
+                        <Box
+                          key={pa.wdpaid}
+                          sx={{ px: 1.5, py: 0.8, borderBottom: "1px solid #f5f5f5" }}
+                        >
+                          <Link
+                            href={`https://www.protectedplanet.net/${pa.wdpaid}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="body2"
+                            fontWeight={500}
+                          >
+                            {pa.name || `WDPA ${pa.wdpaid}`}
+                          </Link>
+                          <Typography variant="body2" color="text.secondary">
+                            {[
+                              pa.desig_eng,
+                              pa.iucn_cat && `IUCN ${pa.iucn_cat}`,
+                              [pa.status, pa.status_yr || null]
+                                .filter(Boolean)
+                                .join(" "),
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
                 </Box>
 
                 <Box

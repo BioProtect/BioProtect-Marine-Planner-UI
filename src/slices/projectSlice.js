@@ -13,6 +13,13 @@ import { setSelectedFeatureIds } from "./featureSlice"
 export const projectApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // -----------------------------
+    // REFERENCE LAYERS (view-only map layers, e.g. WDPA)
+    // -----------------------------
+    getReferenceLayers: builder.query({
+      query: () => ({ url: "reference-layers", method: "GET" }),
+    }),
+
+    // -----------------------------
     // CREATE PROJECT (JSON)
     // -----------------------------
     createProject: builder.mutation({
@@ -189,6 +196,7 @@ export const projectApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useCreateProjectMutation,
+  useGetReferenceLayersQuery,
   useUpdateProjectMutation,
   useUpdateProjectFeaturesMutation,
   useGetProjectQuery,
