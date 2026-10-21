@@ -23,6 +23,7 @@ const HumanActivitiesDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
+  const activeProjectId = useSelector((state) => state.project.activeProjectId);
   const [stepIndex, setStepIndex] = useState(0);
   const [filename, setFilename] = useState("");
   const [description, setDescription] = useState("");
@@ -69,7 +70,9 @@ const HumanActivitiesDialog = (props) => {
       `uploadActivity?filename=${importFilename}` +
       `&activity=${activity}` +
       `&description=${encodeURIComponent(description)}` +
-      `&upload_type=${uploadType}`;
+      `&upload_type=${uploadType}` +
+      // files with no CRS metadata are read in the project CRS
+      `&project_id=${activeProjectId}`;
 
     const response = await props.handleWebSocket(url).catch((err) => {
       console.error("WebSocket failed:", err);

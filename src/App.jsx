@@ -3090,7 +3090,8 @@ const App = () => {
   ) => {
     startLogging();
 
-    const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}`;
+    // project_id: a shapefile without a .prj is read in the project CRS
+    const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}&project_id=${activeProjectId}`;
     const url =
       name !== ""
         ? `${baseUrl}&name=${name}&description=${description}`
