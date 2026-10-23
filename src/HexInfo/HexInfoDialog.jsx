@@ -1,26 +1,48 @@
-import { setIdentifyPlanningUnits, togglePUD } from "@slices/planningUnitSlice";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
+import ButtonBase from "@mui/material/ButtonBase";
 import CONSTANTS from "../bpVars.jsx";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import CloseIcon from "@mui/icons-material/Close";
 import Fade from "@mui/material/Fade";
-import Link from "@mui/material/Link";
-import { HexInfoFeatureRow } from "./HexInfoFeatureRow";
 import HexagonIcon from "@mui/icons-material/Hexagon";
 import HexagonOutlinedIcon from "@mui/icons-material/HexagonOutlined";
+import { HexInfoFeatureRow, dotSx } from "./HexInfoFeatureRow";
+import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Popper from "@mui/material/Popper";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import { togglePUD } from "@slices/planningUnitSlice";
+
+// Small uppercase label used on the dark rail
+const railLabelSx = {
+  display: "block",
+  fontSize: 10,
+  fontWeight: 600,
+  letterSpacing: "0.1em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,.7)",
+};
+
+const railValueSx = {
+  fontFamily: (theme) => theme.typography.headingFont,
+  fontSize: 17,
+  lineHeight: 1.3,
+};
+
+const countSx = {
+  ml: "auto",
+  minWidth: 20,
+  px: 0.75,
+  borderRadius: 9,
+  fontSize: 11,
+  fontWeight: 700,
+  lineHeight: "18px",
+  textAlign: "center",
+};
 
 const HexInfoDialog = ({ xy, metadata }) => {
   const dispatch = useDispatch();
@@ -33,6 +55,10 @@ const HexInfoDialog = ({ xy, metadata }) => {
   const puFeatures = identifyPlanningUnits?.features || [];
   // WDPA areas under the click, when that reference layer is on
   const protectedAreas = identifyPlanningUnits?.protectedAreas || [];
+
+  const [section, setSection] = useState("features");
+  // Protected areas menu item only exists when the WDPA layer returned some
+  const view = protectedAreas.length > 0 ? section : "features";
 
   const virtualAnchor = useMemo(
     () =>
@@ -69,6 +95,19 @@ const HexInfoDialog = ({ xy, metadata }) => {
 
   if (!hexInfoDialogOpen || !virtualAnchor) return null;
 
+  const menuItems = [
+    { key: "features", label: "Features", count: puFeatures.length },
+    ...(protectedAreas.length > 0
+      ? [
+          {
+            key: "protected",
+            label: "Protected areas",
+            count: protectedAreas.length,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <Popper
       open={hexInfoDialogOpen}
@@ -87,112 +126,80 @@ const HexInfoDialog = ({ xy, metadata }) => {
           <Paper
             elevation={6}
             sx={{
-              width: 420,
-              maxHeight: 500,
-              display: "flex",
-              flexDirection: "column",
+              width: 520,
+              height: 380,
               overflow: "hidden",
+              borderRadius: 2.5,
             }}
           >
             <ClickAwayListener onClickAway={closeDialog}>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "100%",
-                }}
-              >
+              <Box sx={{ display: "flex", height: "100%" }}>
+                {/* Rail: planning unit stats + section menu */}
                 <Box
                   sx={{
-                    p: 1.5,
+                    width: 172,
+                    flex: "none",
                     display: "flex",
                     flexDirection: "column",
-                    gap: 1.5,
-                    overflowY: "auto",
-                    flex: 1,
-                    minHeight: 0,
+                    color: "#fff",
+                    background: (theme) => theme.palette.brand.barGradient,
                   }}
                 >
-                  {/* Planning Unit Section */}
                   {puInfo ? (
                     <Box
                       sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 0.8,
-                        border: "1px solid #eee",
-                        borderRadius: 2,
-                        p: 1.5,
+                        p: 1.75,
+                        pb: 1.5,
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "10px 8px",
+                        borderBottom: "1px solid rgba(255,255,255,.1)",
                       }}
                     >
-                      <Typography variant="subtitle2" fontWeight={600}>
-                        Planning Unit
-                      </Typography>
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Typography variant="body2" color="text.secondary">
-                          Hex ID
-                        </Typography>
-                        <Typography variant="body2" fontWeight={500}>
+                      <Box sx={{ gridColumn: "1 / -1" }}>
+                        <Box component="span" sx={railLabelSx}>
+                          Planning unit
+                        </Box>
+                        <Typography
+                          sx={{
+                            fontFamily: "ui-monospace, monospace",
+                            fontSize: 11,
+                            color: "rgba(255,255,255,.9)",
+                            wordBreak: "break-all",
+                          }}
+                        >
                           {puInfo.h3_index || puInfo.id}
                         </Typography>
                       </Box>
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Typography variant="body2" color="text.secondary">
+                      <Box>
+                        <Box component="span" sx={railLabelSx}>
                           Area
-                        </Typography>
-                        <Typography variant="body2" fontWeight={500}>
+                        </Box>
+                        <Typography sx={railValueSx}>
                           {puInfo.area_km2 != null
                             ? `${puInfo.area_km2.toFixed(2)} km²`
                             : "-"}
                         </Typography>
                       </Box>
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Typography variant="body2" color="text.secondary">
+                      <Box>
+                        <Box component="span" sx={railLabelSx}>
                           Cost
-                        </Typography>
-                        <Typography variant="body2" fontWeight={500}>
-                          {puInfo.cost?.toFixed(3)}
+                        </Box>
+                        <Typography sx={railValueSx}>
+                          {puInfo.cost?.toFixed(3) ?? "-"}
                         </Typography>
                       </Box>
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Typography variant="body2" color="text.secondary">
+                      <Box sx={{ gridColumn: "1 / -1" }}>
+                        <Box component="span" sx={railLabelSx}>
                           Status
-                        </Typography>
+                        </Box>
                         <Box
                           sx={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 0.5,
+                            gap: 0.6,
                           }}
                         >
-                          <Typography variant="body2" fontWeight={500}>
-                            {puStatus.label}
-                          </Typography>
                           <span
                             className="hexLegendItem"
                             style={{
@@ -219,118 +226,164 @@ const HexInfoDialog = ({ xy, metadata }) => {
                               }}
                             />
                           </span>
+                          <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
+                            {puStatus.label}
+                          </Typography>
                         </Box>
                       </Box>
                     </Box>
                   ) : (
-                    <Typography color="text.secondary" textAlign="center">
+                    <Typography
+                      sx={{ p: 1.75, fontSize: 12.5, color: "rgba(255,255,255,.8)" }}
+                    >
                       No planning unit data available.
                     </Typography>
                   )}
 
-                  {/* Features Section */}
                   <Box
                     sx={{
-                      border: "1px solid #eee",
-                      borderRadius: 2,
-                      overflow: "hidden",
+                      py: 1.25,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 0.25,
                     }}
                   >
                     <Box
+                      component="span"
+                      sx={{ ...railLabelSx, px: 1.75, pb: 0.5 }}
+                    >
+                      Show
+                    </Box>
+                    {menuItems.map((item) => {
+                      const active = view === item.key;
+                      return (
+                        <ButtonBase
+                          key={item.key}
+                          onClick={() => setSection(item.key)}
+                          sx={{
+                            justifyContent: "flex-start",
+                            gap: 1,
+                            py: 1.1,
+                            pl: 1.4,
+                            pr: 1.75,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            fontFamily: "inherit",
+                            color: active ? "#fff" : "rgba(255,255,255,.8)",
+                            bgcolor: active
+                              ? "rgba(255,255,255,.1)"
+                              : "transparent",
+                            borderLeft: "3px solid",
+                            borderLeftColor: active
+                              ? "brand.green"
+                              : "transparent",
+                            "&:hover": {
+                              bgcolor: "rgba(255,255,255,.06)",
+                              color: "#fff",
+                            },
+                          }}
+                        >
+                          {item.label}
+                          <Box
+                            component="span"
+                            sx={{
+                              ...countSx,
+                              bgcolor: active
+                                ? "brand.green"
+                                : "rgba(255,255,255,.14)",
+                              color: active ? "brand.deep" : "#fff",
+                            }}
+                          >
+                            {item.count}
+                          </Box>
+                        </ButtonBase>
+                      );
+                    })}
+                  </Box>
+                </Box>
+
+                {/* Main: title + scrolling list */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      pl: 1.75,
+                      pr: 1,
+                      py: 0.9,
+                      borderBottom: "1px solid",
+                      borderColor: "brand.border",
+                    }}
+                  >
+                    <Typography
                       sx={{
-                        px: 1.5,
-                        py: 0.8,
-                        borderBottom: "1px solid #eee",
-                        bgcolor: "grey.50",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
+                        flex: 1,
+                        fontFamily: (theme) => theme.typography.headingFont,
+                        fontSize: 18,
                       }}
                     >
-                      <Typography variant="subtitle2" fontWeight={600}>
-                        Features
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {puFeatures.length} feature
-                        {puFeatures.length !== 1 ? "s" : ""}
-                      </Typography>
-                    </Box>
-
-                    {puFeatures.length > 0 ? (
-                      <Box sx={{ maxHeight: 240, overflowY: "auto" }}>
-                        <TableContainer>
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Source</TableCell>
-                                <TableCell align="center">
-                                  Preprocessed
-                                </TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {puFeatures.map((row, i) => (
-                                <HexInfoFeatureRow
-                                  key={row.feature_id ?? row.alias ?? i}
-                                  row={row}
-                                />
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </Box>
-                    ) : (
-                      <Box sx={{ p: 1.5, textAlign: "center" }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No features in this planning unit.
-                        </Typography>
-                      </Box>
-                    )}
+                      {view === "features" ? "Features" : "Protected areas"}
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={closeDialog}
+                      aria-label="Close"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
                   </Box>
 
-                  {/* Protected Areas Section (WDPA reference layer) */}
-                  {protectedAreas.length > 0 && (
-                    <Box
-                      sx={{
-                        border: "1px solid #eee",
-                        borderRadius: 2,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          px: 1.5,
-                          py: 0.8,
-                          borderBottom: "1px solid #eee",
-                          bgcolor: "grey.50",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          Protected areas
+                  <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+                    {view === "features" ? (
+                      puFeatures.length > 0 ? (
+                        puFeatures.map((row, i) => (
+                          <HexInfoFeatureRow
+                            key={row.feature_id ?? row.alias ?? i}
+                            row={row}
+                          />
+                        ))
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ p: 2, textAlign: "center" }}
+                        >
+                          No features in this planning unit.
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          WDPA
-                        </Typography>
-                      </Box>
-                      {protectedAreas.map((pa) => (
+                      )
+                    ) : (
+                      protectedAreas.map((pa) => (
                         <Box
                           key={pa.wdpaid}
-                          sx={{ px: 1.5, py: 0.8, borderBottom: "1px solid #f5f5f5" }}
+                          sx={{
+                            px: 1.75,
+                            py: 1,
+                            borderBottom: "1px solid #f0f3f5",
+                          }}
                         >
                           <Link
                             href={`https://www.protectedplanet.net/${pa.wdpaid}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            variant="body2"
-                            fontWeight={500}
+                            underline="hover"
+                            sx={{ fontSize: 13, fontWeight: 600 }}
                           >
-                            {pa.name || `WDPA ${pa.wdpaid}`}
+                            {pa.name || `WDPA ${pa.wdpaid}`} ↗
                           </Link>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography
+                            sx={{
+                              fontSize: 11.5,
+                              lineHeight: 1.35,
+                              color: "text.secondary",
+                            }}
+                          >
                             {[
                               pa.desig_eng,
                               pa.iucn_cat && `IUCN ${pa.iucn_cat}`,
@@ -342,30 +395,37 @@ const HexInfoDialog = ({ xy, metadata }) => {
                               .join(" · ")}
                           </Typography>
                         </Box>
-                      ))}
+                      ))
+                    )}
+                  </Box>
+
+                  {view === "features" && puFeatures.length > 0 && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 1.5,
+                        px: 1.75,
+                        py: 0.75,
+                        fontSize: 11,
+                        color: "text.secondary",
+                        bgcolor: "brand.surfaceTint",
+                        borderTop: "1px solid #f0f3f5",
+                      }}
+                    >
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 0.6 }}
+                      >
+                        <Box sx={dotSx(true)} />
+                        Preprocessed
+                      </Box>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 0.6 }}
+                      >
+                        <Box sx={dotSx(false)} />
+                        Not preprocessed
+                      </Box>
                     </Box>
                   )}
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    px: 1.5,
-                    py: 0.8,
-                    pb: 1.5,
-                    borderTop: "1px solid #eee",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<CloseIcon />}
-                    onClick={closeDialog}
-                  >
-                    Close
-                  </Button>
                 </Box>
               </Box>
             </ClickAwayListener>
