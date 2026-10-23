@@ -5,6 +5,7 @@ import { CONSTANTS, INITIAL_VARS } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   addFeaturesToCache,
+  removeFeaturesFromCache,
   setAllFeaturesInCache,
   setOneFeatureInCache,
 } from "./store/featureCacheActions";
@@ -22,9 +23,8 @@ import {
 } from "@slices/uiSlice";
 import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
-  initialiseServers,
+  initialiseServer,
   projectApiSlice,
-  selectServer,
   setActiveProjectId,
   setCostData,
   setPlanningCostsTrigger,
@@ -167,7 +167,6 @@ const App = () => {
   const [updateUser] = useUpdateUserMutation();
   // Instead of importing the whole state - import whats needed
   const projState = useSelector((state) => state.project);
-  const bioprotectServers = useSelector((state) => state.project.bpServers);
   const bioprotectServer = useSelector((state) => state.project.bpServer);
   const projDialogStates = useSelector((state) => state.project.dialogs);
 
@@ -372,34 +371,18 @@ const App = () => {
   }, [dispatch, featurePUData]);
 
   useEffect(() => {
-    dispatch(initialiseServers(INITIAL_VARS.BP_SERVERS))
+    dispatch(initialiseServer())
       .unwrap()
       .then((message) => console.log(message))
       .catch((error) => console.error("Error:", error));
-  }, [dispatch, INITIAL_VARS.BP_SERVERS]);
-
-  const selectServerByName = useCallback(
-    (servername) => {
-      // Remove the search part of the URL
-      window.history.replaceState({}, document.title, "/");
-      const server = bioprotectServers.find((item) => item.name === servername);
-      if (server) {
-        dispatch(selectServer(server));
-      }
-    },
-    [dispatch, bioprotectServers],
-  );
+  }, [dispatch]);
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
     const fetchGlobalVariables = async () => {
       dispatch(setLoading(true));
       try {
         setBrew(new classyBrew());
         dispatch(setRegistry(INITIAL_VARS));
-        if (searchParams.has("server")) {
-          selectServerByName(searchParams.get("server"));
-        }
       } catch (error) {
         console.error("Error fetching global variables:", error);
       } finally {
@@ -3212,10 +3195,7 @@ const App = () => {
         return;
       }
 
-      const color =
-        Array.isArray(window.colors) && window.colors.length
-          ? window.colors[activity.id % window.colors.length]
-          : "#F5C043";
+      const color = "#F5C043";
 
       if (!map.current.getSource(sourceId)) {
         map.current.addSource(sourceId, {
@@ -3265,11 +3245,7 @@ const App = () => {
     if (!sourceId || !sourceLayerName) return;
 
     // Ensure feature has a color assigned
-    const color =
-      feature.color ||
-      (Array.isArray(window.colors) && window.colors.length
-        ? window.colors[feature.id % window.colors.length]
-        : "#ff0000");
+    const color = feature.color || "#ff0000";
 
     let layerName = `martin_layer_feature_puid_${feature.id}`;
 

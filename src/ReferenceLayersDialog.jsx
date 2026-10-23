@@ -1,8 +1,8 @@
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "./BPDialog";
 import CONSTANTS from "./bpVars.jsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import MarxanDialog from "./MarxanDialog";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { getWdpaTilesTemplate } from "@config/api";
@@ -90,7 +90,11 @@ const ReferenceLayersDialog = ({ map }) => {
       addWdpaLayers(map, wdpa?.release);
     }
     [FILL, LINE].forEach((id) =>
-      map.current.setLayoutProperty(id, "visibility", next ? "visible" : "none"),
+      map.current.setLayoutProperty(
+        id,
+        "visibility",
+        next ? "visible" : "none",
+      ),
     );
     setWdpaOn(next);
   };
@@ -109,7 +113,7 @@ const ReferenceLayersDialog = ({ map }) => {
         : `UNEP-WCMC and IUCN, Protected Planet. ${releaseLabel(wdpa.release)} release. View only: it doesn't affect the analysis.`;
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={open}
       onOk={closeDialog}
       onCancel={closeDialog}
@@ -128,7 +132,7 @@ const ReferenceLayersDialog = ({ map }) => {
       <Typography variant="body2" color="text.secondary" sx={{ ml: 6 }}>
         {wdpaStatus}
       </Typography>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

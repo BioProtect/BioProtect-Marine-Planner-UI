@@ -16,9 +16,9 @@ import {
 } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "../BPDialog";
 import LinkIcon from "@mui/icons-material/Link";
 import MapContainer2 from "../MapContainer2";
-import MarxanDialog from "../MarxanDialog";
 import { togglePUD } from "@slices/planningUnitSlice";
 
 const PlanningGridDialog = ({
@@ -48,7 +48,7 @@ const PlanningGridDialog = ({
 
   return (
     <div>
-      <MarxanDialog
+      <BPDialog
         open={puState.dialogs.planningGridDialogOpen}
         onOk={() => closeDialog()}
         onClose={() => closeDialog()}
@@ -149,7 +149,7 @@ const PlanningGridDialog = ({
             You may need to zoom in to see the planning grid units.
           </Typography>
         </Box>
-      </MarxanDialog>
+      </BPDialog>
     </div>
   );
 };

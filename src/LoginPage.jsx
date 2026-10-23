@@ -1,5 +1,5 @@
 import { setLoading, toggleDialog } from "./slices/uiSlice";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useLayoutEffect, useRef, useState } from "react";
 
 import AccountCircle from "@mui/icons-material/AccountCircle";
@@ -12,15 +12,11 @@ import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
-import LinkOffIcon from "@mui/icons-material/LinkOff";
-import LockIcon from "@mui/icons-material/Lock";
-import MenuItem from "@mui/material/MenuItem";
 import OutlinedInput from "@mui/material/OutlinedInput";
-import Select from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { selectServer, toggleProjDialog } from "@slices/projectSlice";
+import { toggleProjDialog } from "@slices/projectSlice";
 import { setCredentials } from "@slices/authSlice";
 import styled from "@emotion/styled";
 import useAppSnackbar from "@hooks/useAppSnackbar";
@@ -137,7 +133,6 @@ const onDark = {
 };
 
 const LoginPage = ({ loadProjectAndSetup }) => {
-  const projectState = useSelector((state) => state.project);
   const dispatch = useDispatch();
   const { showMessage } = useAppSnackbar();
   const [login, { isLoading }] = useLoginMutation();
@@ -145,19 +140,11 @@ const LoginPage = ({ loadProjectAndSetup }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [selectOpen, setSelectOpen] = useState(false);
   const userRef = useRef(null);
 
   useLayoutEffect(() => {
     if (userRef.current) userRef.current.focus();
   }, []);
-
-  const handleSelectServer = (event) => {
-    const selectedServer = projectState.bpServers.find(
-      (server) => server.name === event.target.value,
-    );
-    dispatch(selectServer(selectedServer));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -447,44 +434,6 @@ const LoginPage = ({ loadProjectAndSetup }) => {
             Sign in to your BioProtect Marine Planner account
           </Typography>
 
-          <FormControl fullWidth variant="outlined" margin="normal">
-            <InputLabel id="select-bpServer-label">
-              BioProtect Server
-            </InputLabel>
-            <Select
-              labelId="select-bpServer-label"
-              id="select-bpServer"
-              open={selectOpen}
-              onClose={() => setSelectOpen(false)}
-              onOpen={() => setSelectOpen(true)}
-              value={projectState.bpServer?.name ?? ""}
-              onChange={handleSelectServer}
-              label="BioProtect Server"
-            >
-              {projectState.bpServers.map((item) => {
-                const text =
-                  item.offline || item.corsEnabled || item.guestUserEnabled
-                    ? item.name
-                    : item.name + " (Guest user disabled)";
-                return (
-                  <MenuItem
-                    value={item.name}
-                    key={item.name}
-                    sx={{ fontSize: 13 }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      {item.offline ? (
-                        <LinkOffIcon sx={{ fontSize: 16, mr: 1 }} />
-                      ) : item.corsEnabled ? null : (
-                        <LockIcon sx={{ fontSize: 16, mr: 1 }} />
-                      )}
-                      {text}
-                    </Box>
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
 
           <FormControl fullWidth variant="outlined" margin="normal">
             <InputLabel htmlFor="username">Username</InputLabel>

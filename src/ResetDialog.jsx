@@ -1,7 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 
-import MarxanDialog from "./MarxanDialog";
+import BPDialog from "./BPDialog";
 import React from "react";
 import { toggleDialog } from "@slices/uiSlice";
 
@@ -10,7 +10,7 @@ const ResetDialog = ({ onOk, loading }) => {
   const uiState = useSelector((state) => state.ui);
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={uiState.dialogStates.resetDialogOpen}
       loading={uiState.loading}
       onOk={onOk}
@@ -29,7 +29,7 @@ const ResetDialog = ({ onOk, loading }) => {
       <Box>
         <Typography variant="body1">Are you sure you want to reset?</Typography>
       </Box>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

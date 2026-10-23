@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "../BPDialog";
 import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
-import MarxanDialog from "../MarxanDialog";
 import TextField from "@mui/material/TextField";
 import { togglePUD } from "@slices/planningUnitSlice";
 
 const ImportPlanningGridDialog = (props) => {
   const dispatch = useDispatch();
-  const puState = useSelector((state) => state.planningUnit)
+  const puState = useSelector((state) => state.planningUnit);
 
   const [planningGridName, setPlanningGridName] = useState("");
   const [zipFilename, setZipFilename] = useState("");
@@ -41,11 +41,11 @@ const ImportPlanningGridDialog = (props) => {
       togglePUD({
         dialogName: "importPlanningGridDialogOpen",
         isOpen: false,
-      })
+      }),
     );
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={puState.dialogs.importPlanningGridDialogOpen}
       fullWidth={true}
       maxWidth="md"
@@ -91,7 +91,7 @@ const ImportPlanningGridDialog = (props) => {
           />
         </FormControl>
       </React.Fragment>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

@@ -4,10 +4,16 @@ import {
   toggleDialog,
 } from "@slices/uiSlice";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useDeleteCostRasterMutation,
+  useListCostRastersQuery,
+  useSetCostRasterVisibilityMutation,
+} from "@slices/costRasterSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import Alert from "@mui/material/Alert";
+import BPDialog from "../BPDialog";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
@@ -20,7 +26,6 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import InputLabel from "@mui/material/InputLabel";
-import MarxanDialog from "../MarxanDialog";
 import MenuItem from "@mui/material/MenuItem";
 import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import Select from "@mui/material/Select";
@@ -34,15 +39,10 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
-import {
-  useDeleteCostRasterMutation,
-  useListCostRastersQuery,
-  useSetCostRasterVisibilityMutation,
-} from "@slices/costRasterSlice";
+import Typography from "@mui/material/Typography";
 import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 
 const CumulativeImpactDialog = ({
@@ -353,7 +353,7 @@ const CumulativeImpactDialog = ({
   };
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={dialogStates.cumulativeImpactDialogOpen}
       onOk={closeDialog}
       onCancel={closeDialog}
@@ -714,8 +714,7 @@ const CumulativeImpactDialog = ({
                               disabled={!r.is_owner}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (r.is_owner)
-                                  handleToggleRasterVisibility(r);
+                                if (r.is_owner) handleToggleRasterVisibility(r);
                               }}
                             />
                           </span>
@@ -891,9 +890,7 @@ const CumulativeImpactDialog = ({
                   control={
                     <Checkbox
                       checked={rasterExactSampling}
-                      onChange={(e) =>
-                        setRasterExactSampling(e.target.checked)
-                      }
+                      onChange={(e) => setRasterExactSampling(e.target.checked)}
                     />
                   }
                   label="Force exact zonal stats (slow)"
@@ -944,7 +941,7 @@ const CumulativeImpactDialog = ({
           </ButtonGroup>
         </>
       )}
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

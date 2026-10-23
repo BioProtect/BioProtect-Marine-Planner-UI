@@ -11,6 +11,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useRef, useState } from "react";
 
+import BPDialog from "../BPDialog.jsx";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -21,7 +22,6 @@ import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import LinearProgress from "@mui/material/LinearProgress";
-import MarxanDialog from "../MarxanDialog.jsx";
 import PlanningUnitsDialog from "@planningGrids/PlanningUnitsDialog";
 import ProjectFeaturesTable from "@projects/ProjectFeaturesTable";
 import { RESOLUTIONS } from "../bpVars.jsx";
@@ -327,7 +327,7 @@ const NewProjectDialog = ({
 
   return (
     <>
-      <MarxanDialog
+      <BPDialog
         open={projState.dialogs.newProjectDialogOpen}
         loading={isLoading}
         title={`New project: ${steps[stepIndex]}`}
@@ -371,9 +371,7 @@ const NewProjectDialog = ({
                 getOptionLabel={(o) =>
                   typeof o === "string" ? o : `EPSG:${o.code} - ${o.label}`
                 }
-                value={
-                  CRS_OPTIONS.find((o) => o.code === crsEpsg) ?? crsEpsg
-                }
+                value={CRS_OPTIONS.find((o) => o.code === crsEpsg) ?? crsEpsg}
                 onChange={(e, v) =>
                   setCrsEpsg(
                     typeof v === "string"
@@ -546,7 +544,7 @@ const NewProjectDialog = ({
         {stepIndex === 3 && (
           <SelectCostFeatures selectedCosts={selectedCosts} />
         )}
-      </MarxanDialog>
+      </BPDialog>
     </>
   );
 };

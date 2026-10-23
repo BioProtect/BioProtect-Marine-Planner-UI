@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 
-import MarxanDialog from "./MarxanDialog";
+import BPDialog from "./BPDialog";
 import React from "react";
 import { toggleDialog } from "@slices/uiSlice";
 
@@ -9,7 +9,7 @@ const AlertDialog = () => {
   const dialogStates = useSelector((state) => state.ui.dialogStates);
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={dialogStates.alertDialogOpen}
       onOk={() =>
         dispatch(toggleDialog({ dialogName: "alertDialogOpen", isOpen: false }))
@@ -24,7 +24,7 @@ const AlertDialog = () => {
           Click on Help | Server Details for more information.
         </div>
       </div>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

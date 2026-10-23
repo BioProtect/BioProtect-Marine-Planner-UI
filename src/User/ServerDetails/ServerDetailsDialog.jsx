@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 
-import MarxanDialog from "../../MarxanDialog";
+import BPDialog from "../../BPDialog";
 import React from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -81,7 +81,7 @@ const ServerDetailsDialog = ({ loading, newWDPAVersion }) => {
     );
 
   return (
-    <MarxanDialog
+    <BPDialog
       loading={loading}
       open={uiState.dialogStates.serverDetailsDialogOpen}
       onOk={() => closeDialog()}
@@ -108,7 +108,7 @@ const ServerDetailsDialog = ({ loading, newWDPAVersion }) => {
           </TableBody>
         </Table>
       </TableContainer>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

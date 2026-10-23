@@ -571,10 +571,7 @@ const PlanningUnitsTab = ({
                   >
                     {activities.map((activity) => {
                       const isActive = !!loadedActivityIds?.[activity.id];
-                      const color =
-                        Array.isArray(window.colors) && window.colors.length
-                          ? window.colors[activity.id % window.colors.length]
-                          : "#F5C043";
+                      const color = "#F5C043";
                       return (
                         <ActivityListItem
                           key={`activity-${activity.id}`}

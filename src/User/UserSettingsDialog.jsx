@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "../BPDialog";
 import Checkbox from "@mui/material/Checkbox";
 import { Divider } from "@mui/material";
 import FormControl from "@mui/material/FormControl";
@@ -8,7 +9,6 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
 import InputLabel from "@mui/material/InputLabel";
-import MarxanDialog from "../MarxanDialog";
 import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -55,7 +55,7 @@ const UserSettingsDialog = (props) => {
   };
 
   return (
-    <MarxanDialog
+    <BPDialog
       {...props}
       maxWidth="md"
       showCancelButton={false}
@@ -120,7 +120,7 @@ const UserSettingsDialog = (props) => {
           />
         </FormGroup>
       </div>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 
