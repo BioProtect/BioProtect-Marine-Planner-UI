@@ -16,6 +16,7 @@ import Button from "@mui/material/Button";
 import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import HelpIcon from "@mui/icons-material/Help";
+import LayersIcon from "@mui/icons-material/Layers";
 import SetMealIcon from "@mui/icons-material/SetMeal";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
@@ -27,7 +28,6 @@ const MenuBar = ({
   openProjectsDialog,
   openPlanningGridsDialog,
   openCumulativeImpactDialog,
-  openAtlasLayersDialog,
   setMenuAnchor,
 }) => {
   const dispatch = useDispatch();
@@ -109,11 +109,13 @@ const MenuBar = ({
               <DirectionsBoatIcon title="Planning Grids" />
               Planning Grids
             </Button>
-            {/* <AppBarIcon
-              icon={faGlobeEurope}
-              onClick={() => openAtlasLayersDialog()}
-              title="Atlas Layers"
-            /> */}
+            <Button
+              onClick={(e) => openDialog(e, "referenceLayersDialogOpen")}
+              sx={{ color: "#fff" }}
+            >
+              <LayersIcon title="Reference layers" />
+              Reference layers
+            </Button>
             <Button
               onClick={() => openCumulativeImpactDialog()}
               sx={{ color: "#fff" }}

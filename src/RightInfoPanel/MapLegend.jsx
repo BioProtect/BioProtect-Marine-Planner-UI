@@ -191,14 +191,9 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
               layer={layer}
               items={[
                 {
-                  fillColor: "rgba(63,127,191)",
-                  strokeColor: "lightgray",
-                  label: "Marine",
-                },
-                {
-                  fillColor: "rgba(99,148,69)",
-                  strokeColor: "lightgray",
-                  label: "Terrestrial",
+                  fillColor: CONSTANTS.WDPA_COLOR,
+                  strokeColor: CONSTANTS.WDPA_COLOR,
+                  label: "Protected areas (WDPA)",
                 },
               ]}
               shape="square"

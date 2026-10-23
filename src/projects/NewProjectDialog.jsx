@@ -1,4 +1,4 @@
-import { MenuItem, Select } from "@mui/material";
+import { Autocomplete, MenuItem, Select } from "@mui/material";
 import {
   setPlanningUnitGrids,
   useListPlanningUnitGridsQuery,
@@ -40,6 +40,16 @@ import { useGetAllFeaturesQuery } from "@slices/featureSlice";
 import { useMemo } from "react";
 import { usePlanningGridWebSocket } from "@hooks/usePlanningGridWebSocket";
 
+// Suggestions only; any EPSG code PostGIS knows can be typed in.
+const CRS_OPTIONS = [
+  { code: "4326", label: "WGS 84 (lat/lon)" },
+  { code: "3035", label: "ETRS89 / LAEA Europe" },
+  { code: "2157", label: "IRENET95 / Irish Transverse Mercator" },
+  { code: "2193", label: "NZGD2000 / New Zealand TM 2000" },
+  { code: "3793", label: "NZGD2000 / Chatham Islands TM 2000" },
+  { code: "6933", label: "WGS 84 / NSIDC EASE-Grid 2.0 Global (equal area)" },
+];
+
 const NewProjectDialog = ({
   loadProjectAndSetup,
   updateSelectedFeatures,
@@ -69,6 +79,8 @@ const NewProjectDialog = ({
   // project basics
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  // EPSG code as a string; fixed once the project exists
+  const [crsEpsg, setCrsEpsg] = useState("4326");
 
   // planning grid choice
   const [puGrid, setPuGrid] = useState(""); // 'upload' | 'select' | 'draw'
@@ -148,6 +160,7 @@ const NewProjectDialog = ({
         description: proj.description,
         planning_grid_name: proj.planning_grid_name,
         resolution: resolution,
+        crs_epsg: Number(crsEpsg),
         interest_features: proj.features,
         target_values: proj.features.map(() => 17),
         spf_values: proj.features.map(() => 40),
@@ -156,6 +169,8 @@ const NewProjectDialog = ({
       // Server errors come back as HTTP 200 with an error field
       if (response.error) throw new Error(response.error);
       showMessage(response.info, "success");
+      // e.g. the grid lies outside the CRS's area of use
+      if (response.warning) showMessage(response.warning, "warning");
       dispatch(
         toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
       );
@@ -293,7 +308,10 @@ const NewProjectDialog = ({
         }
         disabled={
           (stepIndex === 0 &&
-            (name === "" || description === "" || puGrid === "")) ||
+            (name === "" ||
+              description === "" ||
+              puGrid === "" ||
+              !/^\d+$/.test(crsEpsg))) ||
           (stepIndex === 1 && !currentPUGrid) ||
           creating
         }
@@ -345,6 +363,33 @@ const NewProjectDialog = ({
                 margin="normal"
                 value={description}
                 onChange={handleChangeDescription}
+              />
+              <Autocomplete
+                freeSolo
+                autoSelect
+                options={CRS_OPTIONS}
+                getOptionLabel={(o) =>
+                  typeof o === "string" ? o : `EPSG:${o.code} - ${o.label}`
+                }
+                value={
+                  CRS_OPTIONS.find((o) => o.code === crsEpsg) ?? crsEpsg
+                }
+                onChange={(e, v) =>
+                  setCrsEpsg(
+                    typeof v === "string"
+                      ? v.replace(/^epsg:/i, "").trim()
+                      : (v?.code ?? ""),
+                  )
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    margin="normal"
+                    label="Coordinate reference system (EPSG code)"
+                    error={!/^\d+$/.test(crsEpsg)}
+                    helperText="Used for areas, exports, and files that have no CRS of their own. It can't be changed later."
+                  />
+                )}
               />
             </Box>
             <Divider sx={{ my: 2 }} />

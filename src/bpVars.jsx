@@ -178,13 +178,17 @@ export const CONSTANTS = {
   SHAPES: ["Hexagon", "Square"],
   AREAKM2S: [10, 20, 30, 40, 50, 100],
   //layer source names
-  WDPA_SOURCE_NAME: "bioprotect_wdpa_source",
+  WDPA_SOURCE_NAME: "wdpa_src",
   //layer names
   PU_LAYER_NAME: "bioprotect_pu_layer", //layer showing the planning units
   STATUS_LAYER_NAME: "bioprotect_pu_status_layer", //layer showing the status of planning units
   COSTS_LAYER_NAME: "bioprotect_pu_costs_layer", //layer showing the cost of planning units
   RESULTS_LAYER_NAME: "bioprotect_pu_results_layer", //layer for either the sum of solutions or the individual solutions
-  WDPA_LAYER_NAME: "bioprotect_wdpa_polygon_layer", //layer showing the protected areas from the WDPA
+  // WDPA reference layer. Only the fill has the martin_ prefix, so it alone
+  // gets a legend entry; the outline is wdpa_line.
+  WDPA_LAYER_NAME: "martin_wdpa_fill",
+  WDPA_LINE_LAYER_NAME: "wdpa_line",
+  WDPA_COLOR: "#2e7d32",
   LAYER_TYPE_SUMMED_SOLUTIONS: "summed_solutions",
   LAYER_TYPE_PLANNING_UNITS: "pus",
   LAYER_TYPE_PLANNING_UNITS_COST: "cost",
@@ -213,7 +217,8 @@ export const CONSTANTS = {
   PU_LAYER_OPACITY: 0.6,
   PU_COSTS_LAYER_OPACITY: 0.3,
   STATUS_LAYER_LINE_WIDTH: 1.5,
-  WDPA_FILL_LAYER_OPACITY: 0.2,
+  WDPA_FILL_LAYER_OPACITY: 0.15,
+  WDPA_FILL_MIN_ZOOM: 5, // outline only below this - fills just turn coasts green
   FEATURE_LAYER_OPACITY: 0.9,
   FEATURE_PLANNING_GRID_LAYER_OPACITY: 0.9,
   ACTIVITY_LAYER_OPACITY: 0.55,
