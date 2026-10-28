@@ -144,6 +144,25 @@ export const suggestResolution = (areaKm2) =>
 export const resolutionLabel = (res) =>
   RESOLUTIONS.find((r) => r.value === Number(res))?.label ?? "-";
 
+// "#rrggbb" -> "rgba(r, g, b, a)"
+export const hexToRgba = (hex, a) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+
+// Map palette: "Viridis and amber" from src/colourblind-palettes.examples.html.
+// Both ramps change steadily in lightness, so they hold up for colour-blind
+// viewers, in greyscale and in print. Ramps run low -> high.
+export const PALETTE = {
+  results: ["#cae11f", "#7fd34e", "#3fbc73", "#1fa287", "#24868e", "#2f6b8e", "#3e4c8a", "#482979", "#440154"],
+  costs: ["#fff9c5", "#feeaa0", "#fed26d", "#feb13e", "#f88b22", "#e56910", "#c84a02", "#9b3504", "#6e2706"],
+  lockedIn: "#3b528b",
+  lockedOut: "#e66101",
+  features: ["#4477AA", "#EE6677", "#228833", "#CCBB44", "#66CCEE", "#AA3377", "#BBBBBB"],
+  protectedAreas: "#35b779",
+  activities: "#e0c200",
+};
+
 export const CONSTANTS = {
   DOCS_ROOT: "https://docs.marxanweb.org/",
   ERRORS_PAGE: "https://docs.marxanweb.org/errors.html",
@@ -178,7 +197,7 @@ export const CONSTANTS = {
   // gets a legend entry; the outline is wdpa_line.
   WDPA_LAYER_NAME: "martin_wdpa_fill",
   WDPA_LINE_LAYER_NAME: "wdpa_line",
-  WDPA_COLOR: "#2e7d32",
+  WDPA_COLOR: PALETTE.protectedAreas,
   LAYER_TYPE_SUMMED_SOLUTIONS: "summed_solutions",
   LAYER_TYPE_PLANNING_UNITS: "pus",
   LAYER_TYPE_PLANNING_UNITS_COST: "cost",
@@ -194,12 +213,12 @@ export const CONSTANTS = {
     label: "Default",
   },
   PU_STATUS_LOCKED_IN: {
-    fillColor: "none",
-    strokeColor: "blue",
+    fillColor: PALETTE.lockedIn,
+    strokeColor: "transparent",
     label: "Locked in",
   },
   PU_STATUS_LOCKED_OUT: {
-    fillColor: "rgba(191, 63, 63, 1)",
+    fillColor: PALETTE.lockedOut,
     strokeColor: "transparent",
     label: "Locked out",
   },
@@ -213,17 +232,7 @@ export const CONSTANTS = {
   FEATURE_PLANNING_GRID_LAYER_OPACITY: 0.9,
   ACTIVITY_LAYER_OPACITY: 0.55,
   RESULTS_LAYER_OPACITY: 0.8,
-  COST_COLORS: [
-    "rgba(255,255,204,0.8)",
-    "rgba(255,237,160,0.8)",
-    "rgba(254,217,118,0.8)",
-    "rgba(254,178,76,0.8)",
-    "rgba(253,141,60,0.8)",
-    "rgba(252,78,42,0.8)",
-    "rgba(227,26,28,0.8)",
-    "rgba(189,0,38,0.8)",
-    "rgba(128,0,38,0.8)",
-  ],
+  COST_COLORS: PALETTE.costs.map((c) => hexToRgba(c, 0.8)),
   UNIFORM_COST_NAME: "Equal area",
   //an array of feature property information that is used in the Feature Information dialog box - showForOld sets whether that property is shown for old versions of bioprotect
   FEATURE_PROPERTIES_POLYGONS: FEATURE_PROPERTIES_CORE.concat([

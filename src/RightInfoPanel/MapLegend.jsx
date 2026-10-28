@@ -1,127 +1,117 @@
 import React, { Fragment, useEffect, useState } from "react";
 
+import { useDispatch, useSelector } from "react-redux";
+
+import CONSTANTS, { PALETTE } from "../bpVars";
+import LayerRow, { formatPx } from "./LayerRow";
+
 import Box from "@mui/material/Box";
-import CONSTANTS from "../bpVars";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import HexagonOutlinedIcon from "@mui/icons-material/HexagonOutlined";
 import LayerLegend from "./LayerLegend";
+import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
-import { useSelector } from "react-redux";
+import { setCellOutline } from "@slices/uiSlice";
 
-const YLGN_GRADIENT = [
-  "#ffffe5",
-  "#f7fcb9",
-  "#d9f0a3",
-  "#addd8e",
-  "#78c679",
-  "#41ab5d",
-  "#238443",
-  "#006837",
-  "#004529",
-];
-const ORRD_GRADIENT = [
-  "#fff7ec",
-  "#fee8c8",
-  "#fdd49e",
-  "#fdbb84",
-  "#fc8d59",
-  "#ef6548",
-  "#d7301f",
-  "#b30000",
-  "#7f0000",
-];
-
-const GradientBar = ({ colors, leftLabel, rightLabel, title }) => (
-  <Box sx={{ px: 1, py: 0.5 }}>
-    {title && (
-      <Typography
-        variant="caption"
-        fontWeight={600}
-        sx={{ display: "block", mb: 0.3 }}
-      >
-        {title}
-      </Typography>
-    )}
-    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ whiteSpace: "nowrap" }}
-      >
-        {leftLabel}
-      </Typography>
-      <Box
-        sx={{
-          flex: 1,
-          height: 14,
-          borderRadius: 1,
-          background: `linear-gradient(to right, ${colors.join(", ")})`,
-          border: "1px solid #ccc",
-        }}
-      />
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ whiteSpace: "nowrap" }}
-      >
-        {rightLabel}
-      </Typography>
-    </Box>
+// colour key: ramp with its end labels
+const GradientBar = ({ colors, leftLabel, rightLabel }) => (
+  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+    <span style={{ whiteSpace: "nowrap" }}>{leftLabel}</span>
+    <Box
+      sx={{
+        flex: 1,
+        height: 8,
+        borderRadius: "4px",
+        background: `linear-gradient(to right, ${colors.join(", ")})`,
+      }}
+    />
+    <span style={{ whiteSpace: "nowrap" }}>{rightLabel}</span>
   </Box>
 );
+
+const fmtNum = (v) =>
+  Number.isFinite(Number(v)) ? Number(v).toLocaleString() : v;
 
 const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
   const [planningGridShape, setPlanningGridShape] = useState("hexagon");
   const selectedRunIds = useSelector((s) => s.prioritizr.selectedRunIds);
+  const cellOutline = useSelector((s) => s.ui.cellOutline);
+  const dispatch = useDispatch();
 
-  /**
-   * Prioritizr results legend
-   * Shows opacity slider + frequency gradient when multiple runs selected
-   */
+  // Prioritizr results: opacity, with the selection-frequency ramp as key
   const getPrioritizrResultsLegend = (layer) => {
     const runCount = selectedRunIds.length;
     return (
-      <React.Fragment key={`legend_${layer.id}`}>
-        <LayerLegend
-          changeOpacity={changeOpacity}
-          layer={layer}
-          items={[
-            {
-              fillColor: runCount > 1 ? "#41ab5d" : "#004529",
-              strokeColor: "transparent",
-              label: "Selected planning units",
-            },
-          ]}
-          shape={planningGridShape}
-        />
+      <LayerLegend
+        key={`legend_${layer.id}`}
+        changeOpacity={changeOpacity}
+        layer={layer}
+        items={[
+          {
+            fillColor: PALETTE.results[8],
+            strokeColor: "transparent",
+            label: "Selected planning units",
+          },
+        ]}
+      >
         {runCount > 1 && (
           <GradientBar
-            colors={YLGN_GRADIENT}
+            colors={PALETTE.results}
             leftLabel="1 run"
             rightLabel={`${runCount} runs`}
-            title="Selection frequency"
           />
         )}
-      </React.Fragment>
+      </LayerLegend>
     );
   };
 
+  // Shown straight after the results layer. No eye: width 0 is "off".
+  const getCellOutlineLegend = () => (
+    <LayerRow
+      name="Cell outlines"
+      icon={<HexagonOutlinedIcon sx={{ fontSize: 20, color: "brand.muted" }} />}
+      value={cellOutline.width}
+      min={0}
+      max={4}
+      step={0.5}
+      format={formatPx}
+      onChange={(v) => dispatch(setCellOutline({ width: v }))}
+    >
+      <FormControlLabel
+        sx={{ ml: 0, mr: 0, gap: 1 }}
+        control={
+          <Switch
+            size="small"
+            checked={cellOutline.selectedOnly}
+            onChange={(e) =>
+              dispatch(setCellOutline({ selectedOnly: e.target.checked }))
+            }
+          />
+        }
+        label={
+          <Typography sx={{ fontSize: 12, color: "text.primary" }}>
+            Selected cells only
+          </Typography>
+        }
+      />
+    </LayerRow>
+  );
+
+  // Legend order: results (+ cell outlines), status, cost, then the rest.
+  // Feature/activity groups follow these, see the return below.
+  const LEGEND_ORDER = {
+    [CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS]: 0,
+    [CONSTANTS.LAYER_TYPE_PLANNING_UNITS_STATUS]: 1,
+    [CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST]: 2,
+  };
+
   const getNonFeatureLegendItems = () => {
-    let layers = [];
-    let costLayers = visibleLayers.filter(
-      (item) => item.id === CONSTANTS.COSTS_LAYER_NAME,
-    );
-    if (costLayers.length) {
-      layers = visibleLayers.filter(
-        (item) => item.id !== CONSTANTS.COSTS_LAYER_NAME,
-      );
-      layers.push(costLayers[0]);
-    } else {
-      layers = visibleLayers;
-    }
+    const rank = (layer) => LEGEND_ORDER[layer.metadata?.type] ?? 3;
     // ponytail: selection-highlight layer shares LAYER_TYPE_PLANNING_UNITS_STATUS
     // with the status layer but shouldn't get its own legend entry
-    layers = layers.filter(
-      (layer) => layer.metadata?.name !== "Planning Unit Selection",
-    );
+    const layers = visibleLayers
+      .filter((layer) => layer.metadata?.name !== "Planning Unit Selection")
+      .sort((a, b) => rank(a) - rank(b));
     return layers.map((layer) => {
       //get a unique key create the legend for non-feature layers
       let key = "legend_" + layer.id;
@@ -132,33 +122,30 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
 
       switch (layer.metadata.type) {
         case CONSTANTS.LAYER_TYPE_SUMMED_SOLUTIONS:
-          return getPrioritizrResultsLegend(layer);
+          return (
+            <Fragment key={key}>
+              {getPrioritizrResultsLegend(layer)}
+              {getCellOutlineLegend()}
+            </Fragment>
+          );
 
         case CONSTANTS.LAYER_TYPE_PLANNING_UNITS_COST: {
           const minVal = layer.metadata.min;
           const maxVal = layer.metadata.max;
 
           return (
-            <React.Fragment key={key}>
-              <LayerLegend
-                loading={costsLoading}
-                changeOpacity={changeOpacity}
-                layer={layer}
-                items={[
-                  {
-                    fillColor: ORRD_GRADIENT[0],
-                    strokeColor: "lightgray",
-                    label: minVal === maxVal ? minVal : "Low cost",
-                  },
-                ]}
-                shape={planningGridShape}
-              />
+            <LayerLegend
+              key={key}
+              loading={costsLoading}
+              changeOpacity={changeOpacity}
+              layer={layer}
+            >
               <GradientBar
-                colors={ORRD_GRADIENT}
-                leftLabel={minVal ?? "Low"}
-                rightLabel={maxVal ?? "High"}
+                colors={PALETTE.costs}
+                leftLabel={minVal != null ? fmtNum(minVal) : "Low"}
+                rightLabel={maxVal != null ? fmtNum(maxVal) : "High"}
               />
-            </React.Fragment>
+            </LayerLegend>
           );
         }
 
@@ -214,6 +201,7 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
       fillColor: layer.paint["fill-color"],
       strokeColor: "lightgray",
       label: layer.metadata.name,
+      layer,
     }));
     items.sort((a, b) =>
       a.label.toLowerCase() < b.label.toLowerCase() ? -1 : 1,
@@ -237,6 +225,7 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
       fillColor: layer.paint["fill-color"],
       strokeColor: "lightgray",
       label: layer.metadata.name,
+      layer,
     }));
     items.sort((a, b) =>
       a.label.toLowerCase() < b.label.toLowerCase() ? -1 : 1,
@@ -260,6 +249,7 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
       fillColor: "none",
       strokeColor: layer.metadata.lineColor,
       label: layer.metadata.name,
+      layer,
     }));
     return items.length ? (
       <LayerLegend
@@ -277,8 +267,8 @@ const MapLegend = ({ changeOpacity, visibleLayers, costsLoading }) => {
       sx={{
         maxHeight: "calc(100vh - 200px)", // responsive vertical size
         overflowY: "auto",
-        pr: 1, // avoids scrollbar overlay
-        my: 1,
+        px: 2, // keep rows off the panel edge
+        pb: 1,
         // optional: MUI theme scrollbar
         "&::-webkit-scrollbar": {
           width: "8px",

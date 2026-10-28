@@ -10,7 +10,7 @@ import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
-import CONSTANTS from "../bpVars.jsx"; // Ensure this path is correct
+import CONSTANTS, { PALETTE } from "../bpVars.jsx";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -447,14 +447,14 @@ const PlanningUnitsTab = ({
 
                 <ListItem dense={true}>
                   <ListItemAvatar>
-                    <HexagonIcon sx={{ color: "#3f3fbf" }} />
+                    <HexagonIcon sx={{ color: PALETTE.lockedIn }} />
                   </ListItemAvatar>
                   <ListItemText primary="Locked In" />
                 </ListItem>
 
                 <ListItem dense={true}>
                   <ListItemAvatar>
-                    <HexagonIcon sx={{ color: "#bf3f3f" }} />
+                    <HexagonIcon sx={{ color: PALETTE.lockedOut }} />
                   </ListItemAvatar>
                   <ListItemText primary="Locked Out" />
                 </ListItem>
@@ -572,7 +572,7 @@ const PlanningUnitsTab = ({
                   >
                     {activities.map((activity) => {
                       const isActive = !!loadedActivityIds?.[activity.id];
-                      const color = "#F5C043";
+                      const color = PALETTE.activities;
                       return (
                         <ActivityListItem
                           key={`activity-${activity.id}`}

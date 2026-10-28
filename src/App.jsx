@@ -1,7 +1,7 @@
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-import { CONSTANTS, INITIAL_VARS } from "./bpVars";
+import { CONSTANTS, INITIAL_VARS, PALETTE, hexToRgba } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   addFeaturesToCache,
@@ -21,7 +21,11 @@ import {
   setUploadedActivities,
   toggleDialog,
 } from "@slices/uiSlice";
-import { getPaintProperty, getTypeProperty } from "@features/featuresService";
+import {
+  featureColor,
+  getPaintProperty,
+  getTypeProperty,
+} from "@features/featuresService";
 import {
   initialiseServer,
   projectApiSlice,
@@ -1458,6 +1462,30 @@ const App = () => {
     "match",
     ["get", attribute],
   ];
+  // h3 indexes selected in the shown solution(s), for "outline selected only"
+  const solutionCellIdsRef = useRef([]);
+  const cellOutlineRef = useRef(uiState.cellOutline);
+  cellOutlineRef.current = uiState.cellOutline;
+
+  const applyCellOutlines = () => {
+    const id = puLayerIdsRef.current?.outlineLayerId;
+    if (!map.current || !id || !map.current.getLayer(id)) return;
+    const { width, selectedOnly } = cellOutlineRef.current;
+    map.current.setPaintProperty(id, "line-width", width);
+    map.current.setFilter(
+      id,
+      selectedOnly
+        ? [
+            "in",
+            ["to-string", ["get", "h3_index"]],
+            ["literal", solutionCellIdsRef.current],
+          ]
+        : null,
+    );
+  };
+
+  useEffect(applyCellOutlines, [uiState.cellOutline]);
+
   //gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
   const renderPuPrioritizrLayer = (freq, totalRuns) => {
     // freq: { h3_index: count } — how many runs each hex was selected in
@@ -1475,6 +1503,10 @@ const App = () => {
     }
 
     const entries = Object.entries(freq || {});
+    solutionCellIdsRef.current = entries
+      .filter(([, count]) => count > 0)
+      .map(([h3]) => h3);
+    applyCellOutlines();
     if (!entries.length) {
       map.current.setPaintProperty(
         resultsLayerId,
@@ -1495,30 +1527,18 @@ const App = () => {
 
     // YlGn colormap: yellow to dark green, normalised by totalRuns
     const maxRuns = Math.max(totalRuns, 1);
+    // stops at 0.01, 1/8 ... 1; alpha rises with the count
+    const alphas = [0.75, 0.75, 0.8, 0.8, 0.85, 0.85, 0.9, 0.9, 0.95];
     const fillExpr = [
       "interpolate",
       ["linear"],
       ["/", matchExpr, maxRuns],
       0,
       "rgba(0,0,0,0)",
-      0.01,
-      "rgba(255, 255, 229, 0.75)", // #ffffe5
-      0.125,
-      "rgba(247, 252, 185, 0.75)", // #f7fcb9
-      0.25,
-      "rgba(217, 240, 163, 0.8)", // #d9f0a3
-      0.375,
-      "rgba(173, 221, 142, 0.8)", // #addd8e
-      0.5,
-      "rgba(120, 198, 121, 0.85)", // #78c679
-      0.625,
-      "rgba(65, 171, 93, 0.85)", // #41ab5d
-      0.75,
-      "rgba(35, 132, 67, 0.9)", // #238443
-      0.875,
-      "rgba(0, 104, 55, 0.9)", // #006837
-      1,
-      "rgba(0, 69, 41, 0.95)", // #004529
+      ...PALETTE.results.flatMap((c, i) => [
+        i === 0 ? 0.01 : i / 8,
+        hexToRgba(c, alphas[i]),
+      ]),
     ];
 
     map.current.setPaintProperty(resultsLayerId, "fill-color", fillExpr);
@@ -2096,6 +2116,7 @@ const App = () => {
     const puLayerId = `martin_layer_pu_${puLayerName}`;
     const statusLayerId = `martin_layer_status_${puLayerName}`;
     const selectionLayerId = `martin_layer_selection_${puLayerName}`;
+    const outlineLayerId = `martin_layer_outline_${puLayerName}`;
     // Store layer and source IDs in a ref for later use
     puLayerIdsRef.current = {
       sourceId,
@@ -2104,6 +2125,7 @@ const App = () => {
       puLayerId,
       statusLayerId,
       selectionLayerId,
+      outlineLayerId,
       sourceLayerName: puLayerName,
       propId: "h3_index",
     };
@@ -2122,6 +2144,7 @@ const App = () => {
       puLayerId,
       statusLayerId,
       selectionLayerId,
+      outlineLayerId,
     ].forEach((layerId) => {
       if (map.current.getLayer(layerId)) {
         map.current.removeLayer(layerId);
@@ -2167,6 +2190,25 @@ const App = () => {
       },
     });
 
+    // grid outlines - a line layer, since a fill's outline is always a
+    // hairline. Width and "selected cells only" come from ui.cellOutline.
+    addMapLayer({
+      id: outlineLayerId,
+      metadata: { name: "Cell outlines", type: "cell_outlines" },
+      minzoom: 0,
+      maxzoom: 24,
+      type: "line",
+      source: sourceId,
+      layout: { visibility: "visible" },
+      "source-layer": puLayerName,
+      paint: {
+        "line-color": "rgb(150, 150, 150)",
+        "line-opacity": CONSTANTS.PU_LAYER_OPACITY,
+        "line-width": uiState.cellOutline.width,
+      },
+    });
+    applyCellOutlines();
+
     addMapLayer({
       id: puLayerId,
       metadata: {
@@ -2183,7 +2225,8 @@ const App = () => {
       "source-layer": puLayerName,
       paint: {
         "fill-color": "rgba(0, 0, 0, 0)",
-        "fill-outline-color": `rgba(150, 150, 150, ${CONSTANTS.PU_LAYER_OPACITY})`,
+        // outlines are drawn by the outline line layer
+        "fill-outline-color": "rgba(0, 0, 0, 0)",
         "fill-opacity": CONSTANTS.PU_LAYER_OPACITY,
       },
     });
@@ -2207,9 +2250,9 @@ const App = () => {
           ["==", ["feature-state", "status"], 0],
           "rgba(150,150,150,0)",
           ["==", ["feature-state", "status"], 1],
-          "rgba(63,63,191,1)",
+          PALETTE.lockedIn,
           ["==", ["feature-state", "status"], 2],
-          "rgba(191, 63, 63, 1)",
+          PALETTE.lockedOut,
           "rgba(150,150,150,0)", // default
         ],
         "fill-outline-color": "rgba(0, 0, 0, 0)",
@@ -3150,7 +3193,7 @@ const App = () => {
         return;
       }
 
-      const color = "#F5C043";
+      const color = PALETTE.activities;
 
       if (!map.current.getSource(sourceId)) {
         map.current.addSource(sourceId, {
@@ -3199,8 +3242,7 @@ const App = () => {
     const { sourceId, sourceLayerName } = puLayerIdsRef.current || {};
     if (!sourceId || !sourceLayerName) return;
 
-    // Ensure feature has a color assigned
-    const color = feature.color || "#ff0000";
+    const color = featureColor(feature);
 
     let layerName = `martin_layer_feature_puid_${feature.id}`;
 

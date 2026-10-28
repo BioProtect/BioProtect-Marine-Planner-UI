@@ -85,6 +85,9 @@ const initialState = {
   loading: false,
   activeTab: "project",
   activeResultsTab: "legend",
+  // results map: grid outline width in px (0 = none), and whether only
+  // cells selected in a solution keep their outline
+  cellOutline: { width: 1, selectedOnly: false },
   basemap: "BioProtect",
   basemaps: mapboxBasemaps,
   registry: {},
@@ -141,6 +144,9 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
+    setCellOutline(state, action) {
+      state.cellOutline = { ...state.cellOutline, ...action.payload };
+    },
     setBasemap(state, action) {
       state.basemap = action.payload;
     },
@@ -194,6 +200,7 @@ const uiSlice = createSlice({
 });
 
 export const {
+  setCellOutline,
   setBasemap,
   setBasemaps,
   setActiveTab,

@@ -1,13 +1,15 @@
-import CONSTANTS from "../bpVars.jsx";
+import CONSTANTS, { PALETTE } from "../bpVars.jsx";
 
-// seed a random color if missing; returns a copy — features from the RTK Query cache are frozen
+// Colour-blind-safe colour from the palette, picked by id so a feature keeps
+// its colour. ponytail: 7 colours, so features 7 ids apart share one; a
+// per-project assignment would avoid clashes among the loaded features.
+export const featureColor = (feature) =>
+  feature.color ||
+  PALETTE.features[Math.abs(Number(feature.id) || 0) % PALETTE.features.length];
+
+// returns a copy — features from the RTK Query cache are frozen
 const ensureFeatureColor = (feature) =>
-  feature.color
-    ? feature
-    : {
-        ...feature,
-        color: "#" + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0"),
-      };
+  feature.color ? feature : { ...feature, color: featureColor(feature) };
 
 export const getPaintProperty = (feature) => {
   // before you call addMapLayer on a feature…

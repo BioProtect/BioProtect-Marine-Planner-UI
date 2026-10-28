@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import logoSrc from "@images/bioprotect_nobgrnd.png";
+import { PALETTE } from "../bpVars.jsx";
 
 // Brand colours
 const TEAL = [0, 150, 135];
@@ -157,14 +158,11 @@ export async function generatePdfReport({
 
   //  2b. Selection frequency legend 
   if (selectedRuns.length > 0) {
-    // YlGn colour stops (matches the map layer paint expression)
-    const YLGN = [
-      [0.00, 255, 255, 229], // #ffffe5
-      [0.25, 217, 240, 163], // #d9f0a3
-      [0.50, 120, 198, 121], // #78c679
-      [0.75, 35, 132, 67], // #238443
-      [1.00, 0, 69, 41], // #004529
-    ];
+    // results ramp as [t, r, g, b] stops (matches the map layer)
+    const YLGN = PALETTE.results.map((hex, i, all) => {
+      const n = parseInt(hex.slice(1), 16);
+      return [i / (all.length - 1), n >> 16, (n >> 8) & 255, n & 255];
+    });
 
     const lerp = (a, b, t) => Math.round(a + t * (b - a));
     const interpColor = (t) => {
@@ -176,7 +174,7 @@ export async function generatePdfReport({
           return [lerp(r0, r1, f), lerp(g0, g1, f), lerp(b0, b1, f)];
         }
       }
-      return [0, 69, 41];
+      return YLGN[YLGN.length - 1].slice(1);
     };
 
     // Label above bar
