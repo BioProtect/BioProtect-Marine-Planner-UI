@@ -90,7 +90,6 @@ import HexInfoDialog from "./HexInfo/HexInfoDialog";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
-import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
 import LoginPage from "./LoginPage";
@@ -98,7 +97,6 @@ import LoginPage from "./LoginPage";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
-import NewPlanningGridDialog from "@planningGrids/NewPlanningGridDialog";
 import NewProjectDialog from "@projects/NewProjectDialog";
 import PlanningGridDialog from "@planningGrids/PlanningGridDialog";
 import PlanningGridsDialog from "@planningGrids/PlanningGridsDialog";
@@ -2450,42 +2448,6 @@ const App = () => {
     );
   };
 
-  //imports a zipped shapefile as a new planning grid
-  const importPlanningUnitGrid = async (zipFilename, alias, description) => {
-    try {
-      startLogging();
-      messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Started",
-        info: "Importing planning grid..",
-      });
-      const response = await importZippedShapefileAsPu(
-        zipFilename,
-        alias,
-        description,
-      );
-      messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Finished",
-        info: response.info,
-      });
-      dispatch(
-        togglePUD({
-          dialogName: "importPlanningGridDialogOpen",
-          isOpen: false,
-        }),
-      );
-    } catch (error) {
-      deletePlanningUnitGrid(alias, true);
-      messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Finished",
-        error: error,
-      });
-      throw error;
-    }
-  };
-
   //deletes a planning unit grid - the server only allows this for the user who
   //created it, and only when no project uses it. silent is used to roll back
   //failed imports of planning grids
@@ -2558,13 +2520,6 @@ const App = () => {
       }),
     );
   };
-
-  //used by the import wizard to import a users zipped shapefile as the planning units
-  //the zipped shapefile has been uploaded to the MARXAN folder - it will be imported to PostGIS and a record will be entered in the metadata_planningUnits table
-  const importZippedShapefileAsPu = async (zipname, alias, description) =>
-    await _get(
-      `importPlanningUnitGrid?filename=${zipname}&name=${alias}&description=${description}`,
-    );
 
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -2749,7 +2704,7 @@ const App = () => {
     return "Costs created from Cumulative impact";
   };
 
-  // Inspect an uploaded raster sitting in data/tmp/ on the server.
+  // Inspect an uploaded raster sitting in imports/ on the server.
   // Returns { band_count, dtypes, nodata, bounds, crs_epsg, ... } or null on error.
   // NOT wrapped in useCallback because (a) loadCostsLayer is declared later
   // in this file, and putting later-declared functions in a useCallback
@@ -2770,7 +2725,7 @@ const App = () => {
     }
   };
 
-  // Build a cost profile from a pre-uploaded raster (sitting in data/tmp/).
+  // Build a cost profile from a pre-uploaded raster (sitting in imports/).
   // options: { band, stat, normalise, floor, fillStrategy, setActive }
   // Negative pixel values are always clamped to floor server-side; that
   // is not a user-configurable option because negatives are invalid for
@@ -3713,15 +3668,6 @@ const App = () => {
           previewFeature={previewFeature}
           fileUpload={uploadFileToFolder}
           updateSelectedFeatures={updateSelectedFeatures}
-        />
-        <NewPlanningGridDialog
-          loading={uiState.loading || preprocessing || uploading}
-          fileUpload={uploadFileToFolder}
-        />
-        <ImportPlanningGridDialog
-          importPlanningUnitGrid={importPlanningUnitGrid}
-          loading={uiState.loading || uploading}
-          fileUpload={uploadFileToFolder}
         />
         <FeatureInfoDialog open={true} updateFeature={updateFeature} />
         <FeaturesDialog

@@ -121,12 +121,25 @@ export const INITIAL_VARS = {
   ],
 };
 // H3 resolutions offered for planning grids
+// areaKm2 is H3's average cell area, used to estimate cell counts
 export const RESOLUTIONS = [
-  { label: "Basin resolution (36 km²)", value: 6 },
-  { label: "Regional resolution (5 km²)", value: 7 },
-  { label: "Mid Regional Local resolution (0.7 km²)", value: 8 },
-  { label: "Local resolution (0.1 km²)", value: 9 },
+  { label: "Basin resolution (36 km²)", value: 6, areaKm2: 36.129 },
+  { label: "Regional resolution (5 km²)", value: 7, areaKm2: 5.161 },
+  { label: "Mid Regional Local resolution (0.7 km²)", value: 8, areaKm2: 0.7373 },
+  { label: "Local resolution (0.1 km²)", value: 9, areaKm2: 0.1053 },
 ];
+
+// New grids: suggest the finest resolution at or under SUGGEST_MAX_CELLS,
+// warn above WARN_CELLS (Prioritizr with a boundary penalty gets slow)
+export const SUGGEST_MAX_CELLS = 50_000;
+export const WARN_CELLS = 200_000;
+
+export const cellsAt = (areaKm2, r) => Math.round(areaKm2 / r.areaKm2);
+
+// Finest resolution under the target, else the coarsest
+export const suggestResolution = (areaKm2) =>
+  [...RESOLUTIONS].reverse().find((r) => cellsAt(areaKm2, r) <= SUGGEST_MAX_CELLS)
+    ?.value ?? RESOLUTIONS[0].value;
 
 export const resolutionLabel = (res) =>
   RESOLUTIONS.find((r) => r.value === Number(res))?.label ?? "-";

@@ -56,7 +56,7 @@ const PlanningUnitsTab = ({
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
 
-  // Build a quick lookup of puid → status, recomputed whenever the planningUnits array changes
+  // puid → status for locked cells only; the server leaves out status 0
   const planningUnitStatusMap = useMemo(() => {
     const map = {};
     for (const [status, ids] of Object.entries(planningUnits)) {
@@ -285,10 +285,11 @@ const PlanningUnitsTab = ({
 
   const clearManualEdits = () => {
     const { sourceId, sourceLayerName } = puLayerIdsRef.current;
-    for (const [id, status] of Object.entries(planningUnitStatusMap)) {
+    // reset just the edited cells to their saved status (absent = 0)
+    for (const id of Object.keys(localEditsRef.current)) {
       map.current.setFeatureState(
         { source: sourceId, sourceLayer: sourceLayerName, id: String(id) },
-        { status },
+        { status: planningUnitStatusMap[id] ?? 0 },
       );
     }
     localEditsRef.current = {};

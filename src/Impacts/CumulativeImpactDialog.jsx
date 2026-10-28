@@ -18,6 +18,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ConfirmDeleteDialog from "../BPComponents/ConfirmDeleteDialog";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -95,6 +96,8 @@ const CumulativeImpactDialog = ({
   // and whose file is long gone (only its per-hex values survive).
   const [rasterSource, setRasterSource] = useState("upload");
   const [selectedRasterId, setSelectedRasterId] = useState(null);
+  const [rasterToDelete, setRasterToDelete] = useState(null);
+  const [rasterDeleteError, setRasterDeleteError] = useState("");
 
   const activeProjectId = projState.activeProjectId;
   const { data: rasterLibraryResp, refetch: refetchRasters } =
@@ -304,8 +307,19 @@ const CumulativeImpactDialog = ({
     refetchRasters();
   };
 
-  const handleDeleteCachedRaster = async (raster) => {
-    await deleteCostRaster(raster.id);
+  const handleDeleteCachedRaster = async () => {
+    const raster = rasterToDelete;
+    setRasterToDelete(null);
+    const response = await deleteCostRaster(raster.id);
+    // the server answers errors with 200 + {error}
+    const error = response?.data?.error ?? response?.error;
+    if (error) {
+      setRasterDeleteError(
+        typeof error === "string" ? error : `Could not delete "${raster.name}".`,
+      );
+      return;
+    }
+    setRasterDeleteError("");
     if (selectedRasterId === raster.id) setSelectedRasterId(null);
     refetchRasters();
   };
@@ -692,7 +706,7 @@ const CumulativeImpactDialog = ({
                       <TableCell align="center">
                         <Tooltip
                           title={
-                            r.is_owner
+                            r.can_manage
                               ? "Click to change who can reuse this raster"
                               : "Shared with you by another user"
                           }
@@ -711,24 +725,24 @@ const CumulativeImpactDialog = ({
                                   ? "filled"
                                   : "outlined"
                               }
-                              disabled={!r.is_owner}
+                              disabled={!r.can_manage}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (r.is_owner) handleToggleRasterVisibility(r);
+                                if (r.can_manage) handleToggleRasterVisibility(r);
                               }}
                             />
                           </span>
                         </Tooltip>
                       </TableCell>
                       <TableCell align="center">
-                        {r.is_owner && userRole !== "ReadOnly" ? (
+                        {r.can_manage && userRole !== "ReadOnly" ? (
                           <Button
                             size="small"
                             color="error"
                             startIcon={<DeleteIcon />}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteCachedRaster(r);
+                              setRasterToDelete(r);
                             }}
                           >
                             Delete
@@ -741,6 +755,16 @@ const CumulativeImpactDialog = ({
               </Table>
             </TableContainer>
           )}
+
+          {rasterDeleteError ? (
+            <Alert
+              severity="error"
+              sx={{ mt: 1 }}
+              onClose={() => setRasterDeleteError("")}
+            >
+              {rasterDeleteError}
+            </Alert>
+          ) : null}
 
           {rasterSource === "library" && selectedRaster ? (
             <Alert
@@ -941,6 +965,32 @@ const CumulativeImpactDialog = ({
           </ButtonGroup>
         </>
       )}
+
+      <ConfirmDeleteDialog
+        open={rasterToDelete != null}
+        title="Delete extracted raster?"
+        onCancel={() => setRasterToDelete(null)}
+        onConfirm={handleDeleteCachedRaster}
+      >
+        <Typography>
+          Delete <strong>{rasterToDelete?.name}</strong> and its{" "}
+          {(rasterToDelete?.hex_count ?? 0).toLocaleString()} cached hex
+          values? To use it again you will have to re-upload the raster.
+        </Typography>
+        {rasterToDelete?.visibility === "shared" ? (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            This raster is shared — other users will lose access to it too.
+          </Alert>
+        ) : null}
+        {rasterToDelete?.profile_count > 0 ? (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            {rasterToDelete.profile_count} cost profile
+            {rasterToDelete.profile_count === 1 ? " was" : "s were"} built from
+            this raster. They keep their values, but will no longer show where
+            they came from.
+          </Alert>
+        ) : null}
+      </ConfirmDeleteDialog>
     </BPDialog>
   );
 };

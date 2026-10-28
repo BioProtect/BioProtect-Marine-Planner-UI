@@ -77,26 +77,6 @@ const PlanningGridsDialog = (props) => {
     setSelectedPlanningGrid(undefined);
   }, [props, selectedPlanningGrid]);
 
-  const handleNewMarine = useCallback(() => {
-    dispatch(
-      togglePUD({
-        dialogName: "newPlanningGridDialogOpen",
-        isOpen: true,
-      }),
-    );
-    closeDialog();
-  }, [closeDialog]);
-
-  const openImportDialog = useCallback(() => {
-    dispatch(
-      togglePUD({
-        dialogName: "importPlanningGridDialogOpen",
-        isOpen: true,
-      }),
-    );
-    closeDialog();
-  }, [props, closeDialog]);
-
   const exportPlanningGrid = useCallback(() => {
     // the list rows carry the grid's name as tilesetid
     props.exportPlanningGrid(selectedPlanningGrid.tilesetid).then((url) => {
@@ -194,9 +174,6 @@ const PlanningGridsDialog = (props) => {
         <PlanningGridsToolbar
           userRole={props.userRole}
           unauthorisedMethods={props.unauthorisedMethods}
-          handleNew={() => handleNew()}
-          handleNewMarine={() => handleNewMarine()}
-          openImportDialog={() => openImportDialog()}
           loading={props.loading}
           exportPlanningGrid={() => exportPlanningGrid()}
           handleDelete={() => setConfirmDeleteOpen(true)}
