@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "./BPDialog";
 import BoundaryPenaltyControl from "./LeftInfoPanel/BoundaryPenaltyControl";
 import Box from "@mui/material/Box";
-import MarxanDialog from "./MarxanDialog";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import { toggleDialog } from "@slices/uiSlice";
@@ -62,7 +62,7 @@ const RunPrioritizrDialog = ({
   };
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={open}
       title="Run Prioritizr"
       contentWidth={420}
@@ -99,7 +99,7 @@ const RunPrioritizrDialog = ({
           />
         </Stack>
       </Box>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

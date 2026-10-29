@@ -2,7 +2,7 @@ import { Box, TextField } from "@mui/material";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import MarxanDialog from "./MarxanDialog";
+import BPDialog from "./BPDialog";
 import { isValidTargetValue } from "./Helpers";
 import { toggleDialog } from "@slices/uiSlice";
 
@@ -30,7 +30,7 @@ const TargetDialog = ({ updateTargetValueForFeatures, ...props }) => {
   };
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={dialogStates.targetDialogOpen}
       contentWidth={240}
       offsetX={80}
@@ -39,7 +39,7 @@ const TargetDialog = ({ updateTargetValueForFeatures, ...props }) => {
       onOk={() => validateTarget()}
       onCancel={() =>
         dispatch(
-          toggleDialog({ dialogName: "targetDialogOpen", isOpen: false })
+          toggleDialog({ dialogName: "targetDialogOpen", isOpen: false }),
         )
       }
     >
@@ -60,7 +60,7 @@ const TargetDialog = ({ updateTargetValueForFeatures, ...props }) => {
           size="small"
         />
       </Box>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

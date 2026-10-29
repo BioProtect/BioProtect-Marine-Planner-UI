@@ -12,8 +12,8 @@ import { getArea, isNumber, isValidTargetValue } from "../Helpers";
 import { toggleFeatureD, useGetAllFeaturesQuery } from "@slices/featureSlice";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "../BPDialog";
 import CONSTANTS from "../bpVars.jsx";
-import MarxanDialog from "../MarxanDialog";
 import { selectCurrentUser } from "@slices/authSlice";
 
 const FeatureInfoDialog = ({ updateFeature }) => {
@@ -213,7 +213,7 @@ const FeatureInfoDialog = ({ updateFeature }) => {
   }));
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={featureDialogs.featureInfoDialogOpen}
       loading={uiState.loading}
       onOk={() => closeDialog()}
@@ -251,7 +251,7 @@ const FeatureInfoDialog = ({ updateFeature }) => {
           </TableBody>
         </Table>
       </TableContainer>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

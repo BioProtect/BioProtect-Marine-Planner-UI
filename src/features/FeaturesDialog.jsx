@@ -7,6 +7,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "../BPDialog";
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import Button from "@mui/material/Button";
 import { CONSTANTS } from "../bpVars";
@@ -17,7 +18,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import FeaturesToolbar from "./FeaturesToolbar";
-import MarxanDialog from "../MarxanDialog";
 import { generateTableCols } from "../Helpers";
 import jsonp from "jsonp-promise";
 import { selectCurrentUser } from "@slices/authSlice";
@@ -236,7 +236,7 @@ const FeaturesDialog = ({ onOk, metadata, userRole, previewFeature }) => {
   };
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={dialogIsOpen}
       loading={uiState.loading}
       onOk={handleClickOk}
@@ -304,7 +304,7 @@ const FeaturesDialog = ({ onOk, metadata, userRole, previewFeature }) => {
           </Button>
         </DialogActions>
       </Dialog>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

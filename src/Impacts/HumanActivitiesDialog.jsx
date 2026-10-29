@@ -8,11 +8,11 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import BPDialog from "../BPDialog";
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import FileUpload from "../Uploads/FileUpload";
-import MarxanDialog from "../MarxanDialog";
 import TextField from "@mui/material/TextField";
 import { generateTableCols } from "../Helpers";
 import useAppSnackbar from "@hooks/useAppSnackbar";
@@ -145,7 +145,7 @@ const HumanActivitiesDialog = (props) => {
   );
 
   return (
-    <MarxanDialog
+    <BPDialog
       loading={uiState.loading}
       open={dialogStates.humanActivitiesDialogOpen}
       onOk={closeDialog}
@@ -218,7 +218,7 @@ const HumanActivitiesDialog = (props) => {
           />
         </div>
       )}
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "../BPDialog";
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import ConfirmDeleteDialog from "../BPComponents/ConfirmDeleteDialog";
-import MarxanDialog from "../MarxanDialog";
 import ProjectsToolbar from "./ProjectsToolbar";
 import { generateTableCols } from "../Helpers";
 import { resolutionLabel } from "../bpVars.jsx";
@@ -119,7 +119,7 @@ const ProjectsDialog = ({
 
   if (projects) {
     return (
-      <MarxanDialog
+      <BPDialog
         open={projDialogs.projectsDialogOpen}
         loading={loading}
         okLabel={userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
@@ -168,7 +168,7 @@ const ProjectsDialog = ({
             and cannot be undone. Features and planning grids are not deleted.
           </p>
         </ConfirmDeleteDialog>
-      </MarxanDialog>
+      </BPDialog>
     );
   } else {
     return null;

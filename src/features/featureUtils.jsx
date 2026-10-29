@@ -12,7 +12,6 @@ const addFeatureAttributes = (item) => {
     feature_layer_loaded: false, // is the feature's distribution currently visible on the map
     feature_puid_layer_loaded: false, // are the planning units that intersect the feature currently visible on the map
     occurs_in_planning_grid: false, // does the feature occur in the planning grid
-    // color: window.colors[item.id % window.colors.length], // color for the map layer and analysis outputs
     in_filter: true, // true if the feature is currently visible in the features dialog
   };
   return { ...item, ...defaultAttributes };

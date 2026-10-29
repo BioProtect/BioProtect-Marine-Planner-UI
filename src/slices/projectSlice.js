@@ -1,8 +1,4 @@
-import {
-  addLocalServer,
-  filterAndSortServers,
-  getServerCapabilities,
-} from "../Server/serverFunctions";
+import { getServerCapabilities } from "../Server/serverFunctions";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { setActiveTab, setOwner } from "./uiSlice";
 
@@ -210,7 +206,6 @@ export const {
 const initialState = {
   activeProjectId: null,
   addToProject: true,
-  bpServers: [],
   bpServer: {},
   newWDPAVersion: false,
   wdpaVectorTilesLayerName: "",
@@ -226,7 +221,6 @@ const initialState = {
   projectListDialogHeading: "",
   projectListDialogTitle: "",
   projectChanged: false,
-  projectImpacts: [],
   planningCostsTrigger: false,
 
   dialogs: {
@@ -237,20 +231,18 @@ const initialState = {
   },
 };
 
-// Thunk to handle server initialization
-export const initialiseServers = createAsyncThunk(
-  "project/initialiseServers",
-  async (servers, { dispatch, rejectWithValue }) => {
+// The app talks to one server: the one it is served from (see @config/api)
+export const initialiseServer = createAsyncThunk(
+  "project/initialiseServer",
+  async (_, { dispatch, rejectWithValue }) => {
     try {
-      const updatedServers = addLocalServer(servers);
-      const allCapabilities = await Promise.all(
-        updatedServers.map((server) => getServerCapabilities(server))
-      );
-      const filteredAndSortedServers = filterAndSortServers(allCapabilities);
-      dispatch(setBpServers(filteredAndSortedServers)); // Dispatch the updated servers to the store
-      if (filteredAndSortedServers.length) {
-        dispatch(selectServer(filteredAndSortedServers[0]));
-      }
+      const server = await getServerCapabilities({
+        name: window.location.hostname,
+        host: window.location.hostname,
+        description: "Local machine",
+        type: "local",
+      });
+      dispatch(selectServer(server));
       return "ServerData retrieved";
     } catch (error) {
       return rejectWithValue(error.message);
@@ -310,10 +302,6 @@ const projectSlice = createSlice({
     setActiveProjectId(state, action) {
       state.activeProjectId = action.payload;
     },
-    setBpServers(state, action) {
-      console.warn("setBpServers called with", action.payload);
-      state.bpServers = action.payload;
-    },
     setBpServer(state, action) {
       console.warn("setBpServer called with", action.payload);
       state.bpServer = action.payload;
@@ -346,9 +334,6 @@ const projectSlice = createSlice({
     setProjectData(state, action) {
       state.projectData = action.payload;
     },
-    setProjectImpacts(state, action) {
-      state.projectImpacts = action.payload;
-    },
     setProjectListDialogHeading(state, action) {
       state.projectListDialogHeading = action.payload;
     },
@@ -380,17 +365,17 @@ const projectSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(initialiseServers.pending, (state) => {
+      .addCase(initialiseServer.pending, (state) => {
         state.status = "loading";
         state.error = null;
       })
-      .addCase(initialiseServers.fulfilled, (state, action) => {
+      .addCase(initialiseServer.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.error = null;
       })
-      .addCase(initialiseServers.rejected, (state, action) => {
+      .addCase(initialiseServer.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload || "Failed to initialise servers";
+        state.error = action.payload || "Failed to initialise server";
       })
       .addCase(switchProject.pending, (state) => {
         state.status = "loading";
@@ -409,13 +394,11 @@ const projectSlice = createSlice({
 
 export const {
   setActiveProjectId,
-  setBpServers,
   setBpServer,
   selectServer,
   setAddToProject,
   setCostData,
   setProjectData,
-  setProjectImpacts,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjectList,

@@ -1,10 +1,11 @@
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-import { CONSTANTS, INITIAL_VARS } from "./bpVars";
+import { CONSTANTS, INITIAL_VARS, PALETTE, hexToRgba } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   addFeaturesToCache,
+  removeFeaturesFromCache,
   setAllFeaturesInCache,
   setOneFeatureInCache,
 } from "./store/featureCacheActions";
@@ -20,16 +21,18 @@ import {
   setUploadedActivities,
   toggleDialog,
 } from "@slices/uiSlice";
-import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
-  initialiseServers,
+  featureColor,
+  getPaintProperty,
+  getTypeProperty,
+} from "@features/featuresService";
+import {
+  initialiseServer,
   projectApiSlice,
-  selectServer,
   setActiveProjectId,
   setCostData,
   setPlanningCostsTrigger,
   setProjectCosts,
-  setProjectImpacts,
   setProjectList,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
@@ -90,7 +93,6 @@ import HexInfoDialog from "./HexInfo/HexInfoDialog";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
-import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
 import LoginPage from "./LoginPage";
@@ -98,7 +100,6 @@ import LoginPage from "./LoginPage";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
-import NewPlanningGridDialog from "@planningGrids/NewPlanningGridDialog";
 import NewProjectDialog from "@projects/NewProjectDialog";
 import PlanningGridDialog from "@planningGrids/PlanningGridDialog";
 import PlanningGridsDialog from "@planningGrids/PlanningGridsDialog";
@@ -167,7 +168,6 @@ const App = () => {
   const [updateUser] = useUpdateUserMutation();
   // Instead of importing the whole state - import whats needed
   const projState = useSelector((state) => state.project);
-  const bioprotectServers = useSelector((state) => state.project.bpServers);
   const bioprotectServer = useSelector((state) => state.project.bpServer);
   const projDialogStates = useSelector((state) => state.project.dialogs);
 
@@ -302,7 +302,6 @@ const App = () => {
   const [dataBreaks, setDataBreaks] = useState([]);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [pid, setPid] = useState("");
-  const [allImpacts, setAllImpacts] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
   const [countries, setCountries] = useState([]);
   const [files, setFiles] = useState({});
@@ -322,7 +321,6 @@ const App = () => {
   const [runParams, setRunParams] = useState([]);
   const [boundaryPenalty, setBoundaryPenalty] = useState(0);
   const [selectedCosts, setSelectedCosts] = useState([]);
-  const [selectedImpactIds, setSelectedImpactIds] = useState([]);
   const [smallLinearGauge, setSmallLinearGauge] = useState(true);
   const [tileset, setTileset] = useState(null);
   const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
@@ -372,34 +370,18 @@ const App = () => {
   }, [dispatch, featurePUData]);
 
   useEffect(() => {
-    dispatch(initialiseServers(INITIAL_VARS.BP_SERVERS))
+    dispatch(initialiseServer())
       .unwrap()
       .then((message) => console.log(message))
       .catch((error) => console.error("Error:", error));
-  }, [dispatch, INITIAL_VARS.BP_SERVERS]);
-
-  const selectServerByName = useCallback(
-    (servername) => {
-      // Remove the search part of the URL
-      window.history.replaceState({}, document.title, "/");
-      const server = bioprotectServers.find((item) => item.name === servername);
-      if (server) {
-        dispatch(selectServer(server));
-      }
-    },
-    [dispatch, bioprotectServers],
-  );
+  }, [dispatch]);
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
     const fetchGlobalVariables = async () => {
       dispatch(setLoading(true));
       try {
         setBrew(new classyBrew());
         dispatch(setRegistry(INITIAL_VARS));
-        if (searchParams.has("server")) {
-          selectServerByName(searchParams.get("server"));
-        }
       } catch (error) {
         console.error("Error fetching global variables:", error);
       } finally {
@@ -1477,6 +1459,30 @@ const App = () => {
     "match",
     ["get", attribute],
   ];
+  // h3 indexes selected in the shown solution(s), for "outline selected only"
+  const solutionCellIdsRef = useRef([]);
+  const cellOutlineRef = useRef(uiState.cellOutline);
+  cellOutlineRef.current = uiState.cellOutline;
+
+  const applyCellOutlines = () => {
+    const id = puLayerIdsRef.current?.outlineLayerId;
+    if (!map.current || !id || !map.current.getLayer(id)) return;
+    const { width, selectedOnly } = cellOutlineRef.current;
+    map.current.setPaintProperty(id, "line-width", width);
+    map.current.setFilter(
+      id,
+      selectedOnly
+        ? [
+            "in",
+            ["to-string", ["get", "h3_index"]],
+            ["literal", solutionCellIdsRef.current],
+          ]
+        : null,
+    );
+  };
+
+  useEffect(applyCellOutlines, [uiState.cellOutline]);
+
   //gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
   const renderPuPrioritizrLayer = (freq, totalRuns) => {
     // freq: { h3_index: count } — how many runs each hex was selected in
@@ -1494,6 +1500,10 @@ const App = () => {
     }
 
     const entries = Object.entries(freq || {});
+    solutionCellIdsRef.current = entries
+      .filter(([, count]) => count > 0)
+      .map(([h3]) => h3);
+    applyCellOutlines();
     if (!entries.length) {
       map.current.setPaintProperty(
         resultsLayerId,
@@ -1514,30 +1524,18 @@ const App = () => {
 
     // YlGn colormap: yellow to dark green, normalised by totalRuns
     const maxRuns = Math.max(totalRuns, 1);
+    // stops at 0.01, 1/8 ... 1; alpha rises with the count
+    const alphas = [0.75, 0.75, 0.8, 0.8, 0.85, 0.85, 0.9, 0.9, 0.95];
     const fillExpr = [
       "interpolate",
       ["linear"],
       ["/", matchExpr, maxRuns],
       0,
       "rgba(0,0,0,0)",
-      0.01,
-      "rgba(255, 255, 229, 0.75)", // #ffffe5
-      0.125,
-      "rgba(247, 252, 185, 0.75)", // #f7fcb9
-      0.25,
-      "rgba(217, 240, 163, 0.8)", // #d9f0a3
-      0.375,
-      "rgba(173, 221, 142, 0.8)", // #addd8e
-      0.5,
-      "rgba(120, 198, 121, 0.85)", // #78c679
-      0.625,
-      "rgba(65, 171, 93, 0.85)", // #41ab5d
-      0.75,
-      "rgba(35, 132, 67, 0.9)", // #238443
-      0.875,
-      "rgba(0, 104, 55, 0.9)", // #006837
-      1,
-      "rgba(0, 69, 41, 0.95)", // #004529
+      ...PALETTE.results.flatMap((c, i) => [
+        i === 0 ? 0.01 : i / 8,
+        hexToRgba(c, alphas[i]),
+      ]),
     ];
 
     map.current.setPaintProperty(resultsLayerId, "fill-color", fillExpr);
@@ -2115,6 +2113,7 @@ const App = () => {
     const puLayerId = `martin_layer_pu_${puLayerName}`;
     const statusLayerId = `martin_layer_status_${puLayerName}`;
     const selectionLayerId = `martin_layer_selection_${puLayerName}`;
+    const outlineLayerId = `martin_layer_outline_${puLayerName}`;
     // Store layer and source IDs in a ref for later use
     puLayerIdsRef.current = {
       sourceId,
@@ -2123,6 +2122,7 @@ const App = () => {
       puLayerId,
       statusLayerId,
       selectionLayerId,
+      outlineLayerId,
       sourceLayerName: puLayerName,
       propId: "h3_index",
     };
@@ -2141,6 +2141,7 @@ const App = () => {
       puLayerId,
       statusLayerId,
       selectionLayerId,
+      outlineLayerId,
     ].forEach((layerId) => {
       if (map.current.getLayer(layerId)) {
         map.current.removeLayer(layerId);
@@ -2186,6 +2187,25 @@ const App = () => {
       },
     });
 
+    // grid outlines - a line layer, since a fill's outline is always a
+    // hairline. Width and "selected cells only" come from ui.cellOutline.
+    addMapLayer({
+      id: outlineLayerId,
+      metadata: { name: "Cell outlines", type: "cell_outlines" },
+      minzoom: 0,
+      maxzoom: 24,
+      type: "line",
+      source: sourceId,
+      layout: { visibility: "visible" },
+      "source-layer": puLayerName,
+      paint: {
+        "line-color": "rgb(150, 150, 150)",
+        "line-opacity": CONSTANTS.PU_LAYER_OPACITY,
+        "line-width": uiState.cellOutline.width,
+      },
+    });
+    applyCellOutlines();
+
     addMapLayer({
       id: puLayerId,
       metadata: {
@@ -2202,7 +2222,8 @@ const App = () => {
       "source-layer": puLayerName,
       paint: {
         "fill-color": "rgba(0, 0, 0, 0)",
-        "fill-outline-color": `rgba(150, 150, 150, ${CONSTANTS.PU_LAYER_OPACITY})`,
+        // outlines are drawn by the outline line layer
+        "fill-outline-color": "rgba(0, 0, 0, 0)",
         "fill-opacity": CONSTANTS.PU_LAYER_OPACITY,
       },
     });
@@ -2226,9 +2247,9 @@ const App = () => {
           ["==", ["feature-state", "status"], 0],
           "rgba(150,150,150,0)",
           ["==", ["feature-state", "status"], 1],
-          "rgba(63,63,191,1)",
+          PALETTE.lockedIn,
           ["==", ["feature-state", "status"], 2],
-          "rgba(191, 63, 63, 1)",
+          PALETTE.lockedOut,
           "rgba(150,150,150,0)", // default
         ],
         "fill-outline-color": "rgba(0, 0, 0, 0)",
@@ -2467,42 +2488,6 @@ const App = () => {
     );
   };
 
-  //imports a zipped shapefile as a new planning grid
-  const importPlanningUnitGrid = async (zipFilename, alias, description) => {
-    try {
-      startLogging();
-      messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Started",
-        info: "Importing planning grid..",
-      });
-      const response = await importZippedShapefileAsPu(
-        zipFilename,
-        alias,
-        description,
-      );
-      messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Finished",
-        info: response.info,
-      });
-      dispatch(
-        togglePUD({
-          dialogName: "importPlanningGridDialogOpen",
-          isOpen: false,
-        }),
-      );
-    } catch (error) {
-      deletePlanningUnitGrid(alias, true);
-      messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Finished",
-        error: error,
-      });
-      throw error;
-    }
-  };
-
   //deletes a planning unit grid - the server only allows this for the user who
   //created it, and only when no project uses it. silent is used to roll back
   //failed imports of planning grids
@@ -2576,13 +2561,6 @@ const App = () => {
     );
   };
 
-  //used by the import wizard to import a users zipped shapefile as the planning units
-  //the zipped shapefile has been uploaded to the MARXAN folder - it will be imported to PostGIS and a record will be entered in the metadata_planningUnits table
-  const importZippedShapefileAsPu = async (zipname, alias, description) =>
-    await _get(
-      `importPlanningUnitGrid?filename=${zipname}&name=${alias}&description=${description}`,
-    );
-
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -2592,131 +2570,12 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
-  const openCumulativeImpactDialog = async () => {
-    dispatch(setLoading(true));
-    if (uiState.allImpacts.length < 1) {
-      const response = await _get("getAllImpacts");
-      setAllImpacts(response.data);
-    }
+  const openCumulativeImpactDialog = () =>
     dispatch(
       toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true }),
     );
-    dispatch(setLoading(false));
-  };
 
-  //makes a call to get the impacts from the server and returns them
-  const getImpacts = async () => {
-    const response = await _get("getAllImpacts");
-    setAllImpacts(response.data);
-  };
-
-  const openCostsDialog = async () => {
-    if (!uiState.allImpacts?.length) {
-      await getImpacts();
-    }
-    setCostsDialogOpen(true);
-  };
-
-  //when a user clicks a impact in the ImpactsDialog
-  const clickImpact = (impact, event, previousRow) => {
-    selectedImpactIds.includes(impact.id)
-      ? removeImpact(impact)
-      : addImpact(impact);
-    toggleImpactLayer(impact);
-  };
-
-  //adds a impact to the selectedImpactIds array
-  const addImpact = (impact) =>
-    setSelectedImpactIds((prevState) => [
-      ...prevState.selectedImpactIds,
-      impact.id,
-    ]);
-
-  //removes a impact from the selectedImpactIds array
-  const removeImpact = (impact) => {
-    setSelectedImpactIds((prevState) =>
-      prevState.selectedImpactIds.filter((imp) => imp !== impact.id),
-    );
-  };
-
-  //toggles the impact layer on the map
-  const toggleImpactLayer = (impact) => {
-    if (impact.tilesetid === "") {
-      showMessage(`This feature does not seem to have a tileset.`, "error");
-      return;
-    }
-    // this.closeImpactMenu();
-    const layerName = impact.tilesetid.split(".")[1];
-    const layerId = "marxan_impact_layer_" + layerName;
-    // const layerId = "martin_impact_layer_" + layerName;
-    // const tilesURL = `/tiles/${layerName}/{z}/{x}/{y}.png`;
-
-    if (map.current.getLayer(layerId)) {
-      removeMapLayer(layerId);
-      map.current.removeSource(layerId);
-      updateImpact(impact, { impact_layer_loaded: false });
-    } else {
-      //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
-      const layers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER]);
-      const beforeLayer = layers.length > 0 ? layers[0].id : undefined;
-
-      map.current.addSource(layerId, {
-        type: "raster",
-        tiles: [tilesURL],
-        tileSize: 256,
-      });
-
-      const rasterLayer = {
-        id: layerId,
-        type: "raster",
-        source: layerId,
-        layout: {
-          visibility: "visible",
-        },
-        paint: {
-          "raster-opacity": 0.85,
-        },
-        metadata: {
-          name: impact.alias,
-          type: "impact",
-        },
-      };
-
-      addMapLayer(rasterLayer, beforeLayer);
-      updateImpact(impact, { impact_layer_loaded: true });
-    }
-  };
-
-  //gets the ids of the selected impacts
-  const getSelectedImpactIds = () => {
-    // Use map and filter to get selected impact IDs in one line
-    const ids = uiState.allImpacts
-      .filter((impact) => impact.selected)
-      .map((impact) => impact.id);
-
-    // Update the state with the selected impact IDs
-    setSelectedImpactIds(ids);
-  };
-
-  //updates the properties of a impact and then updates the impacts state
-  const updateImpact = (impact, newProps) => {
-    // Create a shallow copy of the impacts array
-    const impacts = [...uiState.allImpacts];
-
-    // Find the index of the impact to update
-    const index = impacts.findIndex((element) => element.id === impact.id);
-
-    if (index !== -1) {
-      // Create a new impact object with updated properties
-      impacts[index] = { ...impacts[index], ...newProps };
-
-      // Update the state
-      setAllImpacts(impacts);
-
-      // Update projectImpacts based on the selected impacts
-      dispatch(setProjectImpacts(impacts.filter((item) => item.selected)));
-    }
-  };
+  const openCostsDialog = () => setCostsDialogOpen(true);
 
   const runCumulativeImpact = async (
     selectedUploadedActivityIds,
@@ -2766,7 +2625,7 @@ const App = () => {
     return "Costs created from Cumulative impact";
   };
 
-  // Inspect an uploaded raster sitting in data/tmp/ on the server.
+  // Inspect an uploaded raster sitting in imports/ on the server.
   // Returns { band_count, dtypes, nodata, bounds, crs_epsg, ... } or null on error.
   // NOT wrapped in useCallback because (a) loadCostsLayer is declared later
   // in this file, and putting later-declared functions in a useCallback
@@ -2787,7 +2646,7 @@ const App = () => {
     }
   };
 
-  // Build a cost profile from a pre-uploaded raster (sitting in data/tmp/).
+  // Build a cost profile from a pre-uploaded raster (sitting in imports/).
   // options: { band, stat, normalise, floor, fillStrategy, setActive }
   // Negative pixel values are always clamped to floor server-side; that
   // is not a user-configurable option because negatives are invalid for
@@ -3212,10 +3071,7 @@ const App = () => {
         return;
       }
 
-      const color =
-        Array.isArray(window.colors) && window.colors.length
-          ? window.colors[activity.id % window.colors.length]
-          : "#F5C043";
+      const color = PALETTE.activities;
 
       if (!map.current.getSource(sourceId)) {
         map.current.addSource(sourceId, {
@@ -3264,12 +3120,7 @@ const App = () => {
     const { sourceId, sourceLayerName } = puLayerIdsRef.current || {};
     if (!sourceId || !sourceLayerName) return;
 
-    // Ensure feature has a color assigned
-    const color =
-      feature.color ||
-      (Array.isArray(window.colors) && window.colors.length
-        ? window.colors[feature.id % window.colors.length]
-        : "#ff0000");
+    const color = featureColor(feature);
 
     let layerName = `martin_layer_feature_puid_${feature.id}`;
 
@@ -3587,7 +3438,6 @@ const App = () => {
           menuAnchor={menuAnchor}
           openUsersDialog={openUsersDialog}
           userRole={userData}
-          metadata={metadata}
           cleanup={cleanup}
         />
         <UserMenu menuAnchor={menuAnchor} logout={handleLogOut} />
@@ -3737,15 +3587,6 @@ const App = () => {
           previewFeature={previewFeature}
           fileUpload={uploadFileToFolder}
           updateSelectedFeatures={updateSelectedFeatures}
-        />
-        <NewPlanningGridDialog
-          loading={uiState.loading || preprocessing || uploading}
-          fileUpload={uploadFileToFolder}
-        />
-        <ImportPlanningGridDialog
-          importPlanningUnitGrid={importPlanningUnitGrid}
-          loading={uiState.loading || uploading}
-          fileUpload={uploadFileToFolder}
         />
         <FeatureInfoDialog open={true} updateFeature={updateFeature} />
         <FeaturesDialog

@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 
-import MarxanDialog from "../MarxanDialog";
+import BPDialog from "../BPDialog";
 import React from "react";
 import { selectCurrentUser } from "@slices/authSlice";
 import { toggleProjDialog } from "@slices/projectSlice";
@@ -51,11 +51,11 @@ const ProjectsListDialog = () => {
       toggleProjDialog({
         dialogName: "projectsListDialogOpen",
         isOpen: false,
-      })
+      }),
     );
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={projState.dialogs.projectsListDialogOpen}
       showCancelButton={false}
       autoDetectWindowHeight={false}
@@ -65,7 +65,9 @@ const ProjectsListDialog = () => {
       helpLink={"user.html#projects-list"}
       onOk={() => closeDialog()}
     >
-      <div style={{ marginBottom: "5px" }}>{projState.projectListDialogHeading}</div>
+      <div style={{ marginBottom: "5px" }}>
+        {projState.projectListDialogHeading}
+      </div>
       <div id="failedProjectsTable">
         <TableContainer component={Paper}>
           <Table>
@@ -97,7 +99,7 @@ const ProjectsListDialog = () => {
           </Table>
         </TableContainer>
       </div>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

@@ -5,20 +5,24 @@ import {
   toggleDialog,
   toggleProjectDialog,
 } from "@slices/uiSlice";
-import { setPlanningUnitGrids, togglePUD, useListPlanningUnitGridsQuery } from "@slices/planningUnitSlice";
-import { useGetProjectQuery } from "@slices/projectSlice";
+import {
+  setPlanningUnitGrids,
+  togglePUD,
+  useListPlanningUnitGridsQuery,
+} from "@slices/planningUnitSlice";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "../BPDialog";
 import BioprotectTable from "../BPComponents/BioprotectTable";
 import ConfirmDeleteDialog from "../BPComponents/ConfirmDeleteDialog";
-import { selectCurrentUser } from "@slices/authSlice";
-import MarxanDialog from "../MarxanDialog";
 import PlanningGridsToolbar from "./PlanningGridsToolbar";
+import { selectCurrentUser } from "@slices/authSlice";
+import { useGetProjectQuery } from "@slices/projectSlice";
 
 const PlanningGridsDialog = (props) => {
   const dispatch = useDispatch();
   const uiState = useSelector((state) => state.ui);
-  const puState = useSelector((state) => state.planningUnit)
+  const puState = useSelector((state) => state.planningUnit);
   const dialogStates = useSelector((state) => state.ui.dialogStates);
   const [searchText, setSearchText] = useState("");
   const [selectedPlanningGrid, setSelectedPlanningGrid] = useState(undefined);
@@ -28,7 +32,8 @@ const PlanningGridsDialog = (props) => {
   const canDelete =
     !!currentUser?.username &&
     selectedPlanningGrid?.created_by === currentUser.username;
-  const { data: planningUnitsData, isLoading: isPUsLoading } = useListPlanningUnitGridsQuery();
+  const { data: planningUnitsData, isLoading: isPUsLoading } =
+    useListPlanningUnitGridsQuery();
   const activeProjectId = useSelector((state) => state.project.activeProjectId);
   const { data: projectResp } = useGetProjectQuery(activeProjectId, {
     skip: activeProjectId == null,
@@ -37,16 +42,17 @@ const PlanningGridsDialog = (props) => {
 
   useEffect(() => {
     if (planningUnitsData) {
-      dispatch(setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []));
+      dispatch(
+        setPlanningUnitGrids(planningUnitsData.planning_unit_grids || []),
+      );
     }
   }, [dispatch, planningUnitsData]);
-
 
   // preselect the project's own planning grid whenever the dialog opens
   useEffect(() => {
     if (!puState.dialogs.planningGridsDialogOpen) return;
     setSelectedPlanningGrid(
-      puState.planningUnitGrids.find((g) => g.alias === activeGridAlias)
+      puState.planningUnitGrids.find((g) => g.alias === activeGridAlias),
     );
   }, [
     puState.dialogs.planningGridsDialogOpen,
@@ -60,7 +66,7 @@ const PlanningGridsDialog = (props) => {
       togglePUD({
         dialogName: "planningGridsDialogOpen",
         isOpen: false,
-      })
+      }),
     );
   }, []);
 
@@ -70,26 +76,6 @@ const PlanningGridsDialog = (props) => {
     props.deletePlanningGrid(selectedPlanningGrid.tilesetid);
     setSelectedPlanningGrid(undefined);
   }, [props, selectedPlanningGrid]);
-
-  const handleNewMarine = useCallback(() => {
-    dispatch(
-      togglePUD({
-        dialogName: "newPlanningGridDialogOpen",
-        isOpen: true,
-      })
-    );
-    closeDialog();
-  }, [closeDialog]);
-
-  const openImportDialog = useCallback(() => {
-    dispatch(
-      togglePUD({
-        dialogName: "importPlanningGridDialogOpen",
-        isOpen: true,
-      })
-    );
-    closeDialog();
-  }, [props, closeDialog]);
 
   const exportPlanningGrid = useCallback(() => {
     // the list rows carry the grid's name as tilesetid
@@ -107,7 +93,7 @@ const PlanningGridsDialog = (props) => {
     (planning_grid_metadata) => {
       props.previewPlanningGrid(planning_grid_metadata);
     },
-    [props]
+    [props],
   );
 
   const sortDate = useCallback((a, b, desc) => {
@@ -117,7 +103,7 @@ const PlanningGridsDialog = (props) => {
       a.slice(0, 2),
       a.slice(9, 11),
       a.slice(12, 14),
-      a.slice(15, 17)
+      a.slice(15, 17),
     );
     const dateB = new Date(
       b.slice(6, 8),
@@ -125,7 +111,7 @@ const PlanningGridsDialog = (props) => {
       b.slice(0, 2),
       b.slice(9, 11),
       b.slice(12, 14),
-      b.slice(15, 17)
+      b.slice(15, 17),
     );
     return dateA > dateB ? 1 : -1;
   }, []);
@@ -173,7 +159,7 @@ const PlanningGridsDialog = (props) => {
   ];
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={puState.dialogs.planningGridsDialogOpen}
       loading={props.loading}
       fullWidth={props.fullWidth}
@@ -188,9 +174,6 @@ const PlanningGridsDialog = (props) => {
         <PlanningGridsToolbar
           userRole={props.userRole}
           unauthorisedMethods={props.unauthorisedMethods}
-          handleNew={() => handleNew()}
-          handleNewMarine={() => handleNewMarine()}
-          openImportDialog={() => openImportDialog()}
           loading={props.loading}
           exportPlanningGrid={() => exportPlanningGrid()}
           handleDelete={() => setConfirmDeleteOpen(true)}
@@ -205,7 +188,6 @@ const PlanningGridsDialog = (props) => {
           data={puState.planningUnitGrids}
           tableColumns={columns}
           searchColumns={[
-            "country",
             "domain",
             "alias",
             "description",
@@ -225,11 +207,11 @@ const PlanningGridsDialog = (props) => {
         <p>Are you sure you want to delete the planning grid</p>
         <b>{selectedPlanningGrid?.alias}?</b>
         <p>
-          This removes the grid and its cells and cannot be undone. A grid
-          that is used by a project cannot be deleted.
+          This removes the grid and its cells and cannot be undone. A grid that
+          is used by a project cannot be deleted.
         </p>
       </ConfirmDeleteDialog>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

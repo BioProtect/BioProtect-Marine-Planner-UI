@@ -74,29 +74,6 @@ export const FEATURE_PROPERTIES_CORE = [
 export const INITIAL_VARS = {
   CLIENT_VERSION: "v1.0.8",
   SERVER_VERSION: "v1.0.8",
-  BP_SERVERS: [
-    // {
-    //   name: "Beta test",
-    //   port: 443,
-    //   host: "andrewcottam.com",
-    //   protocol: "https:",
-    //   description:
-    //     "Playground for trying features and analyses. All projects will be deleted at the end.",
-    //   type: "remote",
-    //   project: "geeImageServer",
-    //   zone: "europe-west6-a",
-    //   instanceName: "bioprotect-test-server",
-    // },
-    // {
-    //   name: "Bioprotect",
-    //   protocol: window.location.protocol,
-    //   host: window.location.hostname,
-    //   port: "",
-    //   description: "Biprotect test server",
-    //   type: "remote",
-    //   instanceName: "bioprotect-test-server",
-    // },
-  ],
   WDPA: {
     latest_version: "February 2023",
     downloadUrl: "http://wcmc.io/wdpa_current_release",
@@ -144,15 +121,47 @@ export const INITIAL_VARS = {
   ],
 };
 // H3 resolutions offered for planning grids
+// areaKm2 is H3's average cell area, used to estimate cell counts
 export const RESOLUTIONS = [
-  { label: "Basin resolution (36 km²)", value: 6 },
-  { label: "Regional resolution (5 km²)", value: 7 },
-  { label: "Mid Regional Local resolution (0.7 km²)", value: 8 },
-  { label: "Local resolution (0.1 km²)", value: 9 },
+  { label: "Basin resolution (36 km²)", value: 6, areaKm2: 36.129 },
+  { label: "Regional resolution (5 km²)", value: 7, areaKm2: 5.161 },
+  { label: "Mid Regional Local resolution (0.7 km²)", value: 8, areaKm2: 0.7373 },
+  { label: "Local resolution (0.1 km²)", value: 9, areaKm2: 0.1053 },
 ];
+
+// New grids: suggest the finest resolution at or under SUGGEST_MAX_CELLS,
+// warn above WARN_CELLS (Prioritizr with a boundary penalty gets slow)
+export const SUGGEST_MAX_CELLS = 50_000;
+export const WARN_CELLS = 200_000;
+
+export const cellsAt = (areaKm2, r) => Math.round(areaKm2 / r.areaKm2);
+
+// Finest resolution under the target, else the coarsest
+export const suggestResolution = (areaKm2) =>
+  [...RESOLUTIONS].reverse().find((r) => cellsAt(areaKm2, r) <= SUGGEST_MAX_CELLS)
+    ?.value ?? RESOLUTIONS[0].value;
 
 export const resolutionLabel = (res) =>
   RESOLUTIONS.find((r) => r.value === Number(res))?.label ?? "-";
+
+// "#rrggbb" -> "rgba(r, g, b, a)"
+export const hexToRgba = (hex, a) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+
+// Map palette: "Viridis and amber" from src/colourblind-palettes.examples.html.
+// Both ramps change steadily in lightness, so they hold up for colour-blind
+// viewers, in greyscale and in print. Ramps run low -> high.
+export const PALETTE = {
+  results: ["#cae11f", "#7fd34e", "#3fbc73", "#1fa287", "#24868e", "#2f6b8e", "#3e4c8a", "#482979", "#440154"],
+  costs: ["#fff9c5", "#feeaa0", "#fed26d", "#feb13e", "#f88b22", "#e56910", "#c84a02", "#9b3504", "#6e2706"],
+  lockedIn: "#3b528b",
+  lockedOut: "#e66101",
+  features: ["#4477AA", "#EE6677", "#228833", "#CCBB44", "#66CCEE", "#AA3377", "#BBBBBB"],
+  protectedAreas: "#35b779",
+  activities: "#e0c200",
+};
 
 export const CONSTANTS = {
   DOCS_ROOT: "https://docs.marxanweb.org/",
@@ -188,7 +197,7 @@ export const CONSTANTS = {
   // gets a legend entry; the outline is wdpa_line.
   WDPA_LAYER_NAME: "martin_wdpa_fill",
   WDPA_LINE_LAYER_NAME: "wdpa_line",
-  WDPA_COLOR: "#2e7d32",
+  WDPA_COLOR: PALETTE.protectedAreas,
   LAYER_TYPE_SUMMED_SOLUTIONS: "summed_solutions",
   LAYER_TYPE_PLANNING_UNITS: "pus",
   LAYER_TYPE_PLANNING_UNITS_COST: "cost",
@@ -204,12 +213,12 @@ export const CONSTANTS = {
     label: "Default",
   },
   PU_STATUS_LOCKED_IN: {
-    fillColor: "none",
-    strokeColor: "blue",
+    fillColor: PALETTE.lockedIn,
+    strokeColor: "transparent",
     label: "Locked in",
   },
   PU_STATUS_LOCKED_OUT: {
-    fillColor: "rgba(191, 63, 63, 1)",
+    fillColor: PALETTE.lockedOut,
     strokeColor: "transparent",
     label: "Locked out",
   },
@@ -223,17 +232,7 @@ export const CONSTANTS = {
   FEATURE_PLANNING_GRID_LAYER_OPACITY: 0.9,
   ACTIVITY_LAYER_OPACITY: 0.55,
   RESULTS_LAYER_OPACITY: 0.8,
-  COST_COLORS: [
-    "rgba(255,255,204,0.8)",
-    "rgba(255,237,160,0.8)",
-    "rgba(254,217,118,0.8)",
-    "rgba(254,178,76,0.8)",
-    "rgba(253,141,60,0.8)",
-    "rgba(252,78,42,0.8)",
-    "rgba(227,26,28,0.8)",
-    "rgba(189,0,38,0.8)",
-    "rgba(128,0,38,0.8)",
-  ],
+  COST_COLORS: PALETTE.costs.map((c) => hexToRgba(c, 0.8)),
   UNIFORM_COST_NAME: "Equal area",
   //an array of feature property information that is used in the Feature Information dialog box - showForOld sets whether that property is shown for old versions of bioprotect
   FEATURE_PROPERTIES_POLYGONS: FEATURE_PROPERTIES_CORE.concat([

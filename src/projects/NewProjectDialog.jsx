@@ -1,4 +1,4 @@
-import { Autocomplete, MenuItem, Select } from "@mui/material";
+import { Autocomplete } from "@mui/material";
 import {
   setPlanningUnitGrids,
   useListPlanningUnitGridsQuery,
@@ -11,6 +11,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useRef, useState } from "react";
 
+import BPDialog from "../BPDialog.jsx";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -21,12 +22,11 @@ import FileUpload from "../Uploads/FileUpload";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import LinearProgress from "@mui/material/LinearProgress";
-import MarxanDialog from "../MarxanDialog.jsx";
 import PlanningUnitsDialog from "@planningGrids/PlanningUnitsDialog";
 import ProjectFeaturesTable from "@projects/ProjectFeaturesTable";
-import { RESOLUTIONS } from "../bpVars.jsx";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
+import ResolutionSelect from "@planningGrids/ResolutionSelect";
 import SelectCostFeatures from "../SelectCostFeatures.jsx";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -90,7 +90,6 @@ const NewProjectDialog = ({
   // upload - create grid inputs
   const [planningGridName, setPlanningGridName] = useState("");
   const [resolution, setResolution] = useState(7);
-  const resolutionOptions = RESOLUTIONS;
 
   // upload progress - continue automatically
   const [waitingForUpload, setWaitingForUpload] = useState(false);
@@ -327,7 +326,7 @@ const NewProjectDialog = ({
 
   return (
     <>
-      <MarxanDialog
+      <BPDialog
         open={projState.dialogs.newProjectDialogOpen}
         loading={isLoading}
         title={`New project: ${steps[stepIndex]}`}
@@ -371,13 +370,13 @@ const NewProjectDialog = ({
                 getOptionLabel={(o) =>
                   typeof o === "string" ? o : `EPSG:${o.code} - ${o.label}`
                 }
-                value={
-                  CRS_OPTIONS.find((o) => o.code === crsEpsg) ?? crsEpsg
-                }
+                value={CRS_OPTIONS.find((o) => o.code === crsEpsg) ?? crsEpsg}
                 onChange={(e, v) =>
                   setCrsEpsg(
+                    // autoSelect hands back the input text on blur, e.g.
+                    // "EPSG:3035 - ETRS89 / LAEA Europe": keep the code only
                     typeof v === "string"
-                      ? v.replace(/^epsg:/i, "").trim()
+                      ? (v.match(/^\s*(?:epsg:?)?\s*(\d+)/i)?.[1] ?? v.trim())
                       : (v?.code ?? ""),
                   )
                 }
@@ -435,7 +434,7 @@ const NewProjectDialog = ({
                 fileUpload={fileUpload}
                 fileMatch=".zip"
                 mandatory
-                destFolder="data/tmp"
+                destFolder="imports"
                 label="Shapefile (.zip)"
               />
             ) : (
@@ -453,22 +452,14 @@ const NewProjectDialog = ({
               value={planningGridName}
               onChange={(e) => setPlanningGridName(e.target.value)}
             />
-            <Box>
-              <Typography variant="body2" gutterBottom>
-                Resolution of planning grid
-              </Typography>
-              <Select
-                value={resolution}
-                onChange={(e) => setResolution(e.target.value)}
-                sx={{ width: 500 }}
-              >
-                {resolutionOptions.map((item) => (
-                  <MenuItem key={item.value} value={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Box>
+            <ResolutionSelect
+              value={resolution}
+              onChange={setResolution}
+              geojson={puGrid === "draw" ? drawnArea : null}
+              shapefilePath={
+                puGrid === "upload" ? fileUploadResponse?.file_path : null
+              }
+            />
             <Button
               variant="outlined"
               onClick={handleCreateNewPlanningGrid}
@@ -546,7 +537,7 @@ const NewProjectDialog = ({
         {stepIndex === 3 && (
           <SelectCostFeatures selectedCosts={selectedCosts} />
         )}
-      </MarxanDialog>
+      </BPDialog>
     </>
   );
 };

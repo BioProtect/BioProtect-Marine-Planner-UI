@@ -1,12 +1,11 @@
 import { defineConfig } from "vite";
 import path from "path";
 import react from "@vitejs/plugin-react-swc";
-import svgr from "vite-plugin-svgr";
 
 export default defineConfig({
   // depending on your application, base can also be "/"
   base: "/",
-  plugins: [react(), svgr()],
+  plugins: [react()],
   resolve: {
     alias: {
       "@slices": path.resolve(__dirname, "./src/slices"),

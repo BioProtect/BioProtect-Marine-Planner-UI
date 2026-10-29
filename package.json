@@ -12,7 +12,6 @@
     "@reduxjs/toolkit": "^2.7.0",
     "@vitejs/plugin-react-swc": "^4.0.1",
     "classybrew": "0.0.3",
-    "gh-pages": "^6.3.0",
     "jsonp-promise": "^0.1.2",
     "jspdf": "^4.2.1",
     "mapbox-gl": "^2.15.0",
@@ -20,27 +19,21 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-redux": "^9.2.0",
-    "vite-plugin-svgr": "^4.5.0",
     "wellknown": "^0.5.0"
   },
   "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
     "start": "vite",
     "serve": "vite preview",
     "build": "vite build",
     "test": "vitest",
     "test:coverage": "vitest run --coverage --watch=false"
   },
-  "homepage": "https://app.marxanweb.org",
   "devDependencies": {
-    "@babel/plugin-transform-private-property-in-object": "^7.25.9",
     "@vitest/coverage-v8": "^3.2.0",
     "eslint": "^9.9.0",
     "eslint-plugin-react": "^7.37.0",
     "prettier": "^3.3.3",
     "vite": "^7.1.5",
-    "vite-tsconfig-paths": "^1.0.0",
     "vitest": "^3.2.0"
   },
   "browserslist": {

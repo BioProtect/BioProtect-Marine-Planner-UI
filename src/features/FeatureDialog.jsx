@@ -7,12 +7,12 @@ import {
 } from "@slices/projectSlice";
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "../BPDialog";
 import BPTableRow from "../BPComponents/BPTableRow";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import LinkIcon from "@mui/icons-material/Link";
 import MapContainer2 from "../MapContainer2";
-import MarxanDialog from "../MarxanDialog";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -71,7 +71,7 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
     );
 
   return (
-    <MarxanDialog
+    <BPDialog
       open={featureDialogs.featureDialogOpen}
       loading={uiState.loading}
       onOk={closeDialog}
@@ -154,7 +154,7 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
           </Box>
         </Box>
       </Box>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

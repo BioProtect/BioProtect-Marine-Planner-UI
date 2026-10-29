@@ -47,6 +47,8 @@ export const costRasterApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: { action: "delete", raster_id: rasterId },
       }),
+      transformResponse: (raw) =>
+        typeof raw === "string" ? JSON.parse(raw) : raw,
       invalidatesTags: [{ type: "CostRaster", id: "LIST" }],
     }),
   }),
