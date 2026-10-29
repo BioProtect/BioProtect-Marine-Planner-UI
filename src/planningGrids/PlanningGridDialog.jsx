@@ -78,10 +78,6 @@ const PlanningGridDialog = ({
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>Country:</TableCell>
-                <TableCell>{planningGridMetadata.country}</TableCell>
-              </TableRow>
-              <TableRow>
                 <TableCell>Domain:</TableCell>
                 <TableCell>{planningGridMetadata.domain}</TableCell>
               </TableRow>

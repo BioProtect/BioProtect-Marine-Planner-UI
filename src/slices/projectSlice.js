@@ -221,7 +221,6 @@ const initialState = {
   projectListDialogHeading: "",
   projectListDialogTitle: "",
   projectChanged: false,
-  projectImpacts: [],
   planningCostsTrigger: false,
 
   dialogs: {
@@ -335,9 +334,6 @@ const projectSlice = createSlice({
     setProjectData(state, action) {
       state.projectData = action.payload;
     },
-    setProjectImpacts(state, action) {
-      state.projectImpacts = action.payload;
-    },
     setProjectListDialogHeading(state, action) {
       state.projectListDialogHeading = action.payload;
     },
@@ -403,7 +399,6 @@ export const {
   setAddToProject,
   setCostData,
   setProjectData,
-  setProjectImpacts,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjectList,

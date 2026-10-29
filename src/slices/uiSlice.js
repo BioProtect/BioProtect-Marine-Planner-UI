@@ -93,7 +93,6 @@ const initialState = {
   registry: {},
 
   activities: [],
-  allImpacts: [],
   uploadedActivities: [],
   selectedActivity: "",
 

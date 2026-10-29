@@ -33,7 +33,6 @@ import {
   setCostData,
   setPlanningCostsTrigger,
   setProjectCosts,
-  setProjectImpacts,
   setProjectList,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
@@ -303,7 +302,6 @@ const App = () => {
   const [dataBreaks, setDataBreaks] = useState([]);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [pid, setPid] = useState("");
-  const [allImpacts, setAllImpacts] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
   const [countries, setCountries] = useState([]);
   const [files, setFiles] = useState({});
@@ -323,7 +321,6 @@ const App = () => {
   const [runParams, setRunParams] = useState([]);
   const [boundaryPenalty, setBoundaryPenalty] = useState(0);
   const [selectedCosts, setSelectedCosts] = useState([]);
-  const [selectedImpactIds, setSelectedImpactIds] = useState([]);
   const [smallLinearGauge, setSmallLinearGauge] = useState(true);
   const [tileset, setTileset] = useState(null);
   const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
@@ -2573,131 +2570,12 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
-  const openCumulativeImpactDialog = async () => {
-    dispatch(setLoading(true));
-    if (uiState.allImpacts.length < 1) {
-      const response = await _get("getAllImpacts");
-      setAllImpacts(response.data);
-    }
+  const openCumulativeImpactDialog = () =>
     dispatch(
       toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true }),
     );
-    dispatch(setLoading(false));
-  };
 
-  //makes a call to get the impacts from the server and returns them
-  const getImpacts = async () => {
-    const response = await _get("getAllImpacts");
-    setAllImpacts(response.data);
-  };
-
-  const openCostsDialog = async () => {
-    if (!uiState.allImpacts?.length) {
-      await getImpacts();
-    }
-    setCostsDialogOpen(true);
-  };
-
-  //when a user clicks a impact in the ImpactsDialog
-  const clickImpact = (impact, event, previousRow) => {
-    selectedImpactIds.includes(impact.id)
-      ? removeImpact(impact)
-      : addImpact(impact);
-    toggleImpactLayer(impact);
-  };
-
-  //adds a impact to the selectedImpactIds array
-  const addImpact = (impact) =>
-    setSelectedImpactIds((prevState) => [
-      ...prevState.selectedImpactIds,
-      impact.id,
-    ]);
-
-  //removes a impact from the selectedImpactIds array
-  const removeImpact = (impact) => {
-    setSelectedImpactIds((prevState) =>
-      prevState.selectedImpactIds.filter((imp) => imp !== impact.id),
-    );
-  };
-
-  //toggles the impact layer on the map
-  const toggleImpactLayer = (impact) => {
-    if (impact.tilesetid === "") {
-      showMessage(`This feature does not seem to have a tileset.`, "error");
-      return;
-    }
-    // this.closeImpactMenu();
-    const layerName = impact.tilesetid.split(".")[1];
-    const layerId = "marxan_impact_layer_" + layerName;
-    // const layerId = "martin_impact_layer_" + layerName;
-    // const tilesURL = `/tiles/${layerName}/{z}/{x}/{y}.png`;
-
-    if (map.current.getLayer(layerId)) {
-      removeMapLayer(layerId);
-      map.current.removeSource(layerId);
-      updateImpact(impact, { impact_layer_loaded: false });
-    } else {
-      //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
-      const layers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER]);
-      const beforeLayer = layers.length > 0 ? layers[0].id : undefined;
-
-      map.current.addSource(layerId, {
-        type: "raster",
-        tiles: [tilesURL],
-        tileSize: 256,
-      });
-
-      const rasterLayer = {
-        id: layerId,
-        type: "raster",
-        source: layerId,
-        layout: {
-          visibility: "visible",
-        },
-        paint: {
-          "raster-opacity": 0.85,
-        },
-        metadata: {
-          name: impact.alias,
-          type: "impact",
-        },
-      };
-
-      addMapLayer(rasterLayer, beforeLayer);
-      updateImpact(impact, { impact_layer_loaded: true });
-    }
-  };
-
-  //gets the ids of the selected impacts
-  const getSelectedImpactIds = () => {
-    // Use map and filter to get selected impact IDs in one line
-    const ids = uiState.allImpacts
-      .filter((impact) => impact.selected)
-      .map((impact) => impact.id);
-
-    // Update the state with the selected impact IDs
-    setSelectedImpactIds(ids);
-  };
-
-  //updates the properties of a impact and then updates the impacts state
-  const updateImpact = (impact, newProps) => {
-    // Create a shallow copy of the impacts array
-    const impacts = [...uiState.allImpacts];
-
-    // Find the index of the impact to update
-    const index = impacts.findIndex((element) => element.id === impact.id);
-
-    if (index !== -1) {
-      // Create a new impact object with updated properties
-      impacts[index] = { ...impacts[index], ...newProps };
-
-      // Update the state
-      setAllImpacts(impacts);
-
-      // Update projectImpacts based on the selected impacts
-      dispatch(setProjectImpacts(impacts.filter((item) => item.selected)));
-    }
-  };
+  const openCostsDialog = () => setCostsDialogOpen(true);
 
   const runCumulativeImpact = async (
     selectedUploadedActivityIds,
@@ -3560,7 +3438,6 @@ const App = () => {
           menuAnchor={menuAnchor}
           openUsersDialog={openUsersDialog}
           userRole={userData}
-          metadata={metadata}
           cleanup={cleanup}
         />
         <UserMenu menuAnchor={menuAnchor} logout={handleLogOut} />

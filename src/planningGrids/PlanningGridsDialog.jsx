@@ -188,7 +188,6 @@ const PlanningGridsDialog = (props) => {
           data={puState.planningUnitGrids}
           tableColumns={columns}
           searchColumns={[
-            "country",
             "domain",
             "alias",
             "description",

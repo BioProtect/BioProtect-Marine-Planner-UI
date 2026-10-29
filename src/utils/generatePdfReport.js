@@ -119,7 +119,6 @@ export async function generatePdfReport({
   const metaRows = [];
   if (metadata?.pu_alias) metaRows.push(["Grid", metadata.pu_alias]);
   if (metadata?.pu_area && Number(metadata.pu_area) > 0) metaRows.push(["Hex area", `${Number(metadata.pu_area).toLocaleString("en-GB", { maximumFractionDigits: 1 })} km²`]);
-  if (metadata?.pu_country) metaRows.push(["Country", metadata.pu_country]);
   if (metadata?.pu_domain) metaRows.push(["Domain", metadata.pu_domain]);
   metaRows.push(["Date", dateStr]);
 

@@ -373,8 +373,10 @@ const NewProjectDialog = ({
                 value={CRS_OPTIONS.find((o) => o.code === crsEpsg) ?? crsEpsg}
                 onChange={(e, v) =>
                   setCrsEpsg(
+                    // autoSelect hands back the input text on blur, e.g.
+                    // "EPSG:3035 - ETRS89 / LAEA Europe": keep the code only
                     typeof v === "string"
-                      ? v.replace(/^epsg:/i, "").trim()
+                      ? (v.match(/^\s*(?:epsg:?)?\s*(\d+)/i)?.[1] ?? v.trim())
                       : (v?.code ?? ""),
                   )
                 }
