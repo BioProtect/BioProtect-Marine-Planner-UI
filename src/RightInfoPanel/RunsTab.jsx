@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
 import { clearRuns, toggleRun } from "@slices/prioritizrSlice";
+import { PALETTE } from "../bpVars.jsx";
 import {
   useDeletePrioritizrRunMutation,
   useListPrioritizrRunsQuery,
@@ -35,8 +36,8 @@ const fmtTime = (iso) =>
     timeZone: "UTC",
   }).format(new Date(iso));
 
-// YlGn colormap stops matching the map layer
-const YLGN_STOPS = ["#ffffe5", "#d9f0a3", "#78c679", "#238443", "#004529"];
+// results ramp, as on the map layer
+const RESULTS_STOPS = PALETTE.results;
 
 const FrequencyLegend = ({ runCount }) => (
   <Box sx={{ px: 1.5, py: 1, borderBottom: 1, borderColor: "brand.border" }}>
@@ -61,7 +62,7 @@ const FrequencyLegend = ({ runCount }) => (
           height: 14,
           borderRadius: 1,
           border: "1px solid #ccd6db",
-          background: `linear-gradient(to right, ${YLGN_STOPS.join(", ")})`,
+          background: `linear-gradient(to right, ${RESULTS_STOPS.join(", ")})`,
         }}
       />
       <Typography

@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import CONSTANTS from "../bpVars.jsx";
 import FeaturesTab from "./FeaturesTab";
+import useAppSnackbar from "@hooks/useAppSnackbar";
 import Loading from "../Loading";
 import PanelHeader from "../BPComponents/PanelHeader";
 import Paper from "@mui/material/Paper";
@@ -26,6 +27,7 @@ const activeTabArr = ["project", "features", "planning_units"];
 
 const InfoPanel = (props) => {
   const dispatch = useDispatch();
+  const { showMessage } = useAppSnackbar();
   const uiState = useSelector((state) => state.ui);
   const projState = useSelector((state) => state.project);
   const puState = useSelector((state) => state.planningUnit);
@@ -75,10 +77,13 @@ const InfoPanel = (props) => {
 
   //preprocess synchronously, i.e. one after another
   const preprocessAllFeatures = async () => {
-    for (const feature of projectFeatures) {
-      if (!feature.preprocessed) {
-        await preprocessFeature(feature);
-      }
+    const todo = projectFeatures.filter((f) => !f.preprocessed);
+    if (!todo.length) {
+      showMessage("All features are already preprocessed", "info");
+      return;
+    }
+    for (const feature of todo) {
+      await preprocessFeature(feature);
     }
   };
 

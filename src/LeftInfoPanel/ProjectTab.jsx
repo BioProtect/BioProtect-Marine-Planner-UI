@@ -55,6 +55,7 @@ const ProjectTabContent = ({
               {metadata.area_km2 != null
                 ? `${Math.round(metadata.area_km2).toLocaleString()} km²`
                 : "-"}
+              {metadata.crs_epsg != null && ` · EPSG:${metadata.crs_epsg}`}
             </Typography>
             <Typography variant="h5" component="div">
               Created

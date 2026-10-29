@@ -1,8 +1,8 @@
 import { useDispatch, useSelector } from "react-redux";
 
+import BPDialog from "./BPDialog";
 import { Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import MarxanDialog from "./MarxanDialog";
 import Typography from "@mui/material/Typography";
 import coir_logo from "./images/COIR_Logo_transparent.png";
 import ec_logo from "./images/ec_logo.svg";
@@ -17,7 +17,7 @@ const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
   const closeDialog = () =>
     dispatch(toggleDialog({ dialogName: "aboutDialogOpen", isOpen: false }));
   return (
-    <MarxanDialog
+    <BPDialog
       open={dialogStates.aboutDialogOpen}
       onOk={() => closeDialog()}
       contentWidth={500}
@@ -115,7 +115,7 @@ const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
           </Grid>
         </Grid>
       </div>
-    </MarxanDialog>
+    </BPDialog>
   );
 };
 

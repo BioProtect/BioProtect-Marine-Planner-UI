@@ -63,27 +63,4 @@ const getServerCapabilities = async (server) => {
   return serverInfo;
 };
 
-const addLocalServer = (servers) => {
-  return [
-    ...servers,
-    {
-      name: window.location.hostname,
-      host: window.location.hostname,
-      description: "Local machine",
-      type: "local",
-    },
-  ];
-};
-
-// function to filter and sort the servers
-const filterAndSortServers = (servers) =>
-  servers
-    .filter(
-      (server) =>
-        server.type === "remote" ||
-        (server.type === "local" && !server.offline) ||
-        server.host === "localhost"
-    )
-    .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
-
-export { addLocalServer, getServerCapabilities, filterAndSortServers };
+export { getServerCapabilities };

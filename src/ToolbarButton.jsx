@@ -10,9 +10,8 @@ import Button from "@mui/material/Button";
 import React from "react";
 
 const ToolbarButton = (props) => {
-  // Merge any user-passed style
-  let _style1 = props.style ? { ...props.style } : {};
-  let _style2 = {
+  const style = {
+    ...props.style,
     display: props.show !== false ? "inline-block" : "none",
     marginLeft: "4px",
     marginRight: "4px",
@@ -21,11 +20,9 @@ const ToolbarButton = (props) => {
     width: props.label ? "" : "24px",
     height: "24px",
   };
-  Object.assign(_style1, _style2);
 
-  // return <Button {...props} variant="contained" style={_style1} />;
   return (
-    <Button {...props} variant="contained" style={_style1}>
+    <Button {...props} variant="contained" style={style}>
       {props.title}
     </Button>
   );

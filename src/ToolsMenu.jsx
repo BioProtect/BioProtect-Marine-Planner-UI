@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import AssessmentIcon from "@mui/icons-material/Assessment";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
 import GroupIcon from "@mui/icons-material/Group";
@@ -20,11 +19,6 @@ const ToolsMenu = (props) => {
 
   const openUsersDialog = useCallback(() => {
     props.openUsersDialog();
-    closeDialog();
-  }, [props]);
-
-  const openGapAnalysisDialog = useCallback(() => {
-    props.openGapAnalysisDialog();
     closeDialog();
   }, [props]);
 
@@ -84,22 +78,6 @@ const ToolsMenu = (props) => {
             <ManageHistoryIcon />
           </ListItemIcon>
           <ListItemText>Reset database</ListItemText>
-        </MenuItem>
-      )}
-      {props.userRole !== "ReadOnly" && (
-        <MenuItem
-          onClick={openGapAnalysisDialog}
-          title={
-            props.metadata.pu_country === null
-              ? "Gap Analysis (not available)"
-              : "Gap Analysis"
-          }
-          disabled={props.metadata.pu_country === null}
-        >
-          <ListItemIcon>
-            <AssessmentIcon />
-          </ListItemIcon>
-          <ListItemText>Gap Analysis</ListItemText>
         </MenuItem>
       )}
       {props.userRole === "Admin" && (

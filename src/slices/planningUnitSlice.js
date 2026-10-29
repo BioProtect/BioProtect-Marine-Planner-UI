@@ -6,7 +6,7 @@ export const planningUnitApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     deletePlanningUnitGrid: builder.mutation({
       query: (featureName) => ({
-        url: `planning-units?action=delete&feature_name=${featureName}`,
+        url: `planning-units?action=delete&planning_grid_name=${featureName}`,
         method: "GET",
       }),
       invalidatesTags: ["PlanningUnitGrids"],
@@ -16,6 +16,16 @@ export const planningUnitApiSlice = apiSlice.injectEndpoints({
         url: `planning-units?action=export&name=${featureName}`,
         method: "GET",
       }),
+    }),
+    // Area of an uploaded shapefile or drawn area, for suggesting a resolution
+    estimateGridArea: builder.mutation({
+      query: (source) => ({
+        url: `planning-units?action=estimate`,
+        method: "POST",
+        body: source,
+      }),
+      transformResponse: (raw) =>
+        typeof raw === "string" ? JSON.parse(raw) : raw,
     }),
     listPlanningUnitGrids: builder.query({
       query: () => ({
@@ -29,6 +39,7 @@ export const planningUnitApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useDeletePlanningUnitGridMutation,
+  useEstimateGridAreaMutation,
   useExportPlanningUnitGridQuery,
   useListPlanningUnitGridsQuery,
 } = planningUnitApiSlice;
@@ -41,8 +52,6 @@ const initialState = {
   showPlanningGrid: true,
 
   dialogs: {
-    newPlanningGridDialogOpen: false,
-    importPlanningGridDialogOpen: false,
     planningGridDialogOpen: false,
     planningGridsDialogOpen: false,
     hexInfoDialogOpen: false,

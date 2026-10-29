@@ -1,4 +1,3 @@
-import { getComparator, stableSort } from "../Helpers";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import BPTableHeadWithSort from "./BPTableHeadWithSort";
@@ -90,7 +89,7 @@ const BioprotectTable = (props) => {
 
   const filteredData = useMemo(() => {
     if (!searchQuery) {
-      return stableSort(props.data, getComparator(order, orderBy));
+      return props.data.slice().sort(getComparator(order, orderBy));
     }
     const lowerCaseQuery = searchQuery.toLowerCase();
 
@@ -99,7 +98,7 @@ const BioprotectTable = (props) => {
         String(row[column] ?? "").toLowerCase().includes(lowerCaseQuery),
       ),
     );
-    return stableSort(filteredResult, getComparator(order, orderBy));
+    return filteredResult.sort(getComparator(order, orderBy));
   }, [searchQuery, props.data, order, orderBy]);
 
   const lastSent = useRef([]);

@@ -124,13 +124,7 @@ const FeaturesList = ({
     <List sx={{ maxHeight: "60vh", overflowY: "auto", px: 1, mb: 4 }}>
       {projectFeatures.map((item) => {
         const { id, area, protected_area, target_value } = item;
-        // Derive the layer color using the same palette logic as ensureFeatureColor
-        // in featuresService.jsx — window.colors[id % palette.length].
-        const color =
-          item.color ??
-          (Array.isArray(window.colors) && window.colors.length
-            ? window.colors[id % window.colors.length]
-            : undefined);
+        const color = item.color;
         const repr = reprByFeatureUniqueId[id] ?? null;
         const achieved = repr?.achieved ?? null;
         const achievedMin = repr?.achievedMin ?? null;

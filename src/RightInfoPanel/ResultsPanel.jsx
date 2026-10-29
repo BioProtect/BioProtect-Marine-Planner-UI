@@ -311,7 +311,28 @@ const ResultsPanel = (props) => {
           Results
         </PanelHeader>
 
-        <Tabs value={currentTabIndex} onChange={handleTabChange} centered>
+        <Tabs
+          value={currentTabIndex}
+          onChange={handleTabChange}
+          sx={{
+            px: 2,
+            minHeight: 40,
+            borderBottom: 1,
+            borderColor: "brand.border",
+            "& .MuiTabs-flexContainer": { gap: 2.5 },
+            "& .MuiTabs-indicator": { height: 2 },
+            "& .MuiTab-root": {
+              textTransform: "none",
+              minWidth: 0,
+              minHeight: 40,
+              px: 0,
+              fontSize: 14,
+              fontWeight: 600,
+              color: "brand.muted",
+            },
+            "& .MuiTab-root.Mui-selected": { color: "primary.main" },
+          }}
+        >
           <Tab label="Legend" />
           <Tab label="Runs" />
           <Tab label="Log" />

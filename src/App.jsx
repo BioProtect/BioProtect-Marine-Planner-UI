@@ -1,10 +1,11 @@
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-import { CONSTANTS, INITIAL_VARS } from "./bpVars";
+import { CONSTANTS, INITIAL_VARS, PALETTE, hexToRgba } from "./bpVars";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   addFeaturesToCache,
+  removeFeaturesFromCache,
   setAllFeaturesInCache,
   setOneFeatureInCache,
 } from "./store/featureCacheActions";
@@ -20,17 +21,18 @@ import {
   setUploadedActivities,
   toggleDialog,
 } from "@slices/uiSlice";
-import { apiSlice } from "@slices/apiSlice";
-import { getPaintProperty, getTypeProperty } from "@features/featuresService";
 import {
-  initialiseServers,
+  featureColor,
+  getPaintProperty,
+  getTypeProperty,
+} from "@features/featuresService";
+import {
+  initialiseServer,
   projectApiSlice,
-  selectServer,
   setActiveProjectId,
   setCostData,
   setPlanningCostsTrigger,
   setProjectCosts,
-  setProjectImpacts,
   setProjectList,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
@@ -38,6 +40,7 @@ import {
   switchProject,
   toggleProjDialog,
   useGetProjectQuery,
+  useDeleteProjectMutation,
   useRenameProjectMutation,
   useUpdateProjectFeaturesMutation,
 } from "@slices/projectSlice";
@@ -48,7 +51,6 @@ import {
   selectCurrentUserId,
   selectIsUserLoggedIn,
 } from "@slices/authSlice";
-import { useCreateProfileFromRasterMutation } from "@slices/costRasterSlice";
 import {
   setDigitisedFeatures,
   setFeatureMetadata,
@@ -60,10 +62,10 @@ import {
   useListFeaturePUsQuery,
 } from "@slices/featureSlice";
 import {
+  planningUnitApiSlice,
   setIdentifyPlanningUnits,
   togglePUD,
   useDeletePlanningUnitGridMutation,
-  useExportPlanningUnitGridQuery,
   useListPlanningUnitGridsQuery,
 } from "@slices/planningUnitSlice";
 import {
@@ -78,7 +80,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import AboutDialog from "./AboutDialog";
 import AlertDialog from "./AlertDialog";
-import AtlasLayersDialog from "./AtlasLayersDialog";
+import ReferenceLayersDialog from "./ReferenceLayersDialog";
 import ChangPasswordDialog from "./User/ChangePasswordDialog";
 // CostsDialog removed - merged into CumulativeImpactDialog
 import CumulativeImpactDialog from "./Impacts/CumulativeImpactDialog";
@@ -91,7 +93,6 @@ import HexInfoDialog from "./HexInfo/HexInfoDialog";
 import HomeButton from "./HomeButton";
 import HumanActivitiesDialog from "./Impacts/HumanActivitiesDialog";
 import ImportFeaturesDialog from "@features/ImportFeaturesDialog";
-import ImportPlanningGridDialog from "@planningGrids/ImportPlanningGridDialog";
 import InfoPanel from "./LeftInfoPanel/InfoPanel";
 import Loading from "./Loading";
 import LoginPage from "./LoginPage";
@@ -99,7 +100,6 @@ import LoginPage from "./LoginPage";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MenuBar from "./MenuBar/MenuBar";
 //project components
-import NewPlanningGridDialog from "@planningGrids/NewPlanningGridDialog";
 import NewProjectDialog from "@projects/NewProjectDialog";
 import PlanningGridDialog from "@planningGrids/PlanningGridDialog";
 import PlanningGridsDialog from "@planningGrids/PlanningGridsDialog";
@@ -118,12 +118,17 @@ import UserSettingsDialog from "./User/UserSettingsDialog";
 import UsersDialog from "./User/UsersDialog";
 //@mui/material components and icons
 import { addFeatureAttributes } from "@features/featureUtils";
+import { apiSlice } from "@slices/apiSlice";
 import classyBrew from "classybrew";
 import { featureApiSlice } from "@slices/featureSlice";
 /*global fetch*/
 /*global URLSearchParams*/
 /*global AbortController*/
-import { getTilesBaseUrl } from "@config/api";
+import {
+  getApiBaseUrl,
+  getGridTilesUrl,
+  getLayerTilesUrl,
+} from "@config/api";
 /*eslint-enable no-unused-vars*/
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from "jsonp-promise";
@@ -135,10 +140,11 @@ import { setSelectedRuns } from "@slices/prioritizrSlice";
 import store from "@store/store";
 /*eslint-disable no-unused-vars*/
 import useAppSnackbar from "@hooks/useAppSnackbar";
+import { useCreateProfileFromRasterMutation } from "@slices/costRasterSlice";
 import useFeatureNotifications from "@hooks/useFeatureNotifications";
 import { useSnackbar } from "notistack";
 import useWebSocketHandler from "./WebSocketHandler";
-import { zoomToBounds } from "./Helpers";
+import { envelopeToBounds, zoomToBounds } from "./Helpers";
 
 import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -162,7 +168,6 @@ const App = () => {
   const [updateUser] = useUpdateUserMutation();
   // Instead of importing the whole state - import whats needed
   const projState = useSelector((state) => state.project);
-  const bioprotectServers = useSelector((state) => state.project.bpServers);
   const bioprotectServer = useSelector((state) => state.project.bpServer);
   const projDialogStates = useSelector((state) => state.project.dialogs);
 
@@ -196,6 +201,10 @@ const App = () => {
   const costNames = projectResp?.costnames ?? [];
   const costProfiles = projectResp?.costProfiles ?? [];
   const [renameProjectMutation] = useRenameProjectMutation();
+  const [deleteProjectMutation] = useDeleteProjectMutation();
+  const [deletePlanningUnitGridMutation] = useDeletePlanningUnitGridMutation();
+  const [triggerExportPlanningGrid] =
+    planningUnitApiSlice.useLazyExportPlanningUnitGridQuery();
 
   // Refs for Map so state isnt stale.
   const featuresRef = useRef(projectFeatures);
@@ -293,8 +302,6 @@ const App = () => {
   const [dataBreaks, setDataBreaks] = useState([]);
   const [mapboxDrawControls, setMapboxDrawControls] = useState(undefined);
   const [pid, setPid] = useState("");
-  const [allImpacts, setAllImpacts] = useState([]);
-  const [atlasLayers, setAtlasLayers] = useState([]);
   const [costsLoading, setCostsLoading] = useState(false);
   const [countries, setCountries] = useState([]);
   const [files, setFiles] = useState({});
@@ -314,7 +321,6 @@ const App = () => {
   const [runParams, setRunParams] = useState([]);
   const [boundaryPenalty, setBoundaryPenalty] = useState(0);
   const [selectedCosts, setSelectedCosts] = useState([]);
-  const [selectedImpactIds, setSelectedImpactIds] = useState([]);
   const [smallLinearGauge, setSmallLinearGauge] = useState(true);
   const [tileset, setTileset] = useState(null);
   const [unauthorisedMethods, setUnauthorisedMethods] = useState([]);
@@ -330,7 +336,6 @@ const App = () => {
   const [planningGridMetadata, setPlanningGridMetadata] = useState({});
   const [runlogTimer, setRunlogTimer] = useState(0);
   const [addToProject, setAddToProject] = useState(false);
-  const tilesUrl = getTilesBaseUrl();
   const mapContainer = useRef(null);
   const map = useRef(import.meta.hot ? window._mapInstance : null);
   const puLayerIdsRef = useRef({
@@ -365,34 +370,18 @@ const App = () => {
   }, [dispatch, featurePUData]);
 
   useEffect(() => {
-    dispatch(initialiseServers(INITIAL_VARS.BP_SERVERS))
+    dispatch(initialiseServer())
       .unwrap()
       .then((message) => console.log(message))
       .catch((error) => console.error("Error:", error));
-  }, [dispatch, INITIAL_VARS.BP_SERVERS]);
-
-  const selectServerByName = useCallback(
-    (servername) => {
-      // Remove the search part of the URL
-      window.history.replaceState({}, document.title, "/");
-      const server = bioprotectServers.find((item) => item.name === servername);
-      if (server) {
-        dispatch(selectServer(server));
-      }
-    },
-    [dispatch, bioprotectServers],
-  );
+  }, [dispatch]);
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
     const fetchGlobalVariables = async () => {
       dispatch(setLoading(true));
       try {
         setBrew(new classyBrew());
         dispatch(setRegistry(INITIAL_VARS));
-        if (searchParams.has("server")) {
-          selectServerByName(searchParams.get("server"));
-        }
       } catch (error) {
         console.error("Error fetching global variables:", error);
       } finally {
@@ -1236,34 +1225,38 @@ const App = () => {
   };
 
   //REST call to delete a specific project
-  const deleteProject = async (user, proj, silent = false) => {
+  const deleteProject = async (projectId) => {
+    dispatch(setLoading(true));
     try {
-      // Make the request to delete the project
-      // const response = await _get(`deleteProject?user=${user}&project=${proj}`); - old
-      const response = await _get(
-        `projects?action=delete&user=${user}&project=${proj}`,
-      );
+      // The server only allows the project's owner to delete it
+      const response = await deleteProjectMutation(projectId).unwrap();
+      // Server errors come back as HTTP 200 with an error field
+      if (response.error) throw new Error(response.error);
 
       // Fetch the updated list of projects
       await getProjects();
 
-      // Show a snackbar message, but allow it to be silent if specified
-      showMessage(response.info, "info", silent);
+      showMessage(response.info, "info");
 
       // Check if the deleted project is the current one
-      if (response.project === project) {
+      if (projectId === activeProjectId) {
         showMessage(
           "Current project deleted - loading first available",
           "success",
         );
-        const nextProject = projState.projects.find((p) => p.name !== project);
+        const nextProject = projState.projects.find((p) => p.id !== projectId);
         if (nextProject) {
           await dispatch(switchProject(nextProject.id)).unwrap();
         }
       }
     } catch (error) {
       console.error("Error deleting project:", error);
-      showMessage("Error deleting project:", "error");
+      showMessage(
+        `Error deleting project: ${error?.data?.error || error?.message || ""}`,
+        "error",
+      );
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
@@ -1466,6 +1459,30 @@ const App = () => {
     "match",
     ["get", attribute],
   ];
+  // h3 indexes selected in the shown solution(s), for "outline selected only"
+  const solutionCellIdsRef = useRef([]);
+  const cellOutlineRef = useRef(uiState.cellOutline);
+  cellOutlineRef.current = uiState.cellOutline;
+
+  const applyCellOutlines = () => {
+    const id = puLayerIdsRef.current?.outlineLayerId;
+    if (!map.current || !id || !map.current.getLayer(id)) return;
+    const { width, selectedOnly } = cellOutlineRef.current;
+    map.current.setPaintProperty(id, "line-width", width);
+    map.current.setFilter(
+      id,
+      selectedOnly
+        ? [
+            "in",
+            ["to-string", ["get", "h3_index"]],
+            ["literal", solutionCellIdsRef.current],
+          ]
+        : null,
+    );
+  };
+
+  useEffect(applyCellOutlines, [uiState.cellOutline]);
+
   //gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
   const renderPuPrioritizrLayer = (freq, totalRuns) => {
     // freq: { h3_index: count } — how many runs each hex was selected in
@@ -1483,6 +1500,10 @@ const App = () => {
     }
 
     const entries = Object.entries(freq || {});
+    solutionCellIdsRef.current = entries
+      .filter(([, count]) => count > 0)
+      .map(([h3]) => h3);
+    applyCellOutlines();
     if (!entries.length) {
       map.current.setPaintProperty(
         resultsLayerId,
@@ -1503,30 +1524,18 @@ const App = () => {
 
     // YlGn colormap: yellow to dark green, normalised by totalRuns
     const maxRuns = Math.max(totalRuns, 1);
+    // stops at 0.01, 1/8 ... 1; alpha rises with the count
+    const alphas = [0.75, 0.75, 0.8, 0.8, 0.85, 0.85, 0.9, 0.9, 0.95];
     const fillExpr = [
       "interpolate",
       ["linear"],
       ["/", matchExpr, maxRuns],
       0,
       "rgba(0,0,0,0)",
-      0.01,
-      "rgba(255, 255, 229, 0.75)", // #ffffe5
-      0.125,
-      "rgba(247, 252, 185, 0.75)", // #f7fcb9
-      0.25,
-      "rgba(217, 240, 163, 0.8)", // #d9f0a3
-      0.375,
-      "rgba(173, 221, 142, 0.8)", // #addd8e
-      0.5,
-      "rgba(120, 198, 121, 0.85)", // #78c679
-      0.625,
-      "rgba(65, 171, 93, 0.85)", // #41ab5d
-      0.75,
-      "rgba(35, 132, 67, 0.9)", // #238443
-      0.875,
-      "rgba(0, 104, 55, 0.9)", // #006837
-      1,
-      "rgba(0, 69, 41, 0.95)", // #004529
+      ...PALETTE.results.flatMap((c, i) => [
+        i === 0 ? 0.01 : i / 8,
+        hexToRgba(c, alphas[i]),
+      ]),
     ];
 
     map.current.setPaintProperty(resultsLayerId, "fill-color", fillExpr);
@@ -1826,9 +1835,27 @@ const App = () => {
             .filter(Boolean);
         }
 
+        ///////////////////////////////////////////
+        // WDPA reference layer (view only)
+        ///////////////////////////////////////////
+        let protectedAreas = [];
+        if (
+          map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME) &&
+          map.current.getLayoutProperty(CONSTANTS.WDPA_LAYER_NAME, "visibility") ===
+            "visible"
+        ) {
+          const hits = map.current.queryRenderedFeatures(e.point, {
+            layers: [CONSTANTS.WDPA_LAYER_NAME],
+          });
+          // an area comes back once per subdivided piece and per tile
+          const byId = new Map(hits.map((f) => [f.properties.wdpaid, f.properties]));
+          protectedAreas = [...byId.values()];
+        }
+
         dispatch(
           setIdentifyPlanningUnits({
             identifiedFeatures,
+            protectedAreas,
           }),
         );
 
@@ -2024,11 +2051,19 @@ const App = () => {
 
   const changePlanningGrid = async (puLayerName) => {
     try {
-      // Fetch tile metadata from Martin tile server
-      const response = await fetch(`${tilesUrl}${puLayerName}`);
-      if (!response.ok) throw new Error("Failed to fetch tileset metadata");
-      const data = await response.json();
-      console.log("data - check if there are bounds to zoom to -  ", data);
+      // Grids share one Martin function source, whose TileJSON has no per-grid
+      // bounds, so they come from the grid's stored envelope instead
+      const { planning_unit_grids = [] } = await dispatch(
+        planningUnitApiSlice.endpoints.listPlanningUnitGrids.initiate(undefined, {
+          subscribe: false,
+        }),
+      ).unwrap();
+      const grid = planning_unit_grids.find((g) => g.tilesetid === puLayerName);
+      if (!grid) throw new Error(`Planning grid '${puLayerName}' was not found`);
+      const data = {
+        name: puLayerName,
+        bounds: envelopeToBounds(grid.envelope),
+      };
       // Remove any existing PU-related layers and sources
       removePlanningGridLayers();
       // Add layers for the new planning unit grid
@@ -2078,6 +2113,7 @@ const App = () => {
     const puLayerId = `martin_layer_pu_${puLayerName}`;
     const statusLayerId = `martin_layer_status_${puLayerName}`;
     const selectionLayerId = `martin_layer_selection_${puLayerName}`;
+    const outlineLayerId = `martin_layer_outline_${puLayerName}`;
     // Store layer and source IDs in a ref for later use
     puLayerIdsRef.current = {
       sourceId,
@@ -2086,6 +2122,7 @@ const App = () => {
       puLayerId,
       statusLayerId,
       selectionLayerId,
+      outlineLayerId,
       sourceLayerName: puLayerName,
       propId: "h3_index",
     };
@@ -2093,18 +2130,23 @@ const App = () => {
     if (!map.current.getSource(sourceId)) {
       map.current.addSource(sourceId, {
         type: "vector",
-        url: `${tilesUrl}${puLayerName}`,
+        url: getGridTilesUrl(puLayerName),
         promoteId: "h3_index", // treat each hex id as its unique feature id - helps with rendering
       });
     }
 
-    [resultsLayerId, costsLayerId, puLayerId, statusLayerId, selectionLayerId].forEach(
-      (layerId) => {
-        if (map.current.getLayer(layerId)) {
-          map.current.removeLayer(layerId);
-        }
-      },
-    );
+    [
+      resultsLayerId,
+      costsLayerId,
+      puLayerId,
+      statusLayerId,
+      selectionLayerId,
+      outlineLayerId,
+    ].forEach((layerId) => {
+      if (map.current.getLayer(layerId)) {
+        map.current.removeLayer(layerId);
+      }
+    });
 
     //add the planning units costs layer
     addMapLayer({
@@ -2145,6 +2187,25 @@ const App = () => {
       },
     });
 
+    // grid outlines - a line layer, since a fill's outline is always a
+    // hairline. Width and "selected cells only" come from ui.cellOutline.
+    addMapLayer({
+      id: outlineLayerId,
+      metadata: { name: "Cell outlines", type: "cell_outlines" },
+      minzoom: 0,
+      maxzoom: 24,
+      type: "line",
+      source: sourceId,
+      layout: { visibility: "visible" },
+      "source-layer": puLayerName,
+      paint: {
+        "line-color": "rgb(150, 150, 150)",
+        "line-opacity": CONSTANTS.PU_LAYER_OPACITY,
+        "line-width": uiState.cellOutline.width,
+      },
+    });
+    applyCellOutlines();
+
     addMapLayer({
       id: puLayerId,
       metadata: {
@@ -2161,7 +2222,8 @@ const App = () => {
       "source-layer": puLayerName,
       paint: {
         "fill-color": "rgba(0, 0, 0, 0)",
-        "fill-outline-color": `rgba(150, 150, 150, ${CONSTANTS.PU_LAYER_OPACITY})`,
+        // outlines are drawn by the outline line layer
+        "fill-outline-color": "rgba(0, 0, 0, 0)",
         "fill-opacity": CONSTANTS.PU_LAYER_OPACITY,
       },
     });
@@ -2185,9 +2247,9 @@ const App = () => {
           ["==", ["feature-state", "status"], 0],
           "rgba(150,150,150,0)",
           ["==", ["feature-state", "status"], 1],
-          "rgba(63,63,191,1)",
+          PALETTE.lockedIn,
           ["==", ["feature-state", "status"], 2],
-          "rgba(191, 63, 63, 1)",
+          PALETTE.lockedOut,
           "rgba(150,150,150,0)", // default
         ],
         "fill-outline-color": "rgba(0, 0, 0, 0)",
@@ -2426,80 +2488,49 @@ const App = () => {
     );
   };
 
-  //imports a zipped shapefile as a new planning grid
-  const importPlanningUnitGrid = async (zipFilename, alias, description) => {
-    try {
-      startLogging();
-      messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Started",
-        info: "Importing planning grid..",
-      });
-      const response = await importZippedShapefileAsPu(
-        zipFilename,
-        alias,
-        description,
-      );
-      messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Finished",
-        info: response.info,
-      });
-      dispatch(
-        togglePUD({
-          dialogName: "importPlanningGridDialogOpen",
-          isOpen: false,
-        }),
-      );
-    } catch (error) {
-      deletePlanningUnitGrid(alias, true);
-      messageLogger({
-        method: "importPlanningUnitGrid",
-        status: "Finished",
-        error: error,
-      });
-      throw error;
-    }
-  };
-
-  //deletes a planning unit grid
+  //deletes a planning unit grid - the server only allows this for the user who
+  //created it, and only when no project uses it. silent is used to roll back
+  //failed imports of planning grids
   const deletePlanningUnitGrid = async (feature_class_name, silent = false) => {
-    if (silent) {
-      //used to roll back failed imports of planning grids
-      await deletePlanningGrid(feature_class_name, true);
-    } else {
-      //get a list of the projects for the planning grid
-      const projects = await getProjectsForPlanningGrid(feature_class_name);
-      //if the planning grid is not being used then delete it
-      if (projects.length === 0) {
-        await deletePlanningGrid(feature_class_name, false);
-      } else {
-        //show the projects list dialog
-        showProjectListDialog(
-          projects,
-          "Failed to delete planning grid",
-          "The planning grid is used in the following projects",
+    // show the loading gif: deleting a large grid's cells takes a while
+    if (!silent) dispatch(setLoading(true));
+    try {
+      const response =
+        await deletePlanningUnitGridMutation(feature_class_name).unwrap();
+      // Server errors come back as HTTP 200 with an error field
+      if (response.error) throw new Error(response.error);
+      showMessage(response.info, "info", silent);
+    } catch (error) {
+      console.error("Error deleting planning grid:", error);
+      if (!silent) {
+        showMessage(
+          `Error deleting planning grid: ${error?.data?.error || error?.message || ""}`,
+          "error",
         );
       }
+    } finally {
+      if (!silent) dispatch(setLoading(false));
     }
-  };
-
-  //deletes a planning grid
-  const deletePlanningGrid = async (feature_class_name, silent) => {
-    const response =
-      await useDeletePlanningUnitGridMutation(feature_class_name);
-    //update the planning unit grids
-
-    showMessage(response.info, "info", silent);
   };
 
   //exports a planning grid to a zipped shapefile
+  //returns the download url, or null if the export failed
   const exportPlanningGrid = async (featureName) => {
+    dispatch(setLoading(true));
     try {
-      const response = await useExportPlanningUnitGridQuery(featureName);
-      return `${bioprotectServer.endpoint} exports / ${response.filename} `;
+      const response = await triggerExportPlanningGrid(featureName).unwrap();
+      // Server errors come back as HTTP 200 with an error field
+      if (response.error) throw new Error(response.error);
+      return `${getApiBaseUrl()}exports/${response.filename}`;
     } catch (error) {
-      throw new Error("Failed to export planning grid");
+      console.error("Error exporting planning grid:", error);
+      showMessage(
+        `Failed to export planning grid: ${error?.data?.error || error?.message || ""}`,
+        "error",
+      );
+      return null;
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
@@ -2530,13 +2561,6 @@ const App = () => {
     );
   };
 
-  //used by the import wizard to import a users zipped shapefile as the planning units
-  //the zipped shapefile has been uploaded to the MARXAN folder - it will be imported to PostGIS and a record will be entered in the metadata_planningUnits table
-  const importZippedShapefileAsPu = async (zipname, alias, description) =>
-    await _get(
-      `importPlanningUnitGrid?filename=${zipname}&name=${alias}&description=${description}`,
-    );
-
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
@@ -2546,192 +2570,12 @@ const App = () => {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
-  const openAtlasLayersDialog = async () => {
-    dispatch(setLoading(true));
-    if (atlasLayers.length < 1) {
-      const data = await getAtlasLayers();
-      setAtlasLayers(data);
-    }
-    dispatch(
-      toggleDialog({ dialogName: "atlasLayersDialogOpen", isOpen: true }),
-    );
-    dispatch(setLoading(false));
-  };
-
-  const openCumulativeImpactDialog = async () => {
-    dispatch(setLoading(true));
-    if (uiState.allImpacts.length < 1) {
-      const response = await _get("getAllImpacts");
-      setAllImpacts(response.data);
-    }
+  const openCumulativeImpactDialog = () =>
     dispatch(
       toggleDialog({ dialogName: "cumulativeImpactDialogOpen", isOpen: true }),
     );
-    dispatch(setLoading(false));
-  };
 
-  //makes a call to get the impacts from the server and returns them
-  const getImpacts = async () => {
-    const response = await _get("getAllImpacts");
-    setAllImpacts(response.data);
-  };
-
-  const addSource = async (sourceName, tileUrl) => {
-    map.current.addSource(sourceName, {
-      type: "raster",
-      tiles: [tileUrl],
-      tileSize: 256,
-    });
-  };
-
-  const addLayer = async (sourceName) => {
-    if (!map.current || map.current.getLayer(sourceName)) return;
-
-    map.current.addLayer({
-      id: sourceName,
-      type: "raster",
-      source: sourceName,
-      layout: {
-        visibility: "none",
-      },
-    });
-
-    updateLegend();
-  };
-
-  const getAtlasLayers = async () => {
-    try {
-      const response = await fetch(
-        bioprotectServer.endpoint + "getAtlasLayers",
-        {
-          credentials: "include",
-        },
-      );
-      const data = await response.json();
-      const parsedData = data.map(JSON.parse);
-
-      for (const layer of parsedData) {
-        const sourceName = layer.layer;
-        const tileUrl = `http://www.atlas-horizon2020.eu/gs/ows?layers=${sourceName}&service=WMS&request=GetMap&format=image/png&transparent=true&width=256&height=256&srs=EPSG:3857&bbox={bbox - epsg - 3857}`;
-
-        // Add the source and layer to the map
-        await addSource(sourceName, tileUrl);
-        await addLayer(sourceName);
-      }
-
-      return parsedData;
-    } catch (error) {
-      console.error("Failed to fetch and add Atlas layers:", error);
-    }
-  };
-
-  const openCostsDialog = async () => {
-    if (!uiState.allImpacts?.length) {
-      await getImpacts();
-    }
-    setCostsDialogOpen(true);
-  };
-
-  //when a user clicks a impact in the ImpactsDialog
-  const clickImpact = (impact, event, previousRow) => {
-    selectedImpactIds.includes(impact.id)
-      ? removeImpact(impact)
-      : addImpact(impact);
-    toggleImpactLayer(impact);
-  };
-
-  //adds a impact to the selectedImpactIds array
-  const addImpact = (impact) =>
-    setSelectedImpactIds((prevState) => [
-      ...prevState.selectedImpactIds,
-      impact.id,
-    ]);
-
-  //removes a impact from the selectedImpactIds array
-  const removeImpact = (impact) => {
-    setSelectedImpactIds((prevState) =>
-      prevState.selectedImpactIds.filter((imp) => imp !== impact.id),
-    );
-  };
-
-  //toggles the impact layer on the map
-  const toggleImpactLayer = (impact) => {
-    if (impact.tilesetid === "") {
-      showMessage(`This feature does not seem to have a tileset.`, "error");
-      return;
-    }
-    // this.closeImpactMenu();
-    const layerName = impact.tilesetid.split(".")[1];
-    const layerId = "marxan_impact_layer_" + layerName;
-    // const layerId = "martin_impact_layer_" + layerName;
-    // const tilesURL = `/tiles/${layerName}/{z}/{x}/{y}.png`;
-
-    if (map.current.getLayer(layerId)) {
-      removeMapLayer(layerId);
-      map.current.removeSource(layerId);
-      updateImpact(impact, { impact_layer_loaded: false });
-    } else {
-      //if a planning units layer for a impact is visible then we need to add the impact layer before it - first get the impact puid layer
-      const layers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER]);
-      const beforeLayer = layers.length > 0 ? layers[0].id : undefined;
-
-      map.current.addSource(layerId, {
-        type: "raster",
-        tiles: [tilesURL],
-        tileSize: 256,
-      });
-
-      const rasterLayer = {
-        id: layerId,
-        type: "raster",
-        source: layerId,
-        layout: {
-          visibility: "visible",
-        },
-        paint: {
-          "raster-opacity": 0.85,
-        },
-        metadata: {
-          name: impact.alias,
-          type: "impact",
-        },
-      };
-
-      addMapLayer(rasterLayer, beforeLayer);
-      updateImpact(impact, { impact_layer_loaded: true });
-    }
-  };
-
-  //gets the ids of the selected impacts
-  const getSelectedImpactIds = () => {
-    // Use map and filter to get selected impact IDs in one line
-    const ids = uiState.allImpacts
-      .filter((impact) => impact.selected)
-      .map((impact) => impact.id);
-
-    // Update the state with the selected impact IDs
-    setSelectedImpactIds(ids);
-  };
-
-  //updates the properties of a impact and then updates the impacts state
-  const updateImpact = (impact, newProps) => {
-    // Create a shallow copy of the impacts array
-    const impacts = [...uiState.allImpacts];
-
-    // Find the index of the impact to update
-    const index = impacts.findIndex((element) => element.id === impact.id);
-
-    if (index !== -1) {
-      // Create a new impact object with updated properties
-      impacts[index] = { ...impacts[index], ...newProps };
-
-      // Update the state
-      setAllImpacts(impacts);
-
-      // Update projectImpacts based on the selected impacts
-      dispatch(setProjectImpacts(impacts.filter((item) => item.selected)));
-    }
-  };
+  const openCostsDialog = () => setCostsDialogOpen(true);
 
   const runCumulativeImpact = async (
     selectedUploadedActivityIds,
@@ -2781,7 +2625,7 @@ const App = () => {
     return "Costs created from Cumulative impact";
   };
 
-  // Inspect an uploaded raster sitting in data/tmp/ on the server.
+  // Inspect an uploaded raster sitting in imports/ on the server.
   // Returns { band_count, dtypes, nodata, bounds, crs_epsg, ... } or null on error.
   // NOT wrapped in useCallback because (a) loadCostsLayer is declared later
   // in this file, and putting later-declared functions in a useCallback
@@ -2802,7 +2646,7 @@ const App = () => {
     }
   };
 
-  // Build a cost profile from a pre-uploaded raster (sitting in data/tmp/).
+  // Build a cost profile from a pre-uploaded raster (sitting in imports/).
   // options: { band, stat, normalise, floor, fillStrategy, setActive }
   // Negative pixel values are always clamped to floor server-side; that
   // is not a user-configurable option because negatives are invalid for
@@ -3061,7 +2905,8 @@ const App = () => {
   ) => {
     startLogging();
 
-    const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}`;
+    // project_id: a shapefile without a .prj is read in the project CRS
+    const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}&project_id=${activeProjectId}`;
     const url =
       name !== ""
         ? `${baseUrl}&name=${name}&description=${description}`
@@ -3137,15 +2982,19 @@ const App = () => {
       const tableName = feature.tilesetid
         ? feature.tilesetid.split(".")[1]
         : feature.feature_class_name;
-      console.log("feature ", feature);
       const sourceId = `martin_src_${tableName}`;
       const layerId = `martin_layer_${tableName}`;
-      const tileJSON = `${tilesUrl}${tableName}`;
+      const tileJSON = getLayerTilesUrl(tableName);
 
       if (map.current.getLayer(layerId)) {
         removeMapLayer(layerId);
         map.current.removeSource(sourceId);
-        updateFeature(feature.id, { feature_layer_loaded: false });
+        dispatch(
+          setOneFeatureInCache({
+            id: feature.id,
+            patch: { feature_layer_loaded: false },
+          }),
+        );
       } else {
         // 1) make sure the vector‐tile source is added
         if (!map.current.getSource(sourceId)) {
@@ -3174,15 +3023,19 @@ const App = () => {
         };
 
         addMapLayer(mapLayer, beforeLayer);
-        updateFeature(feature.id, { feature_layer_loaded: true });
+        dispatch(
+          setOneFeatureInCache({
+            id: feature.id,
+            patch: { feature_layer_loaded: true },
+          }),
+        );
         // Helper function tozom to layer to see if its working
         // zoomToLayer(tileJSON)
       }
     },
     [
       map,
-      tilesUrl,
-      updateFeature,
+      dispatch,
       removeMapLayer,
       addMapLayer,
       getLayers,
@@ -3218,15 +3071,12 @@ const App = () => {
         return;
       }
 
-      const color =
-        Array.isArray(window.colors) && window.colors.length
-          ? window.colors[activity.id % window.colors.length]
-          : "#F5C043";
+      const color = PALETTE.activities;
 
       if (!map.current.getSource(sourceId)) {
         map.current.addSource(sourceId, {
           type: "vector",
-          url: `${tilesUrl}${tableName}`,
+          url: getLayerTilesUrl(tableName),
         });
       }
 
@@ -3251,7 +3101,7 @@ const App = () => {
 
       setLoadedActivityIds((prev) => ({ ...prev, [activity.id]: true }));
     },
-    [tilesUrl],
+    [],
   );
 
   // Fetch the activities that make up a cost profile
@@ -3270,18 +3120,18 @@ const App = () => {
     const { sourceId, sourceLayerName } = puLayerIdsRef.current || {};
     if (!sourceId || !sourceLayerName) return;
 
-    // Ensure feature has a color assigned
-    const color =
-      feature.color ||
-      (Array.isArray(window.colors) && window.colors.length
-        ? window.colors[feature.id % window.colors.length]
-        : "#ff0000");
+    const color = featureColor(feature);
 
     let layerName = `martin_layer_feature_puid_${feature.id}`;
 
     if (map.current.getLayer(layerName)) {
       removeMapLayer(layerName);
-      updateFeature(feature.id, { feature_puid_layer_loaded: false });
+      dispatch(
+        setOneFeatureInCache({
+          id: feature.id,
+          patch: { feature_puid_layer_loaded: false },
+        }),
+      );
       return;
     }
     //get the planning units where the feature occurs
@@ -3328,7 +3178,12 @@ const App = () => {
     }
     //show the layer
     showLayer(layerName);
-    updateFeature(feature.id, { feature_puid_layer_loaded: true });
+    dispatch(
+      setOneFeatureInCache({
+        id: feature.id,
+        patch: { feature_puid_layer_loaded: true },
+      }),
+    );
   };
 
   //zooms to a features extent
@@ -3472,8 +3327,16 @@ const App = () => {
         map.current.setLayerZoomRange(statusLayerId, 0, 24);
       }
       const selectionLayerId = puLayerIdsRef.current?.selectionLayerId;
-      if (map.current && selectionLayerId && map.current.getLayer(selectionLayerId)) {
-        map.current.setLayoutProperty(selectionLayerId, "visibility", "visible");
+      if (
+        map.current &&
+        selectionLayerId &&
+        map.current.getLayer(selectionLayerId)
+      ) {
+        map.current.setLayoutProperty(
+          selectionLayerId,
+          "visibility",
+          "visible",
+        );
         map.current.setLayerZoomRange(selectionLayerId, 0, 24);
       }
       // cache in Redux
@@ -3575,7 +3438,6 @@ const App = () => {
           menuAnchor={menuAnchor}
           openUsersDialog={openUsersDialog}
           userRole={userData}
-          metadata={metadata}
           cleanup={cleanup}
         />
         <UserMenu menuAnchor={menuAnchor} logout={handleLogOut} />
@@ -3726,15 +3588,6 @@ const App = () => {
           fileUpload={uploadFileToFolder}
           updateSelectedFeatures={updateSelectedFeatures}
         />
-        <NewPlanningGridDialog
-          loading={uiState.loading || preprocessing || uploading}
-          fileUpload={uploadFileToFolder}
-        />
-        <ImportPlanningGridDialog
-          importPlanningUnitGrid={importPlanningUnitGrid}
-          loading={uiState.loading || uploading}
-          fileUpload={uploadFileToFolder}
-        />
         <FeatureInfoDialog open={true} updateFeature={updateFeature} />
         <FeaturesDialog
           onOk={updateSelectedFeatures}
@@ -3792,8 +3645,8 @@ const App = () => {
           showCancelButton={true}
           updateTargetValueForFeatures={updateTargetValueForFeatures}
         />
-        {dialogStates.atlasLayersDialogOpen ? (
-          <AtlasLayersDialog map={map} atlasLayers={atlasLayers} />
+        {dialogStates.referenceLayersDialogOpen ? (
+          <ReferenceLayersDialog map={map} />
         ) : null}
 
         {dialogStates.cumulativeImpactDialogOpen ? (
@@ -3830,7 +3683,6 @@ const App = () => {
           openProjectsDialog={openProjectsDialog}
           openPlanningGridsDialog={openPlanningGridsDialog}
           openCumulativeImpactDialog={openCumulativeImpactDialog}
-          openAtlasLayersDialog={openAtlasLayersDialog}
           setMenuAnchor={setMenuAnchor}
         />
       </React.Fragment>
