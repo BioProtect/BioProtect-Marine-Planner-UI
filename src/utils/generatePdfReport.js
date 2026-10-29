@@ -1,6 +1,6 @@
 import logoSrc from '@images/bioprotect_nobgrnd.png'
-import jsPDF from 'jspdf'
-import { PALETTE } from '../bpVars.jsx'
+import JsPDF from 'jspdf'
+import { PALETTE } from '../bpVars'
 
 // Brand colours
 const TEAL = [0, 150, 135]
@@ -36,11 +36,11 @@ function loadImage(src) {
  *   │  Logo    │  BioProtect / project   │  PU metadata     │
  *   │  28 mm   │  teal block ~90 mm      │  ~65 mm          │
  *   └──────────┴─────────────────────────┴──────────────────┘
- *   Map — full content width, aspect-ratio preserved
+ *   Map - full content width, aspect-ratio preserved
  *   ┌──────────────────┬────────────────────┬────────────────┐
  *   │  Activities      │  Features (col 1)  │  Features (2)  │
  *   └──────────────────┴────────────────────┴────────────────┘
- *   Selected Runs — full width
+ *   Selected Runs - full width
  */
 export async function generatePdfReport({
   project,
@@ -53,7 +53,7 @@ export async function generatePdfReport({
   // Pre-load logo before building the doc
   const logoImg = await loadImage(logoSrc)
 
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  const doc = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
   const PAGE_W = 210
   const PAGE_H = 297
@@ -230,7 +230,7 @@ export async function generatePdfReport({
   else {
     y += 3
   }
-  //  Selected Runs — full width
+  //  Selected Runs - full width
   if (selectedRuns.length > 0 && y < PAGE_H - MARGIN - 12) {
     doc.setDrawColor(200, 200, 200)
     doc.setLineWidth(0.2)
@@ -262,7 +262,7 @@ export async function generatePdfReport({
   const COL_F1_X = MARGIN + COL_W + COL_GAP
   const COL_F2_X = MARGIN + (COL_W + COL_GAP) * 2
 
-  // Helper — section divider + teal title
+  // Helper - section divider + teal title
   const sectionHeader = (title, count, x, yRef) => {
     doc.setDrawColor(200, 200, 200)
     doc.setLineWidth(0.2)
@@ -275,7 +275,7 @@ export async function generatePdfReport({
     return yRef + 5
   }
 
-  // Helper — bullet line (may wrap within column)
+  // Helper - bullet line (may wrap within column)
   const bulletItem = (text, x, yRef) => {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7.5)
@@ -285,7 +285,7 @@ export async function generatePdfReport({
     return yRef + lines.length * LINE_H
   }
 
-  // Feature bullet — name on line 1, target/achieved/status on line 2.
+  // Feature bullet - name on line 1, target/achieved/status on line 2.
   // Colour the status line green when every run met the target, red when none
   // did, and amber for partial success.
   const featureItem = (feat, x, yRef) => {
@@ -354,11 +354,10 @@ export async function generatePdfReport({
       doc.setFontSize(7)
       doc.setTextColor(...GREY)
       doc.text(`+ ${activities.length - shown} more`, COL_A_X + 4, yAct)
-      yAct += LINE_H
     }
   }
 
-  // Features — split evenly across the two right columns
+  // Features - split evenly across the two right columns
   if (features.length > 0) {
     const half = Math.ceil(features.length / 2)
     yFeatL = sectionHeader('FEATURES', features.length, COL_F1_X, yFeatL)

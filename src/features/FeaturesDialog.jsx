@@ -50,7 +50,7 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
 
   // Per-row delete gating. A user may delete a feature if they are an Admin
   // OR they personally created it. System features (created_by === "global
-  // admin") are never deletable from the UI — the backend also enforces this.
+  // admin") are never deletable from the UI - the backend also enforces this.
   const isAdmin = userRole === 'Admin'
   const canDeleteFeature = useCallback(
     (feature) => {

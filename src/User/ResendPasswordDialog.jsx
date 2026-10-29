@@ -1,6 +1,7 @@
 import useAppSnackbar from '@hooks/useAppSnackbar'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
-import { useResendPasswordQuery } from '@slices/userSlice'
+import { toggleDialog } from '@slices/uiSlice'
+import { useLazyResendPasswordQuery } from '@slices/userSlice'
 
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -11,13 +12,14 @@ function ResendPasswordDialog({
 }) {
   const [resendEmail, setResendEmail] = useState('')
   const dispatch = useDispatch()
-  const userState = useSelector(state => state.user)
   const uiState = useSelector(state => state.ui)
   const { showMessage } = useAppSnackbar()
+  const [triggerResendPassword] = useLazyResendPasswordQuery()
 
   const resendPassword = async () => {
     try {
-      const { data: response } = useResendPasswordQuery(userState.user)
+      // ponytail: backend resend_password is a stub that ignores the email; pass resendEmail once it's implemented
+      const response = await triggerResendPassword().unwrap()
       showMessage(response.info, 'success')
       dispatch(
         toggleDialog({ dialogName: 'resendPasswordDialogOpen', isOpen: false }),

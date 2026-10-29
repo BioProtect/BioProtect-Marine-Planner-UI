@@ -1,15 +1,16 @@
 minimumReleaseAgeExcludePrune: true
+
 trustPolicy: no-downgrade
-shellEmulator: true
-
-allowBuilds:
-  "@swc/core": true
-  core-js: false
-  esbuild: true
-  simple-git-hooks: true
-
 trustPolicyExclude:
   - semver@6.3.1
   - react-redux@9.2.0
   - reselect@5.1.1
-  - "@vercel/detect-agent@1.2.7"
+  - '@vercel/detect-agent@1.2.7'
+
+shellEmulator: true
+
+allowBuilds:
+  '@swc/core': true
+  core-js: false
+  esbuild: true
+  simple-git-hooks: true

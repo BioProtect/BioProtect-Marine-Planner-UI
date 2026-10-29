@@ -1,4 +1,4 @@
-import CONSTANTS, { PALETTE } from '../bpVars.jsx'
+import CONSTANTS, { PALETTE } from '../bpVars'
 
 /**
  * Colour-blind-safe colour from the palette, picked by id so a feature keeps
@@ -10,7 +10,7 @@ export function featureColor(feature) {
     || PALETTE.features[Math.abs(Number(feature.id) || 0) % PALETTE.features.length]
 }
 
-// returns a copy — features from the RTK Query cache are frozen
+// returns a copy - features from the RTK Query cache are frozen
 function ensureFeatureColor(feature) {
   return feature.color
     ? feature

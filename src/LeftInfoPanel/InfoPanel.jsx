@@ -148,7 +148,6 @@ function InfoPanel(props) {
   )
 
   const handleChange = (e) => {
-    console.log('e ', e)
     return e.target.id === 'projectName'
       ? props.renameProject(e.target.value)
       : props.renameDescription(e.target.value)

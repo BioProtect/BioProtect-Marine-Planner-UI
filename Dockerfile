@@ -1,13 +1,15 @@
 # build environment
-FROM node:20-alpine as build
+FROM node:22-alpine as build
 
 WORKDIR /app
+RUN corepack enable
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# prepare wires git hooks, which needs a .git dir the image doesn't have
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 FROM nginx:stable-alpine
 COPY --from=build /app/build /usr/share/nginx/html

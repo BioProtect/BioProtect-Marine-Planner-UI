@@ -10,8 +10,9 @@ import { setCellOutline } from '@slices/uiSlice'
 import { Fragment, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import CONSTANTS, { PALETTE } from '../bpVars'
+import { formatPx } from '../Helpers'
 import LayerLegend from './LayerLegend'
-import LayerRow, { formatPx } from './LayerRow'
+import LayerRow from './LayerRow'
 
 // colour key: ramp with its end labels
 function GradientBar({ colors, leftLabel, rightLabel }) {

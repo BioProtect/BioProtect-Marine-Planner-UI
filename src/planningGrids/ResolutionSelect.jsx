@@ -7,7 +7,7 @@ import {
   RESOLUTIONS,
   suggestResolution,
   WARN_CELLS,
-} from '../bpVars.jsx'
+} from '../bpVars'
 
 // Resolution picker for a new grid. Given the area being gridded (drawn
 // geojson or an uploaded shapefile path) it shows estimated cell counts and

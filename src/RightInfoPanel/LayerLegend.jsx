@@ -4,7 +4,8 @@ import HexagonOutlinedIcon from '@mui/icons-material/HexagonOutlined'
 import SyncIcon from '@mui/icons-material/Sync'
 import Box from '@mui/material/Box'
 import { useEffect, useState } from 'react'
-import LayerRow, { formatPct } from './LayerRow'
+import { formatPct } from '../Helpers'
+import LayerRow from './LayerRow'
 
 function layerOpacity(layer) {
   if (!layer?.paint)

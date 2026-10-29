@@ -47,7 +47,7 @@ function ResultsPanel(props) {
   const allFeatures = allFeaturesResp?.data ?? []
 
   // Per-feature achieved % from the selected Prioritizr runs (mirrors
-  // FeaturesList.jsx — same stable sort so the RTK Query cache hits).
+  // FeaturesList.jsx - same stable sort so the RTK Query cache hits).
   const sortedRunIds = useMemo(
     () => [...selectedRunIds].sort((a, b) => a - b),
     [selectedRunIds],
@@ -100,7 +100,7 @@ function ResultsPanel(props) {
       // Gather the selected run objects (for display names in the PDF)
       const selectedRuns = runs.filter(r => selectedRunIds.includes(r.id))
 
-      // Enrich features with alias (from getAllFeatures — `name` is the
+      // Enrich features with alias (from getAllFeatures - `name` is the
       // auto-generated table name, `alias` is the human label) and the
       // achieved / target-met data from the selected runs. Target met =
       // number of selected runs whose represented_percent >= target_value.
@@ -199,7 +199,7 @@ function ResultsPanel(props) {
               msg = j.error
           }
           catch {
-            /* not JSON — keep generic message */
+            /* not JSON - keep generic message */
           }
           throw new Error(msg)
         }

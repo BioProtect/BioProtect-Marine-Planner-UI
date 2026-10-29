@@ -97,19 +97,15 @@ function SelectMapboxLayer({
     // Remove existing layer if it exists
     // Remove previous layers
     map.getStyle().layers.forEach((layer) => {
-      if (layer.id.startsWith('martin_layer_pu_')) {
-        if (map.getLayer(layer.id)) {
-          map.removeLayer(layer.id)
-        }
+      if (layer.id.startsWith('martin_layer_pu_') && map.getLayer(layer.id)) {
+        map.removeLayer(layer.id)
       }
     })
 
     // Remove previous sources
     Object.keys(map.getStyle().sources).forEach((source) => {
-      if (source.startsWith('martin_src_')) {
-        if (map.getSource(source)) {
-          map.removeSource(source)
-        }
+      if (source.startsWith('martin_src_') && map.getSource(source)) {
+        map.removeSource(source)
       }
     })
 

@@ -95,7 +95,7 @@ import {
   useUpdateUserMutation,
 } from '@slices/userSlice'
 // wherever loadProjectAndSetup lives
-import classyBrew from 'classybrew'
+import ClassyBrew from 'classybrew'
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from 'jsonp-promise'
 import mapboxgl from 'mapbox-gl'
@@ -142,8 +142,6 @@ import useWebSocketHandler from './WebSocketHandler'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
-import.meta.env.VITE_MAPBOX_TOKEN
-
 // GLOBAL VARIABLES
 const MARXAN_CLIENT_VERSION = packageJson.version
 // array of timers for seeing when asynchronous calls have finished
@@ -162,6 +160,7 @@ function App() {
 
   const userData = useSelector(selectCurrentUser)
   const [updateUser] = useUpdateUserMutation()
+  const [deleteUserMutation] = useDeleteUserMutation()
   // Instead of importing the whole state - import whats needed
   const projState = useSelector(state => state.project)
   const bioprotectServer = useSelector(state => state.project.bpServer)
@@ -247,7 +246,7 @@ function App() {
     puEditingRef.current = puEditing
   }, [puEditing])
 
-  // RESULTS QUERY — support multiple selected runs
+  // RESULTS QUERY - support multiple selected runs
   const selectedRunIds = useSelector(s => s.prioritizr.selectedRunIds)
 
   useEffect(() => {
@@ -306,7 +305,6 @@ function App() {
   const [resultsLayer, setResultsLayer] = useState({})
   const [paLayerVisible] = useState(false)
   const [planningGridMetadata, setPlanningGridMetadata] = useState({})
-  const [addToProject] = useState(false)
   const mapContainer = useRef(null)
   const map = useRef(import.meta.hot
     ? window._mapInstance
@@ -330,7 +328,6 @@ function App() {
   // Initialize map once after mount (prevents container=null errors)
   useEffect(() => {
     if (mapContainer.current && !map.current) {
-      console.log('🗺️ Creating initial Mapbox map...')
       createMap() // no style argument = default
     }
   }, [mapContainer.current])
@@ -344,7 +341,6 @@ function App() {
   useEffect(() => {
     dispatch(initialiseServer())
       .unwrap()
-      .then(message => console.log(message))
       .catch(error => console.error('Error:', error))
   }, [dispatch])
 
@@ -352,7 +348,7 @@ function App() {
     const fetchGlobalVariables = async () => {
       dispatch(setLoading(true))
       try {
-        setBrew(new classyBrew())
+        setBrew(new ClassyBrew())
         dispatch(setRegistry(INITIAL_VARS))
       }
       catch (error) {
@@ -559,7 +555,7 @@ function App() {
     async (id) => {
       try {
         const result = await dispatch(
-          featureApi.endpoints.getFeature.initiate(id),
+          featureApiSlice.endpoints.getFeature.initiate(id),
         ).unwrap()
 
         const featureData = result.data?.data?.[0]
@@ -577,11 +573,6 @@ function App() {
             { type: 'Features', id: 'LIST' },
           ]),
         )
-
-        if (addToProject) {
-          dispatch(addFeature(updatedFeature))
-          await updateSelectedFeatures()
-        }
       }
       catch (err) {
         console.error('Failed to load feature:', err)
@@ -590,8 +581,6 @@ function App() {
     [
       dispatch,
       addFeaturesToCache,
-      addToProject,
-      updateSelectedFeatures,
     ],
   )
 
@@ -710,7 +699,6 @@ function App() {
   const handleWebSocket = async (url) => {
     try {
       const message = await startWebSocket(url)
-      console.log('WebSocket finished successfully:', message)
       return message
     }
     catch (err) {
@@ -787,11 +775,9 @@ function App() {
   }
 
   const deleteUser = async (user) => {
-    const [deleteUser]
-      = useDeleteUserMutation()
     try {
       // Send request to delete the user
-      await deleteUser(user).unwrap()
+      await deleteUserMutation(user).unwrap()
       showMessage('User Deleted', 'success')
       // Update local state to remove the deleted user
       const usersCopy = userState.users.filter(item => item.user !== user)
@@ -888,15 +874,13 @@ function App() {
 
   // log out and reset some state
   const handleLogOut = async () => {
-    console.log('* * * Logging out... * * *')
-
     // Close all open dialogs
     dispatch(toggleDialog({ dialogName: 'userMenuOpen', isOpen: false }))
     dispatch(toggleDialog({ dialogName: 'resultsPanelOpen', isOpen: false }))
     dispatch(toggleDialog({ dialogName: 'infoPanelOpen', isOpen: false }))
 
     // Reset local state
-    setBrew(new classyBrew())
+    setBrew(new ClassyBrew())
     setRunParams([])
     setNotifications([])
     setFiles({})
@@ -912,10 +896,10 @@ function App() {
     // Clear local auth FIRST so any refetches triggered by the api reset
     // (or any in-flight 403s) see isUserLoggedIn=false and skip the
     // /refresh re-auth path in baseQueryWithReauth.
-    dispatch(logOut()) // from authSlice — clears token + isUserLoggedIn
+    dispatch(logOut()) // from authSlice - clears token + isUserLoggedIn
 
     // Best-effort server-side session invalidation. Failures here must NOT
-    // block local logout — otherwise an expired session or network hiccup
+    // block local logout - otherwise an expired session or network hiccup
     // would trap the user in the app with no way back to the login page.
     try {
       await logoutUser().unwrap()
@@ -927,7 +911,7 @@ function App() {
     // Clear RTK Query cache so mounted hooks don't paint stale data back in.
     dispatch(apiSlice.util.resetApiState())
 
-    // Clear cookies manually if needed (won't touch HTTP-only refresh cookie —
+    // Clear cookies manually if needed (won't touch HTTP-only refresh cookie -
     // the server endpoint above is what invalidates that).
     document.cookie
       .split(';')
@@ -1135,7 +1119,7 @@ function App() {
       return `${bioprotectServer.endpoint}exports/${message.filename}`
     }
     catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 
@@ -1272,7 +1256,7 @@ function App() {
       return resp
     }
     catch (error) {
-      console.log('error ', error)
+      console.error('error ', error)
       throw new Error('Failed to upload file to folder: ', error)
     }
   }
@@ -1313,7 +1297,7 @@ function App() {
 
   // gets the various paint properties for the planning unit layer - if setRenderer is true then it will also update the renderer in the Legend panel
   const renderPuPrioritizrLayer = (freq, totalRuns) => {
-    // freq: { h3_index: count } — how many runs each hex was selected in
+    // freq: { h3_index: count } - how many runs each hex was selected in
     // totalRuns: number of selected runs (for normalising intensity)
     const propId = puLayerIdsRef.current?.propId || 'h3_index'
     const resultsLayerId = puLayerIdsRef.current?.resultsLayerId
@@ -1533,7 +1517,7 @@ function App() {
       })
     }
 
-    // no map yet — make sure container exists
+    // no map yet - make sure container exists
     if (!mapContainer.current) {
       console.warn('Map container not ready yet.')
       // return a resolved promise so callers that await won't hang
@@ -1587,7 +1571,7 @@ function App() {
 
     // ✅ Only add once to prevent duplicate-layer errors
     if (!map.current.getSource(COSTS_SOURCE)) {
-      // Example source — if you’re using H3 grid GeoJSON from your backend
+      // Example source - if you’re using H3 grid GeoJSON from your backend
       map.current.addSource(COSTS_SOURCE, {
         type: 'geojson',
         data: {
@@ -1628,7 +1612,6 @@ function App() {
 
     if (
       message !== 'http status 200 returned without content.'
-      || message == ''
     ) {
       showMessage(
         `MapError: ${message}, Error status: ${e.error.status}`,
@@ -1864,7 +1847,7 @@ function App() {
   // gets the style JSON either as a valid TileJSON object or as a url to a valid TileJSON object
   const getValidStyle = async (basemap) => {
     switch (basemap.provider) {
-      case 'esri':
+      case 'esri': {
         // Load the ESRI style dynamically and return the parsed TileJSON object
         // Fetch the style JSON
         const response = await fetch(basemap.id)
@@ -1892,6 +1875,7 @@ function App() {
           name: metadata.name,
         }
         return style
+      }
 
       case 'local':
         // Return a blank background style
@@ -2476,8 +2460,6 @@ function App() {
       toggleDialog({ dialogName: 'cumulativeImpactDialogOpen', isOpen: true }),
     )
 
-  const openCostsDialog = () => setCostsDialogOpen(true)
-
   const runCumulativeImpact = async (
     selectedUploadedActivityIds,
     profileName,
@@ -2515,13 +2497,9 @@ function App() {
     return response
   }
 
-  // Inspect an uploaded raster sitting in imports/ on the server.
-  // Returns { band_count, dtypes, nodata, bounds, crs_epsg, ... } or null on error.
-  // NOT wrapped in useCallback because (a) loadCostsLayer is declared later
-  // in this file, and putting later-declared functions in a useCallback
-  // deps array hits a TDZ ReferenceError, and (b) the dialog uses a
-  // useRef-based per-filename guard to prevent effect re-fires regardless
-  // of this function's identity.
+  // Inspect an uploaded raster in imports/ on the server; band metadata or null.
+  // Not a useCallback: loadCostsLayer is declared later, so listing it in deps
+  // would hit the TDZ, and the dialog's per-filename ref guard makes identity irrelevant.
   const getRasterBandInfo = async (filename) => {
     if (!filename)
       return null
@@ -2711,16 +2689,6 @@ function App() {
         : f,
     )
     await updateProjectFeatures(updatedFeatures)
-  }
-
-  // removes a feature from the selectedFeatureIds array
-
-  // adds a feature to the selectedFeatureIds array
-  const addFeature = (feature) => {
-    const next = featureState.selectedFeatureIds.includes(feature.id)
-      ? featureState.selectedFeatureIds
-      : [...featureState.selectedFeatureIds, feature.id]
-    dispatch(setSelectedFeatureIds(next))
   }
 
   // called when the user has drawn a polygon on screen
@@ -3297,7 +3265,6 @@ function App() {
   if (import.meta?.hot) {
     import.meta.hot.dispose(() => {
       // ✅ Do nothing: keep map instance alive between reloads
-      console.log('♻️ HMR reload — keeping existing map')
     })
   }
 
@@ -3423,7 +3390,6 @@ function App() {
             loadedActivityIds={loadedActivityIds}
             useFeatureColors={userData?.USEFEATURECOLORS}
             smallLinearGauge={smallLinearGauge}
-            openCostsDialog={openCostsDialog}
             loadCostsLayer={loadCostsLayer}
             loading={uiState.loading}
             setMenuAnchor={setMenuAnchor}

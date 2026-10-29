@@ -8,7 +8,7 @@ import { toggleDialog } from '@slices/uiSlice'
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import BPDialog from './BPDialog'
-import CONSTANTS from './bpVars.jsx'
+import CONSTANTS from './bpVars'
 
 const FILL = CONSTANTS.WDPA_LAYER_NAME
 const LINE = CONSTANTS.WDPA_LINE_LAYER_NAME

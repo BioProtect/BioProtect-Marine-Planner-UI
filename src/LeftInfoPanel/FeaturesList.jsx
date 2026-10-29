@@ -41,7 +41,7 @@ function FeaturesList({
   //   achieved:    number  (server average across the selected runs),
   //   achievedMin: number,
   //   achievedMax: number,
-  //   perRun:      number[] (per-run percents — same length as selectedRunIds)
+  //   perRun:      number[] (per-run percents - same length as selectedRunIds)
   // }
   // When the API hasn't been extended with `per_run`, we fall back to a
   // single-element array so the tri-state UI degrades to current behaviour.

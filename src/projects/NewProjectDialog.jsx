@@ -283,10 +283,8 @@ function NewProjectDialog({
 
   const closeDialog = () => {
     // Only restore if project was NOT created
-    if (!projectWasCreatedRef.current) {
-      if (prevSelectedFeatureIdsRef.current != null) {
-        dispatch(setSelectedFeatureIds(prevSelectedFeatureIdsRef.current))
-      }
+    if (!projectWasCreatedRef.current && prevSelectedFeatureIdsRef.current != null) {
+      dispatch(setSelectedFeatureIds(prevSelectedFeatureIdsRef.current))
     }
     // Reset flags
     projectWasCreatedRef.current = false
@@ -346,7 +344,7 @@ function NewProjectDialog({
         onClose={() => closeDialog()}
         helpLink="user.html#creating-new-projects"
       >
-        {/* STEP 0 — Info + Grid choice */}
+        {/* STEP 0 - Info + Grid choice */}
         {stepIndex === 0 && (
           <FormControl fullWidth component="fieldset" sx={{ gap: 2 }}>
             <Box sx={{ mb: 3 }}>
@@ -433,7 +431,7 @@ function NewProjectDialog({
           </FormControl>
         )}
 
-        {/* STEP 1 — Upload, Draw OR Select existing */}
+        {/* STEP 1 - Upload, Draw OR Select existing */}
         {stepIndex === 1 && (puGrid === 'upload' || puGrid === 'draw') && (
           <Box display="flex" flexDirection="column" gap={2}>
             {puGrid === 'upload'
@@ -506,7 +504,7 @@ function NewProjectDialog({
           />
         )}
 
-        {/* STEP 2 — Features */}
+        {/* STEP 2 - Features */}
         {stepIndex === 2 && (
           <Box
             sx={{
@@ -548,7 +546,7 @@ function NewProjectDialog({
           </Box>
         )}
 
-        {/* STEP 3 — Costs */}
+        {/* STEP 3 - Costs */}
         {stepIndex === 3 && (
           <SelectCostFeatures selectedCosts={selectedCosts} />
         )}

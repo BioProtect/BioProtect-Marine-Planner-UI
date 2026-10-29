@@ -38,7 +38,7 @@ export const prioritizrApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
-    // runIds: sorted number[] — stable cache key, averaged on the server
+    // runIds: sorted number[] - stable cache key, averaged on the server
     getFeatureRepresentation: builder.query({
       query: runIds =>
         `prioritizr?action=get-feature-representation&run-ids=${runIds.join(',')}`,

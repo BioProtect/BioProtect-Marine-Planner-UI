@@ -1,17 +1,7 @@
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 
-/** Filled green = preprocessed, hollow grey ring = not */
-export function dotSx(on) {
-  return {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    flex: 'none',
-    bgcolor: on ? 'brand.green' : 'transparent',
-    boxShadow: on ? 'none' : 'inset 0 0 0 1.5px #b8c4cb',
-  }
-}
+import { dotSx } from '../Helpers'
 
 export function HexInfoFeatureRow({ row }) {
   const name = row.alias || row.feature_name || 'Unknown'

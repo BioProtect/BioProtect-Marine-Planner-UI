@@ -1,3 +1,4 @@
+import useAppSnackbar from '@hooks/useAppSnackbar'
 import {
   Table,
   TableBody,
@@ -13,11 +14,12 @@ import { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import BPDialog from '../BPDialog'
-import CONSTANTS from '../bpVars.jsx'
+import CONSTANTS from '../bpVars'
 import { getArea, isNumber, isValidTargetValue } from '../Helpers'
 
 function FeatureInfoDialog({ updateFeature }) {
   const dispatch = useDispatch()
+  const { showMessage } = useAppSnackbar()
   const uiState = useSelector(state => state.ui)
   const userData = useSelector(selectCurrentUser)
   const featureDialogs = useSelector(s => s.feature.dialogs)
@@ -53,10 +55,10 @@ function FeatureInfoDialog({ updateFeature }) {
         updateFeature(selectedFeatureId, updatedProps)
       }
       else {
-        alert('Invalid value')
+        showMessage('Invalid value', 'error')
       }
     },
-    [selectedFeatureId, updateFeature],
+    [selectedFeatureId, updateFeature, showMessage],
   )
 
   const onKeyDown = useCallback(
@@ -83,7 +85,7 @@ function FeatureInfoDialog({ updateFeature }) {
     // "Total area" comes from metadata_interest_features._area (m²).
     // "Planning grid area" / "Target area" / "Area protected" come from
     // feature_preprocessing.pu_area and derived values, now stored in
-    // km² app-wide — tell getArea() to treat those as km² input.
+    // km² app-wide - tell getArea() to treat those as km² input.
     const sourceUnits = rowKey === 'Total area'
       ? 'm2'
       : 'km2'

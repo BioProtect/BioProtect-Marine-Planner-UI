@@ -5,7 +5,7 @@ import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
-// Discrete preset levels — keeps users away from values that lock CBC up.
+// Discrete preset levels - keeps users away from values that lock CBC up.
 // Each step balances clustering strength vs solver speed.
 const LEVELS = [
   {

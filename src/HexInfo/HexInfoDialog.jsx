@@ -14,8 +14,9 @@ import Typography from '@mui/material/Typography'
 import { togglePUD } from '@slices/planningUnitSlice'
 import { useCallback, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import CONSTANTS from '../bpVars.jsx'
-import { dotSx, HexInfoFeatureRow } from './HexInfoFeatureRow'
+import CONSTANTS from '../bpVars'
+import { dotSx } from '../Helpers'
+import { HexInfoFeatureRow } from './HexInfoFeatureRow'
 
 // Small uppercase label used on the dark rail
 const railLabelSx = {

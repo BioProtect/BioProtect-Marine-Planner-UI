@@ -5,17 +5,7 @@ import IconButton from '@mui/material/IconButton'
 import Slider from '@mui/material/Slider'
 import Typography from '@mui/material/Typography'
 import { useState } from 'react'
-
-export function formatPct(v) {
-  return v === 0
-    ? 'Off'
-    : `${Math.round(v * 100)}%`
-}
-export function formatPx(v) {
-  return v === 0
-    ? 'Off'
-    : `${v}px`
-}
+import { formatPct } from '../Helpers'
 
 // One Legend-tab block, always fully shown:
 //   [eye]  name                  value

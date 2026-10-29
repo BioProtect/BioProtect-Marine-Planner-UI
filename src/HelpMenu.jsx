@@ -7,7 +7,7 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import { toggleDialog } from '@slices/uiSlice'
 import { useDispatch, useSelector } from 'react-redux'
-import CONSTANTS from './bpVars.jsx'
+import CONSTANTS from './bpVars'
 
 function HelpMenu(props) {
   const dispatch = useDispatch()

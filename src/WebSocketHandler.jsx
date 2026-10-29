@@ -87,7 +87,6 @@ function useWebSocketHandler(checkForErrors, setPreprocessing, setPid, newFeatur
   const handleWebSocket = useCallback(
     (params) => {
       return new Promise((resolve, reject) => {
-        console.log('Connecting to:', websocketEndpoint + params)
         const ws = new WebSocket(websocketEndpoint + params)
         // Track when this socket opened so we can compute elapsed time
         // for streaming "Running" messages.
@@ -100,9 +99,8 @@ function useWebSocketHandler(checkForErrors, setPreprocessing, setPid, newFeatur
 
         ws.onmessage = async (evt) => {
           const message = JSON.parse(evt.data)
-          console.log('message from websocker - ', message)
           // Compute elapsed seconds since the socket opened so the log
-          // can show "Running — 00:23" style timestamps.
+          // can show "Running - 00:23" style timestamps.
           if (startTime != null) {
             message.elapsed = Math.max(
               0,

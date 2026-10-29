@@ -66,7 +66,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
   const [profileName, setProfileName] = useState('')
   const [profileDescription, setProfileDescription] = useState('')
 
-  // Raster cost profile tab (tab 2) state — scoped here so it does not
+  // Raster cost profile tab (tab 2) state - scoped here so it does not
   // leak into the activities tab.
   const [rasterFilename, setRasterFilename] = useState('')
   const [rasterProfileName, setRasterProfileName] = useState('')
@@ -145,7 +145,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
     if (!dialogOpen) {
       setActivitiesLoaded(false)
     }
-  }, [dialogOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dialogOpen]) // eslint-disable-line react/exhaustive-deps
 
   const openHumanActivitiesDialog = useCallback(async () => {
     if (uiState.activities.length < 1) {
@@ -207,15 +207,9 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
     }
   }
 
-  // Probe band count / metadata once a raster has been uploaded.
-  //
-  // Hard-guard against effect-loops: we track the last filename we already
-  // fetched for in a ref, and short-circuit if it matches. Even if the
-  // effect re-fires (StrictMode double-invoke, parent re-renders that
-  // change a captured prop's identity, dialog remount, etc.) the network
-  // request only goes out once per actual filename change. This is what
-  // stopped the login flash where getRasterBandInfo was firing in a
-  // tight loop with incrementing JSONP callback IDs.
+  // Probe raster metadata once per filename. The ref guard stops effect
+  // re-fires (StrictMode, prop identity changes, remounts) from looping the
+  // JSONP request, which caused the login flash.
   const lastProbedFilenameRef = useRef('')
   useEffect(() => {
     let cancelled = false
@@ -240,7 +234,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react/exhaustive-deps
   }, [rasterFilename])
 
   const handleUploadRasterCost = async () => {
@@ -635,7 +629,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
             this project. Values are sampled per hex with exactextract,
             log-normalised to [floor, 1] so no hex is ever zero-cost, and saved
             as a new cost profile. The raster is sampled against every planning
-            hex it covers — all areas and resolutions — then deleted, so you can
+            hex it covers - all areas and resolutions - then deleted, so you can
             reuse it later without uploading it again.
           </Alert>
 
@@ -729,7 +723,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
                                 ? `${r.project_coverage_pct}% (${(
                                   r.project_covered ?? 0
                                 ).toLocaleString()})`
-                                : '—'}
+                                : '–'}
                             </TableCell>
                             <TableCell align="center">
                               <Tooltip
@@ -812,7 +806,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
                 >
                   {selectedRaster.project_total
                     && selectedRaster.project_coverage_pct === 0
-                    ? 'This raster has no cached values for this project\'s hexes — it may not reach this area, or not at this resolution. Re-upload it to extend coverage.'
+                    ? 'This raster has no cached values for this project\'s hexes - it may not reach this area, or not at this resolution. Re-upload it to extend coverage.'
                     : `Band ${selectedRaster.band} and ${selectedRaster.stat} are baked into the cached values. Normalisation below is applied fresh for this project.`}
                 </Alert>
               )
@@ -950,7 +944,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
             />
             {rasterSource === 'upload'
               ? (
-                  <Tooltip title="By default, resolutions whose hexes sit inside a single pixel are read with a fast centroid lookup, which gives the same value as the area-weighted mean. Tick this to force exactextract everywhere — much slower, but it blends pixels for hexes straddling a boundary.">
+                  <Tooltip title="By default, resolutions whose hexes sit inside a single pixel are read with a fast centroid lookup, which gives the same value as the area-weighted mean. Tick this to force exactextract everywhere - much slower, but it blends pixels for hexes straddling a boundary.">
                     <FormControlLabel
                       control={(
                         <Checkbox
@@ -991,7 +985,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
                   {' '}
                   {rasterBandInfo.crs_epsg
                     ? `EPSG:${rasterBandInfo.crs_epsg}`
-                    : '(non-standard — will be reprojected)'}
+                    : '(non-standard - will be reprojected)'}
                 </Typography>
               )
             : null}
@@ -1047,7 +1041,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
         {rasterToDelete?.visibility === 'shared'
           ? (
               <Alert severity="warning" sx={{ mt: 2 }}>
-                This raster is shared — other users will lose access to it too.
+                This raster is shared - other users will lose access to it too.
               </Alert>
             )
           : null}

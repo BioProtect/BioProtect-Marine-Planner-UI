@@ -22,7 +22,7 @@ import {
 import { clearRuns, toggleRun } from '@slices/prioritizrSlice'
 import { Fragment, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { PALETTE } from '../bpVars.jsx'
+import { PALETTE } from '../bpVars'
 
 function fmtDate(iso) {
   return new Intl.DateTimeFormat('en-GB', {
@@ -102,7 +102,7 @@ function statusColour(theme, status) {
 }
 
 // Boundary penalty as a 4-segment meter + value. Buckets are coarse on
-// purpose — the number is there for anyone who needs the exact value.
+// purpose - the number is there for anyone who needs the exact value.
 function bpLevel(v) {
   return v === 0
     ? 0
@@ -210,7 +210,7 @@ function RunsTab() {
   }, [runs, query])
 
   // Grouped by date, most recent first. While searching we show a flat list
-  // instead — otherwise matches hide inside collapsed date sections.
+  // instead - otherwise matches hide inside collapsed date sections.
   const groupedRuns = useMemo(() => {
     const groups = new Map()
     for (const run of filtered) {
@@ -306,7 +306,7 @@ function RunsTab() {
     const isExpanded = expandedRunIds.has(run.id)
     const hasDescription = !!run.description?.trim()
     // can_delete is computed by the server from the same rule the delete
-    // endpoint enforces — creator, project owner, or admin.
+    // endpoint enforces - creator, project owner, or admin.
     const canDelete = !!run.can_delete
     const isMine
       = run.created_by != null && Number(run.created_by) === Number(userId)

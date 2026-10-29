@@ -13,7 +13,7 @@ import wellknown from 'wellknown'
  * string (the extent column of features and activities), or null
  */
 export function boxToBounds(box) {
-  const nums = String(box ?? '').match(/-?\d+(\.\d+)?(e-?\d+)?/gi)
+  const nums = String(box ?? '').match(/-?\d+(?:\.\d+)?(?:e-?\d+)?/gi)
   return nums?.length === 4
     ? nums.map(Number)
     : null
@@ -43,8 +43,8 @@ export function isValidTargetValue(value) {
 export function getArea(value, units = 'Km2', asHtml = false, sf = 3, addCommas = true, sourceUnits = 'm2') {
   if (value == null || Number.isNaN(value)) {
     return asHtml
-      ? <span>—</span>
-      : '—'
+      ? <span>–</span>
+      : '–'
   }
 
   const u = String(units || 'Km2').toLowerCase()
@@ -130,4 +130,27 @@ export function generateTableCols(fields, overrides = {}) {
     numeric: overrides[field.id]?.numeric ?? false,
     disablePadding: overrides[field.id]?.disablePadding ?? true,
   }))
+}
+
+/** Filled green = preprocessed, hollow grey ring = not */
+export function dotSx(on) {
+  return {
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    flex: 'none',
+    bgcolor: on ? 'brand.green' : 'transparent',
+    boxShadow: on ? 'none' : 'inset 0 0 0 1.5px #b8c4cb',
+  }
+}
+
+export function formatPct(v) {
+  return v === 0
+    ? 'Off'
+    : `${Math.round(v * 100)}%`
+}
+export function formatPx(v) {
+  return v === 0
+    ? 'Off'
+    : `${v}px`
 }

@@ -13,22 +13,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import BPTableHeadWithSort from './BPTableHeadWithSort'
 import BPTableTitleWithSearch from './BPTableTitleWithSearch'
 
-// Props
-// 1. data (Array, Required)
-// Description: An array of objects containing the data to be displayed in the table. Each object should have keys that correspond to the columns defined in tableColumns.
-// 2. tableColumns (Array, Required)
-// Description: Defines the structure and headers of the table. Each item in this array should be an object with id and label properties. The id should match a key from the data array.
-// 3. title (String, Required)
-// Description: A title that will be displayed above the table.
-// 4. showSearchBox (Boolean, Optional)
-// Description: A flag to control whether the search box is displayed above the table. Default is false.
-// 5. searchColumns (Array of Strings, Required if Search is enabled)
-// Description: Defines the columns that will be searched when a search query is entered. The strings should match the keys in data.
-// 6. initialSelection (String, Optional)
-// Description: The initial selection that pre-selects a row based on the value of a specific column (e.g., the name column).
-// 7. ableToSelectAll (Boolean, Optional)
-// Description: If true, the table will support selecting all rows at once. Default is false.
-
+/**
+ * @param {object} props
+ * @param {object[]} props.data rows; keys match tableColumns ids
+ * @param {{id: string, label: string}[]} props.tableColumns
+ * @param {string} props.title
+ * @param {boolean} [props.showSearchBox]
+ * @param {string[]} [props.searchColumns] data keys searched; required with showSearchBox
+ * @param {string} [props.initialSelection] value of the column used to preselect a row
+ * @param {boolean} [props.ableToSelectAll]
+ */
 function BioprotectTable(props) {
   const [order, setOrder] = useState('asc')
   const [orderBy, setOrderBy] = useState('category')

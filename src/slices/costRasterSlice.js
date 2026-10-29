@@ -3,7 +3,7 @@ import { apiSlice } from './apiSlice'
 /**
  * The cost raster library: rasters that have already been extracted to
  * per-hex values and then deleted. Reusing one builds a cost profile for
- * any project without another upload — see server/handlers/cost_raster_handler.py.
+ * any project without another upload - see server/handlers/cost_raster_handler.py.
  */
 const costRasterApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({

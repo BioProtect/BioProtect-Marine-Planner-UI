@@ -31,7 +31,7 @@ import Typography from '@mui/material/Typography'
 import { setShowPlanningGrid } from '@slices/planningUnitSlice'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { PALETTE } from '../bpVars.jsx'
+import { PALETTE } from '../bpVars'
 import ActivityListItem from './ActivityListItem'
 
 function PlanningUnitsTab({
@@ -77,7 +77,7 @@ function PlanningUnitsTab({
   // ── Activities for the active cost profile ────────────────────────────────
   const activeProfile = (costProfiles || []).find(p => p.is_active)
 
-  // Local selected profile id — drives BOTH the dropdown value and the
+  // Local selected profile id - drives BOTH the dropdown value and the
   // activities list. Updates immediately on user click so the UI responds
   // without waiting for the backend roundtrip in activateCostProfile.
   const [selectedProfileId, setSelectedProfileId] = useState(
@@ -90,7 +90,7 @@ function PlanningUnitsTab({
     if (activeProfile?.id != null && activeProfile.id !== selectedProfileId) {
       setSelectedProfileId(activeProfile.id)
     }
-  }, [activeProfile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeProfile?.id]) // eslint-disable-line react/exhaustive-deps
 
   const handleCostProfileChange = (newId) => {
     setSelectedProfileId(newId)
@@ -374,7 +374,7 @@ function PlanningUnitsTab({
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {puEditing
-                ? 'Click, or drag a box, to select planning units — then apply a status'
+                ? 'Click, or drag a box, to select planning units - then apply a status'
                 : 'Mannually edit planning unit statuses'}
             </Typography>
 
@@ -553,7 +553,7 @@ function PlanningUnitsTab({
                   >
                     {selectedProfileId
                       ? `${activities.length}`
-                      : '—'}
+                      : '–'}
                   </Typography>
                 </Stack>
               </AccordionSummary>

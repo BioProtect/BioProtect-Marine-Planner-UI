@@ -56,7 +56,7 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useLogoutUserMutation,
-  useResendPasswordQuery,
+  useLazyResendPasswordQuery,
 } = userApiSlice
 
 // Define local slice for additional state management

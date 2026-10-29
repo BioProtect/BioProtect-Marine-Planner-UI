@@ -1,3 +1,4 @@
+import useAppSnackbar from '@hooks/useAppSnackbar'
 import { selectCurrentUserId } from '@slices/authSlice'
 import { toggleProjDialog, useListProjectsQuery } from '@slices/projectSlice'
 
@@ -6,13 +7,14 @@ import { useDispatch, useSelector } from 'react-redux'
 import BioprotectTable from '../BPComponents/BioprotectTable'
 import ConfirmDeleteDialog from '../BPComponents/ConfirmDeleteDialog'
 import BPDialog from '../BPDialog'
-import { resolutionLabel } from '../bpVars.jsx'
+import { resolutionLabel } from '../bpVars'
 import { generateTableCols } from '../Helpers'
 import ProjectsToolbar from './ProjectsToolbar'
 
 function ProjectsDialog({ loading, deleteProject, cloneProject, exportProject, userRole, unauthorisedMethods, loadProjectAndSetup }) {
   const dispatch = useDispatch()
   const userId = useSelector(selectCurrentUserId)
+  const { showMessage } = useAppSnackbar()
 
   const projDialogs = useSelector(state => state.project.dialogs)
 

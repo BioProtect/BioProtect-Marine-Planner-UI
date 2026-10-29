@@ -88,7 +88,7 @@ function WaveOverlay({ color = '#5BBD8C' }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Leading orb — shield outline for idle/preprocessed/selected,
+// Leading orb - shield outline for idle/preprocessed/selected,
 // check for met, dash for mixed, X for missed.
 // Same shield icon for idle/preprocessed/selected, only the tile colour
 // changes.
@@ -145,7 +145,7 @@ function FeatureOrb({ state }) {
 }
 
 //
-// Result figures — tri-state.
+// Result figures - tri-state.
 //
 //   verdict   figures               caption          badge
 //   ───────   ───────────────────   ──────────────   ─────
@@ -304,7 +304,7 @@ function FeatureListItem({
 }) {
   const hasResult = achieved != null
 
-  // Multi-run aggregation — only when runCount > 1 and we have min/max
+  // Multi-run aggregation - only when runCount > 1 and we have min/max
   const isMultiRun
     = hasResult
       && runCount != null
@@ -342,7 +342,7 @@ function FeatureListItem({
         ? 'preprocessed'
         : 'idle'
 
-  // Subtitle copy — dynamic for multi-run
+  // Subtitle copy - dynamic for multi-run
   const subtitle
     = isMultiRun && metCount != null
       ? `${metCount} of ${runCount} runs met`
@@ -390,9 +390,9 @@ function FeatureListItem({
 
   // ── Result cluster prop derivation ────────────────────────────────────────
   // verdict       primary             secondary
-  // met           min (or single)     —
+  // met           min (or single)     -
   // mixed         min                 max
-  // missed        max (or single)     —
+  // missed        max (or single)     -
   let resultPrimary
   let resultSecondary = null
   if (verdict === 'met') {

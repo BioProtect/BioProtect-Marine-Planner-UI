@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { suggestResolution } from '../bpVars.jsx'
+import { suggestResolution } from '../bpVars'
 
 describe('suggestResolution', () => {
   it('picks the finest resolution at or under 50k cells', () => {

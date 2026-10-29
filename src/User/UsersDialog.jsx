@@ -103,6 +103,7 @@ function UsersDialog({ open, loading, changeRole, deleteUser }) {
                 Header: 'Role',
                 accessor: 'ROLE',
                 width: 180,
+                // eslint-disable-next-line react/no-nested-component-definitions -- dead until MarxanTable renders columns (it currently spreads them onto a bare MUI Table)
                 Cell: ({ row }) =>
                   row.original.user === 'guest'
                     ? (

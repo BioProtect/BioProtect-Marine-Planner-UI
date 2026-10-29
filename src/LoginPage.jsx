@@ -336,7 +336,7 @@ function LoginPage({ loadProjectAndSetup }) {
             }}
           >
             A browser-based decision support tool for marine conservation and
-            restoration planning — visualising cumulative impacts, identifying
+            restoration planning - visualising cumulative impacts, identifying
             priority areas for protection, and enabling transparent, inclusive
             decision-making across European seas.
           </Typography>
