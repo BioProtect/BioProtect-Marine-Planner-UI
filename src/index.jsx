@@ -1,28 +1,27 @@
-import "./index.css";
+import CssBaseline from '@mui/material/CssBaseline'
 
-import App from "./App";
-import CssBaseline from "@mui/material/CssBaseline";
-import { Provider } from "react-redux";
-import ReactDOM from "react-dom/client";
-import { SnackbarProvider } from "notistack";
-import { ThemeProvider } from "@mui/material/styles";
-import brandTheme from "./theme";
-import store from "@store/store";
+import { ThemeProvider } from '@mui/material/styles'
+import store from '@store/store'
+import { SnackbarProvider } from 'notistack'
+import ReactDOM from 'react-dom/client'
+import { Provider } from 'react-redux'
+import App from './App'
+import brandTheme from './theme'
+import './index.css'
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <Provider store={store}>
     <ThemeProvider theme={brandTheme}>
       <CssBaseline />
       <SnackbarProvider
         maxSnack={5}
         autoHideDuration={5000}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         variant="filled" // optional
         preventDuplicate
       >
         <App />
       </SnackbarProvider>
     </ThemeProvider>
-  </Provider>
-);
-
+  </Provider>,
+)

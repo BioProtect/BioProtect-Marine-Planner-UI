@@ -1,58 +1,56 @@
-import React, { useEffect, useState } from "react";
-import { setUsers, useListUsersQuery } from "@slices/userSlice";
-import { useDispatch, useSelector } from "react-redux";
+import DeleteIcon from '@mui/icons-material/Delete'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
-import DeleteIcon from "@mui/icons-material/Delete";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import MarxanTable from "../MarxanTable";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import Typography from "@mui/material/Typography";
-import toggleButtonClasses from "@mui/material/ToggleButton/toggleButtonClasses";
-import { toggleDialog } from "@slices/uiSlice";
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
+import Typography from '@mui/material/Typography'
+import { toggleDialog } from '@slices/uiSlice'
+import { setUsers, useListUsersQuery } from '@slices/userSlice'
+import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import MarxanTable from '../MarxanTable'
 
-const USER_ROLES = ["User", "ReadOnly", "Admin"];
+const USER_ROLES = ['User', 'ReadOnly', 'Admin']
 
-const UsersDialog = ({ open, loading, changeRole, deleteUser }) => {
-  const dispatch = useDispatch();
-  const [searchText, setSearchText] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const userState = useSelector((state) => state.user);
-  const { data: usersData, isLoading: isUsersLoading } = useListUsersQuery();
+function UsersDialog({ open, loading, changeRole, deleteUser }) {
+  const dispatch = useDispatch()
+  const [searchText, setSearchText] = useState('')
+  const [selectedUser, setSelectedUser] = useState(null)
+  const userState = useSelector(state => state.user)
+  const { data: usersData } = useListUsersQuery()
 
   useEffect(() => {
     if (usersData) {
-      dispatch(setUsers(usersData.users || []));
+      dispatch(setUsers(usersData.users || []))
     }
-  }, [dispatch, usersData]);
+  }, [dispatch, usersData])
 
   useEffect(() => {
     if (!open) {
-      setSearchText("");
-      setSelectedUser(null);
+      setSearchText('')
+      setSelectedUser(null)
     }
-  }, [open]);
+  }, [open])
 
   const handleRoleChange = (user, newRole) => {
-    changeRole(user, newRole);
-  };
+    changeRole(user, newRole)
+  }
 
   const handleDelete = () => {
     if (selectedUser) {
-      deleteUser(selectedUser.user);
-      setSelectedUser(null);
+      deleteUser(selectedUser.user)
+      setSelectedUser(null)
     }
-  };
+  }
 
   const handleRowClick = (row) => {
-    setSelectedUser(row.original);
-  };
+    setSelectedUser(row.original)
+  }
 
   const sortDate = (a, b) => {
     const dateA = new Date(
@@ -62,7 +60,7 @@ const UsersDialog = ({ open, loading, changeRole, deleteUser }) => {
       a.slice(9, 11),
       a.slice(12, 14),
       a.slice(15, 17),
-    );
+    )
     const dateB = new Date(
       b.slice(6, 8),
       b.slice(3, 5) - 1,
@@ -70,12 +68,12 @@ const UsersDialog = ({ open, loading, changeRole, deleteUser }) => {
       b.slice(9, 11),
       b.slice(12, 14),
       b.slice(15, 17),
-    );
-    return dateA - dateB;
-  };
+    )
+    return dateA - dateB
+  }
 
   const closeDialog = () =>
-    dispatch(toggleDialog({ dialogName: "usersDialogOpen", isOpen: false }));
+    dispatch(toggleDialog({ dialogName: 'usersDialogOpen', isOpen: false }))
 
   return (
     <Dialog open={open} onClose={closeDialog} maxWidth="lg" fullWidth>
@@ -86,58 +84,59 @@ const UsersDialog = ({ open, loading, changeRole, deleteUser }) => {
           <input
             type="text"
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            onChange={e => setSearchText(e.target.value)}
             placeholder="Search users"
-            style={{ width: "100%", padding: "8px", marginBottom: "8px" }}
+            style={{ width: '100%', padding: '8px', marginBottom: '8px' }}
           />
         </Box>
         {userState.users && userState.users.length > 0 && (
           <MarxanTable
             data={userState.users}
             selectedUser={selectedUser}
-            searchColumns={["user", "NAME", "EMAIL", "ROLE"]}
+            searchColumns={['user', 'NAME', 'EMAIL', 'ROLE']}
             searchText={searchText}
             columns={[
-              { Header: "User", accessor: "user", width: 90 },
-              { Header: "Name", accessor: "NAME", width: 173 },
-              { Header: "Email", accessor: "EMAIL", width: 135 },
+              { Header: 'User', accessor: 'user', width: 90 },
+              { Header: 'Name', accessor: 'NAME', width: 173 },
+              { Header: 'Email', accessor: 'EMAIL', width: 135 },
               {
-                Header: "Role",
-                accessor: "ROLE",
+                Header: 'Role',
+                accessor: 'ROLE',
                 width: 180,
                 Cell: ({ row }) =>
-                  row.original.user === "guest" ? (
-                    <Typography>ReadOnly</Typography>
-                  ) : (
-                    <Select
-                      value={row.original.ROLE}
-                      onChange={(e) =>
-                        handleRoleChange(row.original.user, e.target.value)
-                      }
-                      sx={{ width: 130, fontSize: "12px" }}
-                    >
-                      {USER_ROLES.map((role) => (
-                        <MenuItem key={role} value={role}>
-                          {role}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  ),
+                  row.original.user === 'guest'
+                    ? (
+                        <Typography>ReadOnly</Typography>
+                      )
+                    : (
+                        <Select
+                          value={row.original.ROLE}
+                          onChange={e =>
+                            handleRoleChange(row.original.user, e.target.value)}
+                          sx={{ width: 130, fontSize: '12px' }}
+                        >
+                          {USER_ROLES.map(role => (
+                            <MenuItem key={role} value={role}>
+                              {role}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      ),
               },
               {
-                Header: "Date",
-                accessor: "CREATEDATE",
+                Header: 'Date',
+                accessor: 'CREATEDATE',
                 width: 115,
                 sortMethod: sortDate,
               },
             ]}
             onRowClick={handleRowClick}
-            getTrProps={(row) => ({
+            getTrProps={row => ({
               style: {
                 backgroundColor:
                   row.original.user === (selectedUser && selectedUser.user)
-                    ? "aliceblue"
-                    : "",
+                    ? 'aliceblue'
+                    : '',
               },
             })}
           />
@@ -149,10 +148,10 @@ const UsersDialog = ({ open, loading, changeRole, deleteUser }) => {
           color="secondary"
           startIcon={<DeleteIcon />}
           disabled={
-            !selectedUser ||
-            loading ||
-            userState.user === selectedUser.user ||
-            selectedUser.user === "guest"
+            !selectedUser
+            || loading
+            || userState.user === selectedUser.user
+            || selectedUser.user === 'guest'
           }
           onClick={handleDelete}
         >
@@ -167,7 +166,7 @@ const UsersDialog = ({ open, loading, changeRole, deleteUser }) => {
         </Button>
       </DialogActions>
     </Dialog>
-  );
-};
+  )
+}
 
-export default UsersDialog;
+export default UsersDialog

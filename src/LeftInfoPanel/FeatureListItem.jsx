@@ -1,3 +1,9 @@
+import CheckIcon from '@mui/icons-material/Check'
+import CloseIcon from '@mui/icons-material/Close'
+
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import RemoveIcon from '@mui/icons-material/Remove'
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined'
 import {
   Box,
   IconButton,
@@ -5,47 +11,41 @@ import {
   ListItem,
   Stack,
   Typography,
-} from "@mui/material";
-import { useEffect, useRef, useState } from "react";
-
-import CheckIcon from "@mui/icons-material/Check";
-import CloseIcon from "@mui/icons-material/Close";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import RemoveIcon from "@mui/icons-material/Remove";
-import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
-import { grey } from "@mui/material/colors";
+} from '@mui/material'
+import { grey } from '@mui/material/colors'
+import { useEffect, useRef, useState } from 'react'
 
 const COLORS = {
-  blueDeep: "#125085",
-  blue: "#3F71B8",
-  green: "#5BBD8C",
-  greenWarm: "#85B658",
-  successDeep: "#2f8a5e",
-  amber: "#F5C043",
-  amberDeep: "#b58324",
-  coralDeep: "#C6603B",
-  ink: "#4D4D4D",
-  inkSoft: "#6f6f6f",
-  inkFaint: "#9b9b9b",
-  rule: "#e6e8eb",
-  ruleSoft: "#eef0f3",
-};
+  blueDeep: '#125085',
+  blue: '#3F71B8',
+  green: '#5BBD8C',
+  greenWarm: '#85B658',
+  successDeep: '#2f8a5e',
+  amber: '#F5C043',
+  amberDeep: '#b58324',
+  coralDeep: '#C6603B',
+  ink: '#4D4D4D',
+  inkSoft: '#6f6f6f',
+  inkFaint: '#9b9b9b',
+  rule: '#e6e8eb',
+  ruleSoft: '#eef0f3',
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Layered wave shown behind the row when the feature is on the map.
 // Uses the feature's map layer colour so it matches the polygon on the map.
 // ────────────────────────────────────────────────────────────────────────────
-function WaveOverlay({ color = "#5BBD8C" }) {
+function WaveOverlay({ color = '#5BBD8C' }) {
   // Unique gradient id per color avoids cross-row bleed when multiple
   // features are active at the same time.
-  const gradId = `fwg-${color.replace("#", "")}`;
+  const gradId = `fwg-${color.replace('#', '')}`
 
   return (
     <Box
       sx={{
-        position: "absolute",
+        position: 'absolute',
         inset: 0,
-        pointerEvents: "none",
+        pointerEvents: 'none',
         zIndex: 0,
       }}
     >
@@ -57,9 +57,9 @@ function WaveOverlay({ color = "#5BBD8C" }) {
       >
         <defs>
           <linearGradient id={gradId} x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0"    stopColor={color} stopOpacity="0"    />
+            <stop offset="0" stopColor={color} stopOpacity="0" />
             <stop offset="0.55" stopColor={color} stopOpacity="0.22" />
-            <stop offset="1"    stopColor={color} stopOpacity="0.30" />
+            <stop offset="1" stopColor={color} stopOpacity="0.30" />
           </linearGradient>
         </defs>
 
@@ -84,7 +84,7 @@ function WaveOverlay({ color = "#5BBD8C" }) {
         />
       </svg>
     </Box>
-  );
+  )
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -94,36 +94,36 @@ function WaveOverlay({ color = "#5BBD8C" }) {
 // changes.
 // ────────────────────────────────────────────────────────────────────────────
 function FeatureOrb({ state }) {
-  let background = "#eef1f4";
-  let color = COLORS.inkFaint;
-  let icon = <ShieldOutlinedIcon sx={{ fontSize: 20 }} />;
+  let background = '#eef1f4'
+  let color = COLORS.inkFaint
+  let icon = <ShieldOutlinedIcon sx={{ fontSize: 20 }} />
 
-  if (state === "preprocessed") {
-    background = "linear-gradient(135deg, #e3eef9, #cfdef3)";
-    color = COLORS.blueDeep;
+  if (state === 'preprocessed') {
+    background = 'linear-gradient(135deg, #e3eef9, #cfdef3)'
+    color = COLORS.blueDeep
   }
 
-  if (state === "selected") {
-    background = "linear-gradient(135deg, #d6e5f3, #b9d2ea)";
-    color = COLORS.blueDeep;
+  if (state === 'selected') {
+    background = 'linear-gradient(135deg, #d6e5f3, #b9d2ea)'
+    color = COLORS.blueDeep
   }
 
-  if (state === "achieved") {
-    background = "linear-gradient(135deg, #e1f4ea, #c5ebd6)";
-    color = COLORS.successDeep;
-    icon = <CheckIcon sx={{ fontSize: 20 }} />;
+  if (state === 'achieved') {
+    background = 'linear-gradient(135deg, #e1f4ea, #c5ebd6)'
+    color = COLORS.successDeep
+    icon = <CheckIcon sx={{ fontSize: 20 }} />
   }
 
-  if (state === "mixed") {
-    background = "linear-gradient(135deg, #fdf2d4, #f9deaa)";
-    color = COLORS.amberDeep;
-    icon = <RemoveIcon sx={{ fontSize: 20 }} />;
+  if (state === 'mixed') {
+    background = 'linear-gradient(135deg, #fdf2d4, #f9deaa)'
+    color = COLORS.amberDeep
+    icon = <RemoveIcon sx={{ fontSize: 20 }} />
   }
 
-  if (state === "missed") {
-    background = "linear-gradient(135deg, #fde7e0, #fbd5c9)";
-    color = COLORS.coralDeep;
-    icon = <CloseIcon sx={{ fontSize: 18 }} />;
+  if (state === 'missed') {
+    background = 'linear-gradient(135deg, #fde7e0, #fbd5c9)'
+    color = COLORS.coralDeep
+    icon = <CloseIcon sx={{ fontSize: 18 }} />
   }
 
   return (
@@ -131,9 +131,9 @@ function FeatureOrb({ state }) {
       sx={{
         width: 36,
         height: 36,
-        borderRadius: "9px",
-        display: "grid",
-        placeItems: "center",
+        borderRadius: '9px',
+        display: 'grid',
+        placeItems: 'center',
         background,
         color,
         flexShrink: 0,
@@ -141,7 +141,7 @@ function FeatureOrb({ state }) {
     >
       {icon}
     </Box>
-  );
+  )
 }
 
 //
@@ -157,30 +157,30 @@ function ResultCluster({ verdict, primary, secondary, target }) {
   // primary  = the single number shown for met/missed (or low end of range)
   // secondary = high end of range when verdict === "mixed", else null
 
-  const isRange = verdict === "mixed" && secondary != null;
+  const isRange = verdict === 'mixed' && secondary != null
 
-  const verdictColor =
-    verdict === "met"
+  const verdictColor
+    = verdict === 'met'
       ? COLORS.successDeep
-      : verdict === "missed"
+      : verdict === 'missed'
         ? COLORS.coralDeep
-        : COLORS.amberDeep;
+        : COLORS.amberDeep
 
-  const badgeBg =
-    verdict === "met"
+  const badgeBg
+    = verdict === 'met'
       ? COLORS.green
-      : verdict === "missed"
+      : verdict === 'missed'
         ? COLORS.coralDeep
-        : COLORS.amber;
+        : COLORS.amber
 
-  const caption =
-    verdict === "met"
+  const caption
+    = verdict === 'met'
       ? isRange
-        ? "Min / Target"
-        : "Result / Target"
-      : verdict === "missed"
-        ? "Max / Target"
-        : "Range / Target";
+        ? 'Min / Target'
+        : 'Result / Target'
+      : verdict === 'missed'
+        ? 'Max / Target'
+        : 'Range / Target'
 
   return (
     <Stack spacing={0.25} alignItems="flex-end">
@@ -189,16 +189,16 @@ function ResultCluster({ verdict, primary, secondary, target }) {
           sx={{
             width: 16,
             height: 16,
-            borderRadius: "50%",
-            display: "grid",
-            placeItems: "center",
-            color: "#fff",
+            borderRadius: '50%',
+            display: 'grid',
+            placeItems: 'center',
+            color: '#fff',
             backgroundColor: badgeBg,
           }}
         >
-          {verdict === "met" && <CheckIcon sx={{ fontSize: 10 }} />}
-          {verdict === "missed" && <CloseIcon sx={{ fontSize: 10 }} />}
-          {verdict === "mixed" && <RemoveIcon sx={{ fontSize: 10 }} />}
+          {verdict === 'met' && <CheckIcon sx={{ fontSize: 10 }} />}
+          {verdict === 'missed' && <CloseIcon sx={{ fontSize: 10 }} />}
+          {verdict === 'mixed' && <RemoveIcon sx={{ fontSize: 10 }} />}
         </Box>
 
         <Typography
@@ -206,8 +206,8 @@ function ResultCluster({ verdict, primary, secondary, target }) {
             fontSize: 15,
             fontWeight: 700,
             lineHeight: 1,
-            fontVariantNumeric: "tabular-nums",
-            whiteSpace: "nowrap",
+            fontVariantNumeric: 'tabular-nums',
+            whiteSpace: 'nowrap',
           }}
         >
           <Box component="span" sx={{ color: verdictColor }}>
@@ -217,7 +217,7 @@ function ResultCluster({ verdict, primary, secondary, target }) {
             <>
               <Box
                 component="span"
-                sx={{ color: COLORS.inkFaint, fontWeight: 500, mx: "1px" }}
+                sx={{ color: COLORS.inkFaint, fontWeight: 500, mx: '1px' }}
               >
                 –
               </Box>
@@ -229,14 +229,14 @@ function ResultCluster({ verdict, primary, secondary, target }) {
           <Box component="span" sx={{ color: COLORS.inkFaint }}>
             %
           </Box>
-          <Box component="span" sx={{ color: COLORS.inkFaint, mx: "2px" }}>
+          <Box component="span" sx={{ color: COLORS.inkFaint, mx: '2px' }}>
             /
           </Box>
           <Box
             component="span"
             sx={{
               color: COLORS.inkSoft,
-              fontSize: "0.82em",
+              fontSize: '0.82em',
             }}
           >
             {target}
@@ -250,8 +250,8 @@ function ResultCluster({ verdict, primary, secondary, target }) {
       <Typography
         sx={{
           fontSize: 9,
-          textTransform: "uppercase",
-          letterSpacing: ".12em",
+          textTransform: 'uppercase',
+          letterSpacing: '.12em',
           color: COLORS.inkFaint,
           fontWeight: 700,
         }}
@@ -259,7 +259,7 @@ function ResultCluster({ verdict, primary, secondary, target }) {
         {caption}
       </Typography>
     </Stack>
-  );
+  )
 }
 
 //
@@ -267,13 +267,13 @@ function ResultCluster({ verdict, primary, secondary, target }) {
 // Multi-run results override with a "K of N runs met" copy at render time.
 //
 const SUBTITLE_BY_STATE = {
-  idle: "Awaiting preprocess",
-  preprocessed: "Ready to run",
-  selected: "● On map",
-  achieved: "Target met",
-  mixed: "Mixed across runs",
-  missed: "Target missed",
-};
+  idle: 'Awaiting preprocess',
+  preprocessed: 'Ready to run',
+  selected: '● On map',
+  achieved: 'Target met',
+  mixed: 'Mixed across runs',
+  missed: 'Target missed',
+}
 
 const SUBTITLE_COLOR_BY_STATE = {
   idle: COLORS.inkFaint,
@@ -282,12 +282,12 @@ const SUBTITLE_COLOR_BY_STATE = {
   achieved: COLORS.successDeep,
   mixed: COLORS.amberDeep,
   missed: COLORS.coralDeep,
-};
+}
 
 //
 // FeatureListItem
 //
-const FeatureListItem = ({
+function FeatureListItem({
   id,
   item,
   isActive,
@@ -301,130 +301,144 @@ const FeatureListItem = ({
   handleIconClick,
   handleTargetChange,
   handleItemClick,
-}) => {
-  const hasResult = achieved != null;
+}) {
+  const hasResult = achieved != null
 
   // Multi-run aggregation — only when runCount > 1 and we have min/max
-  const isMultiRun =
-    hasResult &&
-    runCount != null &&
-    runCount > 1 &&
-    achievedMin != null &&
-    achievedMax != null;
+  const isMultiRun
+    = hasResult
+      && runCount != null
+      && runCount > 1
+      && achievedMin != null
+      && achievedMax != null
 
-  const targetNum = Number(target_value ?? 0);
+  const targetNum = Number(target_value ?? 0)
 
-  let verdict; // "met" | "mixed" | "missed" | undefined (when no result yet)
+  let verdict // "met" | "mixed" | "missed" | undefined (when no result yet)
   if (hasResult) {
     if (isMultiRun) {
-      if (achievedMin >= targetNum) verdict = "met";
-      else if (achievedMax < targetNum) verdict = "missed";
-      else verdict = "mixed";
-    } else {
-      verdict = achieved >= targetNum ? "met" : "missed";
+      if (achievedMin >= targetNum)
+        verdict = 'met'
+      else if (achievedMax < targetNum)
+        verdict = 'missed'
+      else verdict = 'mixed'
+    }
+    else {
+      verdict = achieved >= targetNum
+        ? 'met'
+        : 'missed'
     }
   }
 
   const state = hasResult
-    ? verdict === "met"
-      ? "achieved"
-      : verdict === "mixed"
-        ? "mixed"
-        : "missed"
+    ? verdict === 'met'
+      ? 'achieved'
+      : verdict === 'mixed'
+        ? 'mixed'
+        : 'missed'
     : isActive
-      ? "selected"
+      ? 'selected'
       : item.preprocessed
-        ? "preprocessed"
-        : "idle";
+        ? 'preprocessed'
+        : 'idle'
 
   // Subtitle copy — dynamic for multi-run
-  const subtitle =
-    isMultiRun && metCount != null
+  const subtitle
+    = isMultiRun && metCount != null
       ? `${metCount} of ${runCount} runs met`
-      : SUBTITLE_BY_STATE[state];
+      : SUBTITLE_BY_STATE[state]
 
   // ── Inline target editing (matches the old TargetAvatar behaviour) ────────
-  const [editing, setEditing] = useState(false);
-  const [localTargetValue, setLocalTargetValue] = useState(target_value);
-  const inputRef = useRef(null);
+  const [editing, setEditing] = useState(false)
+  const [localTargetValue, setLocalTargetValue] = useState(target_value)
+  const inputRef = useRef(null)
 
   useEffect(() => {
-    if (!editing) setLocalTargetValue(target_value);
-  }, [target_value, editing]);
+    if (!editing)
+      setLocalTargetValue(target_value)
+  }, [target_value, editing])
 
   useEffect(() => {
     if (editing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
+      inputRef.current?.focus()
+      inputRef.current?.select()
     }
-  }, [editing]);
+  }, [editing])
 
   const handleTargetInputChange = (e) => {
-    const val = e.target.value;
-    if (val === "" || (/^\d*$/.test(val) && Number(val) <= 100)) {
-      setLocalTargetValue(val === "" ? "" : Number(val));
+    const val = e.target.value
+    if (val === '' || (/^\d*$/.test(val) && Number(val) <= 100)) {
+      setLocalTargetValue(val === ''
+        ? ''
+        : Number(val))
     }
-  };
+  }
 
   const commitEdit = () => {
-    setEditing(false);
-    const next = Number(localTargetValue) || 0;
-    if (next === Number(target_value)) return;
-    handleTargetChange(item, next);
-  };
+    setEditing(false)
+    const next = Number(localTargetValue) || 0
+    if (next === Number(target_value))
+      return
+    handleTargetChange(item, next)
+  }
 
   const startEdit = (evt) => {
-    evt.stopPropagation();
-    if (!hasResult) setEditing(true);
-  };
+    evt.stopPropagation()
+    if (!hasResult)
+      setEditing(true)
+  }
 
   // ── Result cluster prop derivation ────────────────────────────────────────
   // verdict       primary             secondary
   // met           min (or single)     —
   // mixed         min                 max
   // missed        max (or single)     —
-  let resultPrimary;
-  let resultSecondary = null;
-  if (verdict === "met") {
-    resultPrimary = Math.round(isMultiRun ? achievedMin : achieved);
-  } else if (verdict === "missed") {
-    resultPrimary = Math.round(isMultiRun ? achievedMax : achieved);
-  } else if (verdict === "mixed") {
-    resultPrimary = Math.round(achievedMin);
-    resultSecondary = Math.round(achievedMax);
+  let resultPrimary
+  let resultSecondary = null
+  if (verdict === 'met') {
+    resultPrimary = Math.round(isMultiRun ? achievedMin : achieved)
+  }
+  else if (verdict === 'missed') {
+    resultPrimary = Math.round(isMultiRun ? achievedMax : achieved)
+  }
+  else if (verdict === 'mixed') {
+    resultPrimary = Math.round(achievedMin)
+    resultSecondary = Math.round(achievedMax)
   }
 
   return (
     <ListItem
       disablePadding
-      onClick={(evt) => handleItemClick(evt, item)}
+      onClick={evt => handleItemClick(evt, item)}
       sx={{
-        width: "100%",
-        minHeight: 56,
-        px: "10px",
-        py: "8px",
-        mb: "6px",
-        borderRadius: "10px",
-        border: `1px solid ${isActive ? COLORS.blue : COLORS.rule}`,
-        boxShadow: isActive ? `inset 0 0 0 1px ${COLORS.blue}` : "none",
-        backgroundColor: "#fff",
-        position: "relative",
+        'width': '100%',
+        'minHeight': 56,
+        'px': '10px',
+        'py': '8px',
+        'mb': '6px',
+        'borderRadius': '10px',
+        'border': `1px solid ${isActive ? COLORS.blue : COLORS.rule}`,
+        'boxShadow': isActive
+          ? `inset 0 0 0 1px ${COLORS.blue}`
+          : 'none',
+        'backgroundColor': '#fff',
+        'position': 'relative',
         // overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        cursor: "pointer",
-        transition:
-          "transform .15s ease, box-shadow .15s ease, border-color .15s ease",
-        "&:hover": {
-          borderColor: "#d6dde6",
-          boxShadow: "0 6px 18px -10px rgba(18, 80, 133, 0.22)",
+        'display': 'flex',
+        'alignItems': 'center',
+        'gap': '10px',
+        'cursor': 'pointer',
+        'transition':
+          'transform .15s ease, box-shadow .15s ease, border-color .15s ease',
+        '&:hover': {
+          borderColor: '#d6dde6',
+          boxShadow: '0 6px 18px -10px rgba(18, 80, 133, 0.22)',
         },
       }}
     >
       {isActive && <WaveOverlay color={layerColor} />}
 
-      <Box sx={{ position: "relative", zIndex: 1 }}>
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
         <FeatureOrb state={state} />
       </Box>
 
@@ -432,34 +446,34 @@ const FeatureListItem = ({
         sx={{
           flex: 1,
           minWidth: 0,
-          position: "relative",
+          position: 'relative',
           zIndex: 1,
         }}
       >
         <Typography
           sx={{
-            fontSize: "13.5px",
+            fontSize: '13.5px',
             fontWeight: 700,
             color: COLORS.blueDeep,
             lineHeight: 1.2,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
-          {item.alias.replaceAll("_", " ")}
+          {item.alias.replaceAll('_', ' ')}
         </Typography>
 
         <Typography
           sx={{
             color: SUBTITLE_COLOR_BY_STATE[state],
             fontWeight: 700,
-            letterSpacing: ".08em",
-            textTransform: "uppercase",
-            fontSize: "9.5px",
-            mt: "1px",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+            fontSize: '9.5px',
+            mt: '1px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
           {subtitle}
@@ -468,137 +482,142 @@ const FeatureListItem = ({
 
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-end",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
           minWidth: 90,
-          position: "relative",
+          position: 'relative',
           zIndex: 1,
         }}
       >
-        {hasResult ? (
-          <ResultCluster
-            verdict={verdict}
-            primary={resultPrimary}
-            secondary={resultSecondary}
-            target={Math.round(targetNum)}
-          />
-        ) : editing ? (
-          <Stack direction="row" spacing={0.75} alignItems="center">
-            <InputBase
-              inputRef={inputRef}
-              value={localTargetValue}
-              onChange={handleTargetInputChange}
-              onBlur={commitEdit}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitEdit();
-                if (e.key === "Escape") {
-                  setLocalTargetValue(target_value);
-                  setEditing(false);
-                }
-              }}
-              onClick={(e) => e.stopPropagation()}
-              sx={{
-                width: 48,
-                fontWeight: 700,
-                fontSize: 15,
-                color: COLORS.blueDeep,
-                backgroundColor: "#fff",
-                border: `1.5px solid ${COLORS.blue}`,
-                borderRadius: "6px",
-                px: "6px",
-                py: "2px",
-                boxShadow: "0 0 0 3px rgba(63, 113, 184, 0.18)",
-                "& input": {
-                  textAlign: "right",
-                  p: 0,
-                },
-              }}
-            />
+        {hasResult
+          ? (
+              <ResultCluster
+                verdict={verdict}
+                primary={resultPrimary}
+                secondary={resultSecondary}
+                target={Math.round(targetNum)}
+              />
+            )
+          : editing
+            ? (
+                <Stack direction="row" spacing={0.75} alignItems="center">
+                  <InputBase
+                    inputRef={inputRef}
+                    value={localTargetValue}
+                    onChange={handleTargetInputChange}
+                    onBlur={commitEdit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter')
+                        commitEdit()
+                      if (e.key === 'Escape') {
+                        setLocalTargetValue(target_value)
+                        setEditing(false)
+                      }
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    sx={{
+                      'width': 48,
+                      'fontWeight': 700,
+                      'fontSize': 15,
+                      'color': COLORS.blueDeep,
+                      'backgroundColor': '#fff',
+                      'border': `1.5px solid ${COLORS.blue}`,
+                      'borderRadius': '6px',
+                      'px': '6px',
+                      'py': '2px',
+                      'boxShadow': '0 0 0 3px rgba(63, 113, 184, 0.18)',
+                      '& input': {
+                        textAlign: 'right',
+                        p: 0,
+                      },
+                    }}
+                  />
 
-            <Typography
-              sx={{
-                fontSize: 9,
-                textTransform: "uppercase",
-                letterSpacing: ".12em",
-                color: COLORS.inkFaint,
-                fontWeight: 700,
-              }}
-            >
-              %
-            </Typography>
-          </Stack>
-        ) : (
-          <Stack spacing={0.25} alignItems="flex-end">
-            <Box
-              onClick={startEdit}
-              sx={{
-                display: "inline-flex",
-                alignItems: "baseline",
-                borderRadius: "6px",
-                px: "5px",
-                py: "1px",
-                cursor: "text",
-                "&:hover": {
-                  backgroundColor: "#f3f7fb",
-                },
-              }}
-            >
-              <Typography
-                component="span"
-                sx={{
-                  fontWeight: 700,
-                  color: COLORS.blueDeep,
-                  fontSize: 16,
-                  lineHeight: 1,
-                }}
-              >
-                {target_value}
-              </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 9,
+                      textTransform: 'uppercase',
+                      letterSpacing: '.12em',
+                      color: COLORS.inkFaint,
+                      fontWeight: 700,
+                    }}
+                  >
+                    %
+                  </Typography>
+                </Stack>
+              )
+            : (
+                <Stack spacing={0.25} alignItems="flex-end">
+                  <Box
+                    onClick={startEdit}
+                    sx={{
+                      'display': 'inline-flex',
+                      'alignItems': 'baseline',
+                      'borderRadius': '6px',
+                      'px': '5px',
+                      'py': '1px',
+                      'cursor': 'text',
+                      '&:hover': {
+                        backgroundColor: '#f3f7fb',
+                      },
+                    }}
+                  >
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontWeight: 700,
+                        color: COLORS.blueDeep,
+                        fontSize: 16,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {target_value}
+                    </Typography>
 
-              <Typography
-                component="span"
-                sx={{
-                  color: COLORS.inkSoft,
-                  fontWeight: 600,
-                  fontSize: "0.7em",
-                  ml: "1px",
-                }}
-              >
-                %
-              </Typography>
-            </Box>
+                    <Typography
+                      component="span"
+                      sx={{
+                        color: COLORS.inkSoft,
+                        fontWeight: 600,
+                        fontSize: '0.7em',
+                        ml: '1px',
+                      }}
+                    >
+                      %
+                    </Typography>
+                  </Box>
 
-            <Typography
-              sx={{
-                fontSize: 9,
-                textTransform: "uppercase",
-                letterSpacing: ".12em",
-                color: COLORS.inkFaint,
-                fontWeight: 700,
-              }}
-            >
-              Target
-            </Typography>
-          </Stack>
-        )}
+                  <Typography
+                    sx={{
+                      fontSize: 9,
+                      textTransform: 'uppercase',
+                      letterSpacing: '.12em',
+                      color: COLORS.inkFaint,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Target
+                  </Typography>
+                </Stack>
+              )}
       </Box>
 
       <IconButton
         edge="end"
         onClick={(evt) => {
-          evt.stopPropagation();
-          handleIconClick(evt, id);
+          evt.stopPropagation()
+          handleIconClick(evt, id)
         }}
         sx={{
-          ml: 0.5,
-          width: 26,
-          height: 26,
-          borderRadius: "6px",
-          color: grey[400],
-          position: "relative",
-          zIndex: 1,
-          "&:hover": {
+          'ml': 0.5,
+          'width': 26,
+          'height': 26,
+          'borderRadius': '6px',
+          'color': grey[400],
+          'position': 'relative',
+          'zIndex': 1,
+          '&:hover': {
             backgroundColor: COLORS.ruleSoft,
             color: COLORS.blueDeep,
           },
@@ -607,7 +626,7 @@ const FeatureListItem = ({
         <MoreVertIcon sx={{ fontSize: 16 }} />
       </IconButton>
     </ListItem>
-  );
-};
+  )
+}
 
-export default FeatureListItem;
+export default FeatureListItem

@@ -1,42 +1,42 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
-import { React, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import useAppSnackbar from '@hooks/useAppSnackbar'
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
+import { useResendPasswordQuery } from '@slices/userSlice'
 
-import useAppSnackbar from "@hooks/useAppSnackbar";
-import { useResendPasswordQuery } from "@slices/userSlice";
+import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 
-const ResendPasswordDialog = ({
+function ResendPasswordDialog({
   open,
   resending,
-}) => {
-  const [resendEmail, setResendEmail] = useState("");
-  const dispatch = useDispatch();
-  const userState = useSelector((state) => state.user)
-  const uiState = useSelector((state) => state.ui)
-  const { showMessage } = useAppSnackbar();
-
+}) {
+  const [resendEmail, setResendEmail] = useState('')
+  const dispatch = useDispatch()
+  const userState = useSelector(state => state.user)
+  const uiState = useSelector(state => state.ui)
+  const { showMessage } = useAppSnackbar()
 
   const resendPassword = async () => {
     try {
-      const { data: response, error } = useResendPasswordQuery(userState.user);
-      showMessage(response.info, "success");
+      const { data: response } = useResendPasswordQuery(userState.user)
+      showMessage(response.info, 'success')
       dispatch(
-        toggleDialog({ dialogName: "resendPasswordDialogOpen", isOpen: false })
-      );
-    } catch (error) {
-      console.error("Failed to resend password:", error);
+        toggleDialog({ dialogName: 'resendPasswordDialogOpen', isOpen: false }),
+      )
     }
-  };
-
+    catch (error) {
+      console.error('Failed to resend password:', error)
+    }
+  }
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      resendPassword();
+    if (e.key === 'Enter') {
+      resendPassword()
     }
-  };
+  }
 
   const closeDialog = () => dispatch(toggleDialog({
-    dialogName: "resendPasswordDialogOpen", isOpen: false
+    dialogName: 'resendPasswordDialogOpen',
+    isOpen: false,
   }))
 
   return (
@@ -48,7 +48,7 @@ const ResendPasswordDialog = ({
           variant="outlined"
           fullWidth
           value={resendEmail}
-          onChange={(e) => setResendEmail(e.target.value)}
+          onChange={e => setResendEmail(e.target.value)}
           onKeyDown={handleKeyPress}
           disabled={uiState.loading}
           autoFocus
@@ -68,7 +68,7 @@ const ResendPasswordDialog = ({
         </Button>
       </DialogActions>
     </Dialog>
-  );
-};
+  )
+}
 
-export default ResendPasswordDialog;
+export default ResendPasswordDialog

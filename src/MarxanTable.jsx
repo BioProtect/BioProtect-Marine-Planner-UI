@@ -7,44 +7,45 @@
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
 
-import React, { useMemo } from "react";
+import { Table } from '@mui/material'
 
-import { Table } from "@mui/material";
+import { useMemo } from 'react'
 
-const MarxanTable = (props) => {
+function MarxanTable(props) {
   const filterData = () => {
     if (!props.searchText) {
-      return props.data;
+      return props.data
     }
 
     return props.data.filter((item) => {
-      const searchTextLower = props.searchText.toLowerCase();
+      const searchTextLower = props.searchText.toLowerCase()
 
-      if (searchTextLower.startsWith("!")) {
+      if (searchTextLower.startsWith('!')) {
         return !Object.keys(item).some(
-          (key) =>
-            props.searchColumns.includes(key) &&
-            item[key] &&
-            item[key].toLowerCase().includes(searchTextLower.substring(1))
-        );
-      } else {
-        return Object.keys(item).some(
-          (key) =>
-            props.searchColumns.includes(key) &&
-            item[key] &&
-            item[key].toLowerCase().includes(searchTextLower)
-        );
+          key =>
+            props.searchColumns.includes(key)
+            && item[key]
+            && item[key].toLowerCase().includes(searchTextLower.substring(1)),
+        )
       }
-    });
-  };
+      else {
+        return Object.keys(item).some(
+          key =>
+            props.searchColumns.includes(key)
+            && item[key]
+            && item[key].toLowerCase().includes(searchTextLower),
+        )
+      }
+    })
+  }
 
   const filteredData = useMemo(
     () => filterData(),
-    [props.data, props.searchText, props.searchColumns]
-  );
+    [props.data, props.searchText, props.searchColumns],
+  )
 
   if (props.dataFiltered) {
-    props.dataFiltered(filteredData);
+    props.dataFiltered(filteredData)
   }
 
   return (
@@ -53,7 +54,7 @@ const MarxanTable = (props) => {
       data={filteredData}
       className="projectsReactTable noselect"
     />
-  );
-};
+  )
+}
 
-export default MarxanTable;
+export default MarxanTable

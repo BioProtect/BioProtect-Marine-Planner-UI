@@ -1,89 +1,77 @@
-import React, { useState } from "react";
-import { selectCurrentUser, setCredentials } from "@slices/authSlice";
+import ClearAllIcon from '@mui/icons-material/ClearAll'
+import DoneAllIcon from '@mui/icons-material/DoneAll'
+import LayersIcon from '@mui/icons-material/Layers'
+import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest'
+
+import TrackChangesIcon from '@mui/icons-material/TrackChanges'
+import Button from '@mui/material/Button'
+import Divider from '@mui/material/Divider'
+import Stack from '@mui/material/Stack'
 import {
   featureApiSlice,
   setAddingRemovingFeatures,
-  setFeaturePlanningUnits,
   toggleFeatureD,
-} from "@slices/featureSlice";
-import { useDispatch, useSelector } from "react-redux";
+} from '@slices/featureSlice'
+import { toggleDialog } from '@slices/uiSlice'
+import React from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import FeaturesList from './FeaturesList'
 
-import Button from "@mui/material/Button";
-import ClearAllIcon from "@mui/icons-material/ClearAll";
-import DoneAllIcon from "@mui/icons-material/DoneAll";
-import Divider from "@mui/material/Divider";
-import FeaturesList from "./FeaturesList";
-import LayersIcon from "@mui/icons-material/Layers";
-import SettingsSuggestIcon from "@mui/icons-material/SettingsSuggest";
-import Stack from "@mui/material/Stack";
-import TrackChangesIcon from "@mui/icons-material/TrackChanges";
-import Typography from "@mui/material/Typography";
-import { toggleDialog } from "@slices/uiSlice";
-
-const FeaturesTab = ({
-  preprocessAllFeatures,
-  setMenuAnchor,
-  simple,
-  updateFeature,
-  toggleFeatureLayer,
-  toggleFeaturePUIDLayer,
-  useFeatureColors,
-  smallLinearGauge,
-  showTargetButton,
-  metadata,
-}) => {
-  const dispatch = useDispatch();
-  const userData = useSelector(selectCurrentUser);
+function FeaturesTab({ preprocessAllFeatures, setMenuAnchor, updateFeature, toggleFeatureLayer, toggleFeaturePUIDLayer, useFeatureColors, smallLinearGauge }) {
+  const dispatch = useDispatch()
 
   const handleOpenFeaturesDialog = () => {
-    dispatch(setAddingRemovingFeatures(true));
+    dispatch(setAddingRemovingFeatures(true))
     dispatch(
       toggleFeatureD({
-        dialogName: "featuresDialogOpen",
+        dialogName: 'featuresDialogOpen',
         isOpen: true,
       }),
-    );
-  };
+    )
+  }
 
-  const selectedIds = useSelector((s) => s.feature.selectedFeatureIds);
-  const { data: allFeaturesResp } =
-    featureApiSlice.endpoints.getAllFeatures.useQuery();
-  const projectFeatures = (allFeaturesResp?.data ?? []).filter((f) =>
+  const selectedIds = useSelector(s => s.feature.selectedFeatureIds)
+  const { data: allFeaturesResp }
+    = featureApiSlice.endpoints.getAllFeatures.useQuery()
+  const projectFeatures = (allFeaturesResp?.data ?? []).filter(f =>
     selectedIds.includes(f.id),
-  );
+  )
   const anyLoaded = projectFeatures.some(
-    (f) => f.feature_layer_loaded || f.feature_puid_layer_loaded,
-  );
+    f => f.feature_layer_loaded || f.feature_puid_layer_loaded,
+  )
 
   // toggle functions flip whatever is on the map, so only call them on the
   // features that need flipping
   const handleToggleAll = () => {
     projectFeatures.forEach((f) => {
       if (anyLoaded) {
-        if (f.feature_layer_loaded) toggleFeatureLayer(f);
-        if (f.feature_puid_layer_loaded) toggleFeaturePUIDLayer(f);
-      } else {
-        toggleFeatureLayer(f);
+        if (f.feature_layer_loaded)
+          toggleFeatureLayer(f)
+        if (f.feature_puid_layer_loaded)
+          toggleFeaturePUIDLayer(f)
       }
-    });
-  };
+      else {
+        toggleFeatureLayer(f)
+      }
+    })
+  }
 
   const handlePreprocessAllFeatures = () => {
-    preprocessAllFeatures();
-  };
+    preprocessAllFeatures()
+  }
 
   const btnSx = {
-    fontSize: "0.72rem",
+    fontSize: '0.72rem',
     fontWeight: 600,
     px: 1.25,
     py: 0.5,
-    whiteSpace: "nowrap",
+    whiteSpace: 'nowrap',
     flex: 1,
-  };
+  }
 
   return (
     <React.Fragment>
-      <div style={{ padding: "4px" }}>
+      <div style={{ padding: '4px' }}>
         <Stack
           direction="row"
           alignItems="center"
@@ -120,11 +108,10 @@ const FeaturesTab = ({
                 onClick={() =>
                   dispatch(
                     toggleDialog({
-                      dialogName: "targetDialogOpen",
+                      dialogName: 'targetDialogOpen',
                       isOpen: true,
                     }),
-                  )
-                }
+                  )}
                 startIcon={<TrackChangesIcon />}
                 sx={btnSx}
               >
@@ -137,18 +124,20 @@ const FeaturesTab = ({
                 disabled={!projectFeatures.length}
                 title={
                   anyLoaded
-                    ? "Remove all feature layers from the map"
-                    : "Show all features on the map"
+                    ? 'Remove all feature layers from the map'
+                    : 'Show all features on the map'
                 }
-                startIcon={anyLoaded ? <ClearAllIcon /> : <DoneAllIcon />}
+                startIcon={anyLoaded
+                  ? <ClearAllIcon />
+                  : <DoneAllIcon />}
                 sx={btnSx}
               >
-                {anyLoaded ? "Clear All" : "Show All"}
+                {anyLoaded ? 'Clear All' : 'Show All'}
               </Button>
             </Stack>
           </Stack>
         </Stack>
-        <Divider sx={{ mb: 1, borderColor: "#e0ecec" }} />
+        <Divider sx={{ mb: 1, borderColor: '#e0ecec' }} />
         <FeaturesList
           setMenuAnchor={setMenuAnchor}
           updateFeature={updateFeature}
@@ -159,7 +148,7 @@ const FeaturesTab = ({
         />
       </div>
     </React.Fragment>
-  );
-};
+  )
+}
 
-export default FeaturesTab;
+export default FeaturesTab

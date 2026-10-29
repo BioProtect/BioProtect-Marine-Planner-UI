@@ -1,61 +1,60 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
-import React, { useState } from "react";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
+import { selectCurrentUser } from '@slices/authSlice'
 
-import PropTypes from "prop-types";
-import { selectCurrentUser } from "@slices/authSlice";
-import { useSelector } from "react-redux";
+import { useState } from 'react'
+import { useSelector } from 'react-redux'
 
-const ProfileDialog = ({ open, onOk, updateUser }) => {
-  const userData = useSelector(selectCurrentUser);
+function ProfileDialog({ open, onOk, updateUser }) {
+  const userData = useSelector(selectCurrentUser)
 
   const [state, setState] = useState({
-    name: userData?.name || "",
-    email: userData?.email || "",
+    name: userData?.name || '',
+    email: userData?.email || '',
     updated: false,
     validEmail: true,
-  });
+  })
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleUpdateUser();
+    if (e.key === 'Enter') {
+      handleUpdateUser()
     }
-  };
+  }
 
   const handleStateUpdate = (name, value) => {
-    setState((prevState) => ({
+    setState(prevState => ({
       ...prevState,
       [name]: value,
       updated: true,
-    }));
-  };
+    }))
+  }
 
   const validateEmail = () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const isValid = emailRegex.test(String(state.email).toLowerCase());
-    setState((prevState) => ({ ...prevState, validEmail: isValid }));
-    return isValid;
-  };
+    const emailRegex = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/
+    const isValid = emailRegex.test(String(state.email).toLowerCase())
+    setState(prevState => ({ ...prevState, validEmail: isValid }))
+    return isValid
+  }
 
   const handleUpdateUser = async () => {
     if (!validateEmail()) {
-      return; // Exit if email is invalid
+      return // Exit if email is invalid
     }
-    const formData = new FormData();
-    formData.append("name", state.name);
-    formData.append("email", state.email);
-    await updateUser(formData).unwrap();
-    handleClose();
-  };
+    const formData = new FormData()
+    formData.append('name', state.name)
+    formData.append('email', state.email)
+    await updateUser(formData).unwrap()
+    handleClose()
+  }
 
   const handleClose = () => {
-    onOk(); // Call parent-provided close function
+    onOk() // Call parent-provided close function
     setState({
-      name: userData?.name || "",
-      email: userData?.email || "",
+      name: userData?.name || '',
+      email: userData?.email || '',
       updated: false,
       validEmail: true,
-    });
-  };
+    })
+  }
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -67,7 +66,7 @@ const ProfileDialog = ({ open, onOk, updateUser }) => {
           variant="outlined"
           margin="normal"
           value={state.name}
-          onChange={(e) => handleStateUpdate("name", e.target.value)}
+          onChange={e => handleStateUpdate('name', e.target.value)}
           onKeyDown={handleKeyPress}
         />
         <TextField
@@ -77,11 +76,14 @@ const ProfileDialog = ({ open, onOk, updateUser }) => {
           margin="normal"
           value={state.email}
           error={!state.validEmail}
-          helperText={state.validEmail ? "" : "Invalid email address"}
-          onChange={(e) => handleStateUpdate("email", e.target.value)}
+          helperText={state.validEmail ? '' : 'Invalid email address'}
+          onChange={e => handleStateUpdate('email', e.target.value)}
           onKeyDown={handleKeyPress}
         />
-        <div style={{ marginTop: "1rem" }}>Role: {userData?.ROLE || "Unknown"}</div>
+        <div style={{ marginTop: '1rem' }}>
+          Role:
+          {userData?.ROLE || 'Unknown'}
+        </div>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="secondary" variant="outlined">
@@ -92,7 +94,7 @@ const ProfileDialog = ({ open, onOk, updateUser }) => {
         </Button>
       </DialogActions>
     </Dialog>
-  );
-};
+  )
+}
 
-export default ProfileDialog;
+export default ProfileDialog

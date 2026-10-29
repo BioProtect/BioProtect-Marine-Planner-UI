@@ -1,8 +1,8 @@
-import { getApiBaseUrl, getWsBaseUrl } from "@config/api";
+import { getApiBaseUrl, getWsBaseUrl } from '@config/api'
 
-const getServerCapabilities = async (server) => {
-  const endpoint = getApiBaseUrl();
-  const websocketEndpoint = getWsBaseUrl();
+async function getServerCapabilities(server) {
+  const endpoint = getApiBaseUrl()
+  const websocketEndpoint = getWsBaseUrl()
 
   // Initialize server properties
   let serverInfo = {
@@ -12,26 +12,26 @@ const getServerCapabilities = async (server) => {
     offline: true,
     guestUserEnabled: true,
     corsEnabled: true,
-  };
+  }
 
   // Poll the server
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    const signal = controller.signal;
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 2000)
+    const signal = controller.signal
 
     const response = await fetch(`${endpoint}getServerData`, {
-      credentials: "include",
+      credentials: 'include',
       signal,
-    });
+    })
 
-    clearTimeout(timeoutId);
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
-      throw new Error(`Server responded ${response.status}`);
+      throw new Error(`Server responded ${response.status}`)
     }
 
-    const json = await response.json();
+    const json = await response.json()
 
     if (json?.info) {
       serverInfo = {
@@ -50,17 +50,18 @@ const getServerCapabilities = async (server) => {
         version: json.serverData.VERSION,
         wdpa_version: json.serverData.WDPA_VERSION,
         planning_grid_units_limit: Number(
-          json.serverData.PLANNING_GRID_UNITS_LIMIT
+          json.serverData.PLANNING_GRID_UNITS_LIMIT,
         ),
         disk_space: json.serverData.DISK_FREE_SPACE,
         shutdowntime: json.serverData.SHUTDOWNTIME,
         enable_reset: json.serverData.ENABLE_RESET,
         name: json.serverData.SERVER_NAME || server.name,
         description: json.serverData.SERVER_DESCRIPTION || server.description,
-      };
+      }
     }
-  } catch (error) {}
-  return serverInfo;
-};
+  }
+  catch {}
+  return serverInfo
+}
 
-export { getServerCapabilities };
+export { getServerCapabilities }

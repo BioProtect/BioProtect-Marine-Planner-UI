@@ -1,3 +1,4 @@
+import LinkIcon from '@mui/icons-material/Link'
 import {
   Box,
   IconButton,
@@ -6,45 +7,38 @@ import {
   TableCell,
   TableRow,
   Typography,
-} from "@mui/material";
-import React, { useCallback, useState } from "react";
-import {
-  setProjectList,
-  setProjectListDialogHeading,
-  setProjectListDialogTitle,
-  toggleProjDialog,
-} from "@slices/projectSlice";
-import { useDispatch, useSelector } from "react-redux";
+} from '@mui/material'
+import { togglePUD } from '@slices/planningUnitSlice'
 
-import BPDialog from "../BPDialog";
-import LinkIcon from "@mui/icons-material/Link";
-import MapContainer2 from "../MapContainer2";
-import { togglePUD } from "@slices/planningUnitSlice";
+import { useCallback, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import BPDialog from '../BPDialog'
+import MapContainer2 from '../MapContainer2'
 
-const PlanningGridDialog = ({
+function PlanningGridDialog({
   planningGridMetadata,
   getTilesetMetadata,
   getProjectList,
-}) => {
-  const dispatch = useDispatch();
-  const puState = useSelector((state) => state.planningUnit);
-  const [expanded, setExpanded] = useState(false);
+}) {
+  const dispatch = useDispatch()
+  const puState = useSelector(state => state.planningUnit)
+  const [expanded, setExpanded] = useState(false)
 
   const toggleExpanded = useCallback(() => {
-    setExpanded((prev) => !prev);
-  }, []);
+    setExpanded(prev => !prev)
+  }, [])
 
   const handleProjectListClick = useCallback(() => {
-    getProjectList(planningGridMetadata, "planning_grid");
-  }, [getProjectList, planningGridMetadata]);
+    getProjectList(planningGridMetadata, 'planning_grid')
+  }, [getProjectList, planningGridMetadata])
 
   const closeDialog = () =>
     dispatch(
       togglePUD({
-        dialogName: "planningGridDialogOpen",
+        dialogName: 'planningGridDialogOpen',
         isOpen: false,
       }),
-    );
+    )
 
   return (
     <div>
@@ -54,7 +48,7 @@ const PlanningGridDialog = ({
         onClose={() => closeDialog()}
         showCancelButton={false}
         title={planningGridMetadata.alias}
-        helpLink={"user.html#the-planning-grid-details-window"}
+        helpLink="user.html#the-planning-grid-details-window"
         contentWidth={768}
       >
         <MapContainer2
@@ -86,7 +80,7 @@ const PlanningGridDialog = ({
                 <TableCell>
                   {planningGridMetadata._area
                     ? `${planningGridMetadata._area} Km²`
-                    : "-"}
+                    : '-'}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -137,9 +131,9 @@ const PlanningGridDialog = ({
             variant="body2"
             component="div"
             onClick={toggleExpanded}
-            style={{ cursor: "pointer", color: "blue", marginTop: 10 }}
+            style={{ cursor: 'pointer', color: 'blue', marginTop: 10 }}
           >
-            {expanded ? "Show less details" : "Show more details"}
+            {expanded ? 'Show less details' : 'Show more details'}
           </Typography>
           <Typography variant="caption" display="block" mt={2}>
             You may need to zoom in to see the planning grid units.
@@ -147,7 +141,7 @@ const PlanningGridDialog = ({
         </Box>
       </BPDialog>
     </div>
-  );
-};
+  )
+}
 
-export default PlanningGridDialog;
+export default PlanningGridDialog

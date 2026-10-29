@@ -1,13 +1,12 @@
-import { Box, Typography } from "@mui/material";
-import { useDispatch, useSelector } from "react-redux";
+import { Box, Typography } from '@mui/material'
+import { toggleDialog } from '@slices/uiSlice'
 
-import BPDialog from "./BPDialog";
-import React from "react";
-import { toggleDialog } from "@slices/uiSlice";
+import { useDispatch, useSelector } from 'react-redux'
+import BPDialog from './BPDialog'
 
-const ResetDialog = ({ onOk, loading }) => {
-  const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
+function ResetDialog({ onOk }) {
+  const dispatch = useDispatch()
+  const uiState = useSelector(state => state.ui)
 
   return (
     <BPDialog
@@ -15,11 +14,9 @@ const ResetDialog = ({ onOk, loading }) => {
       loading={uiState.loading}
       onOk={onOk}
       onCancel={() =>
-        dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: false }))
-      }
+        dispatch(toggleDialog({ dialogName: 'resetDialogOpen', isOpen: false }))}
       onClose={() =>
-        dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: false }))
-      }
+        dispatch(toggleDialog({ dialogName: 'resetDialogOpen', isOpen: false }))}
       contentWidth={240}
       title="Reset database"
       okLabel="Yes"
@@ -30,7 +27,7 @@ const ResetDialog = ({ onOk, loading }) => {
         <Typography variant="body1">Are you sure you want to reset?</Typography>
       </Box>
     </BPDialog>
-  );
-};
+  )
+}
 
-export default ResetDialog;
+export default ResetDialog

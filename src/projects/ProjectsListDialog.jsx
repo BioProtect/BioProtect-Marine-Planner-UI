@@ -6,53 +6,53 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
-} from "@mui/material";
-import { useDispatch, useSelector } from "react-redux";
+} from '@mui/material'
+import { selectCurrentUser } from '@slices/authSlice'
 
-import BPDialog from "../BPDialog";
-import React from "react";
-import { selectCurrentUser } from "@slices/authSlice";
-import { toggleProjDialog } from "@slices/projectSlice";
+import { toggleProjDialog } from '@slices/projectSlice'
+import { useDispatch, useSelector } from 'react-redux'
+import BPDialog from '../BPDialog'
 
-const ProjectsListDialog = () => {
-  const dispatch = useDispatch();
-  const userData = useSelector(selectCurrentUser);
-  const projState = useSelector((state) => state.project);
+function ProjectsListDialog() {
+  const dispatch = useDispatch()
+  const userData = useSelector(selectCurrentUser)
+  const projState = useSelector(state => state.project)
   // Determine the columns based on the user role
   const tableColumns = [
-    ...(userData?.userRole === "Admin"
-      ? [{ Header: "User", accessor: "user", width: 90 }]
+    ...(userData?.userRole === 'Admin'
+      ? [
+          { Header: 'User', accessor: 'user', width: 90 },
+        ]
       : []),
-    { Header: "Name", accessor: "name", width: 200 },
-  ];
+    { Header: 'Name', accessor: 'name', width: 200 },
+  ]
 
   // Render the content of a table cell for "Name"
-  const renderName = (row) => (
+  const renderName = row => (
     <div
       style={{
-        width: "100%",
-        height: "100%",
-        backgroundColor: "#dadada",
-        borderRadius: "2px",
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#dadada',
+        borderRadius: '2px',
       }}
       title={row.name}
     >
       {row.name}
     </div>
-  );
+  )
 
   if (!projState.projectList) {
-    return null;
+    return null
   }
 
   const closeDialog = () =>
     dispatch(
       toggleProjDialog({
-        dialogName: "projectsListDialogOpen",
+        dialogName: 'projectsListDialogOpen',
         isOpen: false,
       }),
-    );
+    )
 
   return (
     <BPDialog
@@ -62,10 +62,10 @@ const ProjectsListDialog = () => {
       // title={projState.projectListDialogTitle}
       title="Hello project lists dialog"
       contentWidth={500}
-      helpLink={"user.html#projects-list"}
+      helpLink="user.html#projects-list"
       onOk={() => closeDialog()}
     >
-      <div style={{ marginBottom: "5px" }}>
+      <div style={{ marginBottom: '5px' }}>
         {projState.projectListDialogHeading}
       </div>
       <div id="failedProjectsTable">
@@ -73,10 +73,10 @@ const ProjectsListDialog = () => {
           <Table>
             <TableHead>
               <TableRow>
-                {tableColumns.map((col) => (
+                {tableColumns.map(col => (
                   <TableCell
                     key={col.accessor}
-                    style={{ textAlign: col.headerStyle?.textAlign || "left" }}
+                    style={{ textAlign: col.headerStyle?.textAlign || 'left' }}
                   >
                     {col.Header}
                   </TableCell>
@@ -86,9 +86,9 @@ const ProjectsListDialog = () => {
             <TableBody>
               {projState.projectList.map((row, index) => (
                 <TableRow key={index}>
-                  {tableColumns.map((col) => (
+                  {tableColumns.map(col => (
                     <TableCell key={col.accessor}>
-                      {col.accessor === "name"
+                      {col.accessor === 'name'
                         ? renderName(row)
                         : row[col.accessor]}
                     </TableCell>
@@ -100,7 +100,7 @@ const ProjectsListDialog = () => {
         </TableContainer>
       </div>
     </BPDialog>
-  );
-};
+  )
+}
 
-export default ProjectsListDialog;
+export default ProjectsListDialog

@@ -1,21 +1,21 @@
-import { useDispatch, useSelector } from "react-redux";
+import { Divider } from '@mui/material'
 
-import BPDialog from "./BPDialog";
-import { Divider } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
-import coir_logo from "./images/COIR_Logo_transparent.png";
-import ec_logo from "./images/ec_logo.svg";
-import insight_logo from "./images/INSIGHT LOGO_colour.png";
-import mi_logo from "./images/MI Logo.png";
-import { toggleDialog } from "@slices/uiSlice";
-import ug_logo from "./images/ug_logo.png";
+import Grid from '@mui/material/Grid'
+import Typography from '@mui/material/Typography'
+import { toggleDialog } from '@slices/uiSlice'
+import { useDispatch, useSelector } from 'react-redux'
+import BPDialog from './BPDialog'
+import coir_logo from './images/COIR_Logo_transparent.png'
+import ec_logo from './images/ec_logo.svg'
+import insight_logo from './images/INSIGHT LOGO_colour.png'
+import mi_logo from './images/MI Logo.png'
+import ug_logo from './images/ug_logo.png'
 
-const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
-  const dispatch = useDispatch();
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
+function AboutDialog() {
+  const dispatch = useDispatch()
+  const dialogStates = useSelector(state => state.ui.dialogStates)
   const closeDialog = () =>
-    dispatch(toggleDialog({ dialogName: "aboutDialogOpen", isOpen: false }));
+    dispatch(toggleDialog({ dialogName: 'aboutDialogOpen', isOpen: false }))
   return (
     <BPDialog
       open={dialogStates.aboutDialogOpen}
@@ -30,10 +30,12 @@ const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
       <Typography variant="body1" gutterBottom>
         <p>
           The BioProtect Marine Planner is inspired by the Marxan Web project,
-          initially developed by{" "}
+          initially developed by
+          {' '}
           <a href="https://www.researchgate.net/profile/Andrew-Cottam">
             Andrew Cottam
-          </a>{" "}
+          </a>
+          {' '}
           to whom much gratitude is owed.
         </p>
         <p>
@@ -69,7 +71,7 @@ const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
                 src={coir_logo}
                 alt="CÓIR logo"
                 title="CÓIR logo"
-                style={{ width: "100%", height: 150, objectFit: "contain" }}
+                style={{ width: '100%', height: 150, objectFit: 'contain' }}
               />
             </a>
           </Grid>
@@ -79,7 +81,7 @@ const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
                 src={mi_logo}
                 alt="Marine Institute logo"
                 title="Marine Institute logo"
-                style={{ width: "100%", height: 100, objectFit: "contain" }}
+                style={{ width: '100%', height: 100, objectFit: 'contain' }}
               />
             </a>
           </Grid>
@@ -89,7 +91,7 @@ const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
                 src={ug_logo}
                 alt="University of Galway logo"
                 title="University of Galway logo"
-                style={{ width: "100%", height: 60, objectFit: "contain" }}
+                style={{ width: '100%', height: 60, objectFit: 'contain' }}
               />
             </a>
           </Grid>
@@ -99,7 +101,7 @@ const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
                 src={insight_logo}
                 alt="Insight Centre"
                 title="Insight Centre"
-                style={{ width: "100%", height: 120, objectFit: "contain" }}
+                style={{ width: '100%', height: 120, objectFit: 'contain' }}
               />
             </a>
           </Grid>
@@ -109,14 +111,14 @@ const AboutDialog = ({ marxanClientReleaseVersion, wdpaAttribution }) => {
                 src={ec_logo}
                 alt="EC logo"
                 title="EC logo"
-                style={{ width: "100%", height: 60, objectFit: "contain" }}
+                style={{ width: '100%', height: 60, objectFit: 'contain' }}
               />
             </a>
           </Grid>
         </Grid>
       </div>
     </BPDialog>
-  );
-};
+  )
+}
 
-export default AboutDialog;
+export default AboutDialog

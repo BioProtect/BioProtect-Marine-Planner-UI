@@ -1,29 +1,29 @@
-import { useDispatch, useSelector } from "react-redux";
+import HelpIcon from '@mui/icons-material/Help'
 
-import CONSTANTS from "./bpVars.jsx";
-import HelpIcon from "@mui/icons-material/Help";
-import InfoIcon from "@mui/icons-material/Info";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import { toggleDialog } from "@slices/uiSlice";
+import InfoIcon from '@mui/icons-material/Info'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import { toggleDialog } from '@slices/uiSlice'
+import { useDispatch, useSelector } from 'react-redux'
+import CONSTANTS from './bpVars.jsx'
 
-const HelpMenu = (props) => {
-  const dispatch = useDispatch();
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
+function HelpMenu(props) {
+  const dispatch = useDispatch()
+  const dialogStates = useSelector(state => state.ui.dialogStates)
 
   const openDocumentation = () => {
-    window.open(CONSTANTS.DOCS_ROOT);
-  };
+    window.open(CONSTANTS.DOCS_ROOT)
+  }
 
   const handleOpenAboutDialog = () => {
-    dispatch(toggleDialog({ dialogName: "aboutDialogOpen", isOpen: true }));
-    closeDialog();
-  };
+    dispatch(toggleDialog({ dialogName: 'aboutDialogOpen', isOpen: true }))
+    closeDialog()
+  }
 
   const closeDialog = () =>
-    dispatch(toggleDialog({ dialogName: "helpMenuOpen", isOpen: false }));
+    dispatch(toggleDialog({ dialogName: 'helpMenuOpen', isOpen: false }))
 
   return (
     <Menu
@@ -33,25 +33,25 @@ const HelpMenu = (props) => {
       PaperProps={{
         elevation: 0,
         sx: {
-          overflow: "visible",
-          filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
-          mt: 1.5,
-          "& .MuiAvatar-root": {
+          'overflow': 'visible',
+          'filter': 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+          'mt': 1.5,
+          '& .MuiAvatar-root': {
             width: 32,
             height: 32,
             ml: -0.5,
             mr: 1,
           },
-          "&::before": {
+          '&::before': {
             content: '""',
-            display: "block",
-            position: "absolute",
+            display: 'block',
+            position: 'absolute',
             top: 0,
             left: 10,
             width: 10,
             height: 10,
-            bgcolor: "background.paper",
-            transform: "translateY(-50%) rotate(45deg)",
+            bgcolor: 'background.paper',
+            transform: 'translateY(-50%) rotate(45deg)',
             zIndex: 0,
           },
         },
@@ -71,7 +71,7 @@ const HelpMenu = (props) => {
         <ListItemText>About</ListItemText>
       </MenuItem>
     </Menu>
-  );
-};
+  )
+}
 
-export default HelpMenu;
+export default HelpMenu

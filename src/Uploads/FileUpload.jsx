@@ -1,67 +1,72 @@
-import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import useAppSnackbar from '@hooks/useAppSnackbar'
+import UploadFile from '@mui/icons-material/UploadFileTwoTone'
+import { Box, CircularProgress, IconButton, Typography } from '@mui/material'
 
-import UploadFile from "@mui/icons-material/UploadFileTwoTone";
-import { setFeatureFilename } from "@slices/featureSlice";
-import { setFileUploadResponse } from "@slices/uiSlice";
-import useAppSnackbar from "@hooks/useAppSnackbar";
+import { setFeatureFilename } from '@slices/featureSlice'
+import { setFileUploadResponse } from '@slices/uiSlice'
+import { useState } from 'react'
+import { useDispatch } from 'react-redux'
 
 // FileUpload component refactored to use React 18 and MUI 5
-const FileUpload = (props) => {
-  const dispatch = useDispatch();
-  const [loading, setLoading] = useState(false);
-  const [active, setActive] = useState(false);
-  const id = `upload-${props.filename}`;
-  const { showMessage } = useAppSnackbar();
+function FileUpload(props) {
+  const dispatch = useDispatch()
+  const [loading, setLoading] = useState(false)
+  const [active, setActive] = useState(false)
+  const id = `upload-${props.filename}`
+  const { showMessage } = useAppSnackbar()
 
   const handleChange = async (e) => {
-    const destFolder = props.destFolder || "imports";
+    const destFolder = props.destFolder || 'imports'
 
     if (e.target.files.length) {
-      setLoading(true);
-      const target = e.target.files[0];
-      const filename = target.name;
+      setLoading(true)
+      const target = e.target.files[0]
+      const filename = target.name
       try {
-        const response = await props.fileUpload(target, filename, destFolder);
+        const response = await props.fileUpload(target, filename, destFolder)
         if (!response || !response.file) {
-          throw new Error("Invalid response from upload");
+          throw new Error('Invalid response from upload')
         }
 
-        dispatch(setFileUploadResponse(response));
-        dispatch(setFeatureFilename(response.file));
-        if (props.setFilename) props.setFilename(response.file);
-        showMessage(response.info, "success");
-      } catch (error) {
-        showMessage(`Upload error: ${error.message || error}`, "error");
-      } finally {
-        setLoading(false);
-        setActive(false);
+        dispatch(setFileUploadResponse(response))
+        dispatch(setFeatureFilename(response.file))
+        if (props.setFilename)
+          props.setFilename(response.file)
+        showMessage(response.info, 'success')
+      }
+      catch (error) {
+        showMessage(`Upload error: ${error.message || error}`, 'error')
+      }
+      finally {
+        setLoading(false)
+        setActive(false)
       }
 
       // Reset file input
-      document.getElementById(id).value = "";
+      document.getElementById(id).value = ''
     }
-  };
+  }
 
   const handleClick = () => {
-    setActive(true);
-  };
+    setActive(true)
+  }
 
   return (
     <Box component="form" sx={{ ...props.style }}>
       <Typography
         sx={{
-          color: active ? "primary.main" : "text.secondary",
+          color: active ? 'primary.main' : 'text.secondary',
         }}
       >
-        {props.label} {props.filename}
+        {props.label}
+        {' '}
+        {props.filename}
       </Typography>
 
       <Box display="flex" alignItems="center">
         <IconButton
           component="label"
-          sx={{ cursor: "pointer" }}
+          sx={{ cursor: 'pointer' }}
           title="Click to upload a file"
           onChange={handleChange}
           onClick={handleClick}
@@ -71,19 +76,19 @@ const FileUpload = (props) => {
             type="file"
             accept={props.fileMatch}
             id={id}
-            style={{ display: "none" }}
+            style={{ display: 'none' }}
           />
         </IconButton>
 
-        <Typography sx={{ width: "168px", textOverflow: "ellipsis" }}>
+        <Typography sx={{ width: '168px', textOverflow: 'ellipsis' }}>
           {props.filename}
         </Typography>
         {loading && (
-          <CircularProgress size={24} sx={{ ml: 1, color: "secondary.main" }} />
+          <CircularProgress size={24} sx={{ ml: 1, color: 'secondary.main' }} />
         )}
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default FileUpload;
+export default FileUpload

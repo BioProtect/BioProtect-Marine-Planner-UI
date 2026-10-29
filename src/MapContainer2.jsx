@@ -1,69 +1,73 @@
-import React, { useEffect, useRef } from "react";
+import { getGridTilesUrl, getLayerTilesUrl } from '@config/api'
 
-import { Box } from "@mui/material";
-import { getGridTilesUrl, getLayerTilesUrl } from "@config/api";
-import mapboxgl from "mapbox-gl";
-import { boxToBounds, envelopeToBounds } from "./Helpers";
+import { Box } from '@mui/material'
+import mapboxgl from 'mapbox-gl'
+import { useEffect, useRef } from 'react'
+import { boxToBounds, envelopeToBounds } from './Helpers'
 
-const getTableName = (tilesetid) => {
+function getTableName(tilesetid) {
   // supports "schema.table" or "table"
-  if (!tilesetid) return "";
-  const parts = String(tilesetid).split(".");
-  return parts.length > 1 ? parts[1] : parts[0];
-};
+  if (!tilesetid)
+    return ''
+  const parts = String(tilesetid).split('.')
+  return parts.length > 1
+    ? parts[1]
+    : parts[0]
+}
 
-const MapContainer2 = ({
+function MapContainer2({
   planningGridMetadata, // expects { tilesetid: "bioprotect.f_0539..." } or "f_0539..."
-  color = "rgba(255, 0, 0, 0.4)",
-  outlineColor = "rgba(255, 0, 0, 0.5)",
+  color = 'rgba(255, 0, 0, 0.4)',
+  outlineColor = 'rgba(255, 0, 0, 0.5)',
   isGrid = false, // planning grid (grid_tiles source) rather than a feature (layer_tiles)
-}) => {
-  const mapEl = useRef(null);
+}) {
+  const mapEl = useRef(null)
 
   useEffect(() => {
-    const tilesetid = planningGridMetadata?.tilesetid;
+    const tilesetid = planningGridMetadata?.tilesetid
     const tableName = tilesetid
       ? getTableName(tilesetid)
-      : planningGridMetadata?.feature_class_name;
-    if (!tableName) return;
+      : planningGridMetadata?.feature_class_name
+    if (!tableName)
+      return
 
     const map = new mapboxgl.Map({
       container: mapEl.current,
-      style: "mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8",
+      style: 'mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8',
       center: [0, 0],
       zoom: 4,
       attributionControl: false,
-    });
+    })
 
-    const sourceId = `martin_src_${tableName}`;
-    const layerId = `martin_layer_${tableName}`;
+    const sourceId = `martin_src_${tableName}`
+    const layerId = `martin_layer_${tableName}`
     const tileJSON = isGrid
       ? getGridTilesUrl(tableName)
-      : getLayerTilesUrl(tableName);
+      : getLayerTilesUrl(tableName)
 
     const onLoad = async () => {
       // 1) Source via TileJSON URL (no manual tiles array needed)
       if (!map.getSource(sourceId)) {
         map.addSource(sourceId, {
-          type: "vector",
+          type: 'vector',
           url: tileJSON, // <-- Martin TileJSON
-        });
+        })
       }
 
       // 2) Layer using the correct source-layer (the table name)
       if (!map.getLayer(layerId)) {
         map.addLayer({
-          id: layerId,
-          type: "fill",
-          source: sourceId,
-          "source-layer": tableName,
-          layout: { visibility: "visible" },
-          paint: {
-            "fill-color": color,
-            "fill-opacity": 0.9,
-            "fill-outline-color": outlineColor,
+          'id': layerId,
+          'type': 'fill',
+          'source': sourceId,
+          'source-layer': tableName,
+          'layout': { visibility: 'visible' },
+          'paint': {
+            'fill-color': color,
+            'fill-opacity': 0.9,
+            'fill-outline-color': outlineColor,
           },
-        });
+        })
       }
 
       // 3) Optional: fit bounds from the stored envelope (grids) or extent
@@ -71,35 +75,38 @@ const MapContainer2 = ({
       try {
         const bounds = isGrid
           ? envelopeToBounds(planningGridMetadata.envelope)
-          : boxToBounds(planningGridMetadata.extent);
+          : boxToBounds(planningGridMetadata.extent)
         if (Array.isArray(bounds) && bounds.length === 4) {
-          const sw = [bounds[0], bounds[1]]; // [minLng, minLat]
-          const ne = [bounds[2], bounds[3]]; // [maxLng, maxLat]
+          const sw = [bounds[0], bounds[1]] // [minLng, minLat]
+          const ne = [bounds[2], bounds[3]] // [maxLng, maxLat]
 
           // Ensure it runs once the style is ready and canvas is laid out
-          map.once("idle", () => {
-            map.resize();
-            map.fitBounds([sw, ne], { padding: 24, duration: 0 });
-          });
+          map.once('idle', () => {
+            map.resize()
+            map.fitBounds([sw, ne], { padding: 24, duration: 0 })
+          })
         }
-      } catch {
+      }
+      catch {
         // ignore if bounds not available
       }
-    };
+    }
 
     if (map.loaded()) {
-      onLoad();
-    } else {
-      map.on("load", onLoad);
+      onLoad()
+    }
+    else {
+      map.on('load', onLoad)
     }
 
     return () => {
       try {
-        map.off("load", onLoad);
-        map.remove();
-      } catch {}
-    };
-  }, [planningGridMetadata?.tilesetid, color, outlineColor]);
+        map.off('load', onLoad)
+        map.remove()
+      }
+      catch {}
+    }
+  }, [planningGridMetadata?.tilesetid, color, outlineColor])
 
   return (
     <Box
@@ -107,12 +114,12 @@ const MapContainer2 = ({
       sx={{
         width: 500,
         height: 300,
-        mt: "50px",
-        ml: "24px",
-        position: "relative",
+        mt: '50px',
+        ml: '24px',
+        position: 'relative',
       }}
     />
-  );
-};
+  )
+}
 
-export default MapContainer2;
+export default MapContainer2

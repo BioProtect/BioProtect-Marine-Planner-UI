@@ -1,23 +1,18 @@
-import { addToImportLog, removeImportLogMessage } from "@slices/uiSlice";
-import { useDispatch, useSelector } from "react-redux";
+import useAppSnackbar from '@hooks/useAppSnackbar'
+import { prioritizrApiSlice } from '@slices/prioritizrApiSlice'
 
-import { prioritizrApiSlice } from "@slices/prioritizrApiSlice";
-import useAppSnackbar from "@hooks/useAppSnackbar";
-import { useCallback } from "react";
+import { addToImportLog, removeImportLogMessage } from '@slices/uiSlice'
+import { useCallback } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 
-const useWebSocketHandler = (
-  checkForErrors,
-  setPreprocessing,
-  setPid,
-  newFeatureCreated,
-) => {
-  const dispatch = useDispatch();
-  const activeProjectId = useSelector((state) => state.project.activeProjectId);
-  const importLog = useSelector((state) => state.ui.importLog);
+function useWebSocketHandler(checkForErrors, setPreprocessing, setPid, newFeatureCreated) {
+  const dispatch = useDispatch()
+  const activeProjectId = useSelector(state => state.project.activeProjectId)
+  const importLog = useSelector(state => state.ui.importLog)
   const websocketEndpoint = useSelector(
-    (state) => state.project.bpServer.websocketEndpoint,
-  );
-  const { showMessage } = useAppSnackbar();
+    state => state.project.bpServer.websocketEndpoint,
+  )
+  const { showMessage } = useAppSnackbar()
 
   // Logs a message, collapsing repeats so the import log doesn't fill up with
   // identical "Preprocessing" lines. This moved here from App.jsx, which used to
@@ -25,173 +20,179 @@ const useWebSocketHandler = (
   // silently landing on setPreprocessing instead.
   const logMessage = useCallback(
     (message) => {
-      if (!message || typeof message.status !== "string") return;
+      if (!message || typeof message.status !== 'string')
+        return
 
       const timestampedMessage = {
         ...message,
         time: new Date().toLocaleTimeString(),
-      };
+      }
 
       const handleSocketClosedUnexpectedly = () => {
         dispatch(
           addToImportLog({
             method: message.method,
-            status: "Finished",
-            error: "The WebSocket connection closed unexpectedly",
+            status: 'Finished',
+            error: 'The WebSocket connection closed unexpectedly',
             time: timestampedMessage.time,
           }),
-        );
-        dispatch(removeImportLogMessage("Preprocessing"));
-        setPid(0);
-      };
+        )
+        dispatch(removeImportLogMessage('Preprocessing'))
+        setPid(0)
+      }
 
       const handlePidMessage = () => {
         const existingMessages = (importLog || []).filter(
-          (_message) => _message.pid === message.pid,
-        );
-        const latestStatus = existingMessages.at(-1)?.status;
+          _message => _message.pid === message.pid,
+        )
+        const latestStatus = existingMessages.at(-1)?.status
 
         if (!existingMessages.length || message.status !== latestStatus) {
-          if (message.status === "Finished") {
-            dispatch(removeImportLogMessage("RunningQuery"));
+          if (message.status === 'Finished') {
+            dispatch(removeImportLogMessage('RunningQuery'))
           }
-          dispatch(addToImportLog(timestampedMessage));
+          dispatch(addToImportLog(timestampedMessage))
         }
-      };
+      }
 
       const handleGeneralMessage = () => {
-        const allowDuplicates = ["RunningMarxan", "Started", "Finished"];
+        const allowDuplicates = ['RunningMarxan', 'Started', 'Finished']
         if (!allowDuplicates.includes(message.status)) {
-          dispatch(removeImportLogMessage(message.status));
+          dispatch(removeImportLogMessage(message.status))
         }
-        dispatch(addToImportLog(timestampedMessage));
-      };
+        dispatch(addToImportLog(timestampedMessage))
+      }
 
-      if (message.status === "SocketClosedUnexpectedly") {
-        handleSocketClosedUnexpectedly();
-      } else if ("pid" in message) {
-        handlePidMessage();
-      } else {
-        handleGeneralMessage();
+      if (message.status === 'SocketClosedUnexpectedly') {
+        handleSocketClosedUnexpectedly()
+      }
+      else if ('pid' in message) {
+        handlePidMessage()
+      }
+      else {
+        handleGeneralMessage()
       }
     },
     [dispatch, importLog, setPid],
-  );
+  )
 
   const removeMessageFromLog = useCallback(
     (matchText) => {
-      dispatch(removeImportLogMessage(matchText));
+      dispatch(removeImportLogMessage(matchText))
     },
     [dispatch],
-  );
+  )
 
   // Combined WebSocket handler
   const handleWebSocket = useCallback(
     (params) => {
       return new Promise((resolve, reject) => {
-        console.log("Connecting to:", websocketEndpoint + params);
-        const ws = new WebSocket(websocketEndpoint + params);
+        console.log('Connecting to:', websocketEndpoint + params)
+        const ws = new WebSocket(websocketEndpoint + params)
         // Track when this socket opened so we can compute elapsed time
         // for streaming "Running" messages.
-        let startTime = null;
+        let startTime = null
 
         ws.onopen = () => {
-          startTime = Date.now();
-          setPreprocessing(true);
-        };
+          startTime = Date.now()
+          setPreprocessing(true)
+        }
 
         ws.onmessage = async (evt) => {
-          const message = JSON.parse(evt.data);
-          console.log("message from websocker - ", message);
+          const message = JSON.parse(evt.data)
+          console.log('message from websocker - ', message)
           // Compute elapsed seconds since the socket opened so the log
           // can show "Running — 00:23" style timestamps.
           if (startTime != null) {
             message.elapsed = Math.max(
               0,
               Math.floor((Date.now() - startTime) / 1000),
-            );
+            )
           }
-          if (message.info) showMessage(message.info, "info");
+          if (message.info)
+            showMessage(message.info, 'info')
           if (!checkForErrors(message)) {
-            logMessage(message);
+            logMessage(message)
 
             // If this message relates to a Prioritizr run, invalidate run tags
             if (message.run_id != null) {
               dispatch(
                 prioritizrApiSlice.util.invalidateTags([
-                  { type: "PrioritizrRun", id: "LIST" },
-                  { type: "PrioritizrRun", id: activeProjectId },
-                  { type: "PrioritizrRun", id: message.run_id },
+                  { type: 'PrioritizrRun', id: 'LIST' },
+                  { type: 'PrioritizrRun', id: activeProjectId },
+                  { type: 'PrioritizrRun', id: message.run_id },
                 ]),
-              );
+              )
             }
 
             switch (message.status) {
-              case "Started":
-                setPreprocessing(true);
-                break;
-              case "pid":
-                setPid(message.pid);
-                break;
-              case "FeatureCreated":
-                removeMessageFromLog("Preprocessing");
-                await newFeatureCreated(message.id);
-                break;
-              case "Finished":
-                setPid(0);
-                removeMessageFromLog("Preprocessing");
-                setPreprocessing(false);
-                resolve(message);
-                ws.close();
-                break;
+              case 'Started':
+                setPreprocessing(true)
+                break
+              case 'pid':
+                setPid(message.pid)
+                break
+              case 'FeatureCreated':
+                removeMessageFromLog('Preprocessing')
+                await newFeatureCreated(message.id)
+                break
+              case 'Finished':
+                setPid(0)
+                removeMessageFromLog('Preprocessing')
+                setPreprocessing(false)
+                resolve(message)
+                ws.close()
+                break
               default:
-                break;
+                break
             }
-          } else {
+          }
+          else {
             logMessage({
               ...message,
               status: message.status,
-              info: "error" || "WebSocketError",
-            });
-            showMessage(message.error, "error");
-            setPreprocessing(false);
-            reject(new Error(message.error || "WebSocket error occurred"));
-            ws.close();
+              info: 'error' || 'WebSocketError',
+            })
+            showMessage(message.error, 'error')
+            setPreprocessing(false)
+            reject(new Error(message.error || 'WebSocket error occurred'))
+            ws.close()
           }
-        };
+        }
 
         ws.onerror = (evt) => {
-          console.error("WebSocket error:", evt);
-          logMessage({ status: "WebSocketError", detail: evt });
-          showMessage("WebSocket error", "error");
-          setPreprocessing(false);
-          ws.close();
-          reject(new Error("WebSocket connection error"));
-        };
+          console.error('WebSocket error:', evt)
+          logMessage({ status: 'WebSocketError', detail: evt })
+          showMessage('WebSocket error', 'error')
+          setPreprocessing(false)
+          ws.close()
+          reject(new Error('WebSocket connection error'))
+        }
 
         ws.onclose = (evt) => {
-          setPreprocessing(false);
-          console.warn("WebSocket closed:", evt);
+          setPreprocessing(false)
+          console.warn('WebSocket closed:', evt)
           if (!evt.wasClean || evt.code !== 1000) {
-            let reason = evt.reason || "No reason provided";
-            showMessage(reason, "error");
+            const reason = evt.reason || 'No reason provided'
+            showMessage(reason, 'error')
             logMessage({
-              status: "SocketClosedUnexpectedly",
+              status: 'SocketClosedUnexpectedly',
               code: evt.code,
-              reason: reason,
+              reason,
               error: reason,
-            });
+            })
             reject(
               new Error(
                 `WebSocket closed unexpectedly: ${evt.code} - ${reason}`,
               ),
-            );
-          } else {
-            showMessage("Socket Closed", "info");
-            logMessage({ status: "SocketClosedCleanly" });
+            )
           }
-        };
-      });
+          else {
+            showMessage('Socket Closed', 'info')
+            logMessage({ status: 'SocketClosedCleanly' })
+          }
+        }
+      })
     },
     [
       websocketEndpoint,
@@ -205,9 +206,9 @@ const useWebSocketHandler = (
       removeMessageFromLog,
       dispatch,
     ],
-  );
+  )
 
-  return handleWebSocket;
-};
+  return handleWebSocket
+}
 
-export default useWebSocketHandler;
+export default useWebSocketHandler

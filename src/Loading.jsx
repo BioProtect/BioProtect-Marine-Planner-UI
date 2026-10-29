@@ -1,9 +1,9 @@
-import BioProtectLogo from "./images/bioprotect_logo.gif";
-import CardMedia from "@mui/material/CardMedia";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
+import CardMedia from '@mui/material/CardMedia'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import BioProtectLogo from './images/bioprotect_logo.gif'
 
-const Loading = ({ open }) => {
+function Loading({ open }) {
   return (
     <Dialog
       fullWidth={false}
@@ -13,7 +13,7 @@ const Loading = ({ open }) => {
       open={Boolean(open)}
     >
       <DialogTitle>
-        <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <CardMedia>
             <img
               srcSet={`${BioProtectLogo}`}
@@ -25,7 +25,7 @@ const Loading = ({ open }) => {
         </div>
       </DialogTitle>
     </Dialog>
-  );
-};
+  )
+}
 
-export default Loading;
+export default Loading

@@ -1,26 +1,26 @@
-import { setLoading, toggleDialog } from "./slices/uiSlice";
-import { useDispatch } from "react-redux";
-import { useLayoutEffect, useRef, useState } from "react";
+import styled from '@emotion/styled'
+import useAppSnackbar from '@hooks/useAppSnackbar'
+import AccountCircle from '@mui/icons-material/AccountCircle'
 
-import AccountCircle from "@mui/icons-material/AccountCircle";
-import BioProtectLogo from "./images/bioprotect_logo_new.png";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
-import Divider from "@mui/material/Divider";
-import FormControl from "@mui/material/FormControl";
-import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
-import InputLabel from "@mui/material/InputLabel";
-import OutlinedInput from "@mui/material/OutlinedInput";
-import Typography from "@mui/material/Typography";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { toggleProjDialog } from "@slices/projectSlice";
-import { setCredentials } from "@slices/authSlice";
-import styled from "@emotion/styled";
-import useAppSnackbar from "@hooks/useAppSnackbar";
-import { useLoginMutation } from "@slices/authApiSlice";
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
+import Divider from '@mui/material/Divider'
+import FormControl from '@mui/material/FormControl'
+import IconButton from '@mui/material/IconButton'
+import InputAdornment from '@mui/material/InputAdornment'
+import InputLabel from '@mui/material/InputLabel'
+import OutlinedInput from '@mui/material/OutlinedInput'
+import Typography from '@mui/material/Typography'
+import { useLoginMutation } from '@slices/authApiSlice'
+import { setCredentials } from '@slices/authSlice'
+import { toggleProjDialog } from '@slices/projectSlice'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { useDispatch } from 'react-redux'
+import BioProtectLogo from './images/bioprotect_logo_new.png'
+import { setLoading } from './slices/uiSlice'
 
 const Root = styled.div`
   position: fixed;
@@ -40,7 +40,7 @@ const Root = styled.div`
   *::after {
     box-sizing: border-box;
   }
-`;
+`
 
 const Left = styled.div`
   width: 54%;
@@ -73,7 +73,7 @@ const Left = styled.div`
     background: linear-gradient(to right, transparent, rgba(9, 27, 53, 0.18));
     pointer-events: none;
   }
-`;
+`
 
 const Contours = styled.div`
   position: absolute;
@@ -85,7 +85,7 @@ const Contours = styled.div`
     width: 100%;
     height: 100%;
   }
-`;
+`
 
 const Right = styled.div`
   width: 46%;
@@ -113,81 +113,81 @@ const Right = styled.div`
       transparent 100%
     );
   }
-`;
+`
 
 const FormWrap = styled.form`
   width: 100%;
   max-width: 360px;
-`;
+`
 
 // muted whites used over the marine gradient on the left panel
 const onDark = {
-  eyebrow: "rgba(255,255,255,0.4)",
-  body: "rgba(255,255,255,0.55)",
-  italic: "rgba(255,255,255,0.7)",
-  foot: "rgba(255,255,255,0.35)",
-  footStrong: "rgba(255,255,255,0.55)",
-  border: "rgba(255,255,255,0.18)",
-  divider: "rgba(255,255,255,0.25)",
-  chipBg: "rgba(255,255,255,0.06)",
-};
+  eyebrow: 'rgba(255,255,255,0.4)',
+  body: 'rgba(255,255,255,0.55)',
+  italic: 'rgba(255,255,255,0.7)',
+  foot: 'rgba(255,255,255,0.35)',
+  footStrong: 'rgba(255,255,255,0.55)',
+  border: 'rgba(255,255,255,0.18)',
+  divider: 'rgba(255,255,255,0.25)',
+  chipBg: 'rgba(255,255,255,0.06)',
+}
 
-const LoginPage = ({ loadProjectAndSetup }) => {
-  const dispatch = useDispatch();
-  const { showMessage } = useAppSnackbar();
-  const [login, { isLoading }] = useLoginMutation();
+function LoginPage({ loadProjectAndSetup }) {
+  const dispatch = useDispatch()
+  const { showMessage } = useAppSnackbar()
+  const [login, { isLoading }] = useLoginMutation()
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const userRef = useRef(null);
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const userRef = useRef(null)
 
   useLayoutEffect(() => {
-    if (userRef.current) userRef.current.focus();
-  }, []);
+    if (userRef.current)
+      userRef.current.focus()
+  }, [])
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      const response = await login({ username, password }).unwrap();
+      const response = await login({ username, password }).unwrap()
       dispatch(
         setCredentials({
           userId: response.userId,
           accessToken: response.accessToken,
           userData: response.userData,
         }),
-      );
+      )
       // ponytail: new users have no project yet; send them to New Project
       if (response.project) {
-        await loadProjectAndSetup(response.project.id);
-      } else {
+        await loadProjectAndSetup(response.project.id)
+      }
+      else {
         dispatch(
           toggleProjDialog({
-            dialogName: "newProjectDialogOpen",
+            dialogName: 'newProjectDialogOpen',
             isOpen: true,
           }),
-        );
+        )
       }
-      dispatch(setLoading(false));
-      setUsername("");
-      setPassword("");
-    } catch (err) {
-      let errMsg = "Login Failed";
-      if (!err?.originalStatus) {
-        errMsg = "No Server Response";
-      } else if (err.originalStatus === 400) {
-        errMsg = "Missing Username or Password";
-      } else if (err.originalStatus === 401) {
-        errMsg = "Unauthorized";
-      }
-      showMessage(errMsg, "error");
+      dispatch(setLoading(false))
+      setUsername('')
+      setPassword('')
     }
-  };
-
-  const handleForgotPassword = (e) => {
-    e.preventDefault();
-    dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: true }));
-  };
+    catch (err) {
+      let errMsg = 'Login Failed'
+      if (!err?.originalStatus) {
+        errMsg = 'No Server Response'
+      }
+      else if (err.originalStatus === 400) {
+        errMsg = 'Missing Username or Password'
+      }
+      else if (err.originalStatus === 401) {
+        errMsg = 'Unauthorized'
+      }
+      showMessage(errMsg, 'error')
+    }
+  }
 
   const chipSx = {
     color: onDark.body,
@@ -195,7 +195,7 @@ const LoginPage = ({ loadProjectAndSetup }) => {
     backgroundColor: onDark.chipBg,
     fontSize: 11,
     fontWeight: 500,
-  };
+  }
 
   return (
     <Root>
@@ -257,24 +257,24 @@ const LoginPage = ({ loadProjectAndSetup }) => {
           </svg>
         </Contours>
 
-        <Box sx={{ position: "relative", zIndex: 2 }}>
+        <Box sx={{ position: 'relative', zIndex: 2 }}>
           <Box
             component="img"
             src={BioProtectLogo}
             alt="BioProtect logo"
             loading="lazy"
-            sx={{ width: 150, height: 180, display: "block" }}
+            sx={{ width: 150, height: 180, display: 'block' }}
           />
         </Box>
 
         <Box
           sx={{
-            position: "relative",
+            position: 'relative',
             zIndex: 2,
             flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
             py: 6,
           }}
         >
@@ -283,7 +283,7 @@ const LoginPage = ({ loadProjectAndSetup }) => {
             component="div"
             sx={{
               color: onDark.eyebrow,
-              letterSpacing: "0.2em",
+              letterSpacing: '0.2em',
               fontWeight: 600,
               fontSize: 10,
               mb: 2,
@@ -294,20 +294,20 @@ const LoginPage = ({ loadProjectAndSetup }) => {
 
           <Typography
             component="h1"
-            sx={(theme) => ({
+            sx={theme => ({
               fontFamily: theme.typography.headingFont,
-              fontSize: "clamp(42px, 5.2vw, 72px)",
+              fontSize: 'clamp(42px, 5.2vw, 72px)',
               lineHeight: 1,
-              letterSpacing: "-0.01em",
-              color: "#ffffff",
+              letterSpacing: '-0.01em',
+              color: '#ffffff',
             })}
           >
             BioProtect
             <Box
               component="em"
               sx={{
-                fontStyle: "italic",
-                display: "block",
+                fontStyle: 'italic',
+                display: 'block',
                 color: onDark.italic,
               }}
             >
@@ -341,7 +341,13 @@ const LoginPage = ({ loadProjectAndSetup }) => {
             decision-making across European seas.
           </Typography>
 
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 4 }}>
+          <Box sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 1,
+            mt: 4,
+          }}
+          >
             <Chip
               label="Cumulative Impact Analysis"
               variant="outlined"
@@ -371,7 +377,7 @@ const LoginPage = ({ loadProjectAndSetup }) => {
 
         <Box
           sx={{
-            position: "relative",
+            position: 'relative',
             zIndex: 2,
             borderTop: `1px solid ${onDark.border}`,
             pt: 2.75,
@@ -381,10 +387,10 @@ const LoginPage = ({ loadProjectAndSetup }) => {
             variant="caption"
             component="p"
             sx={{
-              color: onDark.foot,
-              lineHeight: 1.6,
-              fontSize: 10.5,
-              "& strong": { color: onDark.footStrong },
+              'color': onDark.foot,
+              'lineHeight': 1.6,
+              'fontSize': 10.5,
+              '& strong': { color: onDark.footStrong },
             }}
           >
             <strong>Co-funded by the European Union</strong>
@@ -398,9 +404,9 @@ const LoginPage = ({ loadProjectAndSetup }) => {
         <FormWrap onSubmit={handleSubmit} noValidate>
           <Box
             sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "left",
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'left',
               gap: 1.25,
               mb: 4,
             }}
@@ -420,35 +426,34 @@ const LoginPage = ({ loadProjectAndSetup }) => {
 
           <Typography
             component="h2"
-            sx={(theme) => ({
+            sx={theme => ({
               fontFamily: theme.typography.headingFont,
               fontSize: 30,
-              color: "primary.main",
-              letterSpacing: "-0.01em",
+              color: 'primary.main',
+              letterSpacing: '-0.01em',
               mb: 0.75,
             })}
           >
             Welcome back.
           </Typography>
-          <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 4.5 }}>
+          <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 4.5 }}>
             Sign in to your BioProtect Marine Planner account
           </Typography>
-
 
           <FormControl fullWidth variant="outlined" margin="normal">
             <InputLabel htmlFor="username">Username</InputLabel>
             <OutlinedInput
               id="username"
               type="text"
-              endAdornment={
+              endAdornment={(
                 <InputAdornment position="end">
                   <AccountCircle />
                 </InputAdornment>
-              }
+              )}
               label="Username"
               inputRef={userRef}
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={e => setUsername(e.target.value)}
               autoComplete="username"
               required
             />
@@ -458,21 +463,23 @@ const LoginPage = ({ loadProjectAndSetup }) => {
             <InputLabel htmlFor="password">Password</InputLabel>
             <OutlinedInput
               id="password"
-              type={showPassword ? "text" : "password"}
-              endAdornment={
+              type={showPassword ? 'text' : 'password'}
+              endAdornment={(
                 <InputAdornment position="end">
                   <IconButton
                     aria-label="toggle password visibility"
-                    onClick={() => setShowPassword((s) => !s)}
-                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setShowPassword(s => !s)}
+                    onMouseDown={e => e.preventDefault()}
                     edge="end"
                   >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                    {showPassword
+                      ? <VisibilityOff />
+                      : <Visibility />}
                   </IconButton>
                 </InputAdornment>
-              }
+              )}
               label="Password"
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               value={password}
               required
             />
@@ -485,42 +492,42 @@ const LoginPage = ({ loadProjectAndSetup }) => {
             size="large"
             fullWidth
             disabled={isLoading}
-            sx={(theme) => ({
-              py: 1.6,
-              borderRadius: 2.5,
-              fontWeight: 600,
-              fontSize: 14,
-              letterSpacing: "0.02em",
-              textTransform: "none",
-              background: theme.palette.brand.barGradient,
-              boxShadow:
-                "0 6px 20px rgba(18,80,133,0.22), 0 2px 6px rgba(18,80,133,0.14)",
-              "&:hover": {
+            sx={theme => ({
+              'py': 1.6,
+              'borderRadius': 2.5,
+              'fontWeight': 600,
+              'fontSize': 14,
+              'letterSpacing': '0.02em',
+              'textTransform': 'none',
+              'background': theme.palette.brand.barGradient,
+              'boxShadow':
+                '0 6px 20px rgba(18,80,133,0.22), 0 2px 6px rgba(18,80,133,0.14)',
+              '&:hover': {
                 background: theme.palette.brand.barGradient,
-                filter: "brightness(1.05)",
+                filter: 'brightness(1.05)',
                 boxShadow:
-                  "0 10px 28px rgba(18,80,133,0.3), 0 4px 10px rgba(18,80,133,0.18)",
+                  '0 10px 28px rgba(18,80,133,0.3), 0 4px 10px rgba(18,80,133,0.18)',
               },
             })}
           >
             {isLoading
-              ? "Signing in…"
-              : "Sign in to the BioProtect Marine Planner"}
+              ? 'Signing in…'
+              : 'Sign in to the BioProtect Marine Planner'}
           </Button>
 
           <Box
             sx={{
               mt: 5.5,
               pt: 2.75,
-              borderTop: "1px solid #eef1f4",
-              display: "flex",
-              alignItems: "center",
+              borderTop: '1px solid #eef1f4',
+              display: 'flex',
+              alignItems: 'center',
               gap: 1.5,
             }}
           >
             <Typography
               variant="caption"
-              sx={{ fontSize: 10, color: "#b8c4ca", lineHeight: 1.5 }}
+              sx={{ fontSize: 10, color: '#b8c4ca', lineHeight: 1.5 }}
             >
               Co-funded by the European Union · Grant No. 101157341
             </Typography>
@@ -528,7 +535,7 @@ const LoginPage = ({ loadProjectAndSetup }) => {
         </FormWrap>
       </Right>
     </Root>
-  );
-};
+  )
+}
 
-export default LoginPage;
+export default LoginPage
