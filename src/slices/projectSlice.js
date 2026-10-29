@@ -302,9 +302,15 @@ const bootstrapProject = createAsyncThunk(
 /** projectSlice.js */
 export const switchProject = createAsyncThunk(
   'project/switchProject',
-  async (projectId, { dispatch }) => {
-    await dispatch(bootstrapProject(projectId)).unwrap()
-    return projectId
+  async (projectId, { dispatch, rejectWithValue }) => {
+    try {
+      await dispatch(bootstrapProject(projectId)).unwrap()
+      return projectId
+    }
+    catch (e) {
+      // unwrap() throws bootstrapProject's rejectWithValue payload (a string)
+      return rejectWithValue(e?.message ?? String(e))
+    }
   },
 )
 

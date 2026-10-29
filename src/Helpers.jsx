@@ -57,14 +57,7 @@ export function getArea(value, units = 'Km2', asHtml = false, sf = 3, addCommas 
   const valueInM2 = value * (toM2[src] ?? 1)
   const scale = fromM2[u] ?? fromM2.km2
   const converted = valueInM2 * scale
-  const roundSig = (num, sig) => {
-    if (num === 0)
-      return 0
-    const p = Math.ceil(Math.log10(Math.abs(num)))
-    const f = 10 ** (sig - p)
-    return Math.round(num * f) / f
-  }
-  const n = roundSig(converted, sf)
+  const n = Number(converted.toPrecision(sf))
 
   // Add commas if needed
   const fmt = num =>

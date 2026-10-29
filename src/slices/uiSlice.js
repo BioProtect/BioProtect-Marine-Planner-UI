@@ -189,7 +189,8 @@ const uiSlice = createSlice({
     addToImportLog: (state, action) => {
       state.importLog.push(action.payload)
     },
-    removeImportLogMessage: () => {
+    removeImportLogMessage: (state, action) => {
+      state.importLog = state.importLog.filter(m => m.status !== action.payload)
     },
     clearImportLog: (state) => {
       state.importLog = []

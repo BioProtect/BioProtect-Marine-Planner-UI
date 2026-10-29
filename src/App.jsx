@@ -1100,7 +1100,9 @@ function App() {
     catch (error) {
       console.error('Error deleting project:', error)
       showMessage(
-        `Error deleting project: ${error?.data?.error || error?.message || ''}`,
+        `Error deleting project: ${error?.data?.error || error?.message || (typeof error === 'string'
+          ? error
+          : '')}`,
         'error',
       )
     }

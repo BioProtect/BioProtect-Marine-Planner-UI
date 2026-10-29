@@ -8,26 +8,29 @@ import projectReducer, { projectApiSlice } from '@slices/projectSlice'
 import uiReducer from '@slices/uiSlice'
 import userReducer, { userApiSlice } from '@slices/userSlice'
 
-const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    feature: featureReducer,
-    planningUnit: planningUnitReducer,
-    project: projectReducer,
-    ui: uiReducer,
-    user: userReducer,
-    prioritizr: prioritizrReducer,
+/** a factory so tests get a fresh store per render */
+export function makeStore() {
+  return configureStore({
+    reducer: {
+      auth: authReducer,
+      feature: featureReducer,
+      planningUnit: planningUnitReducer,
+      project: projectReducer,
+      ui: uiReducer,
+      user: userReducer,
+      prioritizr: prioritizrReducer,
 
-    [featureApiSlice.reducerPath]: featureApiSlice.reducer,
-    [planningUnitApiSlice.reducerPath]: planningUnitApiSlice.reducer,
-    [projectApiSlice.reducerPath]: projectApiSlice.reducer,
-    [apiSlice.reducerPath]: apiSlice.reducer,
-    [userApiSlice.reducerPath]: userApiSlice.reducer,
+      [featureApiSlice.reducerPath]: featureApiSlice.reducer,
+      [planningUnitApiSlice.reducerPath]: planningUnitApiSlice.reducer,
+      [projectApiSlice.reducerPath]: projectApiSlice.reducer,
+      [apiSlice.reducerPath]: apiSlice.reducer,
+      [userApiSlice.reducerPath]: userApiSlice.reducer,
 
-  },
-  middleware: getDefaultMiddleware =>
-    getDefaultMiddleware().concat(apiSlice.middleware),
-  devTools: true,
-})
+    },
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware().concat(apiSlice.middleware),
+    devTools: true,
+  })
+}
 
-export default store
+export default makeStore()
