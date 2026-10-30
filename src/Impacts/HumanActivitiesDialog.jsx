@@ -1,127 +1,132 @@
-import React, { useState } from "react";
+import useAppSnackbar from '@hooks/useAppSnackbar'
+import AddCircleIcon from '@mui/icons-material/AddCircle'
+import Button from '@mui/material/Button'
+
+import ButtonGroup from '@mui/material/ButtonGroup'
+import TextField from '@mui/material/TextField'
 import {
   setLoading,
   setSelectedActivity,
   setUploadedActivities,
   toggleDialog,
-} from "@slices/uiSlice";
-import { useDispatch, useSelector } from "react-redux";
+} from '@slices/uiSlice'
+import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import BioprotectTable from '../BPComponents/BioprotectTable'
+import BPDialog from '../BPDialog'
+import { generateTableCols } from '../Helpers'
+import FileUpload from '../Uploads/FileUpload'
 
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import BPDialog from "../BPDialog";
-import BioprotectTable from "../BPComponents/BioprotectTable";
-import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import FileUpload from "../Uploads/FileUpload";
-import TextField from "@mui/material/TextField";
-import { generateTableCols } from "../Helpers";
-import useAppSnackbar from "@hooks/useAppSnackbar";
+const STEPS = ['Select Activity', 'Import Type', 'Upload Data']
 
-const STEPS = ["Select Activity", "Import Type", "Upload Data"];
-
-const HumanActivitiesDialog = (props) => {
-  const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const activeProjectId = useSelector((state) => state.project.activeProjectId);
-  const [stepIndex, setStepIndex] = useState(0);
-  const [filename, setFilename] = useState("");
-  const [description, setDescription] = useState("");
-  const [searchText, setSearchText] = useState("");
-  const [uploadType, setUploadType] = useState(""); // 'raster' or 'shapefile'
-  const { showMessage } = useAppSnackbar();
+function HumanActivitiesDialog(props) {
+  const dispatch = useDispatch()
+  const uiState = useSelector(state => state.ui)
+  const dialogStates = useSelector(state => state.ui.dialogStates)
+  const activeProjectId = useSelector(state => state.project.activeProjectId)
+  const [stepIndex, setStepIndex] = useState(0)
+  const [filename, setFilename] = useState('')
+  const [description, setDescription] = useState('')
+  const [searchText, setSearchText] = useState('')
+  const [uploadType, setUploadType] = useState('') // 'raster' or 'shapefile'
+  const { showMessage } = useAppSnackbar()
 
   const handleNext = () => {
     if (stepIndex === STEPS.length - 1) {
-      handleSaveActivity();
-    } else {
-      setStepIndex(stepIndex + 1);
+      handleSaveActivity()
     }
-  };
+    else {
+      setStepIndex(stepIndex + 1)
+    }
+  }
 
   const handlePrev = () => {
-    setStepIndex(stepIndex - 1);
-  };
+    setStepIndex(stepIndex - 1)
+  }
 
   const selectUploadType = (type) => {
-    setUploadType(type);
-    setStepIndex(2);
-  };
+    setUploadType(type)
+    setStepIndex(2)
+  }
 
   const handleSaveActivity = async () => {
-    const activity = uiState.selectedActivity.activity;
-    dispatch(setLoading(true));
-    props.startLogging();
+    const activity = uiState.selectedActivity.activity
+    dispatch(setLoading(true))
+    props.startLogging()
 
-    let importFilename = filename;
+    let importFilename = filename
 
     // For shapefiles, unzip first to get the .shp filename
-    if (uploadType === "shapefile") {
-      const unzipResponse = await props.unzipShapefile(filename);
+    if (uploadType === 'shapefile') {
+      const unzipResponse = await props.unzipShapefile(filename)
       if (unzipResponse?.error) {
-        showMessage(unzipResponse.error, "error");
-        dispatch(setLoading(false));
-        return;
+        showMessage(unzipResponse.error, 'error')
+        dispatch(setLoading(false))
+        return
       }
-      importFilename = unzipResponse.rootfilename + ".shp";
+      importFilename = `${unzipResponse.rootfilename}.shp`
     }
 
-    const url =
-      `uploadActivity?filename=${importFilename}` +
-      `&activity=${activity}` +
-      `&description=${encodeURIComponent(description)}` +
-      `&upload_type=${uploadType}` +
+    const url
+      = `uploadActivity?filename=${importFilename}`
+        + `&activity=${activity}`
+        + `&description=${encodeURIComponent(description)}`
+        + `&upload_type=${uploadType}`
       // files with no CRS metadata are read in the project CRS
-      `&project_id=${activeProjectId}`;
+        + `&project_id=${activeProjectId}`
 
     const response = await props.handleWebSocket(url).catch((err) => {
-      console.error("WebSocket failed:", err);
-      return { error: `WebSocket error occurred - ${err.message}` };
-    });
+      console.error('WebSocket failed:', err)
+      return { error: `WebSocket error occurred - ${err.message}` }
+    })
 
-    const message = response?.info || response?.error || "No response";
-    showMessage(message, response?.error ? "error" : "success");
+    const message = response?.info || response?.error || 'No response'
+    showMessage(message, response?.error ? 'error' : 'success')
 
     // Refresh the uploaded activities list
     if (!response?.error) {
-      const activitiesData = await props._get("getUploadedActivities");
+      const activitiesData = await props._get('getUploadedActivities')
       if (activitiesData?.data) {
-        dispatch(setUploadedActivities(activitiesData.data));
+        dispatch(setUploadedActivities(activitiesData.data))
       }
     }
 
-    dispatch(setLoading(false));
-    closeDialog();
-  };
+    dispatch(setLoading(false))
+    closeDialog()
+  }
 
   const clickRow = (evt, rowInfo) => {
-    dispatch(setSelectedActivity(rowInfo));
-  };
+    dispatch(setSelectedActivity(rowInfo))
+  }
 
   const closeDialog = () => {
-    setStepIndex(0);
-    setFilename("");
-    setDescription("");
-    setSearchText("");
-    setUploadType("");
-    dispatch(setSelectedActivity(""));
+    setStepIndex(0)
+    setFilename('')
+    setDescription('')
+    setSearchText('')
+    setUploadType('')
+    dispatch(setSelectedActivity(''))
     dispatch(
-      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: false }),
-    );
-  };
+      toggleDialog({ dialogName: 'humanActivitiesDialogOpen', isOpen: false }),
+    )
+  }
 
   const tableColumns = generateTableCols([
-    { id: "category", label: "category" },
-    { id: "activity", label: "activity" },
-  ]);
+    { id: 'category', label: 'category' },
+    { id: 'activity', label: 'activity' },
+  ])
 
   const isNextDisabled = () => {
-    if (stepIndex === 0) return uiState.selectedActivity === "";
-    if (stepIndex === 2) return filename === "" || description === "";
-    return false;
-  };
+    if (stepIndex === 0)
+      return uiState.selectedActivity === ''
+    if (stepIndex === 2)
+      return filename === '' || description === ''
+    return false
+  }
 
-  const fileMatch = uploadType === "raster" ? ".tif,.tiff" : ".zip";
+  const fileMatch = uploadType === 'raster'
+    ? '.tif,.tiff'
+    : '.zip'
 
   const actions = (
     <ButtonGroup aria-label="Basic button group">
@@ -137,12 +142,14 @@ const HumanActivitiesDialog = (props) => {
             onClick={handleNext}
             disabled={isNextDisabled() || uiState.loading}
           >
-            {stepIndex === STEPS.length - 1 ? "Save to Database" : "Next"}
+            {stepIndex === STEPS.length - 1
+              ? 'Save to Database'
+              : 'Next'}
           </Button>
         </>
       )}
     </ButtonGroup>
-  );
+  )
 
   return (
     <BPDialog
@@ -162,7 +169,7 @@ const HumanActivitiesDialog = (props) => {
             data={uiState.activities}
             tableColumns={tableColumns}
             ableToSelectAll={false}
-            searchColumns={["category", "activity"]}
+            searchColumns={['category', 'activity']}
             searchText={searchText}
             selected={[uiState.selectedActivity]}
             clickRow={clickRow}
@@ -176,7 +183,7 @@ const HumanActivitiesDialog = (props) => {
             startIcon={<AddCircleIcon />}
             title="Import from a raster (.tif) file"
             disabled={uiState.loading}
-            onClick={() => selectUploadType("raster")}
+            onClick={() => selectUploadType('raster')}
           >
             Import from Raster
           </Button>
@@ -184,7 +191,7 @@ const HumanActivitiesDialog = (props) => {
             startIcon={<AddCircleIcon />}
             title="Import from a zipped shapefile (.zip)"
             disabled={uiState.loading}
-            onClick={() => selectUploadType("shapefile")}
+            onClick={() => selectUploadType('shapefile')}
           >
             Import from Shapefile
           </Button>
@@ -200,16 +207,16 @@ const HumanActivitiesDialog = (props) => {
             setFilename={setFilename}
             destFolder="imports"
             label={
-              uploadType === "raster"
-                ? "Upload Raster (.tif)"
-                : "Upload Shapefile (.zip)"
+              uploadType === 'raster'
+                ? 'Upload Raster (.tif)'
+                : 'Upload Shapefile (.zip)'
             }
-            style={{ paddingTop: "10px" }}
+            style={{ paddingTop: '10px' }}
           />
           <TextField
             fullWidth
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={e => setDescription(e.target.value)}
             multiline
             rows={4}
             label="Enter a description"
@@ -219,7 +226,7 @@ const HumanActivitiesDialog = (props) => {
         </div>
       )}
     </BPDialog>
-  );
-};
+  )
+}
 
-export default HumanActivitiesDialog;
+export default HumanActivitiesDialog

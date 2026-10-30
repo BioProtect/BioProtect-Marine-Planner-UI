@@ -1,102 +1,102 @@
-import { createSlice, current } from "@reduxjs/toolkit";
+import { createSlice } from '@reduxjs/toolkit'
 
 const mapboxBasemaps = [
   {
-    name: "Charted",
-    alias: "ESRI Charted Territory",
-    description: "Oooo lovely",
-    id: "https://www.arcgis.com/sharing/rest/content/items/1c365daf37a744fbad748b67aa69dac8/resources/styles/root.json",
-    provider: "esri",
+    name: 'Charted',
+    alias: 'ESRI Charted Territory',
+    description: 'Oooo lovely',
+    id: 'https://www.arcgis.com/sharing/rest/content/items/1c365daf37a744fbad748b67aa69dac8/resources/styles/root.json',
+    provider: 'esri',
   },
   {
-    name: "Topographic",
-    alias: "ESRI Topographic",
-    description: "Oooo lovely",
-    id: "https://www.arcgis.com/sharing/rest/content/items/0f52cd2d17ea4773944a1d0e0fb99ea4/resources/styles/root.json",
-    provider: "esri",
+    name: 'Topographic',
+    alias: 'ESRI Topographic',
+    description: 'Oooo lovely',
+    id: 'https://www.arcgis.com/sharing/rest/content/items/0f52cd2d17ea4773944a1d0e0fb99ea4/resources/styles/root.json',
+    provider: 'esri',
   },
   {
-    name: "Streets",
-    alias: "Mapbox Streets",
+    name: 'Streets',
+    alias: 'Mapbox Streets',
     description:
-      "A complete basemap, perfect for incorporating your own data.",
-    id: "mapbox/streets-v10",
-    provider: "mapbox",
+      'A complete basemap, perfect for incorporating your own data.',
+    id: 'mapbox/streets-v10',
+    provider: 'mapbox',
   },
   {
-    name: "Outdoors",
-    alias: "Mapbox Outdoors",
-    description: "General basemap tailored to hiking, biking and sport.",
-    id: "mapbox/outdoors-v10",
-    provider: "mapbox",
+    name: 'Outdoors',
+    alias: 'Mapbox Outdoors',
+    description: 'General basemap tailored to hiking, biking and sport.',
+    id: 'mapbox/outdoors-v10',
+    provider: 'mapbox',
   },
   {
-    name: "Dark",
-    alias: "Mapbox Dark",
-    description: "Subtle dark backdrop for data visualizations.",
-    id: "mapbox/dark-v9",
-    provider: "mapbox",
+    name: 'Dark',
+    alias: 'Mapbox Dark',
+    description: 'Subtle dark backdrop for data visualizations.',
+    id: 'mapbox/dark-v9',
+    provider: 'mapbox',
   },
   {
-    name: "Light",
-    alias: "Mapbox Light",
-    description: "Subtle light backdrop for data visualizations.",
-    id: "mapbox/light-v9",
-    provider: "mapbox",
+    name: 'Light',
+    alias: 'Mapbox Light',
+    description: 'Subtle light backdrop for data visualizations.',
+    id: 'mapbox/light-v9',
+    provider: 'mapbox',
   },
   {
-    name: "Satellite",
-    alias: "Mapbox Satellite",
-    description: "A beautiful global satellite and aerial imagery layer.",
-    id: "mapbox/satellite-v9",
-    provider: "mapbox",
+    name: 'Satellite',
+    alias: 'Mapbox Satellite',
+    description: 'A beautiful global satellite and aerial imagery layer.',
+    id: 'mapbox/satellite-v9',
+    provider: 'mapbox',
   },
   {
-    name: "Satellite Streets",
-    alias: "Mapbox Satellite Streets",
-    description: "Global imagery enhanced with road and label hierarchy.",
-    id: "mapbox/satellite-streets-v9",
-    provider: "mapbox",
+    name: 'Satellite Streets',
+    alias: 'Mapbox Satellite Streets',
+    description: 'Global imagery enhanced with road and label hierarchy.',
+    id: 'mapbox/satellite-streets-v9',
+    provider: 'mapbox',
   },
   {
-    name: "Blank",
-    alias: "Blank background",
-    description: "Plain white background",
-    id: "",
-    provider: "local",
+    name: 'Blank',
+    alias: 'Blank background',
+    description: 'Plain white background',
+    id: '',
+    provider: 'local',
   },
   {
-    name: "BioProtect",
-    alias: "BioProtect",
-    description: "BioProtect basemap",
-    id: "craicerjack/cm4co2ve7000l01pfchhs2vv8",
-    provider: "mapbox",
+    name: 'BioProtect',
+    alias: 'BioProtect',
+    description: 'BioProtect basemap',
+    id: 'craicerjack/cm4co2ve7000l01pfchhs2vv8',
+    provider: 'mapbox',
   },
   {
-    name: "OSM",
-    alias: "Open Street Map",
-    description: "Open Street Map",
-    id: "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    provider: "local",
+    name: 'OSM',
+    alias: 'Open Street Map',
+    description: 'Open Street Map',
+    id: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    provider: 'local',
   },
-];
+]
 
 const initialState = {
   loading: false,
-  activeTab: "project",
-  activeResultsTab: "legend",
+  activeTab: 'project',
+  activeResultsTab: 'legend',
   // results map: grid outline width in px (0 = none), and whether only
   // cells selected in a solution keep their outline
   cellOutline: { width: 1, selectedOnly: false },
-  basemap: "BioProtect",
+  basemap: 'BioProtect',
   basemaps: mapboxBasemaps,
   registry: {},
 
   activities: [],
   uploadedActivities: [],
-  selectedActivity: "",
+  selectedActivity: '',
 
-  owner: "",
+  owner: '',
 
   fileUploadResponse: null,
 
@@ -107,7 +107,6 @@ const initialState = {
     cumulativeImpactDialogOpen: false,
     uploadedActivitiesDialogOpen: false,
     openImportImpactsDialog: false,
-
 
     alertDialogOpen: false,
     referenceLayersDialogOpen: false,
@@ -137,74 +136,74 @@ const initialState = {
   },
 
   importLog: [],
-};
+}
 
 const uiSlice = createSlice({
-  name: "ui",
+  name: 'ui',
   initialState,
   reducers: {
     setCellOutline(state, action) {
-      state.cellOutline = { ...state.cellOutline, ...action.payload };
+      state.cellOutline = {
+        ...state.cellOutline,
+        ...action.payload,
+      }
     },
     setBasemap(state, action) {
-      state.basemap = action.payload;
+      state.basemap = action.payload
     },
     setBasemaps(state, action) {
-      state.basemaps = action.payload;
+      state.basemaps = action.payload
     },
     setActiveTab(state, action) {
-      state.activeTab = action.payload;
+      state.activeTab = action.payload
     },
     setActiveResultsTab(state, action) {
-      state.activeResultsTab = action.payload;
+      state.activeResultsTab = action.payload
     },
     toggleDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.dialogStates[dialogName] = isOpen;
+      const { dialogName, isOpen } = action.payload
+      state.dialogStates[dialogName] = isOpen
     },
     setActivities(state, action) {
-      state.activities = action.payload;
+      state.activities = action.payload
     },
     setUploadedActivities(state, action) {
-      state.uploadedActivities = action.payload;
+      state.uploadedActivities = action.payload
     },
     setLoading(state, action) {
-      state.loading = action.payload;
+      state.loading = action.payload
     },
     setOwner(state, action) {
-      state.owner = action.payload;
+      state.owner = action.payload
     },
 
     setSelectedActivity(state, action) {
-      state.selectedActivity = action.payload;
+      state.selectedActivity = action.payload
     },
     setFileUploadResponse(state, action) {
-      state.fileUploadResponse = action.payload;
+      state.fileUploadResponse = action.payload
     },
     setRegistry(state, action) {
-      state.registry = action.payload;
+      state.registry = action.payload
     },
     addToImportLog: (state, action) => {
-      state.importLog.push(action.payload);
+      state.importLog.push(action.payload)
     },
     removeImportLogMessage: (state, action) => {
-      const matchText = action.payload;
+      state.importLog = state.importLog.filter(m => m.status !== action.payload)
     },
     clearImportLog: (state) => {
-      state.importLog = [];
-    }
-
+      state.importLog = []
+    },
 
   },
-});
+})
 
 export const {
   setCellOutline,
   setBasemap,
-  setBasemaps,
   setActiveTab,
   setActiveResultsTab,
-  toggleProjectDialog,
   toggleDialog,
   setActivities,
   setUploadedActivities,
@@ -216,5 +215,5 @@ export const {
   removeImportLogMessage,
   clearImportLog,
   setOwner,
-} = uiSlice.actions;
-export default uiSlice.reducer;
+} = uiSlice.actions
+export default uiSlice.reducer

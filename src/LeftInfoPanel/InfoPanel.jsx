@@ -1,104 +1,93 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import useAppSnackbar from '@hooks/useAppSnackbar'
+import Button from '@mui/material/Button'
+import Paper from '@mui/material/Paper'
+
+import Stack from '@mui/material/Stack'
+import Tab from '@mui/material/Tab'
+import Tabs from '@mui/material/Tabs'
+import { selectCurrentUser } from '@slices/authSlice'
 import {
   featureApiSlice,
-  setSelectedFeatureId,
-  toggleFeatureD,
-} from "@slices/featureSlice";
-import { setActiveTab, toggleDialog } from "@slices/uiSlice";
-import { useDispatch, useSelector } from "react-redux";
+} from '@slices/featureSlice'
+import { setActiveTab, toggleDialog } from '@slices/uiSlice'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import PanelHeader from '../BPComponents/PanelHeader'
+import FeaturesTab from './FeaturesTab'
+import PlanningUnitsTab from './PlanningUnitsTab'
+import ProjectTabContent from './ProjectTab'
 
-import Button from "@mui/material/Button";
-import CONSTANTS from "../bpVars.jsx";
-import FeaturesTab from "./FeaturesTab";
-import useAppSnackbar from "@hooks/useAppSnackbar";
-import Loading from "../Loading";
-import PanelHeader from "../BPComponents/PanelHeader";
-import Paper from "@mui/material/Paper";
-import PlanningUnitsTab from "./PlanningUnitsTab";
-import ProjectTabContent from "./ProjectTab";
-import Settings from "@mui/icons-material/Settings";
-import Stack from "@mui/material/Stack";
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
-import { selectCurrentUser } from "@slices/authSlice";
-import { setProjectCosts } from "@slices/projectSlice";
+const activeTabArr = ['project', 'features', 'planning_units']
 
-const activeTabArr = ["project", "features", "planning_units"];
+function InfoPanel(props) {
+  const dispatch = useDispatch()
+  const { showMessage } = useAppSnackbar()
+  const uiState = useSelector(state => state.ui)
+  const puState = useSelector(state => state.planningUnit)
+  const dialogStates = useSelector(state => state.ui.dialogStates)
+  const userData = useSelector(selectCurrentUser)
 
-const InfoPanel = (props) => {
-  const dispatch = useDispatch();
-  const { showMessage } = useAppSnackbar();
-  const uiState = useSelector((state) => state.ui);
-  const projState = useSelector((state) => state.project);
-  const puState = useSelector((state) => state.planningUnit);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const userData = useSelector(selectCurrentUser);
+  const [editingProjectName, setEditingProjectName] = useState(false)
+  const [editingDescription, setEditingDescription] = useState(false)
 
-  const [editingProjectName, setEditingProjectName] = useState(false);
-  const [editingDescription, setEditingDescription] = useState(false);
+  const [currentTabIndex, setCurrentTabIndex] = useState(0)
 
-  const [showProtectedAreas, setShowProtectedAreas] = useState(false);
-  const [showCosts, setShowCosts] = useState(false);
-  const [showStatuses, setShowStatuses] = useState(true);
-  const [currentTabIndex, setCurrentTabIndex] = useState(0);
-
-  const projectNameRef = useRef(null);
-  const descriptionEditRef = useRef(null);
+  const projectNameRef = useRef(null)
+  const descriptionEditRef = useRef(null)
 
   // get project features (selectedIds) and get all features. Then filter all features down by selectedIds
-  const selectedIds = useSelector((s) => s.feature.selectedFeatureIds);
-  const { data: allFeaturesResp } =
-    featureApiSlice.endpoints.getAllFeatures.useQuery();
-  const allFeatures = allFeaturesResp?.data ?? [];
-  const projectFeatures = allFeatures.filter((f) => selectedIds.includes(f.id));
+  const selectedIds = useSelector(s => s.feature.selectedFeatureIds)
+  const { data: allFeaturesResp }
+    = featureApiSlice.endpoints.getAllFeatures.useQuery()
+  const allFeatures = allFeaturesResp?.data ?? []
+  const projectFeatures = allFeatures.filter(f => selectedIds.includes(f.id))
 
   useEffect(() => {
     if (editingProjectName && projectNameRef.current) {
-      projectNameRef.current.value = props.project?.name;
-      projectNameRef.current.focus();
+      projectNameRef.current.value = props.project?.name
+      projectNameRef.current.focus()
     }
 
     if (editingDescription && descriptionEditRef.current) {
-      descriptionEditRef.current.value = props.metadata.DESCRIPTION;
-      descriptionEditRef.current.focus();
+      descriptionEditRef.current.value = props.metadata.DESCRIPTION
+      descriptionEditRef.current.focus()
     }
   }, [
     editingProjectName,
     editingDescription,
     props.project,
     props.metadata.DESCRIPTION,
-  ]);
+  ])
 
   useEffect(() => {
     if (uiState.activeTab) {
-      setCurrentTabIndex(activeTabArr.indexOf(uiState.activeTab));
+      setCurrentTabIndex(activeTabArr.indexOf(uiState.activeTab))
     }
-  }, []);
+  }, [])
 
-  //preprocess synchronously, i.e. one after another
+  // preprocess synchronously, i.e. one after another
   const preprocessAllFeatures = async () => {
-    const todo = projectFeatures.filter((f) => !f.preprocessed);
+    const todo = projectFeatures.filter(f => !f.preprocessed)
     if (!todo.length) {
-      showMessage("All features are already preprocessed", "info");
-      return;
+      showMessage('All features are already preprocessed', 'info')
+      return
     }
     for (const feature of todo) {
-      await preprocessFeature(feature);
+      await preprocessFeature(feature)
     }
-  };
+  }
 
   const preprocessFeature = async (feature) => {
-    const project_id = props.project?.id;
-    const pu_id = props.project?.planning_unit_id;
-    const planning_grid_name = props.metadata;
+    const project_id = props.project?.id
+    const pu_id = props.project?.planning_unit_id
     try {
       // Switch to the log tab
-      dispatch(setActiveTab("log"));
+      dispatch(setActiveTab('log'))
 
       // Call the WebSocket
-      const url = `preprocessFeature?project_id=${project_id}&feature_id=${feature.id}&planning_grid_id=${pu_id}&feature_class_name=${feature.feature_class_name}`;
+      const url = `preprocessFeature?project_id=${project_id}&feature_id=${feature.id}&planning_grid_id=${pu_id}&feature_class_name=${feature.feature_class_name}`
 
-      const message = await props.handleWebSocket(url);
+      const message = await props.handleWebSocket(url)
 
       // Update feature with new data
       props.updateFeature(feature.id, {
@@ -106,130 +95,105 @@ const InfoPanel = (props) => {
         pu_count: Number(message.pu_count),
         pu_area: Number(message.pu_area),
         occurs_in_planning_grid: Number(message.pu_count) > 0,
-      });
+      })
 
-      return message;
-    } catch (error) {
-      console.error("Error preprocessing feature:", error);
-      throw error; // Re-throw the error to handle it further up the call stack if needed
+      return message
     }
-  };
+    catch (error) {
+      console.error('Error preprocessing feature:', error)
+      throw error // Re-throw the error to handle it further up the call stack if needed
+    }
+  }
 
   const handleKeyPress = (e) => {
     if (e.nativeEvent.keyCode === 13 || e.nativeEvent.keyCode === 27) {
-      e.target.blur(); // call the onBlur event which will call the REST service to rename the project
+      e.target.blur() // call the onBlur event which will call the REST service to rename the project
     }
-  };
+  }
 
   const handleBlur = (e) => {
-    if (e.target.id === "projectName") {
+    if (e.target.id === 'projectName') {
       props.renameProject(e.target.value).then(() => {
-        setEditingProjectName(false);
-      });
-    } else {
-      props.renameDescription(e.target.value).then(() => {
-        setEditingDescription(false);
-      });
+        setEditingProjectName(false)
+      })
     }
-  };
+    else {
+      props.renameDescription(e.target.value).then(() => {
+        setEditingDescription(false)
+      })
+    }
+  }
 
   const startEditingProjectName = () => {
     if (props.project) {
-      setEditingProjectName(true);
+      setEditingProjectName(true)
     }
-  };
-
-  const startEditingDescription = () => {
-    if (props.project) {
-      setEditingDescription(true);
-    }
-  };
+  }
 
   const titleStyle = useMemo(
     () => ({
-      position: "absolute",
-      left: "39px",
-      top: "32px",
-      width: "365px",
-      border: "1px lightgray solid",
+      position: 'absolute',
+      left: '39px',
+      top: '32px',
+      width: '365px',
+      border: '1px lightgray solid',
     }),
     [],
-  );
+  )
   const panelStyle = useMemo(
     () => ({
-      top: "60px",
+      top: '60px',
     }),
     [],
-  );
-  const iconStyle = useMemo(
-    () => ({
-      color: "white",
-      height: "16px",
-      marginTop: "4px",
-      marginBottom: "2px",
-      marginRight: "5px",
-    }),
-    [],
-  );
+  )
 
   const handleChange = (e) => {
-    console.log("e ", e);
-    return e.target.id === "projectName"
+    return e.target.id === 'projectName'
       ? props.renameProject(e.target.value)
-      : props.renameDescription(e.target.value);
-  };
+      : props.renameDescription(e.target.value)
+  }
 
   const toggleProjectPrivacy = (evt, isInputChecked) => {
-    const checkedString = isInputChecked ? "True" : "False";
-    props.toggleProjectPrivacy(checkedString);
-  };
-
-  const stopProcess = () => props.stopProcess(props.pid);
+    const checkedString = isInputChecked ? 'True' : 'False'
+    props.toggleProjectPrivacy(checkedString)
+  }
 
   // const togglePlanningUnits = (event, isInputChecked) => {
   //   setShowPlanningGrid(!showPlanningGrid);
   //   props.togglePULayer(isInputChecked);
   // };
 
-  const toggleProtectedAreas = (event, isInputChecked) => {
-    setShowProtectedAreas(!showProtectedAreas);
-    props.togglePALayer(isInputChecked);
-  };
-
-  const toggleCosts = (event, isInputChecked) => {
-    setShowCosts(!showCosts);
-    props.toggleCostsLayer(isInputChecked);
-  };
-
-  const toggleStatuses = (event, isInputChecked) => {
-    setShowStatuses(!showStatuses);
-    props.toggleStatuses(isInputChecked);
-  };
-
   const handleTabChange = (evt, tabIndex) => {
-    setCurrentTabIndex(tabIndex);
+    setCurrentTabIndex(tabIndex)
     if (tabIndex === 0) {
-      dispatch(setActiveTab("project"));
-      props.setPUTabInactive();
+      dispatch(setActiveTab('project'))
+      props.setPUTabInactive()
     }
     if (tabIndex === 1) {
-      dispatch(setActiveTab("features"));
-      props.setPUTabInactive();
+      dispatch(setActiveTab('features'))
+      props.setPUTabInactive()
     }
     if (tabIndex === 2) {
-      props.setPUTabActive();
+      props.setPUTabActive()
     }
-  };
+  }
 
   const combinedDisplayStyles = {
     ...panelStyle,
     // Hide via visibility-style fallback when closed; otherwise preserve the
     // flex layout from panelStyle (a `display: block` override here would
     // collapse the column flex container and let the panel grow off-screen).
-    ...(dialogStates.infoPanelOpen ? {} : { display: "none" }),
-  };
-  const titleDisplayStyle = { display: editingProjectName ? "block" : "none" };
-  const combinedDisplayStyle = { ...titleStyle, ...titleDisplayStyle };
+    ...(dialogStates.infoPanelOpen
+      ? {}
+      : { display: 'none' }),
+  }
+  const titleDisplayStyle = {
+    display: editingProjectName ? 'block' : 'none',
+  }
+  const combinedDisplayStyle = {
+    ...titleStyle,
+    ...titleDisplayStyle,
+  }
 
   return (
     <React.Fragment>
@@ -238,27 +202,29 @@ const InfoPanel = (props) => {
           elevation={2}
           className="InfoPanelPaper"
           sx={{
-            display: "flex",
-            flexDirection: "column",
+            display: 'flex',
+            flexDirection: 'column',
             // .infoPanel starts at top:60px, .InfoPanelPaper has margin:20px
             // (CSS class), so total reserved = 60 (top offset) + 20 (top
             // margin) + 20 (bottom margin) = 100. Cap height so the Paper
             // plus its margins never push past the viewport.
-            maxHeight: "calc(100vh - 100px)",
-            overflow: "hidden",
+            maxHeight: 'calc(100vh - 100px)',
+            overflow: 'hidden',
           }}
         >
           <PanelHeader>
-            {editingProjectName ? null : (
-              <span
-                onClick={startEditingProjectName}
-                className="projectNameEditBox"
-                title="Click to rename the project"
-                style={{ cursor: "pointer" }}
-              >
-                {props.project?.name || "Untitled project"}
-              </span>
-            )}
+            {editingProjectName
+              ? null
+              : (
+                  <span
+                    onClick={startEditingProjectName}
+                    className="projectNameEditBox"
+                    title="Click to rename the project"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {props.project?.name || 'Untitled project'}
+                  </span>
+                )}
             <input
               id="projectName"
               ref={projectNameRef}
@@ -275,7 +241,7 @@ const InfoPanel = (props) => {
             <Tab label="Planning units" value={2} />
           </Tabs>
 
-          <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             {currentTabIndex === 0 && (
               <ProjectTabContent
                 project={props.project}
@@ -333,15 +299,14 @@ const InfoPanel = (props) => {
                 onClick={() =>
                   dispatch(
                     toggleDialog({
-                      dialogName: "runPrioritizrDialogOpen",
+                      dialogName: 'runPrioritizrDialogOpen',
                       isOpen: true,
                     }),
-                  )
-                }
+                  )}
                 disabled={
-                  props.preprocessing ||
-                  projectFeatures.length === 0 ||
-                  puState.puEditing
+                  props.preprocessing
+                  || projectFeatures.length === 0
+                  || puState.puEditing
                 }
                 key="runButton"
               >
@@ -352,7 +317,7 @@ const InfoPanel = (props) => {
         </Paper>
       </div>
     </React.Fragment>
-  );
-};
+  )
+}
 
-export default InfoPanel;
+export default InfoPanel

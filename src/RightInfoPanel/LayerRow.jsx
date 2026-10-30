@@ -1,13 +1,11 @@
-import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import Slider from "@mui/material/Slider";
-import Typography from "@mui/material/Typography";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import { useState } from "react";
-
-export const formatPct = (v) => (v === 0 ? "Off" : `${Math.round(v * 100)}%`);
-export const formatPx = (v) => (v === 0 ? "Off" : `${v}px`);
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import Box from '@mui/material/Box'
+import IconButton from '@mui/material/IconButton'
+import Slider from '@mui/material/Slider'
+import Typography from '@mui/material/Typography'
+import { useState } from 'react'
+import { formatPct } from '../Helpers'
 
 // One Legend-tab block, always fully shown:
 //   [eye]  name                  value
@@ -15,7 +13,7 @@ export const formatPx = (v) => (v === 0 ? "Off" : `${v}px`);
 //          key (children)
 // Blocks stack with a hairline between them. Pass `icon` to replace the eye
 // (cell outlines has no visibility toggle).
-const LayerRow = ({
+function LayerRow({
   name,
   value,
   onChange,
@@ -25,28 +23,35 @@ const LayerRow = ({
   format = formatPct,
   icon,
   children,
-}) => {
+}) {
   // last non-zero value, restored when the eye is turned back on
-  const [restore, setRestore] = useState(0.5);
-  const visible = value > 0;
+  const [restore, setRestore] = useState(0.5)
+  const visible = value > 0
 
   const toggle = () => {
     if (visible) {
-      setRestore(value);
-      onChange(0);
-    } else {
-      onChange(restore);
+      setRestore(value)
+      onChange(0)
     }
-  };
+    else {
+      onChange(restore)
+    }
+  }
 
   return (
     <Box
       sx={{
-        py: "11px",
-        "& + &": { borderTop: 1, borderColor: "brand.border" },
+        'py': '11px',
+        '& + &': { borderTop: 1, borderColor: 'brand.border' },
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minHeight: 26 }}>
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.25,
+        minHeight: 26,
+      }}
+      >
         {icon ?? (
           <IconButton
             onClick={toggle}
@@ -54,41 +59,48 @@ const LayerRow = ({
             aria-label={`Show ${name}`}
             aria-pressed={visible}
             sx={{
-              p: 0,
-              width: 20,
-              height: 20,
-              color: visible ? "primary.main" : "brand.muted",
-              "&.Mui-focusVisible, &:focus-visible": {
-                outline: "2px solid",
-                outlineColor: "primary.main",
-                outlineOffset: "2px",
+              'p': 0,
+              'width': 20,
+              'height': 20,
+              'color': visible ? 'primary.main' : 'brand.muted',
+              '&.Mui-focusVisible, &:focus-visible': {
+                outline: '2px solid',
+                outlineColor: 'primary.main',
+                outlineOffset: '2px',
               },
             }}
           >
-            {visible ? (
-              <VisibilityIcon sx={{ fontSize: 20 }} />
-            ) : (
-              <VisibilityOffIcon sx={{ fontSize: 20 }} />
-            )}
+            {visible
+              ? (
+                  <VisibilityIcon sx={{ fontSize: 20 }} />
+                )
+              : (
+                  <VisibilityOffIcon sx={{ fontSize: 20 }} />
+                )}
           </IconButton>
         )}
         <Typography
           noWrap
-          sx={{ flex: 1, fontSize: 14, fontWeight: 600, color: "text.primary" }}
+          sx={{
+            flex: 1,
+            fontSize: 14,
+            fontWeight: 600,
+            color: 'text.primary',
+          }}
         >
           {name}
         </Typography>
         <Typography
           sx={{
             fontSize: 13,
-            color: "text.secondary",
-            fontVariantNumeric: "tabular-nums",
+            color: 'text.secondary',
+            fontVariantNumeric: 'tabular-nums',
           }}
         >
           {format(value)}
         </Typography>
       </Box>
-      <Box sx={{ pl: "30px", pr: 0.5 }}>
+      <Box sx={{ pl: '30px', pr: 0.5 }}>
         <Slider
           size="small"
           min={min}
@@ -96,20 +108,23 @@ const LayerRow = ({
           step={step}
           value={value}
           onChange={(e, v) => {
-            if (v > 0) setRestore(v);
-            onChange(v);
+            if (v > 0)
+              setRestore(v)
+            onChange(v)
           }}
-          aria-label={icon ? name : `Opacity, ${name}`}
+          aria-label={icon
+            ? name
+            : `Opacity, ${name}`}
           getAriaValueText={format}
         />
       </Box>
       {children && (
-        <Box sx={{ pl: "30px", fontSize: 12, color: "text.secondary" }}>
+        <Box sx={{ pl: '30px', fontSize: 12, color: 'text.secondary' }}>
           {children}
         </Box>
       )}
     </Box>
-  );
-};
+  )
+}
 
-export default LayerRow;
+export default LayerRow

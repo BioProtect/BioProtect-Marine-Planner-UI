@@ -4,9 +4,11 @@ Web client for BioProtect, a spatial conservation planning tool built on Priorit
 
 ## Commands
 
-- `npm start` — Vite dev server on http://localhost:4500
-- `npm test` — Vitest
-- `npm run build` — production build into `build/`
+- `pnpm start` - Vite dev server on http://localhost:4500
+- `pnpm test` - Vitest
+- `pnpm run build` - production build into `build/`
+- `pnpm run lint --fix` - ESLint (`@antfu/eslint-config`) with autofix
+- `pnpm run ci` - lint + knip + tests; must pass before committing (the pre-commit hook runs it)
 
 Backend URL comes from `VITE_API_BASE_URL` (see `src/config/api`); a running marxan-server instance is required for most functionality.
 
@@ -14,11 +16,11 @@ Backend URL comes from `VITE_API_BASE_URL` (see `src/config/api`); a running mar
 
 **Before modifying code in a subdirectory, read its AGENTS.md first** to understand local patterns and invariants.
 
-- **Source**: `src/AGENTS.md` — app architecture, state management rules, path aliases
+- **Source**: `src/AGENTS.md` - app architecture, state management rules, path aliases
 
 ### Global Invariants
 
 - ES modules only (`"type": "module"`); JSX lives in `.jsx` files.
 - Import via the path aliases defined in `vite.config.ts` (`@slices`, `@features`, `@store`, etc.), not deep relative paths.
-- All server state goes through RTK Query endpoints injected into `src/slices/apiSlice.js` — never `fetch`/axios directly from components.
+- All server state goes through RTK Query endpoints injected into `src/slices/apiSlice.js` - never `fetch`/axios directly from components.
 - MUI 5 components for UI; prefer `@mui/icons-material` icons over inline SVGs.

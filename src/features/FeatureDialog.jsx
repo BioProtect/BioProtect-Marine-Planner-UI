@@ -1,74 +1,73 @@
-import React, { useState } from "react";
+import LinkIcon from '@mui/icons-material/Link'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableRow from '@mui/material/TableRow'
+import Typography from '@mui/material/Typography'
+import { selectCurrentUser } from '@slices/authSlice'
+import { toggleFeatureD, useListFeatureProjectsQuery } from '@slices/featureSlice'
 import {
   setProjectList,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   toggleProjDialog,
-} from "@slices/projectSlice";
-import { useDispatch, useSelector } from "react-redux";
+} from '@slices/projectSlice'
+import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import BPTableRow from '../BPComponents/BPTableRow'
+import BPDialog from '../BPDialog'
+import { getArea } from '../Helpers'
+import MapContainer2 from '../MapContainer2'
 
-import BPDialog from "../BPDialog";
-import BPTableRow from "../BPComponents/BPTableRow";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import LinkIcon from "@mui/icons-material/Link";
-import MapContainer2 from "../MapContainer2";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
-import { getArea } from "../Helpers";
-import { selectCurrentUser } from "@slices/authSlice";
-import { toggleFeatureD } from "@slices/featureSlice";
-import { useListFeatureProjectsQuery } from "@slices/featureSlice";
+function FeatureDialog({ getTilesetMetadata }) {
+  const dispatch = useDispatch()
+  const uiState = useSelector(state => state.ui)
+  const featureState = useSelector(state => state.feature)
+  const featureDialogs = useSelector(state => state.feature.dialogs)
+  const userData = useSelector(selectCurrentUser)
 
-const FeatureDialog = ({ getTilesetMetadata }) => {
-  const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const featureState = useSelector((state) => state.feature);
-  const featureDialogs = useSelector((state) => state.feature.dialogs);
-  const userData = useSelector(selectCurrentUser);
+  const { data: featureProjectsData }
+    = useListFeatureProjectsQuery(featureState.featureMetadata.id)
+  const projects = featureProjectsData?.projects || []
 
-  const { data: featureProjectsData, isLoading: isFeatureProjectsLoading } =
-    useListFeatureProjectsQuery(featureState.featureMetadata.id);
-  const projects = featureProjectsData?.projects || [];
+  const [expanded, setExpanded] = useState(false)
 
-  const [expanded, setExpanded] = useState(false);
-
-  const toggleExpand = () => setExpanded(!expanded);
+  const toggleExpand = () => setExpanded(!expanded)
 
   const fetchProjectList = () => {
-    dispatch(setProjectList(projects));
-    dispatch(setProjectListDialogHeading("Projects list"));
+    dispatch(setProjectList(projects))
+    dispatch(setProjectListDialogHeading('Projects list'))
     dispatch(
       setProjectListDialogTitle(
-        "The feature is used in the following projects:",
+        'The feature is used in the following projects:',
       ),
-    );
+    )
     dispatch(
       toggleProjDialog({
-        dialogName: "projectsListDialogOpen",
+        dialogName: 'projectsListDialogOpen',
         isOpen: true,
       }),
-    );
-  };
+    )
+  }
 
   // Determine unit type and value
-  const isShapefile =
-    featureState.featureMetadata.source === "Imported shapefile";
+  const isShapefile
+    = featureState.featureMetadata.source === 'Imported shapefile'
   const amount = isShapefile
     ? getArea(featureState.featureMetadata.area, userData?.report_units, true)
-    : featureState.featureMetadata.area;
-  const unit = isShapefile ? "Area" : "Amount";
+    : featureState.featureMetadata.area
+  const unit = isShapefile ? 'Area' : 'Amount'
 
   const closeDialog = () =>
     dispatch(
       toggleFeatureD({
-        dialogName: "featureDialogOpen",
+        dialogName: 'featureDialogOpen',
         isOpen: false,
       }),
-    );
+    )
 
   return (
     <BPDialog
@@ -131,13 +130,13 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
                   />
                   <BPTableRow
                     val1="Projects:"
-                    val2={
+                    val2={(
                       <LinkIcon
                         onClick={fetchProjectList}
                         title="View a list of projects that this feature is used in"
-                        style={{ cursor: "pointer", paddingTop: "6px" }}
+                        style={{ cursor: 'pointer', paddingTop: '6px' }}
                       />
-                    }
+                    )}
                   />
                 </>
               )}
@@ -147,15 +146,15 @@ const FeatureDialog = ({ getTilesetMetadata }) => {
             <Button
               variant="text"
               onClick={toggleExpand}
-              title={expanded ? "Show less details" : "Show more details"}
+              title={expanded ? 'Show less details' : 'Show more details'}
             >
-              {expanded ? "less" : "more.."}
+              {expanded ? 'less' : 'more..'}
             </Button>
           </Box>
         </Box>
       </Box>
     </BPDialog>
-  );
-};
+  )
+}
 
-export default FeatureDialog;
+export default FeatureDialog

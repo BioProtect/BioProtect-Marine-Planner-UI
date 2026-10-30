@@ -1,135 +1,122 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import useAppSnackbar from '@hooks/useAppSnackbar'
+import { selectCurrentUserId } from '@slices/authSlice'
+import { toggleProjDialog, useListProjectsQuery } from '@slices/projectSlice'
 
-import BPDialog from "../BPDialog";
-import BioprotectTable from "../BPComponents/BioprotectTable";
-import ConfirmDeleteDialog from "../BPComponents/ConfirmDeleteDialog";
-import ProjectsToolbar from "./ProjectsToolbar";
-import { generateTableCols } from "../Helpers";
-import { resolutionLabel } from "../bpVars.jsx";
-import { selectCurrentUserId } from "@slices/authSlice";
-import { toggleProjDialog } from "@slices/projectSlice";
-import { useListProjectsQuery } from "@slices/projectSlice";
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import BioprotectTable from '../BPComponents/BioprotectTable'
+import ConfirmDeleteDialog from '../BPComponents/ConfirmDeleteDialog'
+import BPDialog from '../BPDialog'
+import { resolutionLabel } from '../bpVars'
+import { generateTableCols } from '../Helpers'
+import ProjectsToolbar from './ProjectsToolbar'
 
-const ProjectsDialog = ({
-  loading,
-  oldVersion,
-  deleteProject,
-  loadProject,
-  cloneProject,
-  exportProject,
-  userRole,
-  unauthorisedMethods,
-  loadProjectAndSetup,
-}) => {
-  const dispatch = useDispatch();
-  const userId = useSelector(selectCurrentUserId);
+function ProjectsDialog({ loading, deleteProject, cloneProject, exportProject, userRole, unauthorisedMethods, loadProjectAndSetup }) {
+  const dispatch = useDispatch()
+  const userId = useSelector(selectCurrentUserId)
+  const { showMessage } = useAppSnackbar()
 
-  const projDialogs = useSelector((state) => state.project.dialogs);
+  const projDialogs = useSelector(state => state.project.dialogs)
 
-  const { data: projectsResp = {}, isFetching } = useListProjectsQuery(userId, {
+  const { data: projectsResp = {} } = useListProjectsQuery(userId, {
     skip: !userId,
-  });
+  })
   const projects = useMemo(
     () =>
-      (projectsResp.projects ?? []).map((p) => ({
+      (projectsResp.projects ?? []).map(p => ({
         ...p,
         resolution: resolutionLabel(p.resolution),
       })),
     [projectsResp.projects],
-  );
-  const activeProjectId = useSelector((state) => state.project.activeProjectId);
-  const [selectedProjectId, setSelectedProjectId] = useState(activeProjectId);
-  const project = projects.find((p) => p.id === selectedProjectId);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  )
+  const activeProjectId = useSelector(state => state.project.activeProjectId)
+  const [selectedProjectId, setSelectedProjectId] = useState(activeProjectId)
+  const project = projects.find(p => p.id === selectedProjectId)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   useEffect(() => {
-    setSelectedProjectId(activeProjectId);
-  }, [activeProjectId]);
+    setSelectedProjectId(activeProjectId)
+  }, [activeProjectId])
 
   const loadAndClose = useCallback(async () => {
     try {
       dispatch(
-        toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
-      );
-      await loadProjectAndSetup(selectedProjectId);
-    } catch (error) {
-      showMessage("Failed to load project", "error");
+        toggleProjDialog({ dialogName: 'projectsDialogOpen', isOpen: false }),
+      )
+      await loadProjectAndSetup(selectedProjectId)
     }
-  }, [dispatch, selectedProjectId]);
+    catch {
+      showMessage('Failed to load project', 'error')
+    }
+  }, [dispatch, selectedProjectId])
 
   const handleDeleteProject = useCallback(() => {
-    if (!project) return;
-    setConfirmDeleteOpen(false);
-    deleteProject(project.id);
-  }, [project]);
+    if (!project)
+      return
+    setConfirmDeleteOpen(false)
+    deleteProject(project.id)
+  }, [project])
 
   const handleCloneProject = useCallback(() => {
-    if (!project) return;
-    cloneProject(project.user, project.name);
-  }, [project]);
+    if (!project)
+      return
+    cloneProject(project.user, project.name)
+  }, [project])
 
   const handleExportProject = useCallback(() => {
-    if (!project) return;
+    if (!project)
+      return
     exportProject(project.user, project.name).then((url) => {
-      window.location = url;
-    });
-  }, [project]);
+      window.location = url
+    })
+  }, [project])
 
   const handleProjectChange = (event, row) => {
-    const projectId = row?.id;
+    const projectId = row?.id
     if (!projectId) {
-      console.warn("Invalid project selected");
-      return;
+      console.warn('Invalid project selected')
+      return
     }
-    setSelectedProjectId(projectId);
-  };
-
-  const sortDate = useCallback((a, b, desc) => {
-    const dateA = new Date(a.split("/").reverse().join(" "));
-    const dateB = new Date(b.split("/").reverse().join(" "));
-
-    if (dateA > dateB) {
-      return desc ? -1 : 1;
-    } else if (dateA < dateB) {
-      return desc ? 1 : -1;
-    } else {
-      return 0;
-    }
-  }, []);
+    setSelectedProjectId(projectId)
+  }
 
   const baseColumns = [
-    { id: "name", label: "name" },
-    { id: "description", label: "description" },
-    { id: "createdate", label: "created date" },
-    { id: "resolution", label: "resolution" },
-  ];
+    { id: 'name', label: 'name' },
+    { id: 'description', label: 'description' },
+    { id: 'createdate', label: 'created date' },
+    { id: 'resolution', label: 'resolution' },
+  ]
 
-  const tableColumns = ["Admin", "ReadOnly"].includes(userRole)
-    ? [...baseColumns, { id: "user_id", label: "user_id" }]
-    : baseColumns;
+  const tableColumns = ['Admin', 'ReadOnly'].includes(userRole)
+    ? [
+        ...baseColumns,
+        { id: 'user_id', label: 'user_id' },
+      ]
+    : baseColumns
 
-  const columns = generateTableCols(tableColumns);
+  const columns = generateTableCols(tableColumns)
 
   const closeDialog = () => {
     dispatch(
-      toggleProjDialog({ dialogName: "projectsDialogOpen", isOpen: false }),
-    );
-  };
+      toggleProjDialog({ dialogName: 'projectsDialogOpen', isOpen: false }),
+    )
+  }
 
   if (projects) {
     return (
       <BPDialog
         open={projDialogs.projectsDialogOpen}
         loading={loading}
-        okLabel={userRole === "ReadOnly" ? "Open (Read-only)" : "Open"}
+        okLabel={userRole === 'ReadOnly'
+          ? 'Open (Read-only)'
+          : 'Open'}
         onOk={loadAndClose}
         onCancel={() => closeDialog()}
         okDisabled={!project}
         showCancelButton={true}
         autoDetectWindowHeight={false}
         title="Projects"
-        actions={
+        actions={(
           <ProjectsToolbar
             userRole={userRole}
             unauthorisedMethods={unauthorisedMethods}
@@ -137,9 +124,9 @@ const ProjectsDialog = ({
             exportProject={handleExportProject}
             cloneProject={handleCloneProject}
             handleDelete={() => setConfirmDeleteOpen(true)}
-            canDelete={project?.role === "owner"}
+            canDelete={project?.role === 'owner'}
           />
-        }
+        )}
       >
         <div id="projectsTable">
           <BioprotectTable
@@ -149,7 +136,7 @@ const ProjectsDialog = ({
             selected={[selectedProjectId]}
             ableToSelectAll={false}
             showSearchBox={true}
-            searchColumns={["user", "name", "description"]}
+            searchColumns={['user', 'name', 'description']}
             clickRow={handleProjectChange}
             isProject={true}
             preview={false}
@@ -162,17 +149,21 @@ const ProjectsDialog = ({
           onConfirm={handleDeleteProject}
         >
           <p>Are you sure you want to delete the project</p>
-          <b>{project?.name}?</b>
+          <b>
+            {project?.name}
+            ?
+          </b>
           <p>
             This removes its planning units, cost profiles, runs and results,
             and cannot be undone. Features and planning grids are not deleted.
           </p>
         </ConfirmDeleteDialog>
       </BPDialog>
-    );
-  } else {
-    return null;
+    )
   }
-};
+  else {
+    return null
+  }
+}
 
-export default ProjectsDialog;
+export default ProjectsDialog

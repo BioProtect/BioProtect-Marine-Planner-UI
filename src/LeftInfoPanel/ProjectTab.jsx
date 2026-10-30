@@ -1,60 +1,59 @@
-import Box from "@mui/material/Box";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import { selectCurrentUser } from "@slices/authSlice";
-import { useSelector } from "react-redux";
-import { useState } from "react";
+import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import { selectCurrentUser } from '@slices/authSlice'
+import { useState } from 'react'
+import { useSelector } from 'react-redux'
 
-const ProjectTabContent = ({
-  toggleProjectPrivacy,
-  updateDetails,
-  metadata,
-  project,
-}) => {
-  const userData = useSelector(selectCurrentUser);
-  const uiState = useSelector((state) => state.ui);
-  const [editing, setEditing] = useState(false);
+function ProjectTabContent({ updateDetails, metadata, project }) {
+  const userData = useSelector(selectCurrentUser)
+  const uiState = useSelector(state => state.ui)
+  const [editing, setEditing] = useState(false)
   const handleChange = (e) => {
-    setEditing(false);
-    updateDetails(e);
-  };
+    setEditing(false)
+    updateDetails(e)
+  }
   return (
     <div>
       <Card sx={{ minWidth: 275 }}>
         <CardContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Typography variant="h5" component="div">
               Description
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {editing ? (
-                <TextField
-                  id="descriptionEdit"
-                  variant="standard" // clean underline style
-                  value={project.description}
-                  autoFocus
-                  onChange={(e) => handleChange(e.target.value)}
-                  onBlur={() => setEditing(false)} // leave edit mode on blur
-                  InputProps={{ disableUnderline: false }}
-                  fullWidth
-                />
-              ) : (
-                <span
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setEditing(true)}
-                >
-                  {project.description || "Click to add a description"}
-                </span>
-              )}
+              {editing
+                ? (
+                    <TextField
+                      id="descriptionEdit"
+                      variant="standard" // clean underline style
+                      value={project.description}
+                      autoFocus
+                      onChange={e => handleChange(e.target.value)}
+                      onBlur={() => setEditing(false)} // leave edit mode on blur
+                      InputProps={{ disableUnderline: false }}
+                      fullWidth
+                    />
+                  )
+                : (
+                    <span
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setEditing(true)}
+                    >
+                      {project.description || 'Click to add a description'}
+                    </span>
+                  )}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {metadata.pu_count?.toLocaleString() ?? "-"} hexes ·{" "}
+              {metadata.pu_count?.toLocaleString() ?? '-'}
+              {' '}
+              hexes ·
+              {' '}
               {metadata.area_km2 != null
                 ? `${Math.round(metadata.area_km2).toLocaleString()} km²`
-                : "-"}
+                : '-'}
               {metadata.crs_epsg != null && ` · EPSG:${metadata.crs_epsg}`}
             </Typography>
             <Typography variant="h5" component="div">
@@ -63,9 +62,9 @@ const ProjectTabContent = ({
 
             <Typography variant="body2">
               <span className="createDate">
-                {" "}
+                {' '}
                 {new Date(
-                  metadata.createdate.split(".")[0] + "Z"
+                  `${metadata.createdate.split('.')[0]}Z`,
                 ).toLocaleString()}
               </span>
             </Typography>
@@ -84,7 +83,7 @@ const ProjectTabContent = ({
         </CardContent>
       </Card>
     </div>
-  );
-};
+  )
+}
 
-export default ProjectTabContent;
+export default ProjectTabContent

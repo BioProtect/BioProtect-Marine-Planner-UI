@@ -1,58 +1,53 @@
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { Divider } from '@mui/material'
+import Checkbox from '@mui/material/Checkbox'
 
-import BPDialog from "../BPDialog";
-import Checkbox from "@mui/material/Checkbox";
-import { Divider } from "@mui/material";
-import FormControl from "@mui/material/FormControl";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormGroup from "@mui/material/FormGroup";
-import FormLabel from "@mui/material/FormLabel";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import Select from "@mui/material/Select";
-import { selectCurrentUser } from "@slices/authSlice";
-import { setBasemap } from "@slices/uiSlice";
-import { toggleDialog } from "@slices/uiSlice";
+import FormControl from '@mui/material/FormControl'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import FormGroup from '@mui/material/FormGroup'
+import FormLabel from '@mui/material/FormLabel'
+import InputLabel from '@mui/material/InputLabel'
+import MenuItem from '@mui/material/MenuItem'
+import Radio from '@mui/material/Radio'
+import RadioGroup from '@mui/material/RadioGroup'
+import Select from '@mui/material/Select'
+import { selectCurrentUser } from '@slices/authSlice'
+import { setBasemap, toggleDialog } from '@slices/uiSlice'
+import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import BPDialog from '../BPDialog'
 
-const UserSettingsDialog = (props) => {
-  const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const [saveEnabled, setSaveEnabled] = useState(false);
-  const [options, setOptions] = useState({});
-  const userData = useSelector(selectCurrentUser);
+function UserSettingsDialog(props) {
+  const dispatch = useDispatch()
+  const uiState = useSelector(state => state.ui)
+  const [, setSaveEnabled] = useState(false)
+  const [, setOptions] = useState({})
+  const userData = useSelector(selectCurrentUser)
 
   const setOption = (key, value) => {
-    setSaveEnabled(true);
+    setSaveEnabled(true)
     setOptions((prevOptions) => {
-      const newOptions = { ...prevOptions, [key]: value };
-      props.saveOptions(newOptions);
-      return newOptions;
-    });
-  };
+      const newOptions = { ...prevOptions, [key]: value }
+      props.saveOptions(newOptions)
+      return newOptions
+    })
+  }
 
   const changeBasemap = (event) => {
     const basemap = uiState.basemaps.find(
-      (item) => item.name === event.target.value,
-    );
-    dispatch(setBasemap(basemap));
-    setOption("BASEMAP", basemap.name);
-    props.loadBasemap(basemap);
-  };
+      item => item.name === event.target.value,
+    )
+    dispatch(setBasemap(basemap))
+    setOption('BASEMAP', basemap.name)
+    props.loadBasemap(basemap)
+  }
 
   const toggleUseFeatureColors = (event) => {
-    setOption("USEFEATURECOLORS", event.target.checked);
-  };
-
-  const toggleShowWelcomeScreen = (event) => {
-    setOption("SHOWWELCOMESCREEN", event.target.checked);
-  };
+    setOption('USEFEATURECOLORS', event.target.checked)
+  }
 
   const setReportUnit = (event) => {
-    setOption("report_units", event.target.value);
-  };
+    setOption('report_units', event.target.value)
+  }
 
   return (
     <BPDialog
@@ -62,11 +57,10 @@ const UserSettingsDialog = (props) => {
       onOk={() =>
         dispatch(
           toggleDialog({
-            dialogName: "userSettingsDialogOpen",
+            dialogName: 'userSettingsDialogOpen',
             isOpen: false,
           }),
-        )
-      }
+        )}
       title="Settings"
     >
       <div key="k14">
@@ -80,11 +74,11 @@ const UserSettingsDialog = (props) => {
             fullWidth
             onChange={changeBasemap}
           >
-            {uiState.basemaps.map((item) => (
+            {uiState.basemaps.map(item => (
               <MenuItem
                 key={item.name}
                 value={item.name}
-                style={{ fontSize: "12px" }}
+                style={{ fontSize: '12px' }}
                 title={item.description}
               >
                 {item.alias}
@@ -110,18 +104,18 @@ const UserSettingsDialog = (props) => {
 
         <FormGroup>
           <FormControlLabel
-            control={
+            control={(
               <Checkbox
                 checked={userData?.use_feature_colors}
                 onChange={toggleUseFeatureColors}
               />
-            }
+            )}
             label="Use Feature Colours"
           />
         </FormGroup>
       </div>
     </BPDialog>
-  );
-};
+  )
+}
 
-export default UserSettingsDialog;
+export default UserSettingsDialog

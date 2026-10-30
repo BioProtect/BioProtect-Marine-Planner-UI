@@ -1,257 +1,245 @@
-import {
-  setActivities,
-  setUploadedActivities,
-  toggleDialog,
-} from "@slices/uiSlice";
-import { useCallback, useEffect, useRef, useState } from "react";
+import AddCircleIcon from '@mui/icons-material/AddCircle'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import DeleteIcon from '@mui/icons-material/Delete'
+import FileUploadIcon from '@mui/icons-material/FileUpload'
+
+import PlayCircleIcon from '@mui/icons-material/PlayCircle'
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import ButtonGroup from '@mui/material/ButtonGroup'
+import Checkbox from '@mui/material/Checkbox'
+import Chip from '@mui/material/Chip'
+import FormControl from '@mui/material/FormControl'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import InputLabel from '@mui/material/InputLabel'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
+import Stack from '@mui/material/Stack'
+import Tab from '@mui/material/Tab'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import Tabs from '@mui/material/Tabs'
+import TextField from '@mui/material/TextField'
+import ToggleButton from '@mui/material/ToggleButton'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
 import {
   useDeleteCostRasterMutation,
   useListCostRastersQuery,
   useSetCostRasterVisibilityMutation,
-} from "@slices/costRasterSlice";
-import { useDispatch, useSelector } from "react-redux";
+} from '@slices/costRasterSlice'
+import { useGetAllFeaturesQuery } from '@slices/featureSlice'
+import {
+  setActivities,
+  setUploadedActivities,
+  toggleDialog,
+} from '@slices/uiSlice'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import ConfirmDeleteDialog from '../BPComponents/ConfirmDeleteDialog'
+import BPDialog from '../BPDialog'
+import FileUpload from '../Uploads/FileUpload'
 
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import Alert from "@mui/material/Alert";
-import BPDialog from "../BPDialog";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ConfirmDeleteDialog from "../BPComponents/ConfirmDeleteDialog";
-import Checkbox from "@mui/material/Checkbox";
-import Chip from "@mui/material/Chip";
-import DeleteIcon from "@mui/icons-material/Delete";
-import FileUpload from "../Uploads/FileUpload";
-import FileUploadIcon from "@mui/icons-material/FileUpload";
-import FormControl from "@mui/material/FormControl";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import PlayCircleIcon from "@mui/icons-material/PlayCircle";
-import Select from "@mui/material/Select";
-import Stack from "@mui/material/Stack";
-import Tab from "@mui/material/Tab";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Tabs from "@mui/material/Tabs";
-import TextField from "@mui/material/TextField";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
-import { useGetAllFeaturesQuery } from "@slices/featureSlice";
-
-const CumulativeImpactDialog = ({
-  _get,
-  userRole,
-  deleteCost,
-  activateCostProfile,
-  runCumulativeImpact,
-  uploadRasterCost,
-  createCostProfileFromRaster,
-  getRasterBandInfo,
-  fileUpload,
-  handleWebSocket,
-  startLogging,
-}) => {
-  const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projState = useSelector((state) => state.project);
+function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfile, runCumulativeImpact, uploadRasterCost, createCostProfileFromRaster, getRasterBandInfo, fileUpload }) {
+  const dispatch = useDispatch()
+  const uiState = useSelector(state => state.ui)
+  const dialogStates = useSelector(state => state.ui.dialogStates)
+  const projState = useSelector(state => state.project)
   const selectedFeatureIds = useSelector(
-    (state) => state.feature.selectedFeatureIds,
-  );
-  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
-  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+    state => state.feature.selectedFeatureIds,
+  )
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery()
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? []
 
-  const [tabIndex, setTabIndex] = useState(0);
-  const [searchText, setSearchText] = useState("");
-  const [selectedProfileId, setSelectedProfileId] = useState(null);
+  const [tabIndex, setTabIndex] = useState(0)
+  const [searchText, setSearchText] = useState('')
+  const [selectedProfileId, setSelectedProfileId] = useState(null)
 
   // Activities tab state
-  const [selectedActivityIds, setSelectedActivityIds] = useState([]);
-  const [profileName, setProfileName] = useState("");
-  const [profileDescription, setProfileDescription] = useState("");
+  const [selectedActivityIds, setSelectedActivityIds] = useState([])
+  const [profileName, setProfileName] = useState('')
+  const [profileDescription, setProfileDescription] = useState('')
 
-  // Raster cost profile tab (tab 2) state — scoped here so it does not
+  // Raster cost profile tab (tab 2) state - scoped here so it does not
   // leak into the activities tab.
-  const [rasterFilename, setRasterFilename] = useState("");
-  const [rasterProfileName, setRasterProfileName] = useState("");
-  const [rasterProfileDescription, setRasterProfileDescription] = useState("");
-  const [rasterBandInfo, setRasterBandInfo] = useState(null);
-  const [rasterBand, setRasterBand] = useState(1);
-  const [rasterStat, setRasterStat] = useState("mean");
-  const [rasterNormalise, setRasterNormalise] = useState(true);
-  const [rasterFloor, setRasterFloor] = useState(0.001);
-  const [rasterFillStrategy, setRasterFillStrategy] = useState("median");
-  const [rasterSetActive, setRasterSetActive] = useState(true);
-  const [rasterExactSampling, setRasterExactSampling] = useState(false);
+  const [rasterFilename, setRasterFilename] = useState('')
+  const [rasterProfileName, setRasterProfileName] = useState('')
+  const [rasterProfileDescription, setRasterProfileDescription] = useState('')
+  const [rasterBandInfo, setRasterBandInfo] = useState(null)
+  const [rasterBand, setRasterBand] = useState(1)
+  const [rasterStat, setRasterStat] = useState('mean')
+  const [rasterNormalise, setRasterNormalise] = useState(true)
+  const [rasterFloor, setRasterFloor] = useState(0.001)
+  const [rasterFillStrategy, setRasterFillStrategy] = useState('median')
+  const [rasterSetActive, setRasterSetActive] = useState(true)
+  const [rasterExactSampling, setRasterExactSampling] = useState(false)
 
   // Raster source: a fresh upload, or a raster that was extracted earlier
   // and whose file is long gone (only its per-hex values survive).
-  const [rasterSource, setRasterSource] = useState("upload");
-  const [selectedRasterId, setSelectedRasterId] = useState(null);
-  const [rasterToDelete, setRasterToDelete] = useState(null);
-  const [rasterDeleteError, setRasterDeleteError] = useState("");
+  const [rasterSource, setRasterSource] = useState('upload')
+  const [selectedRasterId, setSelectedRasterId] = useState(null)
+  const [rasterToDelete, setRasterToDelete] = useState(null)
+  const [rasterDeleteError, setRasterDeleteError] = useState('')
 
-  const activeProjectId = projState.activeProjectId;
-  const { data: rasterLibraryResp, refetch: refetchRasters } =
-    useListCostRastersQuery(activeProjectId, {
+  const activeProjectId = projState.activeProjectId
+  const { data: rasterLibraryResp, refetch: refetchRasters }
+    = useListCostRastersQuery(activeProjectId, {
       skip: tabIndex !== 2 || !activeProjectId,
-    });
-  const cachedRasters = rasterLibraryResp?.data ?? [];
-  const [setRasterVisibility] = useSetCostRasterVisibilityMutation();
-  const [deleteCostRaster] = useDeleteCostRasterMutation();
-  const selectedRaster = cachedRasters.find((r) => r.id === selectedRasterId);
+    })
+  const cachedRasters = rasterLibraryResp?.data ?? []
+  const [setRasterVisibility] = useSetCostRasterVisibilityMutation()
+  const [deleteCostRaster] = useDeleteCostRasterMutation()
+  const selectedRaster = cachedRasters.find(r => r.id === selectedRasterId)
 
-  const costProfiles = projState.projectCosts || [];
+  const costProfiles = projState.projectCosts || []
 
-  const filteredProfiles = costProfiles.filter((p) =>
+  const filteredProfiles = costProfiles.filter(p =>
     p.name?.toLowerCase().includes(searchText.toLowerCase()),
-  );
+  )
 
   const filteredActivities = uiState.uploadedActivities.filter(
-    (activity) =>
-      activity.activity?.toLowerCase().includes(searchText.toLowerCase()) ||
-      activity.description?.toLowerCase().includes(searchText.toLowerCase()),
-  );
+    activity =>
+      activity.activity?.toLowerCase().includes(searchText.toLowerCase())
+      || activity.description?.toLowerCase().includes(searchText.toLowerCase()),
+  )
 
   // Preprocessing checks
-  const projectFeatures = allFeatures.filter((f) =>
+  const projectFeatures = allFeatures.filter(f =>
     selectedFeatureIds.includes(f.id),
-  );
-  const preprocessedFeatures = projectFeatures.filter((f) => f.preprocessed);
-  const unprocessedFeatures = projectFeatures.filter((f) => !f.preprocessed);
-  const allPreprocessed =
-    projectFeatures.length > 0 && unprocessedFeatures.length === 0;
-  const nonePreprocessed =
-    projectFeatures.length === 0 || preprocessedFeatures.length === 0;
+  )
+  const preprocessedFeatures = projectFeatures.filter(f => f.preprocessed)
+  const unprocessedFeatures = projectFeatures.filter(f => !f.preprocessed)
+  const allPreprocessed
+    = projectFeatures.length > 0 && unprocessedFeatures.length === 0
+  const nonePreprocessed
+    = projectFeatures.length === 0 || preprocessedFeatures.length === 0
 
   // Pre-select the active cost profile when the dialog opens
-  const activeProfile = costProfiles.find((p) => p.is_active);
+  const activeProfile = costProfiles.find(p => p.is_active)
 
   // Load activities once when the dialog opens
-  const dialogOpen = dialogStates.cumulativeImpactDialogOpen;
-  const [activitiesLoaded, setActivitiesLoaded] = useState(false);
+  const dialogOpen = dialogStates.cumulativeImpactDialogOpen
+  const [activitiesLoaded, setActivitiesLoaded] = useState(false)
 
   useEffect(() => {
     if (dialogOpen) {
-      setSelectedProfileId(activeProfile?.id ?? null);
+      setSelectedProfileId(activeProfile?.id ?? null)
     }
-  }, [dialogOpen, activeProfile?.id]);
+  }, [dialogOpen, activeProfile?.id])
 
   useEffect(() => {
     if (dialogOpen && !activitiesLoaded) {
-      setActivitiesLoaded(true);
-      _get("getUploadedActivities").then((resp) => {
+      setActivitiesLoaded(true)
+      _get('getUploadedActivities').then((resp) => {
         if (resp?.data) {
-          dispatch(setUploadedActivities(resp.data));
+          dispatch(setUploadedActivities(resp.data))
         }
-      });
+      })
     }
     if (!dialogOpen) {
-      setActivitiesLoaded(false);
+      setActivitiesLoaded(false)
     }
-  }, [dialogOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dialogOpen]) // eslint-disable-line react/exhaustive-deps
 
   const openHumanActivitiesDialog = useCallback(async () => {
     if (uiState.activities.length < 1) {
-      const response = await _get("getActivities");
-      const data = JSON.parse(response.data);
-      dispatch(setActivities(data));
+      const response = await _get('getActivities')
+      const data = JSON.parse(response.data)
+      dispatch(setActivities(data))
     }
     dispatch(
-      toggleDialog({ dialogName: "humanActivitiesDialogOpen", isOpen: true }),
-    );
-  }, [_get, uiState.activities, dispatch]);
+      toggleDialog({ dialogName: 'humanActivitiesDialogOpen', isOpen: true }),
+    )
+  }, [_get, uiState.activities, dispatch])
 
-  const selectedProfile = costProfiles.find((p) => p.id === selectedProfileId);
+  const selectedProfile = costProfiles.find(p => p.id === selectedProfileId)
 
   const handleActivateProfile = useCallback(async () => {
     if (selectedProfileId && activateCostProfile) {
-      await activateCostProfile(selectedProfileId);
+      await activateCostProfile(selectedProfileId)
     }
-  }, [selectedProfileId, activateCostProfile]);
+  }, [selectedProfileId, activateCostProfile])
 
   const handleDeleteCost = useCallback(async () => {
     if (selectedProfile && deleteCost) {
-      const response = await deleteCost(selectedProfile.id);
+      const response = await deleteCost(selectedProfile.id)
       if (!response?.error) {
-        setSelectedProfileId(null);
+        setSelectedProfileId(null)
       }
     }
-  }, [selectedProfile, deleteCost]);
+  }, [selectedProfile, deleteCost])
 
   const toggleActivitySelection = (id, e) => {
-    if (e) e.stopPropagation();
-    setSelectedActivityIds((prev) =>
+    if (e)
+      e.stopPropagation()
+    setSelectedActivityIds(prev =>
       prev.includes(id)
-        ? prev.filter((activityId) => activityId !== id)
+        ? prev.filter(activityId => activityId !== id)
         : [...prev, id],
-    );
-  };
+    )
+  }
 
   const toggleProfileSelection = (id, e) => {
-    if (e) e.stopPropagation();
-    setSelectedProfileId((prev) => (prev === id ? null : id));
-  };
+    if (e)
+      e.stopPropagation()
+    setSelectedProfileId(prev => (prev === id
+      ? null
+      : id))
+  }
 
   const handleRunCumulativeImpact = async () => {
     const response = await runCumulativeImpact(
       selectedActivityIds,
       profileName,
       profileDescription,
-    );
+    )
     if (!response?.error) {
-      setSelectedActivityIds([]);
-      setProfileName("");
-      setProfileDescription("");
-      setTabIndex(0);
+      setSelectedActivityIds([])
+      setProfileName('')
+      setProfileDescription('')
+      setTabIndex(0)
     }
-  };
+  }
 
-  // Probe band count / metadata once a raster has been uploaded.
-  //
-  // Hard-guard against effect-loops: we track the last filename we already
-  // fetched for in a ref, and short-circuit if it matches. Even if the
-  // effect re-fires (StrictMode double-invoke, parent re-renders that
-  // change a captured prop's identity, dialog remount, etc.) the network
-  // request only goes out once per actual filename change. This is what
-  // stopped the login flash where getRasterBandInfo was firing in a
-  // tight loop with incrementing JSONP callback IDs.
-  const lastProbedFilenameRef = useRef("");
+  // Probe raster metadata once per filename. The ref guard stops effect
+  // re-fires (StrictMode, prop identity changes, remounts) from looping the
+  // JSONP request, which caused the login flash.
+  const lastProbedFilenameRef = useRef('')
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     if (!rasterFilename || !getRasterBandInfo) {
-      setRasterBandInfo(null);
-      lastProbedFilenameRef.current = "";
-      return;
+      setRasterBandInfo(null)
+      lastProbedFilenameRef.current = ''
+      return
     }
     if (lastProbedFilenameRef.current === rasterFilename) {
       // Already fetched info for this filename; do not re-issue.
-      return;
+      return
     }
     lastProbedFilenameRef.current = rasterFilename;
     (async () => {
-      const info = await getRasterBandInfo(rasterFilename);
-      if (cancelled) return;
-      setRasterBandInfo(info);
+      const info = await getRasterBandInfo(rasterFilename)
+      if (cancelled)
+        return
+      setRasterBandInfo(info)
       // Reset band selection to 1 whenever a new raster comes in.
-      setRasterBand(1);
-    })();
+      setRasterBand(1)
+    })()
     return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rasterFilename]);
+      cancelled = true
+    }
+    // eslint-disable-next-line react/exhaustive-deps
+  }, [rasterFilename])
 
   const handleUploadRasterCost = async () => {
-    if (!uploadRasterCost) return;
+    if (!uploadRasterCost)
+      return
     const response = await uploadRasterCost(
       rasterFilename,
       rasterProfileName,
@@ -263,23 +251,24 @@ const CumulativeImpactDialog = ({
         floor: rasterFloor,
         fillStrategy: rasterFillStrategy,
         setActive: rasterSetActive,
-        sampling: rasterExactSampling ? "exact" : "auto",
+        sampling: rasterExactSampling ? 'exact' : 'auto',
       },
-    );
+    )
     if (!response?.error) {
       // Reset tab 2 state, jump back to Cost Profiles list.
-      setRasterFilename("");
-      setRasterProfileName("");
-      setRasterProfileDescription("");
-      setRasterBandInfo(null);
-      setRasterBand(1);
-      setTabIndex(0);
+      setRasterFilename('')
+      setRasterProfileName('')
+      setRasterProfileDescription('')
+      setRasterBandInfo(null)
+      setRasterBand(1)
+      setTabIndex(0)
     }
-  };
+  }
 
   // Reuse a raster that was extracted earlier - no upload, no raster IO.
   const handleCreateFromCachedRaster = async () => {
-    if (!createCostProfileFromRaster || !selectedRasterId) return;
+    if (!createCostProfileFromRaster || !selectedRasterId)
+      return
     const response = await createCostProfileFromRaster(
       selectedRasterId,
       rasterProfileName,
@@ -290,81 +279,86 @@ const CumulativeImpactDialog = ({
         fillStrategy: rasterFillStrategy,
         setActive: rasterSetActive,
       },
-    );
+    )
     if (!response?.error) {
-      setSelectedRasterId(null);
-      setRasterProfileName("");
-      setRasterProfileDescription("");
-      setTabIndex(0);
+      setSelectedRasterId(null)
+      setRasterProfileName('')
+      setRasterProfileDescription('')
+      setTabIndex(0)
     }
-  };
+  }
 
   const handleToggleRasterVisibility = async (raster) => {
     await setRasterVisibility({
       rasterId: raster.id,
-      visibility: raster.visibility === "shared" ? "private" : "shared",
-    });
-    refetchRasters();
-  };
+      visibility: raster.visibility === 'shared'
+        ? 'private'
+        : 'shared',
+    })
+    refetchRasters()
+  }
 
   const handleDeleteCachedRaster = async () => {
-    const raster = rasterToDelete;
-    setRasterToDelete(null);
-    const response = await deleteCostRaster(raster.id);
+    const raster = rasterToDelete
+    setRasterToDelete(null)
+    const response = await deleteCostRaster(raster.id)
     // the server answers errors with 200 + {error}
-    const error = response?.data?.error ?? response?.error;
+    const error = response?.data?.error ?? response?.error
     if (error) {
       setRasterDeleteError(
-        typeof error === "string" ? error : `Could not delete "${raster.name}".`,
-      );
-      return;
+        typeof error === 'string'
+          ? error
+          : `Could not delete "${raster.name}".`,
+      )
+      return
     }
-    setRasterDeleteError("");
-    if (selectedRasterId === raster.id) setSelectedRasterId(null);
-    refetchRasters();
-  };
+    setRasterDeleteError('')
+    if (selectedRasterId === raster.id)
+      setSelectedRasterId(null)
+    refetchRasters()
+  }
 
-  const canUploadRasterCost =
-    !uiState.loading &&
-    rasterFilename !== "" &&
-    rasterProfileName !== "" &&
-    rasterFloor > 0 &&
-    rasterFloor < 1 &&
-    userRole !== "ReadOnly";
+  const canUploadRasterCost
+    = !uiState.loading
+      && rasterFilename !== ''
+      && rasterProfileName !== ''
+      && rasterFloor > 0
+      && rasterFloor < 1
+      && userRole !== 'ReadOnly'
 
-  const canUseCachedRaster =
-    !uiState.loading &&
-    selectedRasterId != null &&
-    rasterProfileName !== "" &&
-    rasterFloor > 0 &&
-    rasterFloor < 1 &&
-    userRole !== "ReadOnly";
+  const canUseCachedRaster
+    = !uiState.loading
+      && selectedRasterId != null
+      && rasterProfileName !== ''
+      && rasterFloor > 0
+      && rasterFloor < 1
+      && userRole !== 'ReadOnly'
 
-  const canRunImpact =
-    !uiState.loading &&
-    selectedActivityIds.length > 0 &&
-    profileName !== "" &&
-    userRole !== "ReadOnly" &&
-    !nonePreprocessed;
+  const canRunImpact
+    = !uiState.loading
+      && selectedActivityIds.length > 0
+      && profileName !== ''
+      && userRole !== 'ReadOnly'
+      && !nonePreprocessed
 
   const closeDialog = () => {
-    setSelectedProfileId(null);
-    setSearchText("");
-    setSelectedActivityIds([]);
-    setProfileName("");
-    setProfileDescription("");
-    setRasterFilename("");
-    setRasterProfileName("");
-    setRasterProfileDescription("");
-    setRasterBandInfo(null);
-    setRasterBand(1);
+    setSelectedProfileId(null)
+    setSearchText('')
+    setSelectedActivityIds([])
+    setProfileName('')
+    setProfileDescription('')
+    setRasterFilename('')
+    setRasterProfileName('')
+    setRasterProfileDescription('')
+    setRasterBandInfo(null)
+    setRasterBand(1)
     dispatch(
       toggleDialog({
-        dialogName: "cumulativeImpactDialogOpen",
+        dialogName: 'cumulativeImpactDialogOpen',
         isOpen: false,
       }),
-    );
-  };
+    )
+  }
 
   return (
     <BPDialog
@@ -379,7 +373,7 @@ const CumulativeImpactDialog = ({
       searchTextChanged={setSearchText}
       fullWidth={true}
     >
-      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 1 }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1 }}>
         <Tabs value={tabIndex} onChange={(e, v) => setTabIndex(v)}>
           <Tab label="Cost Profiles" />
           <Tab label="Activities and Cumulative Impact" />
@@ -400,17 +394,17 @@ const CumulativeImpactDialog = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredProfiles.map((profile) => (
+                {filteredProfiles.map(profile => (
                   <TableRow
                     key={profile.id}
                     hover
                     selected={selectedProfileId === profile.id}
                     onClick={() => toggleProfileSelection(profile.id)}
-                    sx={{ cursor: "pointer" }}
+                    sx={{ cursor: 'pointer' }}
                   >
                     <TableCell
                       padding="checkbox"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                     >
                       <Checkbox
                         checked={selectedProfileId === profile.id}
@@ -452,10 +446,10 @@ const CumulativeImpactDialog = ({
               title="Set selected cost profile as active"
               onClick={handleActivateProfile}
               disabled={
-                !selectedProfile ||
-                selectedProfile.is_active ||
-                uiState.loading ||
-                userRole === "ReadOnly"
+                !selectedProfile
+                || selectedProfile.is_active
+                || uiState.loading
+                || userRole === 'ReadOnly'
               }
             >
               Activate
@@ -467,10 +461,10 @@ const CumulativeImpactDialog = ({
               title="Delete selected cost profile"
               onClick={handleDeleteCost}
               disabled={
-                !selectedProfile ||
-                selectedProfile.is_active ||
-                uiState.loading ||
-                userRole === "ReadOnly"
+                !selectedProfile
+                || selectedProfile.is_active
+                || uiState.loading
+                || userRole === 'ReadOnly'
               }
             >
               Delete
@@ -491,28 +485,39 @@ const CumulativeImpactDialog = ({
 
           {!allPreprocessed && !nonePreprocessed && (
             <Alert severity="warning" sx={{ mb: 2 }}>
-              {preprocessedFeatures.length} of {projectFeatures.length} features
+              {preprocessedFeatures.length}
+              {' '}
+              of
+              {projectFeatures.length}
+              {' '}
+              features
               preprocessed.
               {unprocessedFeatures.length > 0 && (
                 <>
-                  {" "}
-                  Missing:{" "}
+                  {' '}
+                  Missing:
+                  {' '}
                   {unprocessedFeatures
                     .slice(0, 5)
-                    .map((f) => f.alias)
-                    .join(", ")}
-                  {unprocessedFeatures.length > 5 &&
-                    ` and ${unprocessedFeatures.length - 5} more`}
+                    .map(f => f.alias)
+                    .join(', ')}
+                  {unprocessedFeatures.length > 5
+                    && ` and ${unprocessedFeatures.length - 5} more`}
                   .
                 </>
-              )}{" "}
+              )}
+              {' '}
               Unprocessed features will be excluded.
             </Alert>
           )}
 
           {allPreprocessed && (
             <Alert severity="success" sx={{ mb: 2 }}>
-              All {projectFeatures.length} features preprocessed.
+              All
+              {' '}
+              {projectFeatures.length}
+              {' '}
+              features preprocessed.
             </Alert>
           )}
 
@@ -529,17 +534,17 @@ const CumulativeImpactDialog = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredActivities.map((activity) => (
+                {filteredActivities.map(activity => (
                   <TableRow
                     key={activity.id}
                     selected={selectedActivityIds.includes(activity.id)}
                     onClick={() => toggleActivitySelection(activity.id)}
                     hover
-                    sx={{ cursor: "pointer" }}
+                    sx={{ cursor: 'pointer' }}
                   >
                     <TableCell
                       padding="checkbox"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                     >
                       <Checkbox
                         checked={selectedActivityIds.includes(activity.id)}
@@ -571,7 +576,7 @@ const CumulativeImpactDialog = ({
           <TextField
             fullWidth
             value={profileName}
-            onChange={(e) => setProfileName(e.target.value)}
+            onChange={e => setProfileName(e.target.value)}
             label="Cost profile name"
             variant="outlined"
             size="small"
@@ -581,7 +586,7 @@ const CumulativeImpactDialog = ({
           <TextField
             fullWidth
             value={profileDescription}
-            onChange={(e) => setProfileDescription(e.target.value)}
+            onChange={e => setProfileDescription(e.target.value)}
             label="Description"
             variant="outlined"
             size="small"
@@ -595,7 +600,7 @@ const CumulativeImpactDialog = ({
               startIcon={<AddCircleIcon />}
               title="Upload a new activity"
               onClick={openHumanActivitiesDialog}
-              disabled={uiState.loading || userRole === "ReadOnly"}
+              disabled={uiState.loading || userRole === 'ReadOnly'}
             >
               Add Activity
             </Button>
@@ -604,8 +609,8 @@ const CumulativeImpactDialog = ({
               startIcon={<PlayCircleIcon />}
               title={
                 nonePreprocessed
-                  ? "Preprocess features first"
-                  : "Run cumulative impact"
+                  ? 'Preprocess features first'
+                  : 'Run cumulative impact'
               }
               onClick={handleRunCumulativeImpact}
               disabled={!canRunImpact}
@@ -624,7 +629,7 @@ const CumulativeImpactDialog = ({
             this project. Values are sampled per hex with exactextract,
             log-normalised to [floor, 1] so no hex is ever zero-cost, and saved
             as a new cost profile. The raster is sampled against every planning
-            hex it covers — all areas and resolutions — then deleted, so you can
+            hex it covers - all areas and resolutions - then deleted, so you can
             reuse it later without uploading it again.
           </Alert>
 
@@ -637,156 +642,180 @@ const CumulativeImpactDialog = ({
           >
             <ToggleButton value="upload">Upload a raster</ToggleButton>
             <ToggleButton value="library">
-              Reuse an extracted raster ({cachedRasters.length})
+              Reuse an extracted raster (
+              {cachedRasters.length}
+              )
             </ToggleButton>
           </ToggleButtonGroup>
 
-          {rasterSource === "upload" ? (
-            <FileUpload
-              fileUpload={fileUpload}
-              fileMatch=".tif,.tiff"
-              mandatory={true}
-              filename={rasterFilename}
-              setFilename={setRasterFilename}
-              destFolder="imports"
-              label="Upload Raster (.tif)"
-              style={{ paddingTop: "10px" }}
-            />
-          ) : cachedRasters.length === 0 ? (
-            <Alert severity="warning">
-              No extracted rasters available yet. Upload one and it will appear
-              here for every future project.
-            </Alert>
-          ) : (
-            <TableContainer sx={{ maxHeight: 220 }}>
-              <Table size="small" stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell padding="checkbox" />
-                    <TableCell>Raster</TableCell>
-                    <TableCell align="right">Covers this project</TableCell>
-                    <TableCell align="center">Visibility</TableCell>
-                    <TableCell align="center" />
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {cachedRasters.map((r) => (
-                    <TableRow
-                      key={r.id}
-                      hover
-                      selected={r.id === selectedRasterId}
-                      onClick={() => setSelectedRasterId(r.id)}
-                      sx={{ cursor: "pointer" }}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          size="small"
-                          checked={r.id === selectedRasterId}
-                          onChange={() => setSelectedRasterId(r.id)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {r.name}
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ display: "block" }}
-                        >
-                          band {r.band} · {r.stat} ·{" "}
-                          {(r.hex_count ?? 0).toLocaleString()} hexes cached
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        {r.project_total
-                          ? `${r.project_coverage_pct}% (${(
-                              r.project_covered ?? 0
-                            ).toLocaleString()})`
-                          : "—"}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Tooltip
-                          title={
-                            r.can_manage
-                              ? "Click to change who can reuse this raster"
-                              : "Shared with you by another user"
-                          }
-                        >
-                          <span>
-                            <Chip
-                              size="small"
-                              label={r.visibility}
-                              color={
-                                r.visibility === "shared"
-                                  ? "primary"
-                                  : "default"
-                              }
-                              variant={
-                                r.visibility === "shared"
-                                  ? "filled"
-                                  : "outlined"
-                              }
-                              disabled={!r.can_manage}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (r.can_manage) handleToggleRasterVisibility(r);
-                              }}
-                            />
-                          </span>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell align="center">
-                        {r.can_manage && userRole !== "ReadOnly" ? (
-                          <Button
-                            size="small"
-                            color="error"
-                            startIcon={<DeleteIcon />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRasterToDelete(r);
-                            }}
+          {rasterSource === 'upload'
+            ? (
+                <FileUpload
+                  fileUpload={fileUpload}
+                  fileMatch=".tif,.tiff"
+                  mandatory={true}
+                  filename={rasterFilename}
+                  setFilename={setRasterFilename}
+                  destFolder="imports"
+                  label="Upload Raster (.tif)"
+                  style={{ paddingTop: '10px' }}
+                />
+              )
+            : cachedRasters.length === 0
+              ? (
+                  <Alert severity="warning">
+                    No extracted rasters available yet. Upload one and it will appear
+                    here for every future project.
+                  </Alert>
+                )
+              : (
+                  <TableContainer sx={{ maxHeight: 220 }}>
+                    <Table size="small" stickyHeader>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell padding="checkbox" />
+                          <TableCell>Raster</TableCell>
+                          <TableCell align="right">Covers this project</TableCell>
+                          <TableCell align="center">Visibility</TableCell>
+                          <TableCell align="center" />
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {cachedRasters.map(r => (
+                          <TableRow
+                            key={r.id}
+                            hover
+                            selected={r.id === selectedRasterId}
+                            onClick={() => setSelectedRasterId(r.id)}
+                            sx={{ cursor: 'pointer' }}
                           >
-                            Delete
-                          </Button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
+                            <TableCell padding="checkbox">
+                              <Checkbox
+                                size="small"
+                                checked={r.id === selectedRasterId}
+                                onChange={() => setSelectedRasterId(r.id)}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              {r.name}
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: 'block' }}
+                              >
+                                band
+                                {' '}
+                                {r.band}
+                                {' '}
+                                ·
+                                {' '}
+                                {r.stat}
+                                {' '}
+                                ·
+                                {' '}
+                                {(r.hex_count ?? 0).toLocaleString()}
+                                {' '}
+                                hexes cached
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              {r.project_total
+                                ? `${r.project_coverage_pct}% (${(
+                                  r.project_covered ?? 0
+                                ).toLocaleString()})`
+                                : '–'}
+                            </TableCell>
+                            <TableCell align="center">
+                              <Tooltip
+                                title={
+                                  r.can_manage
+                                    ? 'Click to change who can reuse this raster'
+                                    : 'Shared with you by another user'
+                                }
+                              >
+                                <span>
+                                  <Chip
+                                    size="small"
+                                    label={r.visibility}
+                                    color={
+                                      r.visibility === 'shared'
+                                        ? 'primary'
+                                        : 'default'
+                                    }
+                                    variant={
+                                      r.visibility === 'shared'
+                                        ? 'filled'
+                                        : 'outlined'
+                                    }
+                                    disabled={!r.can_manage}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      if (r.can_manage)
+                                        handleToggleRasterVisibility(r)
+                                    }}
+                                  />
+                                </span>
+                              </Tooltip>
+                            </TableCell>
+                            <TableCell align="center">
+                              {r.can_manage && userRole !== 'ReadOnly'
+                                ? (
+                                    <Button
+                                      size="small"
+                                      color="error"
+                                      startIcon={<DeleteIcon />}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setRasterToDelete(r)
+                                      }}
+                                    >
+                                      Delete
+                                    </Button>
+                                  )
+                                : null}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
 
-          {rasterDeleteError ? (
-            <Alert
-              severity="error"
-              sx={{ mt: 1 }}
-              onClose={() => setRasterDeleteError("")}
-            >
-              {rasterDeleteError}
-            </Alert>
-          ) : null}
+          {rasterDeleteError
+            ? (
+                <Alert
+                  severity="error"
+                  sx={{ mt: 1 }}
+                  onClose={() => setRasterDeleteError('')}
+                >
+                  {rasterDeleteError}
+                </Alert>
+              )
+            : null}
 
-          {rasterSource === "library" && selectedRaster ? (
-            <Alert
-              severity={
-                selectedRaster.project_total &&
-                selectedRaster.project_coverage_pct === 0
-                  ? "error"
-                  : "info"
-              }
-              sx={{ mt: 1 }}
-            >
-              {selectedRaster.project_total &&
-              selectedRaster.project_coverage_pct === 0
-                ? "This raster has no cached values for this project's hexes — it may not reach this area, or not at this resolution. Re-upload it to extend coverage."
-                : `Band ${selectedRaster.band} and ${selectedRaster.stat} are baked into the cached values. Normalisation below is applied fresh for this project.`}
-            </Alert>
-          ) : null}
+          {rasterSource === 'library' && selectedRaster
+            ? (
+                <Alert
+                  severity={
+                    selectedRaster.project_total
+                    && selectedRaster.project_coverage_pct === 0
+                      ? 'error'
+                      : 'info'
+                  }
+                  sx={{ mt: 1 }}
+                >
+                  {selectedRaster.project_total
+                    && selectedRaster.project_coverage_pct === 0
+                    ? 'This raster has no cached values for this project\'s hexes - it may not reach this area, or not at this resolution. Re-upload it to extend coverage.'
+                    : `Band ${selectedRaster.band} and ${selectedRaster.stat} are baked into the cached values. Normalisation below is applied fresh for this project.`}
+                </Alert>
+              )
+            : null}
 
           <TextField
             fullWidth
             value={rasterProfileName}
-            onChange={(e) => setRasterProfileName(e.target.value)}
+            onChange={e => setRasterProfileName(e.target.value)}
             label="Cost profile name"
             variant="outlined"
             size="small"
@@ -796,7 +825,7 @@ const CumulativeImpactDialog = ({
           <TextField
             fullWidth
             value={rasterProfileDescription}
-            onChange={(e) => setRasterProfileDescription(e.target.value)}
+            onChange={e => setRasterProfileDescription(e.target.value)}
             label="Description"
             variant="outlined"
             size="small"
@@ -806,31 +835,35 @@ const CumulativeImpactDialog = ({
           />
 
           <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-            {rasterSource === "upload" &&
-            rasterBandInfo &&
-            rasterBandInfo.band_count > 1 ? (
-              <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel id="raster-band-label">Band</InputLabel>
-                <Select
-                  labelId="raster-band-label"
-                  label="Band"
-                  value={rasterBand}
-                  onChange={(e) => setRasterBand(Number(e.target.value))}
-                >
-                  {Array.from(
-                    { length: rasterBandInfo.band_count },
-                    (_, i) => i + 1,
-                  ).map((b) => (
-                    <MenuItem key={b} value={b}>
-                      Band {b}
-                      {rasterBandInfo.dtypes?.[b - 1]
-                        ? ` (${rasterBandInfo.dtypes[b - 1]})`
-                        : ""}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            ) : null}
+            {rasterSource === 'upload'
+              && rasterBandInfo
+              && rasterBandInfo.band_count > 1
+              ? (
+                  <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <InputLabel id="raster-band-label">Band</InputLabel>
+                    <Select
+                      labelId="raster-band-label"
+                      label="Band"
+                      value={rasterBand}
+                      onChange={e => setRasterBand(Number(e.target.value))}
+                    >
+                      {Array.from(
+                        { length: rasterBandInfo.band_count },
+                        (_, i) => i + 1,
+                      ).map(b => (
+                        <MenuItem key={b} value={b}>
+                          Band
+                          {' '}
+                          {b}
+                          {rasterBandInfo.dtypes?.[b - 1]
+                            ? ` (${rasterBandInfo.dtypes[b - 1]})`
+                            : ''}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )
+              : null}
 
             <FormControl
               size="small"
@@ -838,7 +871,9 @@ const CumulativeImpactDialog = ({
                 minWidth: 180,
                 // band + aggregation are fixed at extraction time; a cached
                 // raster already has them baked into its stored values.
-                display: rasterSource === "upload" ? undefined : "none",
+                display: rasterSource === 'upload'
+                  ? undefined
+                  : 'none',
               }}
             >
               <InputLabel id="raster-stat-label">Aggregation</InputLabel>
@@ -846,7 +881,7 @@ const CumulativeImpactDialog = ({
                 labelId="raster-stat-label"
                 label="Aggregation"
                 value={rasterStat}
-                onChange={(e) => setRasterStat(e.target.value)}
+                onChange={e => setRasterStat(e.target.value)}
               >
                 <MenuItem value="mean">Mean (default)</MenuItem>
                 <MenuItem value="sum">Sum</MenuItem>
@@ -867,7 +902,7 @@ const CumulativeImpactDialog = ({
                 labelId="raster-fill-label"
                 label="Fill uncovered hexes"
                 value={rasterFillStrategy}
-                onChange={(e) => setRasterFillStrategy(e.target.value)}
+                onChange={e => setRasterFillStrategy(e.target.value)}
               >
                 <MenuItem value="median">Median observed (default)</MenuItem>
                 <MenuItem value="floor">Floor</MenuItem>
@@ -880,9 +915,8 @@ const CumulativeImpactDialog = ({
               type="number"
               label="Floor"
               value={rasterFloor}
-              onChange={(e) =>
-                setRasterFloor(parseFloat(e.target.value) || 0.001)
-              }
+              onChange={e =>
+                setRasterFloor(Number.parseFloat(e.target.value) || 0.001)}
               inputProps={{ step: 0.001, min: 0.0001, max: 0.999 }}
               sx={{ width: 120 }}
               helperText="Min cost (>0)"
@@ -891,77 +925,97 @@ const CumulativeImpactDialog = ({
 
           <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
             <FormControlLabel
-              control={
+              control={(
                 <Checkbox
                   checked={rasterNormalise}
-                  onChange={(e) => setRasterNormalise(e.target.checked)}
+                  onChange={e => setRasterNormalise(e.target.checked)}
                 />
-              }
+              )}
               label="Apply log(X+1) normalisation"
             />
             <FormControlLabel
-              control={
+              control={(
                 <Checkbox
                   checked={rasterSetActive}
-                  onChange={(e) => setRasterSetActive(e.target.checked)}
+                  onChange={e => setRasterSetActive(e.target.checked)}
                 />
-              }
+              )}
               label="Set as active profile"
             />
-            {rasterSource === "upload" ? (
-              <Tooltip title="By default, resolutions whose hexes sit inside a single pixel are read with a fast centroid lookup, which gives the same value as the area-weighted mean. Tick this to force exactextract everywhere — much slower, but it blends pixels for hexes straddling a boundary.">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={rasterExactSampling}
-                      onChange={(e) => setRasterExactSampling(e.target.checked)}
+            {rasterSource === 'upload'
+              ? (
+                  <Tooltip title="By default, resolutions whose hexes sit inside a single pixel are read with a fast centroid lookup, which gives the same value as the area-weighted mean. Tick this to force exactextract everywhere - much slower, but it blends pixels for hexes straddling a boundary.">
+                    <FormControlLabel
+                      control={(
+                        <Checkbox
+                          checked={rasterExactSampling}
+                          onChange={e => setRasterExactSampling(e.target.checked)}
+                        />
+                      )}
+                      label="Force exact zonal stats (slow)"
                     />
-                  }
-                  label="Force exact zonal stats (slow)"
-                />
-              </Tooltip>
-            ) : null}
+                  </Tooltip>
+                )
+              : null}
           </Stack>
 
-          {rasterSource === "upload" && rasterBandInfo ? (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ display: "block", mt: 1 }}
-            >
-              Detected {rasterBandInfo.band_count} band
-              {rasterBandInfo.band_count === 1 ? "" : "s"} ·{" "}
-              {rasterBandInfo.width}×{rasterBandInfo.height} px · CRS{" "}
-              {rasterBandInfo.crs_epsg
-                ? `EPSG:${rasterBandInfo.crs_epsg}`
-                : "(non-standard — will be reprojected)"}
-            </Typography>
-          ) : null}
+          {rasterSource === 'upload' && rasterBandInfo
+            ? (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mt: 1 }}
+                >
+                  Detected
+                  {' '}
+                  {rasterBandInfo.band_count}
+                  {' '}
+                  band
+                  {rasterBandInfo.band_count === 1
+                    ? ''
+                    : 's'}
+                  {' '}
+                  ·
+                  {' '}
+                  {rasterBandInfo.width}
+                  ×
+                  {rasterBandInfo.height}
+                  {' '}
+                  px · CRS
+                  {' '}
+                  {rasterBandInfo.crs_epsg
+                    ? `EPSG:${rasterBandInfo.crs_epsg}`
+                    : '(non-standard - will be reprojected)'}
+                </Typography>
+              )
+            : null}
 
           <ButtonGroup
             aria-label="Raster cost actions"
             fullWidth
             sx={{ mt: 2 }}
           >
-            {rasterSource === "upload" ? (
-              <Button
-                startIcon={<FileUploadIcon />}
-                title="Extract the uploaded raster, cache it, and build a cost profile"
-                onClick={handleUploadRasterCost}
-                disabled={!canUploadRasterCost}
-              >
-                Create Cost Profile from Raster
-              </Button>
-            ) : (
-              <Button
-                startIcon={<AddCircleIcon />}
-                title="Build a cost profile from the cached values - no upload needed"
-                onClick={handleCreateFromCachedRaster}
-                disabled={!canUseCachedRaster}
-              >
-                Create Cost Profile from Cached Raster
-              </Button>
-            )}
+            {rasterSource === 'upload'
+              ? (
+                  <Button
+                    startIcon={<FileUploadIcon />}
+                    title="Extract the uploaded raster, cache it, and build a cost profile"
+                    onClick={handleUploadRasterCost}
+                    disabled={!canUploadRasterCost}
+                  >
+                    Create Cost Profile from Raster
+                  </Button>
+                )
+              : (
+                  <Button
+                    startIcon={<AddCircleIcon />}
+                    title="Build a cost profile from the cached values - no upload needed"
+                    onClick={handleCreateFromCachedRaster}
+                    disabled={!canUseCachedRaster}
+                  >
+                    Create Cost Profile from Cached Raster
+                  </Button>
+                )}
           </ButtonGroup>
         </>
       )}
@@ -973,26 +1027,43 @@ const CumulativeImpactDialog = ({
         onConfirm={handleDeleteCachedRaster}
       >
         <Typography>
-          Delete <strong>{rasterToDelete?.name}</strong> and its{" "}
-          {(rasterToDelete?.hex_count ?? 0).toLocaleString()} cached hex
+          Delete
+          {' '}
+          <strong>{rasterToDelete?.name}</strong>
+          {' '}
+          and its
+          {' '}
+          {(rasterToDelete?.hex_count ?? 0).toLocaleString()}
+          {' '}
+          cached hex
           values? To use it again you will have to re-upload the raster.
         </Typography>
-        {rasterToDelete?.visibility === "shared" ? (
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            This raster is shared — other users will lose access to it too.
-          </Alert>
-        ) : null}
-        {rasterToDelete?.profile_count > 0 ? (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            {rasterToDelete.profile_count} cost profile
-            {rasterToDelete.profile_count === 1 ? " was" : "s were"} built from
-            this raster. They keep their values, but will no longer show where
-            they came from.
-          </Alert>
-        ) : null}
+        {rasterToDelete?.visibility === 'shared'
+          ? (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                This raster is shared - other users will lose access to it too.
+              </Alert>
+            )
+          : null}
+        {rasterToDelete?.profile_count > 0
+          ? (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                {rasterToDelete.profile_count}
+                {' '}
+                cost profile
+                {rasterToDelete.profile_count === 1
+                  ? ' was'
+                  : 's were'}
+                {' '}
+                built from
+                this raster. They keep their values, but will no longer show where
+                they came from.
+              </Alert>
+            )
+          : null}
       </ConfirmDeleteDialog>
     </BPDialog>
-  );
-};
+  )
+}
 
-export default CumulativeImpactDialog;
+export default CumulativeImpactDialog
