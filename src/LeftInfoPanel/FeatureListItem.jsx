@@ -354,11 +354,6 @@ function FeatureListItem({
   const inputRef = useRef(null)
 
   useEffect(() => {
-    if (!editing)
-      setLocalTargetValue(target_value)
-  }, [target_value, editing])
-
-  useEffect(() => {
     if (editing) {
       inputRef.current?.focus()
       inputRef.current?.select()
@@ -384,8 +379,10 @@ function FeatureListItem({
 
   const startEdit = (evt) => {
     evt.stopPropagation()
-    if (!hasResult)
+    if (!hasResult) {
+      setLocalTargetValue(target_value)
       setEditing(true)
+    }
   }
 
   // ── Result cluster prop derivation ────────────────────────────────────────

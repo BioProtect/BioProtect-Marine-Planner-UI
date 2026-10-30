@@ -21,7 +21,6 @@ import ImportFeaturesDialog from '@features/ImportFeaturesDialog'
 import useAppSnackbar from '@hooks/useAppSnackbar'
 import useFeatureNotifications from '@hooks/useFeatureNotifications'
 // mapbox imports
-import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import PlanningGridDialog from '@planningGrids/PlanningGridDialog'
 import PlanningGridsDialog from '@planningGrids/PlanningGridsDialog'
 
@@ -99,7 +98,7 @@ import ClassyBrew from 'classybrew'
 // import { ThemeProvider } from "@mui/material/styles";
 import jsonp from 'jsonp-promise'
 import mapboxgl from 'mapbox-gl'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 // SERVICES
 import { useDispatch, useSelector } from 'react-redux'
 import packageJson from '../package.json'
@@ -182,7 +181,7 @@ function App() {
   })
 
   const project = projectResp?.project
-  const projectFeatures = projectResp?.features ?? []
+  const projectFeatures = useMemo(() => projectResp?.features ?? [], [projectResp?.features])
   const planningUnits = projectResp?.planning_units
   const metadata = projectResp?.metadata ?? {}
   const [renameProjectMutation] = useRenameProjectMutation()
@@ -232,7 +231,7 @@ function App() {
   const { data: allFeaturesResp, refetch: refetchAllFeatures } = useGetAllFeaturesQuery(undefined, {
     skip: !isLoggedIn,
   })
-  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? []
+  const allFeatures = useMemo(() => allFeaturesResp?.data ?? allFeaturesResp ?? [], [allFeaturesResp])
   useEffect(() => {
     allFeaturesRef.current = allFeatures
   }, [allFeatures])
@@ -250,7 +249,7 @@ function App() {
   const selectedRunIds = useSelector(s => s.prioritizr.selectedRunIds)
 
   useEffect(() => {
-    if (!map.current)
+    if (!mapRef.current)
       return
     if (!puLayerIdsRef.current?.resultsLayerId)
       return
@@ -278,20 +277,18 @@ function App() {
       renderPuPrioritizrLayer(freq, selectedRunIds.length)
     }
     fetchAll()
+    // refetch only when the selection changes; renderPuPrioritizrLayer is rebuilt every render
+    // eslint-disable-next-line react/exhaustive-deps
   }, [selectedRunIds])
 
   const [brew, setBrew] = useState(null)
-  const [, setMapboxDrawControls] = useState(undefined)
   const [pid, setPid] = useState('')
   const [costsLoading, setCostsLoading] = useState(false)
-  const [, setFiles] = useState({})
   /////////////////////////////////////////////////////////////////////////////
   const [logMessages] = useState([])
   const [menuAnchor, setMenuAnchor] = useState(null)
-  const [, setNotifications] = useState([])
 
   const [preprocessing, setPreprocessing] = useState(false)
-  const [, setRunParams] = useState([])
   const [boundaryPenalty, setBoundaryPenalty] = useState(0)
   const [selectedCosts] = useState([])
   const [smallLinearGauge] = useState(true)
@@ -305,8 +302,8 @@ function App() {
   const [resultsLayer, setResultsLayer] = useState({})
   const [paLayerVisible] = useState(false)
   const [planningGridMetadata, setPlanningGridMetadata] = useState({})
-  const mapContainer = useRef(null)
-  const map = useRef(import.meta.hot
+  const mapContainerRef = useRef(null)
+  const mapRef = useRef(import.meta.hot
     ? window._mapInstance
     : null)
   const puLayerIdsRef = useRef({
@@ -327,10 +324,12 @@ function App() {
 
   // Initialize map once after mount (prevents container=null errors)
   useEffect(() => {
-    if (mapContainer.current && !map.current) {
+    if (mapContainerRef.current && !mapRef.current) {
       createMap() // no style argument = default
     }
-  }, [mapContainer.current])
+    // the container div is always rendered, so it exists on mount
+    // eslint-disable-next-line react/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (featurePUData) {
@@ -373,17 +372,24 @@ function App() {
         dispatch(setPlanningCostsTrigger(false))
       })()
     }
-  }, [projState.planningCostsTrigger, uiState.owner, userId])
+    // getPuCostsLayer is rebuilt every render; the trigger is what should re-run this
+    // eslint-disable-next-line react/exhaustive-deps
+  }, [
+    projState.planningCostsTrigger,
+    uiState.owner,
+    userId,
+    dispatch,
+  ])
 
   useEffect(() => {
     return () => {
       // remove listeners if they were still attached
       if (onClickRef.current) {
-        map.current?.off('click', CONSTANTS.PU_LAYER_NAME, onClickRef.current)
+        mapRef.current?.off('click', CONSTANTS.PU_LAYER_NAME, onClickRef.current)
         onClickRef.current = null
       }
       if (onContextMenuRef.current) {
-        map.current?.off(
+        mapRef.current?.off(
           'contextmenu',
           CONSTANTS.PU_LAYER_NAME,
           onContextMenuRef.current,
@@ -394,7 +400,7 @@ function App() {
   }, [dispatch])
 
   useEffect(() => {
-    if (!map.current)
+    if (!mapRef.current)
       return
     if (!puLayerIdsRef.current?.sourceId)
       return
@@ -403,7 +409,7 @@ function App() {
     const { sourceId, sourceLayerName } = puLayerIdsRef.current
     for (const [status, ids] of Object.entries(planningUnits)) {
       ids.forEach((id) => {
-        map.current.setFeatureState(
+        mapRef.current.setFeatureState(
           {
             source: sourceId,
             sourceLayer: sourceLayerName,
@@ -415,14 +421,14 @@ function App() {
         )
       })
     }
-    map.current.triggerRepaint()
-  }, [planningUnits, puLayerIdsRef.current?.sourceId, map.current])
+    mapRef.current.triggerRepaint()
+  }, [planningUnits, puLayerIdsRef.current?.sourceId])
 
-  const setSnackBar = (message, silent = false) => {
+  const setSnackBar = useCallback((message, silent = false) => {
     if (!silent) {
       showMessage(message, 'info')
     }
-  }
+  }, [showMessage])
 
   // Memoized function to check for timeout errors or empty responses
   const responseIsTimeoutOrEmpty = useCallback(
@@ -436,7 +442,7 @@ function App() {
       }
       return false
     },
-    [],
+    [showMessage],
   )
   // Memoized function to check if the response indicates a server error
   const isServerError = useCallback(
@@ -482,7 +488,7 @@ function App() {
       }
       return isError
     },
-    [responseIsTimeoutOrEmpty, isServerError],
+    [responseIsTimeoutOrEmpty, isServerError, dispatch],
   )
 
   // updates the allFeatures to set the various properties based on which features have been selected in the FeaturesDialog or programmatically
@@ -577,10 +583,7 @@ function App() {
         console.error('Failed to load feature:', err)
       }
     },
-    [
-      dispatch,
-      addFeaturesToCache,
-    ],
+    [dispatch],
   )
 
   // ---------------------------------------- //
@@ -671,7 +674,12 @@ function App() {
         dispatch(setLoading(false))
       }
     },
-    [bioprotectServer.endpoint, checkForErrors, setSnackBar],
+    [
+      bioprotectServer.endpoint,
+      checkForErrors,
+      setSnackBar,
+      dispatch,
+    ],
   )
 
   const startLogging = (clearLog = false) => {
@@ -880,9 +888,6 @@ function App() {
 
     // Reset local state
     setBrew(new ClassyBrew())
-    setRunParams([])
-    setNotifications([])
-    setFiles({})
 
     // Reset Redux slices
     dispatch(setOwner(''))
@@ -1275,11 +1280,11 @@ function App() {
 
   const applyCellOutlines = () => {
     const id = puLayerIdsRef.current?.outlineLayerId
-    if (!map.current || !id || !map.current.getLayer(id))
+    if (!mapRef.current || !id || !mapRef.current.getLayer(id))
       return
     const { width, selectedOnly } = cellOutlineRef.current
-    map.current.setPaintProperty(id, 'line-width', width)
-    map.current.setFilter(
+    mapRef.current.setPaintProperty(id, 'line-width', width)
+    mapRef.current.setFilter(
       id,
       selectedOnly
         ? [
@@ -1304,9 +1309,9 @@ function App() {
     const resultsLayerId = puLayerIdsRef.current?.resultsLayerId
 
     if (
-      !map.current
+      !mapRef.current
       || !resultsLayerId
-      || !map.current.getLayer(resultsLayerId)
+      || !mapRef.current.getLayer(resultsLayerId)
     ) {
       console.warn('Results layer not ready yet.')
       return
@@ -1318,7 +1323,7 @@ function App() {
       .map(([h3]) => h3)
     applyCellOutlines()
     if (!entries.length) {
-      map.current.setPaintProperty(
+      mapRef.current.setPaintProperty(
         resultsLayerId,
         'fill-color',
         'rgba(0,0,0,0)',
@@ -1369,8 +1374,8 @@ function App() {
       ]),
     ]
 
-    map.current.setPaintProperty(resultsLayerId, 'fill-color', fillExpr)
-    map.current.setPaintProperty(
+    mapRef.current.setPaintProperty(resultsLayerId, 'fill-color', fillExpr)
+    mapRef.current.setPaintProperty(
       resultsLayerId,
       'fill-outline-color',
       'rgba(0,0,0,0)',
@@ -1389,7 +1394,7 @@ function App() {
     const propId = puLayerIdsRef.current?.propId || 'h3_index' // single truth
     const costsLayerId = puLayerIdsRef.current?.costsLayerId
 
-    if (!map.current || !costsLayerId || !map.current.getLayer(costsLayerId)) {
+    if (!mapRef.current || !costsLayerId || !mapRef.current.getLayer(costsLayerId)) {
       console.warn('Costs layer not ready yet.')
       return
     }
@@ -1411,7 +1416,7 @@ function App() {
       return expression
     }
     const expression = buildExpression(cost_data.data)
-    map.current.setPaintProperty(costsLayerId, 'fill-color', expression)
+    mapRef.current.setPaintProperty(costsLayerId, 'fill-color', expression)
     setLayerMetadata(costsLayerId, {
       min: cost_data.min,
       max: cost_data.max,
@@ -1446,7 +1451,7 @@ function App() {
         }),
       )
     },
-    [dispatch],
+    [dispatch, _get],
   )
 
   // ----------------------------------------------------------------------------------------------- //
@@ -1459,7 +1464,7 @@ function App() {
   // ----------------------------------------------------------------------------------------------- //
   // ----------------------------------------------------------------------------------------------- //
   const setLayerMetadata = (layerId, metadata) => {
-    const layer = map.current.getLayer(layerId)
+    const layer = mapRef.current.getLayer(layerId)
     if (layer) {
       // Use spread operator to merge metadata
       layer.metadata = {
@@ -1471,13 +1476,13 @@ function App() {
 
   // gets a particular set of layers based on the layer types (layerTypes is an array of layer types)
   const getLayers = useCallback((layerTypes = []) => {
-    if (!map.current)
+    if (!mapRef.current)
       return []
-    if (!mapContainer.current)
+    if (!mapContainerRef.current)
       return []
 
     // style may not be ready yet
-    const style = map.current.getStyle?.()
+    const style = mapRef.current.getStyle?.()
     const allLayers = style?.layers ?? []
 
     return allLayers.filter(({ metadata }) => {
@@ -1500,34 +1505,34 @@ function App() {
   // instantiates the mapboxgl map
   const createMap = (url) => {
     // map already exists: switch style & wait for it
-    if (map.current) {
+    if (mapRef.current) {
       return new Promise((resolve) => {
         if (!url) {
           // no style change requested; just ensure current style is ready
-          if (map.current.isStyleLoaded && map.current.isStyleLoaded()) {
+          if (mapRef.current.isStyleLoaded && mapRef.current.isStyleLoaded()) {
             resolve('Map style loaded')
           }
           else {
-            map.current.once('style.load', () => resolve('Map style loaded'))
+            mapRef.current.once('style.load', () => resolve('Map style loaded'))
           }
           return
         }
         // set listener BEFORE setStyle to avoid missing the event
-        map.current.once('style.load', () => resolve('Map style loaded'))
-        map.current.setStyle(url)
+        mapRef.current.once('style.load', () => resolve('Map style loaded'))
+        mapRef.current.setStyle(url)
       })
     }
 
     // no map yet - make sure container exists
-    if (!mapContainer.current) {
+    if (!mapContainerRef.current) {
       console.warn('Map container not ready yet.')
       // return a resolved promise so callers that await won't hang
       return Promise.resolve('Container not ready')
     }
 
     // Create a new Mapbox map instance
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
+    mapRef.current = new mapboxgl.Map({
+      container: mapContainerRef.current,
       style: url || 'mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8',
       center: [-18, 55],
       zoom: 4,
@@ -1535,45 +1540,34 @@ function App() {
     })
     // save globally for hot reloading
     if (import.meta.hot)
-      window._mapInstance = map.current
+      window._mapInstance = mapRef.current
 
     // Event handlers (use .once where appropriate to avoid duplicates)
-    map.current.on('load', mapLoaded)
-    map.current.on('error', mapError)
-    map.current.on('click', mapClick)
-    map.current.on('idle', updateLegend)
+    mapRef.current.on('load', mapLoaded)
+    mapRef.current.on('error', mapError)
+    mapRef.current.on('click', mapClick)
+    mapRef.current.on('idle', updateLegend)
 
     // Resolve when the initial style is ready
     return new Promise((resolve) => {
-      map.current.once('style.load', () => resolve('Map style loaded'))
+      mapRef.current.once('style.load', () => resolve('Map style loaded'))
     })
   }
 
   const mapLoaded = () => {
-    // map.current.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // currently full screen hides the info panel and setting position:absolute and z-index: 10000000000 doesnt work properly
-    map.current.addControl(new mapboxgl.ScaleControl())
-    map.current.addControl(new mapboxgl.NavigationControl(), 'bottom-right')
-    map.current.addControl(new HomeButton())
-    // create the draw controls for the map
-    setMapboxDrawControls(
-      new MapboxDraw({
-        displayControlsDefault: false,
-        controls: {
-          polygon: true,
-          trash: true,
-        },
-        defaultMode: 'draw_polygon',
-      }),
-    )
-    map.current.on('draw.create', polygonDrawn)
+    // mapRef.current.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // currently full screen hides the info panel and setting position:absolute and z-index: 10000000000 doesnt work properly
+    mapRef.current.addControl(new mapboxgl.ScaleControl())
+    mapRef.current.addControl(new mapboxgl.NavigationControl(), 'bottom-right')
+    mapRef.current.addControl(new HomeButton())
+    mapRef.current.on('draw.create', polygonDrawn)
 
     const COSTS_SOURCE = 'bioprotect_pu_source'
     const COSTS_LAYER = CONSTANTS.COSTS_LAYER_NAME // e.g. "bioprotect_pu_costs_layer"
 
     // ✅ Only add once to prevent duplicate-layer errors
-    if (!map.current.getSource(COSTS_SOURCE)) {
+    if (!mapRef.current.getSource(COSTS_SOURCE)) {
       // Example source - if you’re using H3 grid GeoJSON from your backend
-      map.current.addSource(COSTS_SOURCE, {
+      mapRef.current.addSource(COSTS_SOURCE, {
         type: 'geojson',
         data: {
           type: 'FeatureCollection',
@@ -1583,8 +1577,8 @@ function App() {
     }
 
     // ✅ Add the layer if it doesn’t already exist
-    if (!map.current.getLayer(COSTS_LAYER)) {
-      map.current.addLayer({
+    if (!mapRef.current.getLayer(COSTS_LAYER)) {
+      mapRef.current.addLayer({
         id: COSTS_LAYER,
         type: 'fill',
         source: COSTS_SOURCE,
@@ -1620,13 +1614,13 @@ function App() {
       )
       console.error(message)
     }
-  }, [])
+  }, [showMessage])
 
   const mapClick = useCallback(
     async (e) => {
       try {
         const isEditing = puEditingRef.current
-        const isDrawing = map.current?.getSource('mapbox-gl-draw-cold')
+        const isDrawing = mapRef.current?.getSource('mapbox-gl-draw-cold')
         if (isEditing || isDrawing)
           return
 
@@ -1638,7 +1632,7 @@ function App() {
         let puid = null
 
         if (puLayers.length) {
-          const puHits = map.current.queryRenderedFeatures(e.point, {
+          const puHits = mapRef.current.queryRenderedFeatures(e.point, {
             layers: puLayers.map(l => l.id),
           })
 
@@ -1662,7 +1656,7 @@ function App() {
         let identifiedFeatures = []
 
         if (featureLayers.length) {
-          const featureHits = map.current.queryRenderedFeatures(e.point, {
+          const featureHits = mapRef.current.queryRenderedFeatures(e.point, {
             layers: featureLayers.map(l => l.id),
           })
 
@@ -1684,11 +1678,11 @@ function App() {
         ///////////////////////////////////////////
         let protectedAreas = []
         if (
-          map.current.getLayer(CONSTANTS.WDPA_LAYER_NAME)
-          && map.current.getLayoutProperty(CONSTANTS.WDPA_LAYER_NAME, 'visibility')
+          mapRef.current.getLayer(CONSTANTS.WDPA_LAYER_NAME)
+          && mapRef.current.getLayoutProperty(CONSTANTS.WDPA_LAYER_NAME, 'visibility')
           === 'visible'
         ) {
-          const hits = map.current.queryRenderedFeatures(e.point, {
+          const hits = mapRef.current.queryRenderedFeatures(e.point, {
             layers: [CONSTANTS.WDPA_LAYER_NAME],
           })
           // an area comes back once per subdivided piece and per tile
@@ -1723,20 +1717,20 @@ function App() {
   // KEEP AN EYE ON THIS
   ////////////////////////////////////////
   useEffect(() => {
-    if (!map.current)
+    if (!mapRef.current)
       return
-    map.current.off('click', mapClick)
-    map.current.on('click', mapClick)
-    return () => map.current?.off('click', mapClick)
+    mapRef.current.off('click', mapClick)
+    mapRef.current.on('click', mapClick)
+    return () => mapRef.current?.off('click', mapClick)
   }, [mapClick])
 
   // after a layer has been added/removed/shown/hidden update the legend items
   const updateLegend = () => {
-    if (!map.current)
+    if (!mapRef.current)
       return
 
     // Get visible Marxan layers
-    const nextVisibleLayers = map.current
+    const nextVisibleLayers = mapRef.current
       .getStyle()
       .layers
       .filter(
@@ -1814,7 +1808,7 @@ function App() {
 
   // sets the basemap either on project load, or if the user changes it
   const loadBasemap = async (basemap) => {
-    if (uiState.basemap === basemap.name && map.current) {
+    if (uiState.basemap === basemap.name && mapRef.current) {
       // Basemap is already set and map exists; no action needed
       return
     }
@@ -1822,8 +1816,8 @@ function App() {
       dispatch(setBasemap(basemap.name))
       const style = await getValidStyle(basemap)
       // await createMap(style);
-      if (map.current) {
-        map.current.setStyle(style)
+      if (mapRef.current) {
+        mapRef.current.setStyle(style)
       }
       else {
         console.warn('Map not ready yet; skipping style load')
@@ -1927,7 +1921,7 @@ function App() {
       addPlanningGridLayers(data.name)
       // Zoom to bounds if available
       if (data.bounds) {
-        zoomToBounds(map, data.bounds)
+        zoomToBounds(mapRef, data.bounds)
       }
       // Update local state with tileset info
       setTileset(data)
@@ -1964,7 +1958,7 @@ function App() {
   // adds the results, planning unit, planning unit edit etc layers to the map
   // const addPlanningGridLayers = (tileset) => {
   const addPlanningGridLayers = (puLayerName) => {
-    if (!map.current)
+    if (!mapRef.current)
       return
 
     const sourceId = `martin_src_${puLayerName}`
@@ -1987,8 +1981,8 @@ function App() {
       propId: 'h3_index',
     }
 
-    if (!map.current.getSource(sourceId)) {
-      map.current.addSource(sourceId, {
+    if (!mapRef.current.getSource(sourceId)) {
+      mapRef.current.addSource(sourceId, {
         type: 'vector',
         url: getGridTilesUrl(puLayerName),
         promoteId: 'h3_index', // treat each hex id as its unique feature id - helps with rendering
@@ -2003,8 +1997,8 @@ function App() {
       selectionLayerId,
       outlineLayerId,
     ].forEach((layerId) => {
-      if (map.current.getLayer(layerId)) {
-        map.current.removeLayer(layerId)
+      if (mapRef.current.getLayer(layerId)) {
+        mapRef.current.removeLayer(layerId)
       }
     })
 
@@ -2160,7 +2154,7 @@ function App() {
       },
     })
     // set the result layer in app state so that it can update the Legend component and its opacity control
-    setResultsLayer(map.current.getLayer(resultsLayerId))
+    setResultsLayer(mapRef.current.getLayer(resultsLayerId))
     if (selectedRunIds?.length) {
       // re-trigger the effect to re-fetch and render
       const fetchAll = async () => {
@@ -2187,10 +2181,10 @@ function App() {
 
   const removePlanningGridLayers = (puLayerName) => {
     // if a puLayerName passed in remove that layer otherwise remove all layers
-    if (!map.current || !map.current.getStyle())
+    if (!mapRef.current || !mapRef.current.getStyle())
       return
 
-    const style = map.current.getStyle()
+    const style = mapRef.current.getStyle()
     const layers = style.layers || []
 
     if (puLayerName) {
@@ -2230,13 +2224,13 @@ function App() {
   }
 
   const toggleLayerVisibility = (id, visibility) => {
-    if (!map.current) {
+    if (!mapRef.current) {
       console.warn('Map is not ready yet.')
       return
     }
 
-    if (map.current.getLayer(id)) {
-      map.current.setLayoutProperty(id, 'visibility', visibility)
+    if (mapRef.current.getLayer(id)) {
+      mapRef.current.setLayoutProperty(id, 'visibility', visibility)
       updateLegend()
     }
   }
@@ -2247,13 +2241,13 @@ function App() {
 
   // centralised code to add a layer to the maps current style
   const addMapLayer = (mapLayer, beforeLayer) => {
-    if (!map.current)
+    if (!mapRef.current)
       return
-    if (map.current.getLayer(mapLayer.id))
+    if (mapRef.current.getLayer(mapLayer.id))
       return
     // If a beforeLayer is not passed get the first symbol layer (i.e. label layer)
     if (!beforeLayer) {
-      const style = map.current.getStyle()
+      const style = mapRef.current.getStyle()
       if (!style || !style.layers)
         return // style not ready yet
       const symbolLayers = style.layers.filter(
@@ -2263,7 +2257,7 @@ function App() {
     }
     // Add the layer to the map
     try {
-      map.current.addLayer(mapLayer, beforeLayer)
+      mapRef.current.addLayer(mapLayer, beforeLayer)
       updateLegend()
     }
     catch (err) {
@@ -2273,26 +2267,26 @@ function App() {
 
   // centralised code to remove a layer from the maps current style
   const removeMapLayer = (layerId) => {
-    if (!map.current?.getLayer(layerId))
+    if (!mapRef.current?.getLayer(layerId))
       return
-    map.current.removeLayer(layerId)
+    mapRef.current.removeLayer(layerId)
     updateLegend()
   }
-  const removeMapSource = layerid => map.current.removeSource(layerid)
+  const removeMapSource = layerid => mapRef.current.removeSource(layerid)
 
   // changes the layers opacity
   const changeOpacity = (layerId, opacity) => {
-    if (map) {
-      const layer = map.current.getLayer(layerId)
+    if (mapRef.current) {
+      const layer = mapRef.current.getLayer(layerId)
       switch (layer.type) {
         case 'circle':
-          map.current.setPaintProperty(layerId, 'circle-opacity', opacity)
+          mapRef.current.setPaintProperty(layerId, 'circle-opacity', opacity)
           break
         case 'fill':
-          map.current.setPaintProperty(layerId, 'fill-opacity', opacity)
+          mapRef.current.setPaintProperty(layerId, 'fill-opacity', opacity)
           break
         case 'line':
-          map.current.setPaintProperty(layerId, 'line-opacity', opacity)
+          mapRef.current.setPaintProperty(layerId, 'line-opacity', opacity)
           break
         default:
         // code
@@ -2825,135 +2819,121 @@ function App() {
   }
 
   // toggles the feature layer on the map
-  const toggleFeatureLayer = useCallback(
-    (feature) => {
-      const tableName = feature.tilesetid
-        ? feature.tilesetid.split('.')[1]
-        : feature.feature_class_name
-      const sourceId = `martin_src_${tableName}`
-      const layerId = `martin_layer_${tableName}`
-      const tileJSON = getLayerTilesUrl(tableName)
+  const toggleFeatureLayer = (feature) => {
+    const tableName = feature.tilesetid
+      ? feature.tilesetid.split('.')[1]
+      : feature.feature_class_name
+    const sourceId = `martin_src_${tableName}`
+    const layerId = `martin_layer_${tableName}`
+    const tileJSON = getLayerTilesUrl(tableName)
 
-      if (map.current.getLayer(layerId)) {
-        removeMapLayer(layerId)
-        map.current.removeSource(sourceId)
-        dispatch(
-          setOneFeatureInCache({
-            id: feature.id,
-            patch: { feature_layer_loaded: false },
-          }),
-        )
+    if (mapRef.current.getLayer(layerId)) {
+      removeMapLayer(layerId)
+      mapRef.current.removeSource(sourceId)
+      dispatch(
+        setOneFeatureInCache({
+          id: feature.id,
+          patch: { feature_layer_loaded: false },
+        }),
+      )
+    }
+    else {
+      // 1) make sure the vector‐tile source is added
+      if (!mapRef.current.getSource(sourceId)) {
+        mapRef.current.addSource(sourceId, {
+          type: 'vector',
+          url: tileJSON,
+        })
       }
-      else {
-        // 1) make sure the vector‐tile source is added
-        if (!map.current.getSource(sourceId)) {
-          map.current.addSource(sourceId, {
-            type: 'vector',
-            url: tileJSON,
-          })
-        }
 
-        const beforeLayer = (() => {
-          const puLayers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER])
-          return puLayers.length ? puLayers[0].id : undefined
-        })()
+      const beforeLayer = (() => {
+        const puLayers = getLayers([CONSTANTS.LAYER_TYPE_FEATURE_PU_LAYER])
+        return puLayers.length ? puLayers[0].id : undefined
+      })()
 
-        const mapLayer = {
-          'id': layerId,
-          'type': getTypeProperty(feature),
-          'source': sourceId,
-          'source-layer': tableName,
-          'layout': { visibility: 'visible' },
-          'paint': getPaintProperty(feature),
-          'metadata': {
-            name: feature.alias,
-            type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
-          },
-        }
-
-        addMapLayer(mapLayer, beforeLayer)
-        dispatch(
-          setOneFeatureInCache({
-            id: feature.id,
-            patch: { feature_layer_loaded: true },
-          }),
-        )
-        // Helper function tozom to layer to see if its working
-        // zoomToLayer(tileJSON)
+      const mapLayer = {
+        'id': layerId,
+        'type': getTypeProperty(feature),
+        'source': sourceId,
+        'source-layer': tableName,
+        'layout': { visibility: 'visible' },
+        'paint': getPaintProperty(feature),
+        'metadata': {
+          name: feature.alias,
+          type: CONSTANTS.LAYER_TYPE_FEATURE_LAYER,
+        },
       }
-    },
-    [
-      map,
-      dispatch,
-      removeMapLayer,
-      addMapLayer,
-      getLayers,
-      getPaintProperty,
-      getTypeProperty,
-    ],
-  )
+
+      addMapLayer(mapLayer, beforeLayer)
+      dispatch(
+        setOneFeatureInCache({
+          id: feature.id,
+          patch: { feature_layer_loaded: true },
+        }),
+      )
+      // Helper function tozom to layer to see if its working
+      // zoomToLayer(tileJSON)
+    }
+  }
 
   // Activity layer visibility map: { [activityId]: true } when loaded
   const [loadedActivityIds, setLoadedActivityIds] = useState({})
 
   // Toggles a vector tile layer for an activity's geometry table.
   // The PostGIS table name is in metadata_activities.activity_name.
-  const toggleActivityLayer = useCallback(
-    (activity) => {
-      if (!map.current)
-        return
-      const tableName = activity.activity_name
-      if (!tableName)
-        return
+  const toggleActivityLayer = (activity) => {
+    if (!mapRef.current)
+      return
+    const tableName = activity.activity_name
+    if (!tableName)
+      return
 
-      const sourceId = `martin_src_${tableName}`
-      const layerId = `martin_layer_activity_${tableName}`
+    const sourceId = `martin_src_${tableName}`
+    const layerId = `martin_layer_activity_${tableName}`
 
-      if (map.current.getLayer(layerId)) {
-        removeMapLayer(layerId)
-        if (map.current.getSource(sourceId)) {
-          map.current.removeSource(sourceId)
-        }
-        setLoadedActivityIds((prev) => {
-          const next = { ...prev }
-          delete next[activity.id]
-          return next
-        })
-        return
+    if (mapRef.current.getLayer(layerId)) {
+      removeMapLayer(layerId)
+      if (mapRef.current.getSource(sourceId)) {
+        mapRef.current.removeSource(sourceId)
       }
-
-      const color = PALETTE.activities
-
-      if (!map.current.getSource(sourceId)) {
-        map.current.addSource(sourceId, {
-          type: 'vector',
-          url: getLayerTilesUrl(tableName),
-        })
-      }
-
-      addMapLayer({
-        'id': layerId,
-        'type': 'fill',
-        'source': sourceId,
-        'source-layer': tableName,
-        'layout': { visibility: 'visible' },
-        'paint': {
-          'fill-color': color,
-          'fill-opacity': CONSTANTS.ACTIVITY_LAYER_OPACITY,
-          'fill-outline-color': 'rgba(0,0,0,0.25)',
-        },
-        'metadata': {
-          name: activity.activity,
-          type: CONSTANTS.LAYER_TYPE_ACTIVITY,
-          activityId: activity.id,
-          activityName: tableName,
-        },
+      setLoadedActivityIds((prev) => {
+        const next = { ...prev }
+        delete next[activity.id]
+        return next
       })
+      return
+    }
 
-      setLoadedActivityIds(prev => ({ ...prev, [activity.id]: true }))
-    },
-    [],
-  )
+    const color = PALETTE.activities
+
+    if (!mapRef.current.getSource(sourceId)) {
+      mapRef.current.addSource(sourceId, {
+        type: 'vector',
+        url: getLayerTilesUrl(tableName),
+      })
+    }
+
+    addMapLayer({
+      'id': layerId,
+      'type': 'fill',
+      'source': sourceId,
+      'source-layer': tableName,
+      'layout': { visibility: 'visible' },
+      'paint': {
+        'fill-color': color,
+        'fill-opacity': CONSTANTS.ACTIVITY_LAYER_OPACITY,
+        'fill-outline-color': 'rgba(0,0,0,0.25)',
+      },
+      'metadata': {
+        name: activity.activity,
+        type: CONSTANTS.LAYER_TYPE_ACTIVITY,
+        activityId: activity.id,
+        activityName: tableName,
+      },
+    })
+
+    setLoadedActivityIds(prev => ({ ...prev, [activity.id]: true }))
+  }
 
   // Fetch the activities that make up a cost profile
   const fetchCostProfileActivities = useCallback(
@@ -2977,7 +2957,7 @@ function App() {
 
     const layerName = `martin_layer_feature_puid_${feature.id}`
 
-    if (map.current.getLayer(layerName)) {
+    if (mapRef.current.getLayer(layerName)) {
       removeMapLayer(layerName)
       dispatch(
         setOneFeatureInCache({
@@ -3023,7 +3003,7 @@ function App() {
         color,
         'rgba(0,0,0,0)',
       ]
-      map.current.setPaintProperty(
+      mapRef.current.setPaintProperty(
         layerName,
         'line-color',
         line_color_expression,
@@ -3049,7 +3029,7 @@ function App() {
       .split(',')
     // get the points as numbers
     const nums = points.map(item => Number(item))
-    map.current.fitBounds(
+    mapRef.current.fitBounds(
       [
         [nums[0], nums[1]],
         [nums[2], nums[3]],
@@ -3170,22 +3150,22 @@ function App() {
       // fetch from server (or cache)
       const response = await getPuCostsLayer(forceReload)
       const statusLayerId = puLayerIdsRef.current?.statusLayerId
-      if (map.current && statusLayerId && map.current.getLayer(statusLayerId)) {
-        map.current.setLayoutProperty(statusLayerId, 'visibility', 'visible')
-        map.current.setLayerZoomRange(statusLayerId, 0, 24)
+      if (mapRef.current && statusLayerId && mapRef.current.getLayer(statusLayerId)) {
+        mapRef.current.setLayoutProperty(statusLayerId, 'visibility', 'visible')
+        mapRef.current.setLayerZoomRange(statusLayerId, 0, 24)
       }
       const selectionLayerId = puLayerIdsRef.current?.selectionLayerId
       if (
-        map.current
+        mapRef.current
         && selectionLayerId
-        && map.current.getLayer(selectionLayerId)
+        && mapRef.current.getLayer(selectionLayerId)
       ) {
-        map.current.setLayoutProperty(
+        mapRef.current.setLayoutProperty(
           selectionLayerId,
           'visibility',
           'visible',
         )
-        map.current.setLayerZoomRange(selectionLayerId, 0, 24)
+        mapRef.current.setLayerZoomRange(selectionLayerId, 0, 24)
       }
       // cache in Redux
       dispatch(setCostData(response))
@@ -3274,7 +3254,7 @@ function App() {
 
       <React.Fragment>
         <div
-          ref={mapContainer}
+          ref={mapContainerRef}
           className="map-container absolute top right left bottom"
         >
         </div>
@@ -3309,7 +3289,6 @@ function App() {
                   )}
                 loading={uiState.loading}
                 saveOptions={saveOptions}
-                loadBasemap={loadBasemap}
               />
             )
           : null}
@@ -3365,7 +3344,7 @@ function App() {
             metadata={metadata}
             costProfiles={projState.projectCosts || []}
             activateCostProfile={activateCostProfile}
-            map={map}
+            map={mapRef}
             onClickRef={onClickRef}
             onContextMenuRef={onContextMenuRef}
             pid={pid}
@@ -3416,7 +3395,7 @@ function App() {
             visibleLayers={visibleLayers}
             metadata={metadata}
             costsLoading={costsLoading}
-            map={map}
+            map={mapRef}
             project={project}
             projectFeatures={projectFeatures}
           />
@@ -3510,7 +3489,7 @@ function App() {
         />
         {dialogStates.referenceLayersDialogOpen
           ? (
-              <ReferenceLayersDialog map={map} />
+              <ReferenceLayersDialog map={mapRef} />
             )
           : null}
 

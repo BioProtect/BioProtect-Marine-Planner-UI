@@ -19,6 +19,8 @@ import FileUpload from '../Uploads/FileUpload'
 
 const STEPS = ['Select Activity', 'Import Type', 'Upload Data']
 
+const SEARCH_COLUMNS = ['category', 'activity']
+
 function HumanActivitiesDialog(props) {
   const dispatch = useDispatch()
   const uiState = useSelector(state => state.ui)
@@ -169,7 +171,7 @@ function HumanActivitiesDialog(props) {
             data={uiState.activities}
             tableColumns={tableColumns}
             ableToSelectAll={false}
-            searchColumns={['category', 'activity']}
+            searchColumns={SEARCH_COLUMNS}
             searchText={searchText}
             selected={[uiState.selectedActivity]}
             clickRow={clickRow}

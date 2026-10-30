@@ -84,8 +84,8 @@ function ProjectsListDialog() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {projState.projectList.map((row, index) => (
-                <TableRow key={index}>
+              {projState.projectList.map(row => (
+                <TableRow key={row.id ?? row.name}>
                   {tableColumns.map(col => (
                     <TableCell key={col.accessor}>
                       {col.accessor === 'name'

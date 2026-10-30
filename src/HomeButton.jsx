@@ -6,11 +6,9 @@
  *
  * License: European Union Public Licence V. 1.2, see https://opensource.org/licenses/EUPL-1.2
  */
-import * as React from 'react'
-
 import { zoomToBounds } from './Helpers'
 
-class HomeButton extends React.Component {
+class HomeButton {
   zoom() {
     const tileset = this.map.getSource('marxan_planning_units_source')
     if (tileset && tileset.bounds)

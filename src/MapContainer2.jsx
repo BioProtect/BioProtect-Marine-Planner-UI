@@ -21,7 +21,7 @@ function MapContainer2({
   outlineColor = 'rgba(255, 0, 0, 0.5)',
   isGrid = false, // planning grid (grid_tiles source) rather than a feature (layer_tiles)
 }) {
-  const mapEl = useRef(null)
+  const mapElRef = useRef(null)
 
   useEffect(() => {
     const tilesetid = planningGridMetadata?.tilesetid
@@ -32,7 +32,7 @@ function MapContainer2({
       return
 
     const map = new mapboxgl.Map({
-      container: mapEl.current,
+      container: mapElRef.current,
       style: 'mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8',
       center: [0, 0],
       zoom: 4,
@@ -106,11 +106,19 @@ function MapContainer2({
       }
       catch {}
     }
-  }, [planningGridMetadata?.tilesetid, color, outlineColor])
+  }, [
+    planningGridMetadata?.tilesetid,
+    planningGridMetadata?.feature_class_name,
+    planningGridMetadata?.envelope,
+    planningGridMetadata?.extent,
+    isGrid,
+    color,
+    outlineColor,
+  ])
 
   return (
     <Box
-      ref={mapEl}
+      ref={mapElRef}
       sx={{
         width: 500,
         height: 300,

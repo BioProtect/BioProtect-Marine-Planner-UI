@@ -40,7 +40,7 @@ function ImportFeaturesDialog({
     'metadata',
   ])
   const [stepIndex, setStepIndex] = useState(0)
-  const [fieldnames, setFieldNames] = useState([])
+  const [fieldnames, setFieldnames] = useState([])
   const [splitField, setSplitField] = useState('')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -88,7 +88,7 @@ function ImportFeaturesDialog({
   const handleNameChange = event => setName(event.target.value)
   const handleDescriptionChange = event => setDescription(event.target.value)
   const handleSplitFieldChange = event => setSplitField(event.target.value)
-  const resetFieldnames = () => setFieldNames([])
+  const resetFieldnames = () => setFieldnames([])
 
   const handleGetShapefileFieldnames = (shapeFilePath) => {
     if (shapeFilePath === undefined) {
@@ -96,7 +96,7 @@ function ImportFeaturesDialog({
     }
     getShapefileFieldnames(shapeFilePath).then((response) => {
       const { fieldnames, values } = response
-      setFieldNames(fieldnames)
+      setFieldnames(fieldnames)
 
       const descriptField = fieldnames.find(name =>
         name.toLowerCase().includes('descript'),
@@ -116,7 +116,7 @@ function ImportFeaturesDialog({
       deleteShapefile(featureState.featureFilename, shapeFile)
     }
     setStepIndex(0)
-    setFieldNames([])
+    setFieldnames([])
     setSplitField('')
     setName('')
     setDescription('')

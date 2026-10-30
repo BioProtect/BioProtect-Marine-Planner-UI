@@ -30,7 +30,7 @@ function InfoPanel(props) {
   const [editingProjectName, setEditingProjectName] = useState(false)
   const [editingDescription, setEditingDescription] = useState(false)
 
-  const [currentTabIndex, setCurrentTabIndex] = useState(0)
+  const [currentTabIndex, setCurrentTabIndex] = useState(() => Math.max(activeTabArr.indexOf(uiState.activeTab), 0))
 
   const projectNameRef = useRef(null)
   const descriptionEditRef = useRef(null)
@@ -58,12 +58,6 @@ function InfoPanel(props) {
     props.project,
     props.metadata.DESCRIPTION,
   ])
-
-  useEffect(() => {
-    if (uiState.activeTab) {
-      setCurrentTabIndex(activeTabArr.indexOf(uiState.activeTab))
-    }
-  }, [])
 
   // preprocess synchronously, i.e. one after another
   const preprocessAllFeatures = async () => {

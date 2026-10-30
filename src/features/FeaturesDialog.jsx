@@ -22,6 +22,13 @@ import { generateTableCols } from '../Helpers'
 import { setSelectedFeatureId } from '../slices/featureSlice'
 import FeaturesToolbar from './FeaturesToolbar'
 
+const SEARCH_COLUMNS = [
+  'alias',
+  'description',
+  'source',
+  'created_by',
+]
+
 function FeaturesDialog({ onOk, userRole, previewFeature }) {
   const dispatch = useDispatch()
   const currentUser = useSelector(selectCurrentUser)
@@ -41,10 +48,12 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
   // With no project and no new project there is nothing to save ticks to.
   const canChoose = forNewProject || activeProjectId != null
 
-  const selectionWhenOpened = useRef([])
+  const selectionWhenOpenedRef = useRef([])
   useEffect(() => {
     if (dialogIsOpen)
-      selectionWhenOpened.current = selectedFeatureIds ?? []
+      selectionWhenOpenedRef.current = selectedFeatureIds ?? []
+    // a snapshot taken at open: later ticks must not overwrite it
+    // eslint-disable-next-line react/exhaustive-deps
   }, [dialogIsOpen])
 
   const [previousRow, setPreviousRow] = useState(undefined)
@@ -109,7 +118,7 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
         return
       }
       // Clear any references to the now-deleted row.
-      selectionWhenOpened.current = selectionWhenOpened.current.filter(
+      selectionWhenOpenedRef.current = selectionWhenOpenedRef.current.filter(
         id => id !== feature.id,
       )
       dispatch(
@@ -193,7 +202,7 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
     ]))
   }
 
-  const removedCount = selectionWhenOpened.current.filter(
+  const removedCount = selectionWhenOpenedRef.current.filter(
     id => !(selectedFeatureIds || []).includes(id),
   ).length
 
@@ -229,7 +238,7 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
 
   const closeDialog = () => {
     // Also runs on click-outside. Unsaved ticks must not reach the info panel.
-    dispatch(setSelectedFeatureIds(selectionWhenOpened.current))
+    dispatch(setSelectedFeatureIds(selectionWhenOpenedRef.current))
     dispatch(
       toggleFeatureD({ dialogName: 'featuresDialogOpen', isOpen: false }),
     )
@@ -252,12 +261,7 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
           toolbar={<FeaturesToolbar selectAllFeatures={selectAllFeatures} canChoose={canChoose} />}
           data={allFeatures}
           tableColumns={columns}
-          searchColumns={[
-            'alias',
-            'description',
-            'source',
-            'created_by',
-          ]}
+          searchColumns={SEARCH_COLUMNS}
           dataFiltered={dataFiltered}
           selected={selectedFeatureIds}
           selectionDisabled={!canChoose}

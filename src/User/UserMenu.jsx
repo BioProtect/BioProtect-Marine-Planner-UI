@@ -2,7 +2,6 @@ import EditIcon from '@mui/icons-material/Edit'
 
 import LogoutIcon from '@mui/icons-material/Logout'
 import PasswordIcon from '@mui/icons-material/Password'
-import SettingsIcon from '@mui/icons-material/Settings'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Menu from '@mui/material/Menu'
@@ -22,13 +21,6 @@ function UserMenu({ menuAnchor, logout }) {
     dispatch(
       toggleDialog({ dialogName: 'changePasswordDialogOpen', isOpen: true }),
     )
-  }
-
-  const openUserSettingsDialog = () => {
-    dispatch(
-      toggleDialog({ dialogName: 'userSettingsDialogOpen', isOpen: true }),
-    )
-    dispatch(toggleDialog({ dialogName: 'userMenuOpen', isOpen: false }))
   }
 
   const openProfileDialog = () => {
@@ -68,12 +60,6 @@ function UserMenu({ menuAnchor, logout }) {
         },
       }}
     >
-      <MenuItem onClick={openUserSettingsDialog} title="Settings">
-        <ListItemIcon>
-          <SettingsIcon />
-        </ListItemIcon>
-        <ListItemText>Settings</ListItemText>
-      </MenuItem>
       <MenuItem onClick={openProfileDialog} title="Profile">
         <ListItemIcon>
           <EditIcon />
