@@ -62,6 +62,9 @@ function BPTableHeadWithSort(props) {
             </TableSortLabel>
           </TableCell>
         ))}
+        {props.actionColumns?.map(label => (
+          <TableCell key={label} align="center">{label.toUpperCase()}</TableCell>
+        ))}
       </TableRow>
     </TableHead>
   )

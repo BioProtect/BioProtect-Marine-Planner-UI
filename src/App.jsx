@@ -538,16 +538,15 @@ function App() {
         projectId: activeProjectId,
         features: selected,
       }).unwrap()
-    }
-    catch (err) {
-      patchAllResult?.undo?.()
-      // patchProjectResult?.undo?.();
-      showMessage?.(`Failed to save selections. Reverted. ${err}`, 'error')
-    }
-    finally {
       dispatch(
         toggleFeatureD({ dialogName: 'featuresDialogOpen', isOpen: false }),
       )
+    }
+    catch (err) {
+      // Stays open so the ticks aren't left looking saved: retry or Cancel.
+      patchAllResult?.undo?.()
+      // patchProjectResult?.undo?.();
+      showMessage?.(`Failed to save selections. Reverted. ${err}`, 'error')
     }
   }
 
@@ -2430,7 +2429,6 @@ function App() {
   // const openFeaturesDialog = async (showClearSelectAll) => {
   const openFeaturesDialog = async () => {
     // Refresh features list if we are using a hosted service (other users could have created/deleted items) and the project is not imported (only project features are shown)
-    // dispatch(setAddingRemovingFeatures(showClearSelectAll));
     dispatch(
       toggleFeatureD({
         dialogName: 'featuresDialogOpen',
@@ -3448,7 +3446,6 @@ function App() {
           selectedCosts={selectedCosts}
           previewFeature={previewFeature}
           fileUpload={uploadFileToFolder}
-          updateSelectedFeatures={updateSelectedFeatures}
         />
         <FeatureInfoDialog open={true} updateFeature={updateFeature} />
         <FeaturesDialog

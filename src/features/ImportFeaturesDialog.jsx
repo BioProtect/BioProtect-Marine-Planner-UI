@@ -1,6 +1,5 @@
 import { useLogToSnackbar } from '@hooks/useLogToSnackbar'
 import Button from '@mui/material/Button'
-import Checkbox from '@mui/material/Checkbox'
 
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
@@ -18,7 +17,6 @@ import {
   toggleFeatureD,
   useGetSensitivitiesMutation,
 } from '@slices/featureSlice'
-import { setAddToProject } from '@slices/projectSlice'
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import FileUpload from '../Uploads/FileUpload'
@@ -32,7 +30,6 @@ function ImportFeaturesDialog({
 }) {
   const dispatch = useDispatch()
   const uiState = useSelector(state => state.ui)
-  const projState = useSelector(state => state.project)
   const featureState = useSelector(state => state.feature)
   const [getSensitivities]
     = useGetSensitivitiesMutation()
@@ -114,9 +111,6 @@ function ImportFeaturesDialog({
     })
   }
 
-  const handleAddToProjectChange = evt =>
-    dispatch(setAddToProject(evt.target.checked))
-
   const closeDialog = () => {
     if (shapeFile) {
       deleteShapefile(featureState.featureFilename, shapeFile)
@@ -128,12 +122,6 @@ function ImportFeaturesDialog({
     setDescription('')
     setShapeFile(null)
     dispatch(setFeatureFilename(''))
-    dispatch(
-      toggleFeatureD({
-        dialogName: 'featuresDialogOpen',
-        isOpen: true,
-      }),
-    )
     dispatch(
       toggleFeatureD({
         dialogName: 'importFeaturesDialogOpen',
@@ -248,15 +236,6 @@ function ImportFeaturesDialog({
                     ))}
                   </Select>
                 )}
-            <FormControlLabel
-              control={(
-                <Checkbox
-                  checked={projState.addToProject}
-                  onChange={e => handleAddToProjectChange(e)}
-                />
-              )}
-              label="Add to project"
-            />
           </>
         )}
       </DialogContent>

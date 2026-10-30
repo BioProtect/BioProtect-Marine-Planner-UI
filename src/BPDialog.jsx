@@ -22,9 +22,9 @@ function BPDialog({
 }) {
   return (
     <Dialog open={open} fullWidth={fullWidth} maxWidth={maxWidth} onClose={onCancel}>
-      <DialogTitle>{title}</DialogTitle>
+      {title && <DialogTitle>{title}</DialogTitle>}
       <DialogContent>{children}</DialogContent>
-      <DialogActions>{actions}</DialogActions>
+      {actions && <DialogActions>{actions}</DialogActions>}
       <DialogActions>
         {showCancelButton && (
           <Button variant="outlined" onClick={onCancel} color="error">

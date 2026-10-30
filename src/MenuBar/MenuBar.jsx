@@ -15,7 +15,6 @@ import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import { selectCurrentUser } from '@slices/authSlice'
 import {
-  setAddingRemovingFeatures,
   toggleFeatureD,
 } from '@slices/featureSlice'
 import { toggleDialog } from '@slices/uiSlice'
@@ -33,7 +32,6 @@ function MenuBar({
   const dialogStates = useSelector(state => state.ui.dialogStates)
   const projectState = useSelector(state => state.project)
   const userData = useSelector(selectCurrentUser)
-  // opens the features dialog without the ability to add/remove features (i.e. different from the dialog that is opened from a project)
 
   const handleMenuOpen = (e, val) => {
     e.preventDefault()
@@ -61,7 +59,6 @@ function MenuBar({
   }
 
   const handleOpenFeaturesDialog = () => {
-    dispatch(setAddingRemovingFeatures(false))
     dispatch(
       toggleFeatureD({
         dialogName: 'featuresDialogOpen',

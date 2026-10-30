@@ -78,7 +78,6 @@ export const {
 const initialState = {
   // client-only workflow + UI state
   digitisedFeatures: [],
-  addingRemovingFeatures: false,
 
   // selection should be ids, not whole objects
   selectedFeatureId: null,
@@ -111,9 +110,6 @@ const featureSlice = createSlice({
   name: 'feature',
   initialState,
   reducers: {
-    setAddingRemovingFeatures(state, action) {
-      state.addingRemovingFeatures = action.payload
-    },
     setSelectedFeatureId(state, action) {
       state.selectedFeatureId = action.payload
     },
@@ -143,7 +139,6 @@ const featureSlice = createSlice({
 })
 
 export const {
-  setAddingRemovingFeatures,
   setSelectedFeatureId,
   setSelectedFeatureIds,
   setFeatureFilename,

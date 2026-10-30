@@ -9,7 +9,6 @@ import Divider from '@mui/material/Divider'
 import Stack from '@mui/material/Stack'
 import {
   featureApiSlice,
-  setAddingRemovingFeatures,
   toggleFeatureD,
 } from '@slices/featureSlice'
 import { toggleDialog } from '@slices/uiSlice'
@@ -21,7 +20,6 @@ function FeaturesTab({ preprocessAllFeatures, setMenuAnchor, updateFeature, togg
   const dispatch = useDispatch()
 
   const handleOpenFeaturesDialog = () => {
-    dispatch(setAddingRemovingFeatures(true))
     dispatch(
       toggleFeatureD({
         dialogName: 'featuresDialogOpen',
@@ -84,11 +82,11 @@ function FeaturesTab({ preprocessAllFeatures, setMenuAnchor, updateFeature, togg
                 size="small"
                 variant="contained"
                 onClick={() => handleOpenFeaturesDialog()}
-                title="Add/remove features from the project"
+                title="Choose which features are in the project"
                 startIcon={<LayersIcon />}
                 sx={btnSx}
               >
-                Add/Remove Features
+                Choose features
               </Button>
             </Stack>
             <Stack direction="row" gap={0.75}>

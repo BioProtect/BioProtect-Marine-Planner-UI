@@ -1,4 +1,3 @@
-import FeaturesDialog from '@features/FeaturesDialog'
 import useAppSnackbar from '@hooks/useAppSnackbar'
 import { usePlanningGridWebSocket } from '@hooks/usePlanningGridWebSocket'
 import { Autocomplete } from '@mui/material'
@@ -33,7 +32,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import BPDialog from '../BPDialog.jsx'
 import SelectCostFeatures from '../SelectCostFeatures.jsx'
-import { setAddingRemovingFeatures } from '../slices/featureSlice.js'
 import { setCurrentPUGrid } from '../slices/planningUnitSlice.js'
 import FileUpload from '../Uploads/FileUpload'
 
@@ -49,7 +47,6 @@ const CRS_OPTIONS = [
 
 function NewProjectDialog({
   loadProjectAndSetup,
-  updateSelectedFeatures,
   selectedCosts,
   previewFeature,
   fileUpload,
@@ -59,7 +56,6 @@ function NewProjectDialog({
 
   const uiLoading = useSelector(s => s.ui.loading)
   const fileUploadResponse = useSelector(s => s.ui.fileUploadResponse)
-  const featureDialogs = useSelector(s => s.feature.dialogs)
   const selectedFeatureIds = useSelector(s => s.feature.selectedFeatureIds)
   const projState = useSelector(s => s.project)
   const currentPUGrid = useSelector(s => s.planningUnit.currentPUGrid)
@@ -120,12 +116,6 @@ function NewProjectDialog({
       setStepIndex(2)
     }
   }, [waitingForUpload])
-
-  useEffect(() => {
-    if (stepIndex === 2) {
-      dispatch(setAddingRemovingFeatures(true))
-    }
-  }, [stepIndex, dispatch])
 
   useEffect(() => {
     if (dialogOpen) {
@@ -520,29 +510,11 @@ function NewProjectDialog({
               <Button
                 variant="contained"
                 onClick={handleOpenFeaturesDialog}
-                title="Add/remove features from the project"
+                title="Choose which features are in the project"
               >
-                +/-
+                Choose features
               </Button>
             </Box>
-
-            {/* Keep the dialog mounted so lazy-loading + selection work */}
-            <FeaturesDialog
-              open={featureDialogs.featuresDialogOpen}
-              onOk={updateSelectedFeatures}
-              onCancel={() =>
-                dispatch(
-                  toggleFeatureD({
-                    dialogName: 'featuresDialogOpen',
-                    isOpen: false,
-                  }),
-                )}
-              loadingFeatures={false}
-              metadata={{ OLDVERSION: false }}
-              userRole="User"
-              previewFeature={previewFeature}
-              preview={true}
-            />
           </Box>
         )}
 

@@ -40,7 +40,7 @@ function ProjectFeaturesTable() {
   if (selected.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
-        No features selected yet. Click “+/-” to choose features.
+        No features selected yet. Click “Choose features” to add some.
       </Typography>
     )
   }

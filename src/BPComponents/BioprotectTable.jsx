@@ -22,6 +22,9 @@ import BPTableTitleWithSearch from './BPTableTitleWithSearch'
  * @param {string[]} [props.searchColumns] data keys searched; required with showSearchBox
  * @param {string} [props.initialSelection] value of the column used to preselect a row
  * @param {boolean} [props.ableToSelectAll]
+ * @param {React.ReactNode} [props.toolbar] rendered between the search box and the table
+ * @param {boolean} [props.selectionDisabled] rows can't be ticked
+ * @param {string} [props.deleteRowTitle] tooltip on an enabled delete button
  */
 function BioprotectTable(props) {
   const [order, setOrder] = useState('asc')
@@ -154,6 +157,7 @@ function BioprotectTable(props) {
         setSearchQuery={setSearchQuery}
         showSearchBox={props.showSearchBox}
       />
+      {props.toolbar}
       <TableContainer>
         <Table
           key={`BpTable-${props.title}`}
@@ -170,6 +174,7 @@ function BioprotectTable(props) {
             onSelectAllClick={handleSelectAllClick}
             onRequestSort={handleRequestSort}
             rowCount={props.data.length}
+            actionColumns={[props.preview && 'Preview', props.deleteRow && 'Delete'].filter(Boolean)}
           />
           <TableBody>
             {filteredData.map((row, idx) => {
@@ -185,12 +190,15 @@ function BioprotectTable(props) {
                   tabIndex={-1}
                   key={row.id ?? idx}
                   selected={isItemSelected}
-                  sx={{ cursor: 'pointer' }}
+                  sx={{
+                    cursor: props.selectionDisabled ? 'default' : 'pointer',
+                  }}
                 >
                   <TableCell padding="checkbox">
                     <Checkbox
                       color="primary"
                       checked={isItemSelected}
+                      disabled={props.selectionDisabled}
                       // checked={(isItemSelected ? "checked" : "")}
                       inputProps={{
                         'aria-labelledby': labelId,
@@ -248,7 +256,7 @@ function BioprotectTable(props) {
                             size="small"
                             title={
                               canDelete
-                                ? 'Delete this row'
+                                ? props.deleteRowTitle || 'Delete this row'
                                 : reason || 'You cannot delete this row'
                             }
                             onClick={(e) => {

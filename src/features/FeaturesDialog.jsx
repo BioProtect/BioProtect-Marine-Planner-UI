@@ -9,13 +9,12 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import { selectCurrentUser } from '@slices/authSlice'
 import {
-  setAddingRemovingFeatures,
   setSelectedFeatureIds,
   toggleFeatureD,
   useDeleteFeatureMutation,
   useGetAllFeaturesQuery,
 } from '@slices/featureSlice'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import BioprotectTable from '../BPComponents/BioprotectTable'
 import BPDialog from '../BPDialog'
@@ -25,11 +24,7 @@ import FeaturesToolbar from './FeaturesToolbar'
 
 function FeaturesDialog({ onOk, userRole, previewFeature }) {
   const dispatch = useDispatch()
-  const uiState = useSelector(state => state.ui)
   const currentUser = useSelector(selectCurrentUser)
-  const addingRemovingFeatures = useSelector(
-    state => state.feature.addingRemovingFeatures,
-  )
   const selectedFeatureId = useSelector(
     state => state.feature.selectedFeatureId,
   )
@@ -39,11 +34,24 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
   const dialogIsOpen = useSelector(
     state => state.feature.dialogs.featuresDialogOpen,
   )
+  const forNewProject = useSelector(
+    state => state.project.dialogs.newProjectDialogOpen,
+  )
+  const activeProjectId = useSelector(state => state.project.activeProjectId)
+  // With no project and no new project there is nothing to save ticks to.
+  const canChoose = forNewProject || activeProjectId != null
+
+  const selectionWhenOpened = useRef([])
+  useEffect(() => {
+    if (dialogIsOpen)
+      selectionWhenOpened.current = selectedFeatureIds ?? []
+  }, [dialogIsOpen])
 
   const [previousRow, setPreviousRow] = useState(undefined)
   const [filteredRows, setFilteredRows] = useState([])
   // Row currently queued for deletion (drives the confirm dialog).
   const [featurePendingDelete, setFeaturePendingDelete] = useState(null)
+  const [confirmingRemoval, setConfirmingRemoval] = useState(false)
 
   const { showMessage } = useAppSnackbar()
   const [deleteFeature, { isLoading: isDeleting }] = useDeleteFeatureMutation()
@@ -101,6 +109,9 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
         return
       }
       // Clear any references to the now-deleted row.
+      selectionWhenOpened.current = selectionWhenOpened.current.filter(
+        id => id !== feature.id,
+      )
       dispatch(
         setSelectedFeatureIds(
           (selectedFeatureIds || []).filter(id => id !== feature.id),
@@ -120,12 +131,6 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
   }
   const { data: allFeaturesResp } = useGetAllFeaturesQuery(undefined, { skip: !dialogIsOpen })
   const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? []
-
-  const selectedFeature = useMemo(() => {
-    if (selectedFeatureId == null)
-      return null
-    return allFeatures.find(f => f.id === selectedFeatureId) ?? null
-  }, [allFeatures, selectedFeatureId])
 
   const addOrRemoveFeature = (feature) => {
     const ids = selectedFeatureIds || []
@@ -150,68 +155,66 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
     return next
   }
 
-  // Function to allow users to select multiple features using the shift key
+  // Function to allow users to select multiple features using the shift key.
+  // filteredRows is what's on screen, in on-screen order.
   const getFeaturesBetweenRows = (prevRow, thisRow) => {
-    const from
-      = prevRow.index < thisRow.index
-        ? prevRow.index + 1
-        : thisRow.index
-    const to
-      = prevRow.index < thisRow.index
-        ? thisRow.index + 1
-        : prevRow.index
+    const prev = filteredRows.findIndex(f => f.id === prevRow.id)
+    const current = filteredRows.findIndex(f => f.id === thisRow.id)
+    const from = prev < current
+      ? prev + 1
+      : current
+    const to = prev < current
+      ? current + 1
+      : prev
 
-    const base
-      = filteredRows.length < allFeatures.length
-        ? filteredRows
-        : allFeatures
-
-    return toggleSelectionState(selectedFeatureIds || [], base, from, to)
+    return toggleSelectionState(selectedFeatureIds || [], filteredRows, from, to)
   }
 
   const clickRow = (event, row) => {
-    if (!row || row.index === undefined)
+    if (!row || !canChoose)
       return
 
-    if (addingRemovingFeatures) {
-      // Only toggle project membership in add/remove mode. Browsing the list
-      // (opened from the main menu) must not silently add features: OK takes
-      // the else branch below and never persists, so they showed up in the
-      // info panel and preprocessed but never reached project_features.
+    const anchorShown = previousRow && filteredRows.some(f => f.id === previousRow.id)
+    if (event.shiftKey && anchorShown)
+      dispatch(setSelectedFeatureIds(getFeaturesBetweenRows(previousRow, row)))
+    else
       addOrRemoveFeature(row)
-      if (event.shiftKey && previousRow) {
-        const nextIds = getFeaturesBetweenRows(previousRow, row)
-        dispatch(setSelectedFeatureIds(nextIds))
-      }
-      setPreviousRow(row)
-    }
-    else {
-      dispatch(setSelectedFeatureId(row.id))
-    }
+    setPreviousRow(row)
   }
 
+  // Adds to the ticks, so a search then Select all keeps what's already ticked.
   const selectAllFeatures = () => {
-    const ids
-      = filteredRows.length < allFeatures.length
-        ? filteredRows.map(f => f.id)
-        : allFeatures.map(f => f.id)
-    dispatch(setSelectedFeatureIds(ids))
+    const shown = filteredRows.map(f => f.id)
+    dispatch(setSelectedFeatureIds([
+      ...new Set([
+        ...(selectedFeatureIds || []),
+        ...shown,
+      ]),
+    ]))
   }
+
+  const removedCount = selectionWhenOpened.current.filter(
+    id => !(selectedFeatureIds || []).includes(id),
+  ).length
 
   const handleClickOk = () => {
-    if (addingRemovingFeatures) {
+    // A new project has no id yet: createProject sends the ticks on Finish.
+    // onOk saves to the open project, so calling it here would overwrite that.
+    if (forNewProject) {
+      dispatch(
+        toggleFeatureD({ dialogName: 'featuresDialogOpen', isOpen: false }),
+      )
+      return
+    }
+    if (removedCount)
+      setConfirmingRemoval(true)
+    else
       onOk()
-    }
-    else {
-      unselectFeature()
-    }
   }
 
-  const unselectFeature = () => {
-    dispatch(setSelectedFeatureId(null))
-    dispatch(
-      toggleFeatureD({ dialogName: 'featuresDialogOpen', isOpen: false }),
-    )
+  const handleConfirmRemoval = () => {
+    setConfirmingRemoval(false)
+    onOk()
   }
 
   const dataFiltered = useCallback(rows => setFilteredRows(rows), [])
@@ -224,39 +227,30 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
     { id: 'created_by', label: 'By' },
   ])
 
-  const tableData = useMemo(
-    () =>
-      allFeatures.map((feature, index) => ({
-        ...feature,
-        index,
-      })),
-    [allFeatures],
-  )
-
   const closeDialog = () => {
+    // Also runs on click-outside. Unsaved ticks must not reach the info panel.
+    dispatch(setSelectedFeatureIds(selectionWhenOpened.current))
     dispatch(
       toggleFeatureD({ dialogName: 'featuresDialogOpen', isOpen: false }),
     )
-    dispatch(setAddingRemovingFeatures(false))
   }
 
   return (
     <BPDialog
       open={dialogIsOpen}
-      loading={uiState.loading}
       onOk={handleClickOk}
+      okLabel={forNewProject ? 'Use these features' : 'Save to project'}
+      hideOKButton={!canChoose}
       onCancel={closeDialog}
-      showCancelButton={addingRemovingFeatures}
-      autoDetectWindowHeight={false}
-      title="Features"
-      // showSearchBox={true}
-      // searchTextChanged={searchTextChanged}
-      actions={<FeaturesToolbar selectAllFeatures={selectAllFeatures} />}
+      showCancelButton
+      cancelLabel={canChoose ? 'Cancel' : 'Close'}
     >
       <div id="react-features-dialog-table">
         <BioprotectTable
           title="Features"
-          data={tableData}
+          showSearchBox
+          toolbar={<FeaturesToolbar selectAllFeatures={selectAllFeatures} canChoose={canChoose} />}
+          data={allFeatures}
           tableColumns={columns}
           searchColumns={[
             'alias',
@@ -266,15 +260,43 @@ function FeaturesDialog({ onOk, userRole, previewFeature }) {
           ]}
           dataFiltered={dataFiltered}
           selected={selectedFeatureIds}
-          selectedFeatureIds={selectedFeatureIds}
-          selectedFeature={selectedFeature}
+          selectionDisabled={!canChoose}
           clickRow={clickRow}
           preview={row => previewFeature?.(row)}
           deleteRow={row => setFeaturePendingDelete(row)}
           canDeleteRow={canDeleteFeature}
           deleteRowReason={deleteRowReason}
+          deleteRowTitle="Delete this feature from the library"
         />
       </div>
+      <Dialog
+        open={confirmingRemoval}
+        onClose={() => setConfirmingRemoval(false)}
+        aria-labelledby="remove-features-dialog-title"
+      >
+        <DialogTitle id="remove-features-dialog-title">
+          Remove
+          {' '}
+          {removedCount}
+          {' '}
+          {removedCount === 1
+            ? 'feature'
+            : 'features'}
+          {' '}
+          from this project?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Their targets and SPFs will be lost.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmingRemoval(false)}>Back</Button>
+          <Button onClick={handleConfirmRemoval} color="error" variant="contained">
+            Remove and save
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog
         open={!!featurePendingDelete}
         onClose={closeDeleteConfirm}

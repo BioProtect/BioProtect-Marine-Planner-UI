@@ -216,7 +216,6 @@ export const {
 
 const initialState = {
   activeProjectId: null,
-  addToProject: true,
   bpServer: {},
   newWDPAVersion: false,
   wdpaVectorTilesLayerName: '',
@@ -341,9 +340,6 @@ const projectSlice = createSlice({
         state.bpServer.isGuestUser = true
       }
     },
-    setAddToProject(state, action) {
-      state.addToProject = action.payload
-    },
     setCostData(state, action) {
       state.costData = action.payload
     },
@@ -412,7 +408,6 @@ const projectSlice = createSlice({
 
 export const {
   setActiveProjectId,
-  setAddToProject,
   setCostData,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
