@@ -1,34 +1,32 @@
-import React, { useCallback, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices'
 
-import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
-import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
-import GroupIcon from "@mui/icons-material/Group";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import ManageHistoryIcon from "@mui/icons-material/ManageHistory";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import { toggleDialog } from "@slices/uiSlice";
+import GroupIcon from '@mui/icons-material/Group'
+import ManageHistoryIcon from '@mui/icons-material/ManageHistory'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import { toggleDialog } from '@slices/uiSlice'
+import { useCallback } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 
-const ToolsMenu = (props) => {
-  const dispatch = useDispatch();
-  const [selectOpen, setSelectOpen] = useState(false);
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
-  const projectState = useSelector((state) => state.project);
+function ToolsMenu(props) {
+  const dispatch = useDispatch()
+  const dialogStates = useSelector(state => state.ui.dialogStates)
+  const projectState = useSelector(state => state.project)
 
   const openUsersDialog = useCallback(() => {
-    props.openUsersDialog();
-    closeDialog();
-  }, [props]);
+    props.openUsersDialog()
+    closeDialog()
+  }, [props])
 
   const openResetDialog = useCallback(() => {
-    dispatch(toggleDialog({ dialogName: "resetDialogOpen", isOpen: true }));
-    closeDialog();
-  }, []);
+    dispatch(toggleDialog({ dialogName: 'resetDialogOpen', isOpen: true }))
+    closeDialog()
+  }, [])
 
   const closeDialog = () =>
-    dispatch(toggleDialog({ dialogName: "toolsMenuOpen", isOpen: false }));
+    dispatch(toggleDialog({ dialogName: 'toolsMenuOpen', isOpen: false }))
 
   return (
     <Menu
@@ -39,32 +37,32 @@ const ToolsMenu = (props) => {
         paper: {
           elevation: 0,
           sx: {
-            overflow: "visible",
-            filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
-            mt: 1.5,
-            "& .MuiAvatar-root": {
+            'overflow': 'visible',
+            'filter': 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+            'mt': 1.5,
+            '& .MuiAvatar-root': {
               width: 32,
               height: 32,
               ml: -0.5,
               mr: 1,
             },
-            "&::before": {
+            '&::before': {
               content: '""',
-              display: "block",
-              position: "absolute",
+              display: 'block',
+              position: 'absolute',
               top: 0,
               left: 5,
               width: 10,
               height: 10,
-              bgcolor: "background.paper",
-              transform: "translateY(-50%) rotate(45deg)",
+              bgcolor: 'background.paper',
+              transform: 'translateY(-50%) rotate(45deg)',
               zIndex: 0,
             },
           },
         },
       }}
     >
-      {props.userRole === "Admin" && (
+      {props.userRole === 'Admin' && (
         <MenuItem onClick={openUsersDialog} title="Manage Users">
           <ListItemIcon>
             <GroupIcon />
@@ -72,7 +70,7 @@ const ToolsMenu = (props) => {
           <ListItemText>Users</ListItemText>
         </MenuItem>
       )}
-      {props.userRole === "Admin" && projectState.bpServer.enable_reset && (
+      {props.userRole === 'Admin' && projectState.bpServer.enable_reset && (
         <MenuItem onClick={openResetDialog} title="Reset database">
           <ListItemIcon>
             <ManageHistoryIcon />
@@ -80,7 +78,7 @@ const ToolsMenu = (props) => {
           <ListItemText>Reset database</ListItemText>
         </MenuItem>
       )}
-      {props.userRole === "Admin" && (
+      {props.userRole === 'Admin' && (
         <MenuItem onClick={props.cleanup} title="Cleanup server">
           <ListItemIcon>
             <CleaningServicesIcon />
@@ -89,7 +87,7 @@ const ToolsMenu = (props) => {
         </MenuItem>
       )}
     </Menu>
-  );
-};
+  )
+}
 
-export default ToolsMenu;
+export default ToolsMenu

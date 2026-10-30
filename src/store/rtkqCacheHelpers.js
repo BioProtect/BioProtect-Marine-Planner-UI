@@ -5,39 +5,46 @@
  *
  * Returns the mutable list reference inside the draft (Immer draft).
  */
-export const getDraftList = (draft) => {
+function getDraftList(draft) {
   if (Array.isArray(draft)) {
-    return draft;
+    return draft
   }
   if (draft && Array.isArray(draft.data)) {
-    return draft.data;
+    return draft.data
   }
-  return null;
+  return null
 }
 
 /**
  * Update items in a cached list by id.
  */
-export const replaceItemsById = (draft, byId) => {
-  const list = getDraftList(draft);
-  if (!list) return;
+export function replaceItemsById(draft, byId) {
+  const list = getDraftList(draft)
+  if (!list)
+    return
 
   for (let i = 0; i < list.length; i++) {
-    const item = list[i];
-    const updated = byId.get(item?.id);
-    if (updated) list[i] = updated;
+    const item = list[i]
+    const updated = byId.get(item?.id)
+    if (updated)
+      list[i] = updated
   }
 }
 
 /**
  * Patch a single item by id (merge patch into existing item).
  */
-export const patchItemById = (draft, id, patch) => {
-  const list = getDraftList(draft);
-  if (!list) return;
+export function patchItemById(draft, id, patch) {
+  const list = getDraftList(draft)
+  if (!list)
+    return
 
-  const idx = list.findIndex((x) => x?.id === id);
-  if (idx === -1) return;
+  const idx = list.findIndex(x => x?.id === id)
+  if (idx === -1)
+    return
 
-  list[idx] = { ...list[idx], ...patch };
+  list[idx] = {
+    ...list[idx],
+    ...patch,
+  }
 }

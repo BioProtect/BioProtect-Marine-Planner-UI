@@ -13,25 +13,26 @@ Web client for BioProtect, a spatial conservation planning tool built on Priotiz
 ```
 git clone <this-repo>
 cd frontend
-npm install
+pnpm install
 ```
 
 ## Development
 
 ```
-npm start
+pnpm start
 ```
 
 Runs the Vite dev server at http://localhost:4500 and opens it in the browser.
 
 ## Scripts
 
-- `npm start` - run the dev server
-- `npm run build` - build for production into `build/`
-- `npm run serve` - preview the production build locally
-- `npm test` - run the test suite (Vitest)
-- `npm run test:coverage` - run tests with coverage
-- `npm run deploy` - build and publish `build/` to GitHub Pages
+- `pnpm start` - run the dev server
+- `pnpm run build` - build for production into `build/`
+- `pnpm run serve` - preview the production build locally
+- `pnpm test` - run the test suite (Vitest)
+- `pnpm run test:coverage` - run tests with coverage
+- `pnpm run lint` - ESLint; add `--fix` to autofix
+- `pnpm run ci` - lint + knip + tests (runs as the pre-commit hook)
 
 ## Project structure
 
@@ -72,4 +73,4 @@ The image builds the app with Node, then serves the static `build/` output via n
 
 See [LICENSE](LICENSE).
 
-# BioProtect Marine Planner UI
+## BioProtect Marine Planner UI

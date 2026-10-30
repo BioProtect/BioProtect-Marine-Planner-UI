@@ -1,30 +1,31 @@
-import { getServerCapabilities } from "../Server/serverFunctions";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { setActiveTab, setOwner } from "./uiSlice";
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { INITIAL_VARS } from '../bpVars'
+import { getServerCapabilities } from '../Server/serverFunctions'
 
-import { INITIAL_VARS } from "../bpVars";
-import { apiSlice } from "./apiSlice";
-import { setSelectedFeatureIds } from "./featureSlice"
+import { apiSlice } from './apiSlice'
+import { setActiveTab, setOwner } from './uiSlice'
 
 export const projectApiSlice = apiSlice.injectEndpoints({
-  endpoints: (builder) => ({
+  endpoints: builder => ({
     // -----------------------------
     // REFERENCE LAYERS (view-only map layers, e.g. WDPA)
     // -----------------------------
     getReferenceLayers: builder.query({
-      query: () => ({ url: "reference-layers", method: "GET" }),
+      query: () => ({ url: 'reference-layers', method: 'GET' }),
     }),
 
     // -----------------------------
     // CREATE PROJECT (JSON)
     // -----------------------------
     createProject: builder.mutation({
-      query: (projectData) => ({
-        url: "projects?action=create",
-        method: "POST",
+      query: projectData => ({
+        url: 'projects?action=create',
+        method: 'POST',
         body: projectData,
       }),
-      invalidatesTags: [{ type: "ProjectList", id: "LIST" }],
+      invalidatesTags: [
+        { type: 'ProjectList', id: 'LIST' },
+      ],
     }),
 
     // -----------------------------
@@ -34,25 +35,29 @@ export const projectApiSlice = apiSlice.injectEndpoints({
     // -----------------------------
     updateProject: builder.mutation({
       query: ({ projectId, ...updateData }) => ({
-        url: "projects?action=",
-        method: "POST",
-        body: { ...updateData, action: "update" },
+        url: 'projects?action=',
+        method: 'POST',
+        body: { ...updateData, action: 'update' },
       }),
       async onQueryStarted({ projectId, patch }, { dispatch, queryFulfilled }) {
         // patch = { features: [...] } or whatever you send
         const patchResult = dispatch(
-          projectApiSlice.util.updateQueryData("getProject", projectId, (draft) => {
+          projectApiSlice.util.updateQueryData('getProject', projectId, (draft) => {
             // apply patch to draft
-            if (patch.features) draft.features = patch.features;
-          })
-        );
+            if (patch.features)
+              draft.features = patch.features
+          }),
+        )
         try {
-          await queryFulfilled;
-        } catch {
-          patchResult.undo();
+          await queryFulfilled
+        }
+        catch {
+          patchResult.undo()
         }
       },
-      invalidatesTags: (res, err, arg) => [{ type: "Project", id: arg.projectId }],
+      invalidatesTags: (res, err, arg) => [
+        { type: 'Project', id: arg.projectId },
+      ],
     }),
 
     // -----------------------------
@@ -68,18 +73,18 @@ export const projectApiSlice = apiSlice.injectEndpoints({
     // -----------------------------
     updateProjectFeatures: builder.mutation({
       query: ({ projectId, features }) => {
-        const getFeatureId = (f) => f.id ?? f.feature_unique_id;
+        const getFeatureId = f => f.id ?? f.feature_unique_id
 
         return {
-          url: "projects?action=update_features",
-          method: "POST",
+          url: 'projects?action=update_features',
+          method: 'POST',
           body: {
             project_id: projectId,
-            interest_features: features.map((f) => getFeatureId(f)),
-            target_values: features.map((f) => f.target_value),
-            spf_values: features.map((f) => f.spf),
+            interest_features: features.map(f => getFeatureId(f)),
+            target_values: features.map(f => f.target_value),
+            spf_values: features.map(f => f.spf),
           },
-        };
+        }
       },
       async onQueryStarted(
         { projectId, features },
@@ -88,21 +93,22 @@ export const projectApiSlice = apiSlice.injectEndpoints({
         // Optimistic update: keep UI responsive when editing features
         const patchResult = dispatch(
           projectApiSlice.util.updateQueryData(
-            "getProject",
+            'getProject',
             projectId,
             (draft) => {
-              draft.features = features;
+              draft.features = features
             },
           ),
-        );
+        )
         try {
-          await queryFulfilled;
-        } catch {
-          patchResult.undo();
+          await queryFulfilled
+        }
+        catch {
+          patchResult.undo()
         }
       },
       invalidatesTags: (result, error, arg) => [
-        { type: "Project", id: arg.projectId },
+        { type: 'Project', id: arg.projectId },
       ],
     }),
 
@@ -110,22 +116,27 @@ export const projectApiSlice = apiSlice.injectEndpoints({
     // GET SINGLE PROJECT
     // -----------------------------
     getProject: builder.query({
-      query: (projectId) => ({
+      query: projectId => ({
         url: `projects?action=get&projectId=${projectId}`,
         method: 'GET',
       }),
-      transformResponse: (raw) => (typeof raw === "string" ? JSON.parse(raw) : raw),
-      providesTags: (result, err, projectId) => [{ type: "Project", id: projectId }],
+      transformResponse: raw => (typeof raw === 'string'
+        ? JSON.parse(raw)
+        : raw),
+      providesTags: (result, err, projectId) => [
+        { type: 'Project', id: projectId },
+      ],
       async onQueryStarted(projectId, { dispatch, queryFulfilled }) {
         try {
-          const { data } = await queryFulfilled;
-          dispatch(setOwner(data?.project?.user));
-          dispatch(setActiveTab("project"));
+          const { data } = await queryFulfilled
+          dispatch(setOwner(data?.project?.user))
+          dispatch(setActiveTab('project'))
 
           // sync feature selection from project - feature slice if needed
           // const ids = (data?.features ?? []).map((f) => f.feature_unique_id ?? f.id);
           // dispatch(setSelectedFeatureIds(ids));
-        } catch {
+        }
+        catch {
           // ignore
         }
       },
@@ -137,36 +148,39 @@ export const projectApiSlice = apiSlice.injectEndpoints({
     listProjects: builder.query({
       query: () => ({
         url: `projects?action=list`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: (result) => [{ type: "ProjectList", id: "LIST" }],
+      providesTags: () => [
+        { type: 'ProjectList', id: 'LIST' },
+      ],
     }),
 
     // -----------------------------
     // CLONE PROJECT (not yet implemented backend)
     // -----------------------------
     cloneProject: builder.mutation({
-      query: (projectId) => ({
-        url: "projects?action=clone",
-        method: "POST",
+      query: projectId => ({
+        url: 'projects?action=clone',
+        method: 'POST',
         body: { project_id: projectId },
       }),
-      invalidatesTags: [{ type: "ProjectList", id: "LIST" }],
+      invalidatesTags: [
+        { type: 'ProjectList', id: 'LIST' },
+      ],
     }),
-
 
     // -----------------------------
     // DELETE PROJECT (JSON)
     // -----------------------------
     deleteProject: builder.mutation({
-      query: (projectId) => ({
-        url: "projects?action=delete",
-        method: "POST",
+      query: projectId => ({
+        url: 'projects?action=delete',
+        method: 'POST',
         body: { project_id: projectId },
       }),
       invalidatesTags: [
-        { type: "ProjectList", id: "LIST" },
-        { type: "Project" },
+        { type: 'ProjectList', id: 'LIST' },
+        { type: 'Project' },
       ],
     }),
 
@@ -175,42 +189,38 @@ export const projectApiSlice = apiSlice.injectEndpoints({
     // -----------------------------
     renameProject: builder.mutation({
       query: ({ projectId, newName }) => ({
-        url: "projects?action=rename",
-        method: "POST",
+        url: 'projects?action=rename',
+        method: 'POST',
         body: {
           project_id: projectId,
           newName,
         },
       }),
       invalidatesTags: (result, error, arg) => [
-        { type: "Project", id: arg.projectId },
-        { type: "ProjectList", id: "LIST" },
+        { type: 'Project', id: arg.projectId },
+        { type: 'ProjectList', id: 'LIST' },
       ],
     }),
   }),
-});
+})
 
 export const {
   useCreateProjectMutation,
   useGetReferenceLayersQuery,
-  useUpdateProjectMutation,
   useUpdateProjectFeaturesMutation,
   useGetProjectQuery,
   useListProjectsQuery,
-  useCloneProjectMutation,
   useDeleteProjectMutation,
   useRenameProjectMutation,
-} = projectApiSlice;
-
+} = projectApiSlice
 
 const initialState = {
   activeProjectId: null,
-  addToProject: true,
   bpServer: {},
   newWDPAVersion: false,
-  wdpaVectorTilesLayerName: "",
+  wdpaVectorTilesLayerName: '',
   registry: INITIAL_VARS,
-  status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
+  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
 
   costData: null,
@@ -218,8 +228,8 @@ const initialState = {
 
   projects: [],
   projectList: [],
-  projectListDialogHeading: "",
-  projectListDialogTitle: "",
+  projectListDialogHeading: '',
+  projectListDialogTitle: '',
   projectChanged: false,
   planningCostsTrigger: false,
 
@@ -229,184 +239,183 @@ const initialState = {
     projectsDialogOpen: false,
     newProjectWizardDialogOpen: false,
   },
-};
+}
 
-// The app talks to one server: the one it is served from (see @config/api)
+/** The app talks to one server: the one it is served from (see @config/api) */
 export const initialiseServer = createAsyncThunk(
-  "project/initialiseServer",
+  'project/initialiseServer',
   async (_, { dispatch, rejectWithValue }) => {
     try {
       const server = await getServerCapabilities({
         name: window.location.hostname,
         host: window.location.hostname,
-        description: "Local machine",
-        type: "local",
-      });
-      dispatch(selectServer(server));
-      return "ServerData retrieved";
-    } catch (error) {
-      return rejectWithValue(error.message);
+        description: 'Local machine',
+        type: 'local',
+      })
+      dispatch(selectServer(server))
+      return 'ServerData retrieved'
     }
-  }
-);
+    catch (error) {
+      return rejectWithValue(error.message)
+    }
+  },
+)
 
-
-export const bootstrapProject = createAsyncThunk(
-  "projects/bootstrapProject",
-  async (projectId, { dispatch, getState, rejectWithValue }) => {
+const bootstrapProject = createAsyncThunk(
+  'projects/bootstrapProject',
+  async (projectId, { dispatch, rejectWithValue }) => {
     try {
-      let projId = projectId;
+      let projId = projectId
 
       if (!projId) {
         const allProjects = await dispatch(
-          projectApiSlice.endpoints.listProjects.initiate(undefined, { forceRefetch: true })
-        ).unwrap();
+          projectApiSlice.endpoints.listProjects.initiate(undefined, { forceRefetch: true }),
+        ).unwrap()
 
-        const parsed = typeof allProjects === "string" ? JSON.parse(allProjects) : allProjects;
-        projId = parsed.projects?.[0]?.id;
+        const parsed = typeof allProjects === 'string'
+          ? JSON.parse(allProjects)
+          : allProjects
+        projId = parsed.projects?.[0]?.id
 
         if (!projId) {
-          return rejectWithValue("No projects found for user");
+          return rejectWithValue('No projects found for user')
         }
       }
 
-      dispatch(setActiveProjectId(projId));
+      dispatch(setActiveProjectId(projId))
       dispatch(
         projectApiSlice.endpoints.getProject.initiate(projId, {
           // keep it in cache, don't create extra subscriptions in components
           subscribe: false,
           forceRefetch: true,
-        })
-      );
-      return projId;
-    } catch (e) {
-      return rejectWithValue(e?.message ?? String(e));
+        }),
+      )
+      return projId
     }
-  }
-);
+    catch (e) {
+      return rejectWithValue(e?.message ?? String(e))
+    }
+  },
+)
 
-
-// projectSlice.js
+/** projectSlice.js */
 export const switchProject = createAsyncThunk(
-  "project/switchProject",
-  async (projectId, { dispatch }) => {
-    await dispatch(bootstrapProject(projectId)).unwrap();
-    return projectId;
-  }
-);
+  'project/switchProject',
+  async (projectId, { dispatch, rejectWithValue }) => {
+    try {
+      await dispatch(bootstrapProject(projectId)).unwrap()
+      return projectId
+    }
+    catch (e) {
+      // unwrap() throws bootstrapProject's rejectWithValue payload (a string)
+      return rejectWithValue(e?.message ?? String(e))
+    }
+  },
+)
 
 const projectSlice = createSlice({
-  name: "project",
+  name: 'project',
   initialState,
   reducers: {
     setActiveProjectId(state, action) {
-      state.activeProjectId = action.payload;
+      state.activeProjectId = action.payload
     },
     setBpServer(state, action) {
-      console.warn("setBpServer called with", action.payload);
-      state.bpServer = action.payload;
+      console.warn('setBpServer called with', action.payload)
+      state.bpServer = action.payload
     },
     selectServer(state, action) {
-      const server = action.payload;
-      state.bpServer = server;
+      const server = action.payload
+      state.bpServer = server
 
       // Check for new WDPA version
-      state.newWDPAVersion =
-        server.wdpa_version !== state.registry.WDPA.latest_version;
+      state.newWDPAVersion
+        = server.wdpa_version !== state.registry.WDPA.latest_version
 
       // Set the WDPA vector tiles layer name based on server's WDPA version
-      state.wdpaVectorTilesLayerName = server.wdpa_version;
+      state.wdpaVectorTilesLayerName = server.wdpa_version
 
       // Perform guest user check (additional logic like switching user may require a separate thunk)
       if (!server.offline && !server.corsEnabled && server.guestUserEnabled) {
-        state.bpServer.isGuestUser = true;
+        state.bpServer.isGuestUser = true
       }
     },
-    setAddToProject(state, action) {
-      state.addToProject = action.payload;
-    },
     setCostData(state, action) {
-      state.costData = action.payload;
+      state.costData = action.payload
     },
     setFiles(state, action) {
-      state.files = action.payload;
+      state.files = action.payload
     },
     setProjectData(state, action) {
-      state.projectData = action.payload;
+      state.projectData = action.payload
     },
     setProjectListDialogHeading(state, action) {
-      state.projectListDialogHeading = action.payload;
+      state.projectListDialogHeading = action.payload
     },
     setProjectListDialogTitle(state, action) {
-      state.projectListDialogTitle = action.payload;
+      state.projectListDialogTitle = action.payload
     },
     setProjectList(state, action) {
-      state.projectList = action.payload;
+      state.projectList = action.payload
     },
     setProjects(state, action) {
-      state.projects = action.payload;
+      state.projects = action.payload
     },
     setRenderer: (state, action) => {
-      state.renderer = action.payload;
+      state.renderer = action.payload
     },
     setProjectPlanningUnits: (state, action) => {
-      state.projectPlanningUnits = action.payload;
+      state.projectPlanningUnits = action.payload
     },
     setProjectCosts: (state, action) => {
-      state.projectCosts = action.payload;
+      state.projectCosts = action.payload
     },
     setPlanningCostsTrigger: (state, action) => {
-      state.planningCostsTrigger = action.payload;
+      state.planningCostsTrigger = action.payload
     },
     toggleProjDialog(state, action) {
-      const { dialogName, isOpen } = action.payload;
-      state.dialogs[dialogName] = isOpen;
+      const { dialogName, isOpen } = action.payload
+      state.dialogs[dialogName] = isOpen
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(initialiseServer.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
+        state.status = 'loading'
+        state.error = null
       })
-      .addCase(initialiseServer.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.error = null;
+      .addCase(initialiseServer.fulfilled, (state) => {
+        state.status = 'succeeded'
+        state.error = null
       })
       .addCase(initialiseServer.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload || "Failed to initialise server";
+        state.status = 'failed'
+        state.error = action.payload || 'Failed to initialise server'
       })
       .addCase(switchProject.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
+        state.status = 'loading'
+        state.error = null
       })
       .addCase(switchProject.fulfilled, (state) => {
-        state.status = "succeeded";
+        state.status = 'succeeded'
       })
       .addCase(switchProject.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload || "Failed to switch project";
-      });
+        state.status = 'failed'
+        state.error = action.payload || 'Failed to switch project'
+      })
   },
 })
 
-
 export const {
   setActiveProjectId,
-  setBpServer,
-  selectServer,
-  setAddToProject,
   setCostData,
-  setProjectData,
   setProjectListDialogHeading,
   setProjectListDialogTitle,
   setProjectList,
   setProjects,
-  setRenderer,
-  setProjectPlanningUnits,
   setProjectCosts,
   setPlanningCostsTrigger,
   toggleProjDialog,
-} = projectSlice.actions;
-export default projectSlice.reducer;
+} = projectSlice.actions
+const { selectServer } = projectSlice.actions
+export default projectSlice.reducer

@@ -1,11 +1,11 @@
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import { DialogTitle } from "@mui/material";
+import { DialogTitle } from '@mui/material'
+import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
 
 // onCancel also fires when the dialog is closed; actions render above the OK/Cancel row
-const BPDialog = ({
+function BPDialog({
   open,
   title,
   children,
@@ -13,30 +13,32 @@ const BPDialog = ({
   onOk,
   onCancel,
   fullWidth = false,
-  maxWidth = "lg",
+  maxWidth = 'lg',
   showCancelButton,
-  cancelLabel = "Cancel",
+  cancelLabel = 'Cancel',
   hideOKButton,
   okDisabled,
-  okLabel = "OK",
-}) => (
-  <Dialog open={open} fullWidth={fullWidth} maxWidth={maxWidth} onClose={onCancel}>
-    <DialogTitle>{title}</DialogTitle>
-    <DialogContent>{children}</DialogContent>
-    <DialogActions>{actions}</DialogActions>
-    <DialogActions>
-      {showCancelButton && (
-        <Button variant="outlined" onClick={onCancel} color="error">
-          {cancelLabel}
-        </Button>
-      )}
-      {!hideOKButton && (
-        <Button variant="outlined" onClick={onOk} disabled={okDisabled}>
-          {okLabel}
-        </Button>
-      )}
-    </DialogActions>
-  </Dialog>
-);
+  okLabel = 'OK',
+}) {
+  return (
+    <Dialog open={open} fullWidth={fullWidth} maxWidth={maxWidth} onClose={onCancel}>
+      {title && <DialogTitle>{title}</DialogTitle>}
+      <DialogContent>{children}</DialogContent>
+      {actions && <DialogActions>{actions}</DialogActions>}
+      <DialogActions>
+        {showCancelButton && (
+          <Button variant="outlined" onClick={onCancel} color="error">
+            {cancelLabel}
+          </Button>
+        )}
+        {!hideOKButton && (
+          <Button variant="outlined" onClick={onOk} disabled={okDisabled}>
+            {okLabel}
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+  )
+}
 
-export default BPDialog;
+export default BPDialog

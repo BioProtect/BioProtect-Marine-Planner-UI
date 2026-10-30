@@ -117,3 +117,5 @@ dist
 .pnp.*
 
 nginx.conf
+.githooks
+skills/npm-*

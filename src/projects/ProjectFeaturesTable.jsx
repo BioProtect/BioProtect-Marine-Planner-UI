@@ -1,7 +1,7 @@
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import {
   Box,
   Button,
-  Checkbox,
   Divider,
   IconButton,
   Table,
@@ -11,65 +11,58 @@ import {
   TableRow,
   Tooltip,
   Typography,
-} from "@mui/material";
-import { useDispatch, useSelector } from "react-redux";
+} from '@mui/material'
 
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { setSelectedFeatureIds } from "@slices/featureSlice";
-import { useGetAllFeaturesQuery } from "@slices/featureSlice";
-import { useMemo } from "react";
+import { setSelectedFeatureIds, useGetAllFeaturesQuery } from '@slices/featureSlice'
+import { useMemo } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 
 function ProjectFeaturesTable() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch()
   const selectedFeatureIds = useSelector(
-    (state) => state.feature.selectedFeatureIds,
-  );
+    state => state.feature.selectedFeatureIds,
+  )
 
-  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
-  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery()
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? []
 
   const selected = useMemo(() => {
-    const ids = selectedFeatureIds ?? [];
-    return allFeatures.filter((f) => ids.includes(f.id));
-  }, [allFeatures, selectedFeatureIds]);
-
-  const toggleOne = (id) => {
-    const next = selectedFeatureIds.includes(id)
-      ? selectedFeatureIds.filter((x) => x !== id)
-      : [...selectedFeatureIds, id];
-    dispatch(setSelectedFeatureIds(next));
-  };
+    const ids = selectedFeatureIds ?? []
+    return allFeatures.filter(f => ids.includes(f.id))
+  }, [allFeatures, selectedFeatureIds])
 
   const removeOne = (id) => {
-    dispatch(setSelectedFeatureIds(selectedFeatureIds.filter((x) => x !== id)));
-  };
+    dispatch(setSelectedFeatureIds(selectedFeatureIds.filter(x => x !== id)))
+  }
 
-  const clearAll = () => dispatch(setSelectedFeatureIds([]));
+  const clearAll = () => dispatch(setSelectedFeatureIds([]))
 
   if (selected.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
-        No features selected yet. Click “+/-” to choose features.
+        No features selected yet. Click “Choose features” to add some.
       </Typography>
-    );
+    )
   }
 
   return (
     <Box>
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           mb: 1,
         }}
       >
         <Typography variant="h6" sx={{ fontSize: 16, fontWeight: 600 }}>
           Selected features
         </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            {selected.length} selected
+            {selected.length}
+            {' '}
+            selected
           </Typography>
           <Button size="small" onClick={clearAll}>
             Clear all
@@ -89,20 +82,20 @@ function ProjectFeaturesTable() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {selected.map((row) => (
+          {selected.map(row => (
             <TableRow key={row.id} hover>
               <TableCell
                 sx={{
                   maxWidth: 250,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {row.alias}
               </TableCell>
               <TableCell
-                sx={{ textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                sx={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
               >
                 {row.description}
               </TableCell>
@@ -118,7 +111,7 @@ function ProjectFeaturesTable() {
         </TableBody>
       </Table>
     </Box>
-  );
+  )
 }
 
-export default ProjectFeaturesTable;
+export default ProjectFeaturesTable

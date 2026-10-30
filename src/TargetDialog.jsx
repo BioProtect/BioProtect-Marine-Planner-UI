@@ -1,33 +1,33 @@
-import { Box, TextField } from "@mui/material";
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { Box, TextField } from '@mui/material'
+import { toggleDialog } from '@slices/uiSlice'
+import { useState } from 'react'
 
-import BPDialog from "./BPDialog";
-import { isValidTargetValue } from "./Helpers";
-import { toggleDialog } from "@slices/uiSlice";
+import { useDispatch, useSelector } from 'react-redux'
+import BPDialog from './BPDialog'
+import { isValidTargetValue } from './Helpers'
 
-const TargetDialog = ({ updateTargetValueForFeatures, ...props }) => {
-  const dispatch = useDispatch();
-  const dialogStates = useSelector((state) => state.ui.dialogStates);
+function TargetDialog({ updateTargetValueForFeatures }) {
+  const dispatch = useDispatch()
+  const dialogStates = useSelector(state => state.ui.dialogStates)
 
-  const [targetValue, setTargetValue] = useState(17);
-  const [validTarget, setValidTarget] = useState(true);
+  const [targetValue, setTargetValue] = useState(17)
+  const [validTarget, setValidTarget] = useState(true)
 
   const validateTarget = () => {
-    const isValid = isValidTargetValue(targetValue);
-    setValidTarget(isValid);
+    const isValid = isValidTargetValue(targetValue)
+    setValidTarget(isValid)
 
     if (isValid) {
-      updateTargetValueForFeatures(targetValue);
-      dispatch(toggleDialog({ dialogName: "targetDialogOpen", isOpen: false }));
+      updateTargetValueForFeatures(targetValue)
+      dispatch(toggleDialog({ dialogName: 'targetDialogOpen', isOpen: false }))
     }
-  };
+  }
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      validateTarget();
+    if (e.key === 'Enter') {
+      validateTarget()
     }
-  };
+  }
 
   return (
     <BPDialog
@@ -39,21 +39,22 @@ const TargetDialog = ({ updateTargetValueForFeatures, ...props }) => {
       onOk={() => validateTarget()}
       onCancel={() =>
         dispatch(
-          toggleDialog({ dialogName: "targetDialogOpen", isOpen: false }),
-        )
-      }
+          toggleDialog({ dialogName: 'targetDialogOpen', isOpen: false }),
+        )}
     >
       <Box display="flex" justifyContent="center" alignItems="center">
         <TextField
           id="commonTarget"
           type="number"
           value={targetValue}
-          onChange={(e) => setTargetValue(Number(e.target.value))}
+          onChange={e => setTargetValue(Number(e.target.value))}
           onKeyDown={handleKeyPress}
           error={!validTarget}
-          helperText={!validTarget ? "Invalid target" : ""}
+          helperText={!validTarget
+            ? 'Invalid target'
+            : ''}
           inputProps={{
-            style: { fontSize: "13px", width: "70px", textAlign: "center" },
+            style: { fontSize: '13px', width: '70px', textAlign: 'center' },
           }}
           label="Target Value"
           variant="outlined"
@@ -61,7 +62,7 @@ const TargetDialog = ({ updateTargetValueForFeatures, ...props }) => {
         />
       </Box>
     </BPDialog>
-  );
-};
+  )
+}
 
-export default TargetDialog;
+export default TargetDialog

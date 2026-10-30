@@ -1,73 +1,67 @@
-import React, { useState } from "react";
-import { setSelectedFeatureIds, toggleFeatureD } from "@slices/featureSlice";
-import { useDispatch, useSelector } from "react-redux";
+import CheckBoxIcon from '@mui/icons-material/CheckBox'
+import ClearAllIcon from '@mui/icons-material/ClearAll'
+import Import from '@mui/icons-material/GetApp'
 
-import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import ClearAllIcon from "@mui/icons-material/ClearAll";
-import Import from "@mui/icons-material/GetApp";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
+import Button from '@mui/material/Button'
+import ButtonGroup from '@mui/material/ButtonGroup'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import { setSelectedFeatureIds, toggleFeatureD } from '@slices/featureSlice'
+import { useDispatch, useSelector } from 'react-redux'
 
-const FeaturesToolbar = ({ selectAllFeatures }) => {
-  const dispatch = useDispatch();
-  const uiState = useSelector((state) => state.ui);
-  const featureState = useSelector((state) => state.feature);
+function FeaturesToolbar({ selectAllFeatures, canChoose }) {
+  const dispatch = useDispatch()
+  const uiState = useSelector(state => state.ui)
+  // Import reads shapefiles without a .prj in the open project's CRS, which is
+  // the wrong one for a project that doesn't exist yet.
+  const forNewProject = useSelector(
+    state => state.project.dialogs.newProjectDialogOpen,
+  )
 
-  const [newAnchorEl, setNewAnchorEl] = useState(null);
-  const [importAnchorEl, setImportAnchorEl] = useState(null);
-
-  const newOpen = Boolean(newAnchorEl);
-  const importOpen = Boolean(importAnchorEl);
-
-  const handleClose = () => {
-    setNewAnchorEl(null);
-    setImportAnchorEl(null);
-  };
-
+  // Opens on top, like preview: closing this one would lose the Cancel snapshot.
   const handleOpenImportFeaturesDialog = () => {
     dispatch(
-      toggleFeatureD({ dialogName: "featuresDialogOpen", isOpen: false }),
-    );
-    dispatch(
-      toggleFeatureD({ dialogName: "importFeaturesDialogOpen", isOpen: true }),
-    );
-  };
+      toggleFeatureD({ dialogName: 'importFeaturesDialogOpen', isOpen: true }),
+    )
+  }
 
   return (
-    <>
-      {!featureState.addingRemovingFeatures ? (
-        <Button
-          mt={10}
-          variant="contained"
-          startIcon={<Import style={{ height: 20, width: "100%" }} />}
-          title="Create new features from existing data"
-          disabled={uiState.loading}
-          onClick={handleOpenImportFeaturesDialog}
-        >
-          Import
-        </Button>
-      ) : (
-        <ButtonGroup aria-label="Batch feature controls" fullWidth>
+    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ px: 2, pb: 1 }}>
+      <div>
+        {!forNewProject && (
           <Button
-            startIcon={<ClearAllIcon />}
-            title="Clear all features"
-            onClick={() => dispatch(setSelectedFeatureIds([]))}
+            variant="contained"
+            startIcon={<Import />}
+            title="Add features to the library from a shapefile"
+            disabled={uiState.loading}
+            onClick={handleOpenImportFeaturesDialog}
           >
-            Clear all
+            Import shapefile
           </Button>
-          <Button
-            startIcon={<CheckBoxIcon />}
-            title="Select all features"
-            onClick={selectAllFeatures}
-          >
-            Select all
-          </Button>
-        </ButtonGroup>
-      )}
-    </>
-  );
-};
+        )}
+      </div>
+      {canChoose
+        ? (
+            <ButtonGroup aria-label="Batch feature controls">
+              <Button
+                startIcon={<CheckBoxIcon />}
+                title="Tick every feature shown"
+                onClick={selectAllFeatures}
+              >
+                Select all shown
+              </Button>
+              <Button
+                startIcon={<ClearAllIcon />}
+                title="Untick all features"
+                onClick={() => dispatch(setSelectedFeatureIds([]))}
+              >
+                Clear all
+              </Button>
+            </ButtonGroup>
+          )
+        : <Typography color="text.secondary">Open a project to add features</Typography>}
+    </Stack>
+  )
+}
 
-export default FeaturesToolbar;
+export default FeaturesToolbar

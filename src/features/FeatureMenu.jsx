@@ -1,95 +1,89 @@
+import Preprocess from '@mui/icons-material/Autorenew'
+import Properties from '@mui/icons-material/ErrorOutline'
+
+import RemoveFromProject from '@mui/icons-material/Remove'
+import AddToMap from '@mui/icons-material/Visibility'
+import RemoveFromMap from '@mui/icons-material/VisibilityOff'
+import ZoomIn from '@mui/icons-material/ZoomIn'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
 import {
-  setAddingRemovingFeatures,
   setSelectedFeatureIds,
   toggleFeatureD,
   useGetAllFeaturesQuery,
-} from "@slices/featureSlice";
-import { useDispatch, useSelector } from "react-redux";
+} from '@slices/featureSlice'
+import { useUpdateProjectFeaturesMutation } from '@slices/projectSlice'
+import { useMemo } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 
-import AddToMap from "@mui/icons-material/Visibility";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import Preprocess from "@mui/icons-material/Autorenew";
-import Properties from "@mui/icons-material/ErrorOutline";
-import RemoveFromMap from "@mui/icons-material/VisibilityOff";
-import RemoveFromProject from "@mui/icons-material/Remove";
-import ZoomIn from "@mui/icons-material/ZoomIn";
-import { selectCurrentUser } from "@slices/authSlice";
-import { useMemo } from "react";
-import { useUpdateProjectFeaturesMutation } from "@slices/projectSlice";
-
-const FeatureMenu = ({
-  anchorEl,
-  toggleFeatureLayer,
-  toggleFeaturePUIDLayer,
-  zoomToFeature,
-  preprocessSingleFeature,
-  preprocessing,
-}) => {
-  const dispatch = useDispatch();
-  const [updateProjectFeatures] = useUpdateProjectFeaturesMutation();
-  const activeProjectId = useSelector((state) => state.project.activeProjectId);
+function FeatureMenu({ anchorEl, toggleFeatureLayer, toggleFeaturePUIDLayer, zoomToFeature, preprocessSingleFeature }) {
+  const dispatch = useDispatch()
+  const [updateProjectFeatures] = useUpdateProjectFeaturesMutation()
+  const activeProjectId = useSelector(state => state.project.activeProjectId)
   const selectedFeatureId = useSelector(
-    (state) => state.feature.selectedFeatureId,
-  );
+    state => state.feature.selectedFeatureId,
+  )
   const selectedFeatureIds = useSelector(
-    (state) => state.feature.selectedFeatureIds,
-  );
-  const featureDialogs = useSelector((s) => s.feature.dialogs);
+    state => state.feature.selectedFeatureIds,
+  )
+  const featureDialogs = useSelector(s => s.feature.dialogs)
 
-  const { data: allFeaturesResp } = useGetAllFeaturesQuery();
-  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? [];
+  const { data: allFeaturesResp } = useGetAllFeaturesQuery()
+  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? []
 
   const selectedFeature = useMemo(() => {
-    if (selectedFeatureId == null) return null;
-    return allFeatures.find((f) => f.id === selectedFeatureId) ?? null;
-  }, [allFeatures, selectedFeatureId]);
+    if (selectedFeatureId == null)
+      return null
+    return allFeatures.find(f => f.id === selectedFeatureId) ?? null
+  }, [allFeatures, selectedFeatureId])
 
   const handleInfoMenuItemClick = () => {
     dispatch(
-      toggleFeatureD({ dialogName: "featureInfoDialogOpen", isOpen: true }),
-    );
-    closeDialog();
-  };
+      toggleFeatureD({ dialogName: 'featureInfoDialogOpen', isOpen: true }),
+    )
+    closeDialog()
+  }
 
   const removeFeature = async () => {
-    const ids = selectedFeatureIds || [];
-    if (!ids.includes(selectedFeatureId)) return;
+    const ids = selectedFeatureIds || []
+    if (!ids.includes(selectedFeatureId))
+      return
 
     // Toggle off map layers for the removed feature
     if (selectedFeature?.feature_layer_loaded) {
-      toggleFeatureLayer(selectedFeature);
+      toggleFeatureLayer(selectedFeature)
     }
     if (selectedFeature?.feature_puid_layer_loaded) {
-      toggleFeaturePUIDLayer(selectedFeature);
+      toggleFeaturePUIDLayer(selectedFeature)
     }
 
-    const remainingIds = ids.filter((id) => id !== selectedFeatureId);
-    dispatch(setSelectedFeatureIds(remainingIds));
+    const remainingIds = ids.filter(id => id !== selectedFeatureId)
+    dispatch(setSelectedFeatureIds(remainingIds))
     dispatch(
       toggleFeatureD({
-        dialogName: "featureMenuOpen",
+        dialogName: 'featureMenuOpen',
         isOpen: false,
       }),
-    );
+    )
 
-    const remainingFeatures = allFeatures.filter((f) =>
+    const remainingFeatures = allFeatures.filter(f =>
       remainingIds.includes(f.id),
-    );
+    )
     try {
       await updateProjectFeatures({
         projectId: activeProjectId,
         features: remainingFeatures,
-      }).unwrap();
-    } catch (err) {
-      console.error("Failed to persist feature removal:", err);
-      dispatch(setSelectedFeatureIds(ids));
+      }).unwrap()
     }
-  };
+    catch (err) {
+      console.error('Failed to persist feature removal:', err)
+      dispatch(setSelectedFeatureIds(ids))
+    }
+  }
 
   const closeDialog = () =>
-    dispatch(toggleFeatureD({ dialogName: "featureMenuOpen", isOpen: false }));
+    dispatch(toggleFeatureD({ dialogName: 'featureMenuOpen', isOpen: false }))
   return (
     <Menu
       open={featureDialogs.featureMenuOpen}
@@ -113,19 +107,20 @@ const FeatureMenu = ({
 
       <MenuItem
         onClick={() =>
-          selectedFeature && toggleFeaturePUIDLayer(selectedFeature)
-        }
+          selectedFeature && toggleFeaturePUIDLayer(selectedFeature)}
       >
         <ListItemIcon>
-          {selectedFeature?.feature_puid_layer_loaded ? (
-            <RemoveFromMap />
-          ) : (
-            <AddToMap />
-          )}
+          {selectedFeature?.feature_puid_layer_loaded
+            ? (
+                <RemoveFromMap />
+              )
+            : (
+                <AddToMap />
+              )}
         </ListItemIcon>
         {selectedFeature?.feature_puid_layer_loaded
-          ? "Remove planning unit outlines"
-          : "Outline planning units where the feature occurs"}
+          ? 'Remove planning unit outlines'
+          : 'Outline planning units where the feature occurs'}
       </MenuItem>
 
       <MenuItem
@@ -147,7 +142,7 @@ const FeatureMenu = ({
         Preprocess Feature
       </MenuItem>
     </Menu>
-  );
-};
+  )
+}
 
-export default FeatureMenu;
+export default FeatureMenu

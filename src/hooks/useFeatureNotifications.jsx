@@ -1,65 +1,68 @@
-import { useEffect, useRef } from "react";
-import { useDispatch } from "react-redux";
-import { featureApiSlice } from "@slices/featureSlice";
-import { addFeaturesToCache } from "@store/featureCacheActions";
-import { addFeatureAttributes } from "@features/featureUtils";
-import { getApiBaseUrl, getWsBaseUrl } from "@config/api";
+import { getWsBaseUrl } from '@config/api'
+import { addFeatureAttributes } from '@features/featureUtils'
+import { featureApiSlice } from '@slices/featureSlice'
+import { addFeaturesToCache } from '@store/featureCacheActions'
+import { useEffect, useRef } from 'react'
+import { useDispatch } from 'react-redux'
 
-const RECONNECT_DELAY = 3000;
+const RECONNECT_DELAY = 3000
 
-const useFeatureNotifications = () => {
-  const dispatch = useDispatch();
-  const wsRef = useRef(null);
-  const reconnectTimer = useRef(null);
+function useFeatureNotifications() {
+  const dispatch = useDispatch()
+  const wsRef = useRef(null)
+  const reconnectTimer = useRef(null)
 
   useEffect(() => {
     const connect = () => {
-      const url = getWsBaseUrl() + "notifications";
-      const ws = new WebSocket(url);
+      const url = `${getWsBaseUrl()}notifications`
+      const ws = new WebSocket(url)
 
       ws.onmessage = async (evt) => {
         try {
-          const data = JSON.parse(evt.data);
-          if (data.event === "feature-created" && data.metadataId) {
+          const data = JSON.parse(evt.data)
+          if (data.event === 'feature-created' && data.metadataId) {
             const resp = await dispatch(
               featureApiSlice.endpoints.getFeature.initiate(data.metadataId),
-            );
-            const feature = resp?.data?.data?.[0];
+            )
+            const feature = resp?.data?.data?.[0]
             if (feature) {
               dispatch(
                 addFeaturesToCache({
-                  features: [addFeatureAttributes(feature)],
+                  features: [
+                    addFeatureAttributes(feature),
+                  ],
                 }),
-              );
+              )
             }
           }
-        } catch (e) {
-          console.warn("Notification parse error:", e);
         }
-      };
+        catch (e) {
+          console.warn('Notification parse error:', e)
+        }
+      }
 
       ws.onclose = () => {
-        wsRef.current = null;
-        reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY);
-      };
+        wsRef.current = null
+        reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY)
+      }
 
       ws.onerror = () => {
-        ws.close();
-      };
+        ws.close()
+      }
 
-      wsRef.current = ws;
-    };
+      wsRef.current = ws
+    }
 
-    connect();
+    connect()
 
     return () => {
-      clearTimeout(reconnectTimer.current);
+      clearTimeout(reconnectTimer.current)
       if (wsRef.current) {
-        wsRef.current.onclose = null;
-        wsRef.current.close();
+        wsRef.current.onclose = null
+        wsRef.current.close()
       }
-    };
-  }, [dispatch]);
-};
+    }
+  }, [dispatch])
+}
 
-export default useFeatureNotifications;
+export default useFeatureNotifications
