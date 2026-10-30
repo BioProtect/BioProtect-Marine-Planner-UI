@@ -1,5 +1,6 @@
-import Box from '@mui/material/Box'
+import { featureColor } from '@features/featuresService'
 
+import Box from '@mui/material/Box'
 import List from '@mui/material/List'
 import {
   featureApiSlice,
@@ -125,7 +126,7 @@ function FeaturesList({
     >
       {projectFeatures.map((item) => {
         const { id, area, protected_area, target_value } = item
-        const color = item.color
+        const color = featureColor(item)
         const repr = reprByFeatureUniqueId[id] ?? null
         const achieved = repr?.achieved ?? null
         const achievedMin = repr?.achievedMin ?? null
