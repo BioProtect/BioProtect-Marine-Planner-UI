@@ -91,6 +91,9 @@ function useWebSocketHandler(checkForErrors, setPreprocessing, setPid, newFeatur
         // Track when this socket opened so we can compute elapsed time
         // for streaming "Running" messages.
         let startTime = null
+        // Set once the server has reported an error, so the close that follows
+        // (our own ws.close() -> code 1005) doesn't overwrite that error toast.
+        let serverErrored = false
 
         ws.onopen = () => {
           startTime = Date.now()
@@ -153,6 +156,7 @@ function useWebSocketHandler(checkForErrors, setPreprocessing, setPid, newFeatur
             })
             showMessage(message.error, 'error')
             setPreprocessing(false)
+            serverErrored = true
             reject(new Error(message.error || 'WebSocket error occurred'))
             ws.close()
           }
@@ -170,6 +174,8 @@ function useWebSocketHandler(checkForErrors, setPreprocessing, setPid, newFeatur
         ws.onclose = (evt) => {
           setPreprocessing(false)
           console.warn('WebSocket closed:', evt)
+          if (serverErrored)
+            return
           if (!evt.wasClean || evt.code !== 1000) {
             const reason = evt.reason || 'No reason provided'
             showMessage(reason, 'error')
