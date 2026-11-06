@@ -2763,11 +2763,17 @@ function App() {
     startLogging()
 
     // project_id: a shapefile without a .prj is read in the project CRS
-    const baseUrl = `importFeatures?zipfile=${zipfile}&shapefile=${shapefile}&project_id=${activeProjectId}`
-    const url
-      = name !== ''
-        ? `${baseUrl}&name=${name}&description=${description}`
-        : `${baseUrl}&splitfield=${splitfield}`
+    // Mode is decided by the split field, not the name: the dialog pre-fills
+    // the name with the shapefile's, so it is never empty in split mode.
+    const params = new URLSearchParams({
+      zipfile,
+      shapefile,
+      project_id: activeProjectId,
+      ...(splitfield
+        ? { splitfield }
+        : { name, description }),
+    })
+    const url = `importFeatures?${params}`
 
     try {
       const message = await handleWebSocket(url)

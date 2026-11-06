@@ -88,7 +88,11 @@ function ImportFeaturesDialog({
   const handleNameChange = event => setName(event.target.value)
   const handleDescriptionChange = event => setDescription(event.target.value)
   const handleSplitFieldChange = event => setSplitField(event.target.value)
-  const resetFieldnames = () => setFieldnames([])
+  const resetFieldnames = () => {
+    setFieldnames([])
+    // a field picked earlier would otherwise switch the import to split mode
+    setSplitField('')
+  }
 
   const handleGetShapefileFieldnames = (shapeFilePath) => {
     if (shapeFilePath === undefined) {
