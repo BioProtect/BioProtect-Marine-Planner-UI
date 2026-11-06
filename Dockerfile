@@ -2,7 +2,7 @@
 FROM node:22-alpine as build
 
 WORKDIR /app
-RUN corepack enable
+RUN npm install -g pnpm@12.16.1
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # prepare wires git hooks, which needs a .git dir the image doesn't have
