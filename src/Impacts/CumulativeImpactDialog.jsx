@@ -1,8 +1,9 @@
+import { useOnValueChange } from '@hooks/useOnValueChange'
 import AddCircleIcon from '@mui/icons-material/AddCircle'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DeleteIcon from '@mui/icons-material/Delete'
-import FileUploadIcon from '@mui/icons-material/FileUpload'
 
+import FileUploadIcon from '@mui/icons-material/FileUpload'
 import PlayCircleIcon from '@mui/icons-material/PlayCircle'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -59,7 +60,6 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
 
   const [tabIndex, setTabIndex] = useState(0)
   const [searchText, setSearchText] = useState('')
-  const [selectedProfileId, setSelectedProfileId] = useState(null)
 
   // Activities tab state
   const [selectedActivityIds, setSelectedActivityIds] = useState([])
@@ -71,7 +71,10 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
   const [rasterFilename, setRasterFilename] = useState('')
   const [rasterProfileName, setRasterProfileName] = useState('')
   const [rasterProfileDescription, setRasterProfileDescription] = useState('')
-  const [rasterBandInfo, setRasterBandInfo] = useState(null)
+  const [probedBandInfo, setProbedBandInfo] = useState(null)
+  const rasterBandInfo = rasterFilename
+    ? probedBandInfo
+    : null
   const [rasterBand, setRasterBand] = useState(1)
   const [rasterStat, setRasterStat] = useState('mean')
   const [rasterNormalise, setRasterNormalise] = useState(true)
@@ -125,25 +128,16 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
 
   // Load activities once when the dialog opens
   const dialogOpen = dialogStates.cumulativeImpactDialogOpen
-  const [activitiesLoaded, setActivitiesLoaded] = useState(false)
+  const [selectedProfileId, setSelectedProfileId] = useState(activeProfile?.id ?? null)
+  useOnValueChange(activeProfile?.id, id => setSelectedProfileId(id ?? null))
 
   useEffect(() => {
     if (dialogOpen) {
-      setSelectedProfileId(activeProfile?.id ?? null)
-    }
-  }, [dialogOpen, activeProfile?.id])
-
-  useEffect(() => {
-    if (dialogOpen && !activitiesLoaded) {
-      setActivitiesLoaded(true)
       _get('getUploadedActivities').then((resp) => {
         if (resp?.data) {
           dispatch(setUploadedActivities(resp.data))
         }
       })
-    }
-    if (!dialogOpen) {
-      setActivitiesLoaded(false)
     }
   }, [dialogOpen]) // eslint-disable-line react/exhaustive-deps
 
@@ -214,7 +208,6 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
   useEffect(() => {
     let cancelled = false
     if (!rasterFilename || !getRasterBandInfo) {
-      setRasterBandInfo(null)
       lastProbedFilenameRef.current = ''
       return
     }
@@ -227,7 +220,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
       const info = await getRasterBandInfo(rasterFilename)
       if (cancelled)
         return
-      setRasterBandInfo(info)
+      setProbedBandInfo(info)
       // Reset band selection to 1 whenever a new raster comes in.
       setRasterBand(1)
     })()
@@ -259,7 +252,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
       setRasterFilename('')
       setRasterProfileName('')
       setRasterProfileDescription('')
-      setRasterBandInfo(null)
+      setProbedBandInfo(null)
       setRasterBand(1)
       setTabIndex(0)
     }
@@ -350,7 +343,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
     setRasterFilename('')
     setRasterProfileName('')
     setRasterProfileDescription('')
-    setRasterBandInfo(null)
+    setProbedBandInfo(null)
     setRasterBand(1)
     dispatch(
       toggleDialog({

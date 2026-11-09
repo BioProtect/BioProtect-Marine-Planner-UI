@@ -28,7 +28,7 @@ function FeatureInfoDialog({ updateFeature }) {
   )
 
   const { data: allFeaturesResp } = useGetAllFeaturesQuery()
-  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? []
+  const allFeatures = useMemo(() => allFeaturesResp?.data ?? allFeaturesResp ?? [], [allFeaturesResp])
 
   const currentFeature = useMemo(() => {
     if (selectedFeatureId == null)
@@ -36,13 +36,13 @@ function FeatureInfoDialog({ updateFeature }) {
     return allFeatures.find(f => f.id === selectedFeatureId) ?? null
   }, [allFeatures, selectedFeatureId])
 
-  const closeDialog = () =>
+  const closeDialog = useCallback(() =>
     dispatch(
       toggleFeatureD({
         dialogName: 'featureInfoDialogOpen',
         isOpen: false,
       }),
-    )
+    ), [dispatch])
 
   const updateFeatureValue = useCallback(
     (key, e) => {

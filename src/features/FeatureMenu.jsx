@@ -30,7 +30,7 @@ function FeatureMenu({ anchorEl, toggleFeatureLayer, toggleFeaturePUIDLayer, zoo
   const featureDialogs = useSelector(s => s.feature.dialogs)
 
   const { data: allFeaturesResp } = useGetAllFeaturesQuery()
-  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? []
+  const allFeatures = useMemo(() => allFeaturesResp?.data ?? allFeaturesResp ?? [], [allFeaturesResp])
 
   const selectedFeature = useMemo(() => {
     if (selectedFeatureId == null)

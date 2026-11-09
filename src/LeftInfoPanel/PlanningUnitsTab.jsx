@@ -1,6 +1,7 @@
+import { useOnValueChange } from '@hooks/useOnValueChange'
 import EditIcon from '@mui/icons-material/Edit'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import HexagonIcon from '@mui/icons-material/Hexagon'
 import HexagonOutlinedIcon from '@mui/icons-material/HexagonOutlined'
 import LockIcon from '@mui/icons-material/Lock'
@@ -86,11 +87,10 @@ function PlanningUnitsTab({
 
   // Keep in sync if the active profile changes from outside (e.g. another
   // dialog activates a profile, or initial load).
-  useEffect(() => {
-    if (activeProfile?.id != null && activeProfile.id !== selectedProfileId) {
-      setSelectedProfileId(activeProfile.id)
-    }
-  }, [activeProfile?.id]) // eslint-disable-line react/exhaustive-deps
+  useOnValueChange(activeProfile?.id, (id) => {
+    if (id != null)
+      setSelectedProfileId(id)
+  })
 
   const handleCostProfileChange = (newId) => {
     setSelectedProfileId(newId)

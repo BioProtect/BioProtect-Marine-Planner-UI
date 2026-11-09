@@ -1,9 +1,10 @@
+import { useOnValueChange } from '@hooks/useOnValueChange'
 import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
 
+import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import { toggleDialog } from '@slices/uiSlice'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import BPDialog from './BPDialog'
 import BoundaryPenaltyControl from './LeftInfoPanel/BoundaryPenaltyControl'
@@ -26,8 +27,8 @@ function RunPrioritizrDialog({
 
   // Default the name to a timestamp every time the dialog opens so the user
   // gets something sensible without having to think.
-  useEffect(() => {
-    if (!open)
+  useOnValueChange(open, (isOpen) => {
+    if (!isOpen)
       return
     const stamp = new Date().toLocaleString('en-GB', {
       day: '2-digit',
@@ -38,7 +39,7 @@ function RunPrioritizrDialog({
     setName(`Run ${stamp}`)
     setDescription('')
     setSubmitting(false)
-  }, [open])
+  })
 
   const close = () =>
     dispatch(

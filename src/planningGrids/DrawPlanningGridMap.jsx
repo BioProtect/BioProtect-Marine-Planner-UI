@@ -10,13 +10,13 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 // handler (which opens the new-feature dialog) is left alone.
 // onChange gets the drawn FeatureCollection, or null when nothing is drawn.
 function DrawPlanningGridMap({ onChange }) {
-  const mapContainer = useRef(null)
+  const mapContainerRef = useRef(null)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
 
   useEffect(() => {
     const map = new mapboxgl.Map({
-      container: mapContainer.current,
+      container: mapContainerRef.current,
       style: 'mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8',
       center: [0, 50],
       zoom: 2,
@@ -47,7 +47,7 @@ function DrawPlanningGridMap({ onChange }) {
         borderRadius: 2,
       }}
     >
-      <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+      <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
     </Paper>
   )
 }

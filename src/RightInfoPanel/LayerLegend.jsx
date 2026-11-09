@@ -1,9 +1,9 @@
+import { useOnValueChange } from '@hooks/useOnValueChange'
 import HexagonIcon from '@mui/icons-material/Hexagon'
 import HexagonOutlinedIcon from '@mui/icons-material/HexagonOutlined'
-
 import SyncIcon from '@mui/icons-material/Sync'
 import Box from '@mui/material/Box'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { formatPct } from '../Helpers'
 import LayerRow from './LayerRow'
 
@@ -77,8 +77,8 @@ function LayerLegend(props) {
       ? [props.layer]
       : []
   const first = layers[0]
-  const [opacity, setOpacity] = useState(layerOpacity(first))
-  useEffect(() => setOpacity(layerOpacity(first)), [first])
+  const [opacity, setOpacity] = useState(() => layerOpacity(first))
+  useOnValueChange(first, layer => setOpacity(layerOpacity(layer)))
 
   if (!layers.length)
     return null
@@ -113,12 +113,13 @@ function LayerLegend(props) {
   }
   else if (!key && items.length) {
     key = (
-      <Box sx={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        columnGap: 1.5,
-        rowGap: 0.5,
-      }}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          columnGap: 1.5,
+          rowGap: 0.5,
+        }}
       >
         {items.map(item => (
           <SwatchLabel key={item.label} item={item} />

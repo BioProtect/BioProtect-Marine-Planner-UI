@@ -15,7 +15,7 @@ function PlanningUnitsDialog({ puMap, setPuMap }) {
   const dispatch = useDispatch()
 
   // Reference for the map container div
-  const mapContainer = useRef(null)
+  const mapContainerRef = useRef(null)
   const puState = useSelector(state => state.planningUnit)
   const { data: planningUnitsData } = useListPlanningUnitGridsQuery()
 
@@ -34,7 +34,7 @@ function PlanningUnitsDialog({ puMap, setPuMap }) {
   // Initialize the Mapbox map once the component is mounted
   useEffect(() => {
     const mapInstance = new mapboxgl.Map({
-      container: mapContainer.current,
+      container: mapContainerRef.current,
       style: 'mapbox://styles/craicerjack/cm4co2ve7000l01pfchhs2vv8',
       center: [0, 0],
       zoom: 2,
@@ -45,7 +45,7 @@ function PlanningUnitsDialog({ puMap, setPuMap }) {
       if (mapInstance)
         mapInstance.remove() // Clean up on unmount
     }
-  }, [])
+  }, [setPuMap])
 
   const changeItem = event => dispatch(setCurrentPUGrid(event))
   const safeSelected
@@ -68,7 +68,7 @@ function PlanningUnitsDialog({ puMap, setPuMap }) {
           }}
         >
           <Box
-            ref={mapContainer}
+            ref={mapContainerRef}
             sx={{
               width: '100%',
               height: '100%',

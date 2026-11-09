@@ -16,7 +16,7 @@ function ProjectsToolbar(props) {
     dispatch(
       toggleProjDialog({ dialogName: 'newProjectDialogOpen', isOpen: true }),
     )
-  }, [])
+  }, [dispatch])
 
   return (
     <div

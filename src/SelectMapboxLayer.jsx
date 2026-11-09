@@ -2,23 +2,55 @@ import { getGridTilesUrl } from '@config/api'
 
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import wellknown from 'wellknown'
+
+function addLayerToMap(map, tilesetid) {
+  const sourceId = `martin_src_${tilesetid}`
+  const layerId = `martin_layer_pu_${tilesetid}`
+  const tileUrl = getGridTilesUrl(tilesetid)
+
+  // Remove existing layer if it exists
+  // Remove previous layers
+  map.getStyle().layers.forEach((layer) => {
+    if (layer.id.startsWith('martin_layer_pu_') && map.getLayer(layer.id)) {
+      map.removeLayer(layer.id)
+    }
+  })
+
+  // Remove previous sources
+  Object.keys(map.getStyle().sources).forEach((source) => {
+    if (source.startsWith('martin_src_') && map.getSource(source)) {
+      map.removeSource(source)
+    }
+  })
+
+  // Add vector tile source from Martin
+  map.addSource(sourceId, {
+    type: 'vector',
+    url: tileUrl,
+  })
+
+  map.addLayer({
+    'id': layerId,
+    'type': 'fill',
+    'source': sourceId,
+    'source-layer': tilesetid, // MUST match the name of the view in PostGIS
+    'paint': {
+      'fill-color': '#0080ff',
+      'fill-opacity': 0.2,
+      'fill-outline-color': 'black',
+    },
+  })
+}
 
 function SelectMapboxLayer({
   map,
   items,
-  selectedValue,
+  selectedValue: selectedLayer,
   changeItem,
   width,
 }) {
-  const [selectedLayer, setSelectedLayer] = useState(selectedValue)
-
-  // Keep local state in sync with prop
-  useEffect(() => {
-    setSelectedLayer(selectedValue)
-  }, [selectedValue])
-
   // This effect will run when the selected layer changes
   useEffect(() => {
     if (!selectedLayer || !map || !items?.length)
@@ -42,7 +74,7 @@ function SelectMapboxLayer({
           console.warn('fitBounds failed:', e)
         }
       }
-      addLayerToMap(selectedLayer)
+      addLayerToMap(map, selectedLayer)
     }
 
     // Wait until the style is ready
@@ -84,48 +116,7 @@ function SelectMapboxLayer({
 
   // Function to handle selecting an item
   const handleSelectChange = (event) => {
-    const value = event.target.value
-    setSelectedLayer(value)
-    changeItem(value)
-  }
-
-  const addLayerToMap = async (tilesetid) => {
-    const sourceId = `martin_src_${tilesetid}`
-    const layerId = `martin_layer_pu_${tilesetid}`
-    const tileUrl = getGridTilesUrl(tilesetid)
-
-    // Remove existing layer if it exists
-    // Remove previous layers
-    map.getStyle().layers.forEach((layer) => {
-      if (layer.id.startsWith('martin_layer_pu_') && map.getLayer(layer.id)) {
-        map.removeLayer(layer.id)
-      }
-    })
-
-    // Remove previous sources
-    Object.keys(map.getStyle().sources).forEach((source) => {
-      if (source.startsWith('martin_src_') && map.getSource(source)) {
-        map.removeSource(source)
-      }
-    })
-
-    // Add vector tile source from Martin
-    map.addSource(sourceId, {
-      type: 'vector',
-      url: tileUrl,
-    })
-
-    map.addLayer({
-      'id': layerId,
-      'type': 'fill',
-      'source': sourceId,
-      'source-layer': tilesetid, // MUST match the name of the view in PostGIS
-      'paint': {
-        'fill-color': '#0080ff',
-        'fill-opacity': 0.2,
-        'fill-outline-color': 'black',
-      },
-    })
+    changeItem(event.target.value)
   }
 
   return (

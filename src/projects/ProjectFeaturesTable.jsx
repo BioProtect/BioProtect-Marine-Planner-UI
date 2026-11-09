@@ -24,7 +24,7 @@ function ProjectFeaturesTable() {
   )
 
   const { data: allFeaturesResp } = useGetAllFeaturesQuery()
-  const allFeatures = allFeaturesResp?.data ?? allFeaturesResp ?? []
+  const allFeatures = useMemo(() => allFeaturesResp?.data ?? allFeaturesResp ?? [], [allFeaturesResp])
 
   const selected = useMemo(() => {
     const ids = selectedFeatureIds ?? []

@@ -1,9 +1,10 @@
 import useAppSnackbar from '@hooks/useAppSnackbar'
+import { useOnValueChange } from '@hooks/useOnValueChange'
 import { usePlanningGridWebSocket } from '@hooks/usePlanningGridWebSocket'
 import { Autocomplete } from '@mui/material'
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
 
+import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import FormControl from '@mui/material/FormControl'
 import FormControlLabel from '@mui/material/FormControlLabel'
@@ -89,8 +90,6 @@ function NewProjectDialog({
   const [planningGridName, setPlanningGridName] = useState('')
   const [resolution, setResolution] = useState(7)
 
-  // upload progress - continue automatically
-  const [waitingForUpload, setWaitingForUpload] = useState(false)
   // latest progress message while a grid is being created, otherwise null
   const [gridStatus, setGridStatus] = useState(null)
   // true from clicking Finish until the new project has been created and loaded
@@ -102,20 +101,13 @@ function NewProjectDialog({
 
   useGetAllFeaturesQuery()
 
-  useEffect(() => {
-    if (fileUploadResponse?.file) {
+  useOnValueChange(fileUploadResponse, (response) => {
+    if (response?.file) {
       setPlanningGridName(
-        fileUploadResponse.file.replaceAll('_', ' ').split('.')[0],
+        response.file.replaceAll('_', ' ').split('.')[0],
       )
     }
-  }, [fileUploadResponse])
-
-  useEffect(() => {
-    if (waitingForUpload) {
-      setWaitingForUpload(false)
-      setStepIndex(2)
-    }
-  }, [waitingForUpload])
+  })
 
   useEffect(() => {
     if (dialogOpen) {
@@ -128,6 +120,8 @@ function NewProjectDialog({
       // dialog closed -> reset refs so next open re-snapshots
       prevSelectedFeatureIdsRef.current = null
     }
+    // selection must not be a dep: this clears it, and would wipe every tick made while open
+    // eslint-disable-next-line react/exhaustive-deps
   }, [dialogOpen])
 
   const createNewProject = async (proj) => {
@@ -210,7 +204,7 @@ function NewProjectDialog({
 
             if (newGrid?.tilesetid) {
               dispatch(setCurrentPUGrid(newGrid.tilesetid))
-              setWaitingForUpload(true)
+              setStepIndex(2)
             }
           }
         },

@@ -7,7 +7,6 @@ import ListItemText from '@mui/material/ListItemText'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import { toggleDialog } from '@slices/uiSlice'
-import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 function ToolsMenu(props) {
@@ -15,15 +14,15 @@ function ToolsMenu(props) {
   const dialogStates = useSelector(state => state.ui.dialogStates)
   const projectState = useSelector(state => state.project)
 
-  const openUsersDialog = useCallback(() => {
+  const openUsersDialog = () => {
     props.openUsersDialog()
     closeDialog()
-  }, [props])
+  }
 
-  const openResetDialog = useCallback(() => {
+  const openResetDialog = () => {
     dispatch(toggleDialog({ dialogName: 'resetDialogOpen', isOpen: true }))
     closeDialog()
-  }, [])
+  }
 
   const closeDialog = () =>
     dispatch(toggleDialog({ dialogName: 'toolsMenuOpen', isOpen: false }))
