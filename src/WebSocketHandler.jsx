@@ -142,7 +142,8 @@ function useWebSocketHandler(checkForErrors, setPreprocessing, setPid, newFeatur
                 removeMessageFromLog('Preprocessing')
                 setPreprocessing(false)
                 resolve(message)
-                ws.close()
+                // No ws.close(): SocketHandler.close() follows every Finished
+                // with close(1000). Closing here too could race it and end in 1005.
                 break
               default:
                 break
