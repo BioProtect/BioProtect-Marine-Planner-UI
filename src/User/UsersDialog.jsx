@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import MarxanTable from '../MarxanTable'
 
 const USER_ROLES = ['User', 'ReadOnly', 'Admin']
+const SEARCH_COLUMNS = ['user', 'NAME', 'EMAIL', 'ROLE']
 
 function UsersDialog({ open, loading, changeRole, deleteUser }) {
   const dispatch = useDispatch()
@@ -29,13 +30,6 @@ function UsersDialog({ open, loading, changeRole, deleteUser }) {
       dispatch(setUsers(usersData.users || []))
     }
   }, [dispatch, usersData])
-
-  useEffect(() => {
-    if (!open) {
-      setSearchText('')
-      setSelectedUser(null)
-    }
-  }, [open])
 
   const handleRoleChange = (user, newRole) => {
     changeRole(user, newRole)
@@ -93,7 +87,7 @@ function UsersDialog({ open, loading, changeRole, deleteUser }) {
           <MarxanTable
             data={userState.users}
             selectedUser={selectedUser}
-            searchColumns={['user', 'NAME', 'EMAIL', 'ROLE']}
+            searchColumns={SEARCH_COLUMNS}
             searchText={searchText}
             columns={[
               { Header: 'User', accessor: 'user', width: 90 },

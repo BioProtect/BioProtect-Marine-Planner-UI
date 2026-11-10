@@ -13,17 +13,19 @@ import ConfirmDeleteDialog from '../BPComponents/ConfirmDeleteDialog'
 import BPDialog from '../BPDialog'
 import PlanningGridsToolbar from './PlanningGridsToolbar'
 
+const SEARCH_COLUMNS = [
+  'domain',
+  'alias',
+  'description',
+  'created_by',
+]
+
 function PlanningGridsDialog(props) {
   const dispatch = useDispatch()
   const puState = useSelector(state => state.planningUnit)
-  const [, setSearchText] = useState('')
-  const [selectedPlanningGrid, setSelectedPlanningGrid] = useState(undefined)
+  const [pickedPlanningGrid, setPickedPlanningGrid] = useState(undefined)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const currentUser = useSelector(selectCurrentUser)
-  // only the user who created a grid may delete it - the server enforces this too
-  const canDelete
-    = !!currentUser?.username
-      && selectedPlanningGrid?.created_by === currentUser.username
   const { data: planningUnitsData }
     = useListPlanningUnitGridsQuery()
   const activeProjectId = useSelector(state => state.project.activeProjectId)
@@ -31,6 +33,13 @@ function PlanningGridsDialog(props) {
     skip: activeProjectId == null,
   })
   const activeGridAlias = projectResp?.metadata?.PLANNING_UNIT_NAME
+  // the project's own grid is preselected until the user picks another
+  const selectedPlanningGrid = pickedPlanningGrid
+    ?? puState.planningUnitGrids.find(g => g.alias === activeGridAlias)
+  // only the user who created a grid may delete it - the server enforces this too
+  const canDelete
+    = !!currentUser?.username
+      && selectedPlanningGrid?.created_by === currentUser.username
 
   useEffect(() => {
     if (planningUnitsData) {
@@ -40,34 +49,21 @@ function PlanningGridsDialog(props) {
     }
   }, [dispatch, planningUnitsData])
 
-  // preselect the project's own planning grid whenever the dialog opens
-  useEffect(() => {
-    if (!puState.dialogs.planningGridsDialogOpen)
-      return
-    setSelectedPlanningGrid(
-      puState.planningUnitGrids.find(g => g.alias === activeGridAlias),
-    )
-  }, [
-    puState.dialogs.planningGridsDialogOpen,
-    puState.planningUnitGrids,
-    activeGridAlias,
-  ])
-
   const closeDialog = useCallback(() => {
-    setSelectedPlanningGrid(undefined)
+    setPickedPlanningGrid(undefined)
     dispatch(
       togglePUD({
         dialogName: 'planningGridsDialogOpen',
         isOpen: false,
       }),
     )
-  }, [])
+  }, [dispatch])
 
   const handleDelete = useCallback(() => {
     setConfirmDeleteOpen(false)
     // the list rows carry the grid's name as tilesetid
     props.deletePlanningGrid(selectedPlanningGrid.tilesetid)
-    setSelectedPlanningGrid(undefined)
+    setPickedPlanningGrid(undefined)
   }, [props, selectedPlanningGrid])
 
   const exportPlanningGrid = useCallback(() => {
@@ -80,11 +76,7 @@ function PlanningGridsDialog(props) {
   }, [props, selectedPlanningGrid, closeDialog])
 
   const changePlanningGrid = useCallback((event, planningGrid) => {
-    setSelectedPlanningGrid(planningGrid)
-  }, [])
-
-  const searchTextChanged = useCallback((value) => {
-    setSearchText(value)
+    setPickedPlanningGrid(planningGrid)
   }, [])
 
   // the table passes the clicked row itself
@@ -135,8 +127,6 @@ function PlanningGridsDialog(props) {
       showCancelButton={false}
       helpLink="user.html#the-planning-grids-window"
       title="Planning grids"
-      showSearchBox={true}
-      searchTextChanged={searchTextChanged}
       actions={(
         <PlanningGridsToolbar
           userRole={props.userRole}
@@ -154,12 +144,7 @@ function PlanningGridsDialog(props) {
           title="Planning Grids"
           data={puState.planningUnitGrids}
           tableColumns={columns}
-          searchColumns={[
-            'domain',
-            'alias',
-            'description',
-            'created_by',
-          ]}
+          searchColumns={SEARCH_COLUMNS}
           selected={selectedPlanningGrid
             ? [selectedPlanningGrid]
             : []}

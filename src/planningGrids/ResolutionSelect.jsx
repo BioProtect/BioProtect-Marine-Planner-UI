@@ -14,13 +14,17 @@ import {
 // pre-selects a suggestion, unless the user has already picked one.
 function ResolutionSelect({ value, onChange, geojson, shapefilePath }) {
   const [estimateArea] = useEstimateGridAreaMutation()
-  const [areaKm2, setAreaKm2] = useState(null)
-  const userPicked = useRef(false)
+  const [estimate, setEstimate] = useState(null)
+  // an estimate only counts for the area it was made for
+  const source = geojson || shapefilePath
+  const areaKm2 = source && estimate?.source === source
+    ? estimate.area
+    : null
+  const userPickedRef = useRef(false)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
 
   useEffect(() => {
-    setAreaKm2(null)
     if (!geojson && !shapefilePath)
       return
     let stale = false
@@ -31,8 +35,8 @@ function ResolutionSelect({ value, onChange, geojson, shapefilePath }) {
       .then((res) => {
         if (stale || res?.area_km2 == null)
           return
-        setAreaKm2(res.area_km2)
-        if (!userPicked.current)
+        setEstimate({ source: geojson || shapefilePath, area: res.area_km2 })
+        if (!userPickedRef.current)
           onChangeRef.current(suggestResolution(res.area_km2))
       })
       // the suggestion is optional; the dropdown works without it
@@ -56,7 +60,7 @@ function ResolutionSelect({ value, onChange, geojson, shapefilePath }) {
       <Select
         value={value}
         onChange={(e) => {
-          userPicked.current = true
+          userPickedRef.current = true
           onChange(e.target.value)
         }}
         sx={{ width: 500, maxWidth: '100%' }}

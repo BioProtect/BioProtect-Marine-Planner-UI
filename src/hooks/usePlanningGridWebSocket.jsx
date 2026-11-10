@@ -97,7 +97,7 @@ export function usePlanningGridWebSocket() {
         }
       }
     },
-    [],
+    [showMessage],
   )
 
   const closeConnection = () => {

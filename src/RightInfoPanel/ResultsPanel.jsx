@@ -40,11 +40,11 @@ function ResultsPanel(props) {
   const { data: runsResp } = useListPrioritizrRunsQuery(projectId, {
     skip: !projectId,
   })
-  const runs = runsResp?.data ?? []
+  const runs = useMemo(() => runsResp?.data ?? [], [runsResp?.data])
 
   // Feature name lookup (project features may not carry `name`)
   const { data: allFeaturesResp } = useGetAllFeaturesQuery()
-  const allFeatures = allFeaturesResp?.data ?? []
+  const allFeatures = useMemo(() => allFeaturesResp?.data ?? [], [allFeaturesResp?.data])
 
   // Per-feature achieved % from the selected Prioritizr runs (mirrors
   // FeaturesList.jsx - same stable sort so the RTK Query cache hits).
@@ -142,6 +142,7 @@ function ResultsPanel(props) {
       setPdfLoading(false)
     }
   }, [
+    showMessage,
     map,
     project,
     metadata,

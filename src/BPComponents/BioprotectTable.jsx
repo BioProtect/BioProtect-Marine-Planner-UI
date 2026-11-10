@@ -13,6 +13,53 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import BPTableHeadWithSort from './BPTableHeadWithSort'
 import BPTableTitleWithSearch from './BPTableTitleWithSearch'
 
+function parseCreatedAt(value) {
+  if (!value)
+    return null
+  const [d, m, y, ...rest] = value.replace(' ', '/').split('/')
+  const [hh, mm, ss] = rest[0].split(':')
+  const year = 2000 + Number(y) // "20" -> 2020
+  return new Date(
+    year,
+    Number(m) - 1,
+    Number(d),
+    Number(hh),
+    Number(mm),
+    Number(ss),
+  )
+}
+
+function descendingComparator(a, b, orderBy) {
+  if (orderBy === 'creation_date') {
+    const aDate = parseCreatedAt(a[orderBy])
+    const bDate = parseCreatedAt(b[orderBy])
+    const aTs = aDate
+      ? aDate.getTime()
+      : 0
+    const bTs = bDate
+      ? bDate.getTime()
+      : 0
+    if (bTs < aTs)
+      return -1
+    if (bTs > aTs)
+      return 1
+    return 0
+  }
+
+  // existing generic logic for other fields
+  if (b[orderBy] < a[orderBy])
+    return -1
+  if (b[orderBy] > a[orderBy])
+    return 1
+  return 0
+}
+
+function getComparator(order, orderBy) {
+  return order === 'desc'
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy)
+}
+
 /**
  * @param {object} props
  * @param {object[]} props.data rows; keys match tableColumns ids
@@ -30,52 +77,6 @@ function BioprotectTable(props) {
   const [order, setOrder] = useState('asc')
   const [orderBy, setOrderBy] = useState('category')
   const [searchQuery, setSearchQuery] = useState('')
-
-  const parseCreatedAt = (value) => {
-    if (!value)
-      return null
-    const [d, m, y, ...rest] = value.replace(' ', '/').split('/')
-    const [hh, mm, ss] = rest[0].split(':')
-    const year = 2000 + Number(y) // "20" -> 2020
-    return new Date(
-      year,
-      Number(m) - 1,
-      Number(d),
-      Number(hh),
-      Number(mm),
-      Number(ss),
-    )
-  }
-
-  const descendingComparator = (a, b, orderBy) => {
-    if (orderBy === 'creation_date') {
-      const aDate = parseCreatedAt(a[orderBy])
-      const bDate = parseCreatedAt(b[orderBy])
-      const aTs = aDate
-        ? aDate.getTime()
-        : 0
-      const bTs = bDate
-        ? bDate.getTime()
-        : 0
-      if (bTs < aTs)
-        return -1
-      if (bTs > aTs)
-        return 1
-      return 0
-    }
-
-    // existing generic logic for other fields
-    if (b[orderBy] < a[orderBy])
-      return -1
-    if (b[orderBy] > a[orderBy])
-      return 1
-    return 0
-  }
-
-  const getComparator = (order, orderBy) =>
-    order === 'desc'
-      ? (a, b) => descendingComparator(a, b, orderBy)
-      : (a, b) => -descendingComparator(a, b, orderBy)
 
   // Normalize the incoming `selected` into a Set of IDs for fast lookup.
   const selectedIdSet = useMemo(() => {
@@ -109,23 +110,25 @@ function BioprotectTable(props) {
   }, [
     searchQuery,
     props.data,
+    props.searchColumns,
     order,
     orderBy,
   ])
 
-  const lastSent = useRef([])
+  const { dataFiltered } = props
+  const lastSentRef = useRef([])
   useEffect(() => {
-    if (!props.dataFiltered)
+    if (!dataFiltered)
       return
-    const a = lastSent.current
+    const a = lastSentRef.current
     const b = filteredData
     const sameLength = a.length === b.length
     const sameIds = sameLength && a.every((row, i) => row?.id === b[i]?.id)
     if (!sameLength || !sameIds) {
-      props.dataFiltered(b)
-      lastSent.current = b
+      dataFiltered(b)
+      lastSentRef.current = b
     }
-  }, [filteredData, props.dataFiltered])
+  }, [filteredData, dataFiltered])
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
@@ -188,6 +191,8 @@ function BioprotectTable(props) {
                   role="checkbox"
                   aria-checked={isItemSelected}
                   tabIndex={-1}
+                  // some tables' rows have no id
+                  // eslint-disable-next-line react/no-array-index-key
                   key={row.id ?? idx}
                   selected={isItemSelected}
                   sx={{

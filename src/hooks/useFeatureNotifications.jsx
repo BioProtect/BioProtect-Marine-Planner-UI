@@ -10,7 +10,7 @@ const RECONNECT_DELAY = 3000
 function useFeatureNotifications() {
   const dispatch = useDispatch()
   const wsRef = useRef(null)
-  const reconnectTimer = useRef(null)
+  const reconnectTimerRef = useRef(null)
 
   useEffect(() => {
     const connect = () => {
@@ -43,7 +43,7 @@ function useFeatureNotifications() {
 
       ws.onclose = () => {
         wsRef.current = null
-        reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY)
+        reconnectTimerRef.current = setTimeout(connect, RECONNECT_DELAY)
       }
 
       ws.onerror = () => {
@@ -56,7 +56,7 @@ function useFeatureNotifications() {
     connect()
 
     return () => {
-      clearTimeout(reconnectTimer.current)
+      clearTimeout(reconnectTimerRef.current)
       if (wsRef.current) {
         wsRef.current.onclose = null
         wsRef.current.close()

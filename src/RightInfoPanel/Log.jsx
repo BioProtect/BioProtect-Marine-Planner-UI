@@ -161,6 +161,8 @@ function Log({ messages = [] }) {
 
           return (
             <Box
+              // append-only log with no message ids, so positions never shift
+              // eslint-disable-next-line react/no-array-index-key
               key={idx}
               sx={{
                 'display': 'flex',

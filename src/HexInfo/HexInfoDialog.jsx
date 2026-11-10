@@ -367,9 +367,9 @@ function HexInfoDialog({ xy }) {
                       ? (
                           puFeatures.length > 0
                             ? (
-                                puFeatures.map((row, i) => (
+                                puFeatures.map(row => (
                                   <HexInfoFeatureRow
-                                    key={row.feature_id ?? row.alias ?? i}
+                                    key={row.feature_id ?? row.alias}
                                     row={row}
                                   />
                                 ))

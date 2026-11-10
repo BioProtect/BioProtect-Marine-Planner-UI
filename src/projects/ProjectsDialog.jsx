@@ -1,8 +1,9 @@
 import useAppSnackbar from '@hooks/useAppSnackbar'
+import { useOnValueChange } from '@hooks/useOnValueChange'
 import { selectCurrentUserId } from '@slices/authSlice'
-import { toggleProjDialog, useListProjectsQuery } from '@slices/projectSlice'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toggleProjDialog, useListProjectsQuery } from '@slices/projectSlice'
+import { useCallback, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import BioprotectTable from '../BPComponents/BioprotectTable'
 import ConfirmDeleteDialog from '../BPComponents/ConfirmDeleteDialog'
@@ -10,6 +11,8 @@ import BPDialog from '../BPDialog'
 import { resolutionLabel } from '../bpVars'
 import { generateTableCols } from '../Helpers'
 import ProjectsToolbar from './ProjectsToolbar'
+
+const SEARCH_COLUMNS = ['user', 'name', 'description']
 
 function ProjectsDialog({ loading, deleteProject, cloneProject, exportProject, userRole, unauthorisedMethods, loadProjectAndSetup }) {
   const dispatch = useDispatch()
@@ -34,9 +37,7 @@ function ProjectsDialog({ loading, deleteProject, cloneProject, exportProject, u
   const project = projects.find(p => p.id === selectedProjectId)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
-  useEffect(() => {
-    setSelectedProjectId(activeProjectId)
-  }, [activeProjectId])
+  useOnValueChange(activeProjectId, setSelectedProjectId)
 
   const loadAndClose = useCallback(async () => {
     try {
@@ -48,20 +49,25 @@ function ProjectsDialog({ loading, deleteProject, cloneProject, exportProject, u
     catch {
       showMessage('Failed to load project', 'error')
     }
-  }, [dispatch, selectedProjectId])
+  }, [
+    dispatch,
+    selectedProjectId,
+    loadProjectAndSetup,
+    showMessage,
+  ])
 
   const handleDeleteProject = useCallback(() => {
     if (!project)
       return
     setConfirmDeleteOpen(false)
     deleteProject(project.id)
-  }, [project])
+  }, [project, deleteProject])
 
   const handleCloneProject = useCallback(() => {
     if (!project)
       return
     cloneProject(project.user, project.name)
-  }, [project])
+  }, [project, cloneProject])
 
   const handleExportProject = useCallback(() => {
     if (!project)
@@ -69,7 +75,7 @@ function ProjectsDialog({ loading, deleteProject, cloneProject, exportProject, u
     exportProject(project.user, project.name).then((url) => {
       window.location = url
     })
-  }, [project])
+  }, [project, exportProject])
 
   const handleProjectChange = (event, row) => {
     const projectId = row?.id
@@ -136,7 +142,7 @@ function ProjectsDialog({ loading, deleteProject, cloneProject, exportProject, u
             selected={[selectedProjectId]}
             ableToSelectAll={false}
             showSearchBox={true}
-            searchColumns={['user', 'name', 'description']}
+            searchColumns={SEARCH_COLUMNS}
             clickRow={handleProjectChange}
             isProject={true}
             preview={false}
