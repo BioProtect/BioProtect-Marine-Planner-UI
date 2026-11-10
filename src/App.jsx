@@ -1185,8 +1185,8 @@ function App() {
   const updateProjectFeatures = async (features = projectFeatures) => {
     const getFeatureId = item => item.id ?? item.feature_unique_id
 
-    const toCsv = arr =>
-      arr.filter(v => v !== undefined && v !== null && v !== '').join(',')
+    // keep empty slots: a null target must stay at its feature's position
+    const toCsv = arr => arr.map(v => v ?? '').join(',')
 
     const featureIds = toCsv(features.map(f => getFeatureId(f)))
     const targets = toCsv(features.map(f => f.target_value))
@@ -2777,9 +2777,18 @@ function App() {
 
     try {
       const message = await handleWebSocket(url)
+      // a failed upload removes the features it had made: drop them from the list too
+      if (message?.error) {
+        dispatch(featureApiSlice.util.invalidateTags([
+          { type: 'Features', id: 'LIST' },
+        ]))
+      }
       return message
     }
     catch (error) {
+      dispatch(featureApiSlice.util.invalidateTags([
+        { type: 'Features', id: 'LIST' },
+      ]))
       console.error('Feature import failed:', error)
       showMessage(error.message || 'Failed to import features', 'error')
       throw error // re-throw if you want the caller to handle it too
