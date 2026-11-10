@@ -47,6 +47,9 @@ import ConfirmDeleteDialog from '../BPComponents/ConfirmDeleteDialog'
 import BPDialog from '../BPDialog'
 import FileUpload from '../Uploads/FileUpload'
 
+// Matches the server's LARGE_RASTER_PIXELS (handlers/cost_raster_handler.py)
+const LARGE_RASTER_PIXELS = 100_000_000
+
 function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfile, runCumulativeImpact, uploadRasterCost, createCostProfileFromRaster, getRasterBandInfo, fileUpload }) {
   const dispatch = useDispatch()
   const uiState = useSelector(state => state.ui)
@@ -980,6 +983,20 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
                     ? `EPSG:${rasterBandInfo.crs_epsg}`
                     : '(non-standard - will be reprojected)'}
                 </Typography>
+              )
+            : null}
+
+          {rasterSource === 'upload'
+            && rasterBandInfo?.width * rasterBandInfo?.height >= LARGE_RASTER_PIXELS
+            ? (
+                <Alert severity="warning" sx={{ mt: 1 }}>
+                  Large raster:
+                  {' '}
+                  {Math.round(rasterBandInfo.width * rasterBandInfo.height / 1e6).toLocaleString()}
+                  {' '}
+                  million pixels. Creating the cost profile can take several
+                  minutes. Keep this page open; progress is shown in the log.
+                </Alert>
               )
             : null}
 
