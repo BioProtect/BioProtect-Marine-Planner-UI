@@ -47,6 +47,26 @@ import ConfirmDeleteDialog from '../BPComponents/ConfirmDeleteDialog'
 import BPDialog from '../BPDialog'
 import FileUpload from '../Uploads/FileUpload'
 
+// Matches the server's LARGE_RASTER_PIXELS (services/raster_service.py)
+const LARGE_RASTER_PIXELS = 100_000_000
+
+// Shown before upload so a multi-minute extraction isn't a surprise.
+function LargeRasterWarning({ info }) {
+  const pixels = (info?.width ?? 0) * (info?.height ?? 0)
+  if (pixels < LARGE_RASTER_PIXELS)
+    return null
+  return (
+    <Alert severity="warning" sx={{ mt: 1 }}>
+      Large raster:
+      {' '}
+      {Math.round(pixels / 1e6).toLocaleString()}
+      {' '}
+      million pixels. Creating the cost profile can take several
+      minutes. Keep this page open; progress is shown in the log.
+    </Alert>
+  )
+}
+
 function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfile, runCumulativeImpact, uploadRasterCost, createCostProfileFromRaster, getRasterBandInfo, fileUpload }) {
   const dispatch = useDispatch()
   const uiState = useSelector(state => state.ui)
@@ -982,6 +1002,8 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
                 </Typography>
               )
             : null}
+
+          {rasterSource === 'upload' && <LargeRasterWarning info={rasterBandInfo} />}
 
           <ButtonGroup
             aria-label="Raster cost actions"
