@@ -6,11 +6,13 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
 import FormControlLabel from '@mui/material/FormControlLabel'
+import LinearProgress from '@mui/material/LinearProgress'
 import MenuItem from '@mui/material/MenuItem'
 import Radio from '@mui/material/Radio'
 import RadioGroup from '@mui/material/RadioGroup'
 import Select from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
 import {
   featureApiSlice,
   setFeatureFilename,
@@ -45,6 +47,9 @@ function ImportFeaturesDialog({
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [shapeFile, setShapeFile] = useState(null)
+  // true while the server unzips/imports: locks the buttons so nothing is clicked twice
+  const [busy, setBusy] = useState(false)
+  const lastLogInfo = uiState.importLog.findLast(m => m?.info)?.info
 
   useLogToSnackbar(() => true)
 
@@ -54,15 +59,17 @@ function ImportFeaturesDialog({
 
   const handleNext = () => {
     if (stepIndex === 0) {
+      setBusy(true)
       unzipShapefile(featureState.featureFilename).then((response) => {
         const shapeFilePath = response.rootfilename
         setShapeFile(`${shapeFilePath}.shp`)
         setName(`${shapeFilePath}`)
         setStepIndex(stepIndex + 1)
         handleGetShapefileFieldnames(`${shapeFilePath}.shp`)
-      })
+      }).finally(() => setBusy(false))
     }
     else if (stepIndex === steps.length - 1) {
+      setBusy(true)
       importFeatures(
         featureState.featureFilename,
         name,
@@ -77,7 +84,7 @@ function ImportFeaturesDialog({
           }),
         )
         closeDialog()
-      })
+      }).catch(() => {}).finally(() => setBusy(false)) // importFeatures already showed the error
     }
     else {
       setStepIndex(stepIndex + 1)
@@ -142,8 +149,8 @@ function ImportFeaturesDialog({
   return (
     <Dialog
       open={featureState.dialogs.importFeaturesDialogOpen}
-      onClose={closeDialog}
-      onCancel={() => closeDialog()}
+      // closing mid-import would delete the shapefile the server is reading
+      onClose={busy ? undefined : closeDialog}
       maxWidth="md"
       fullWidth
     >
@@ -242,11 +249,21 @@ function ImportFeaturesDialog({
                 )}
           </>
         )}
+        {busy && (
+          <>
+            <LinearProgress sx={{ mt: 2 }} />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {lastLogInfo || 'Working...'}
+              {' '}
+              Large shapefiles can take several minutes - please leave this open.
+            </Typography>
+          </>
+        )}
       </DialogContent>
       <DialogActions>
         <Button
           onClick={handlePrev}
-          disabled={stepIndex === 0 || uiState.loading}
+          disabled={stepIndex === 0 || uiState.loading || busy}
         >
           Back
         </Button>
@@ -254,6 +271,7 @@ function ImportFeaturesDialog({
           onClick={() => handleNext()}
           disabled={
             _disabled
+            || busy
             || (stepIndex === 2
               && fieldnames.length === 0
               && (name === '' || description === ''))
@@ -264,7 +282,7 @@ function ImportFeaturesDialog({
             ? 'Finish'
             : 'Next'}
         </Button>
-        <Button onClick={closeDialog} color="error">
+        <Button onClick={closeDialog} color="error" disabled={busy}>
           Cancel
         </Button>
       </DialogActions>
