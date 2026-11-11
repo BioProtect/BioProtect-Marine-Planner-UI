@@ -4,41 +4,7 @@ import Slider from '@mui/material/Slider'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
-
-// Discrete preset levels - keeps users away from values that lock CBC up.
-// Each step balances clustering strength vs solver speed.
-const LEVELS = [
-  {
-    value: 0,
-    label: 'None',
-    penalty: 0,
-    hint: 'Fastest. No spatial clustering.',
-  },
-  {
-    value: 1,
-    label: 'Light',
-    penalty: 0.0005,
-    hint: 'Mild clustering. Still fast.',
-  },
-  {
-    value: 2,
-    label: 'Moderate',
-    penalty: 0.001,
-    hint: 'Balanced clustering. Slower.',
-  },
-  {
-    value: 3,
-    label: 'Strong',
-    penalty: 0.002,
-    hint: 'Tight clusters. Much slower.',
-  },
-  {
-    value: 4,
-    label: 'Max',
-    penalty: 0.005,
-    hint: 'Strongest. Can take many minutes.',
-  },
-]
+import { LEVELS } from './clusteringLevels'
 
 const SLIDER_MARKS = LEVELS.map(({ value, label }) => ({ value, label }))
 
@@ -60,10 +26,10 @@ function BoundaryPenaltyControl({ value, onChange, disabled }) {
     <Box sx={{ px: 2, py: 1, width: '100%' }}>
       <Stack direction="row" alignItems="center" spacing={0.5} mb={0.5}>
         <Typography variant="caption" sx={{ fontWeight: 600 }}>
-          Boundary penalty
+          Clustering
         </Typography>
         <Tooltip
-          title="Higher values cluster selected planning units together but increase solver time exponentially. Start at None and raise gradually if you need tighter reserves."
+          title="Higher levels group selected planning units into compact patches, at some extra cost. Clustered runs take longer (up to about 4 minutes on large grids)."
           arrow
         >
           <InfoOutlinedIcon
@@ -73,10 +39,6 @@ function BoundaryPenaltyControl({ value, onChange, disabled }) {
         <Box sx={{ flexGrow: 1 }} />
         <Typography variant="caption" color="text.secondary">
           {current.label}
-          {' '}
-          (
-          {current.penalty}
-          )
         </Typography>
       </Stack>
 

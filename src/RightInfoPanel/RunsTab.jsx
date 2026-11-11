@@ -23,6 +23,7 @@ import { clearRuns, toggleRun } from '@slices/prioritizrSlice'
 import { Fragment, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { PALETTE } from '../bpVars'
+import { LEVELS } from '../LeftInfoPanel/clusteringLevels'
 
 function fmtDate(iso) {
   return new Intl.DateTimeFormat('en-GB', {
@@ -101,24 +102,22 @@ function statusColour(theme, status) {
   })[status] ?? theme.palette.brand.muted
 }
 
-// Boundary penalty as a 4-segment meter + value. Buckets are coarse on
-// purpose - the number is there for anyone who needs the exact value.
+// Clustering level as a 4-segment meter (None..Max = 0..4 bars).
+// ponytail: runs before 2026-11-11 stored absolute boundary penalties
+// (<= 0.005); they show one bar, the tooltip keeps the exact value.
 function bpLevel(v) {
-  return v === 0
-    ? 0
-    : v < 0.001
-      ? 0
-      : v < 0.002
-        ? 1
-        : v < 0.005
-          ? 2
-          : 4
+  const level = LEVELS.findIndex(l => Math.abs(l.penalty - v) < 1e-9)
+  return level >= 0
+    ? level
+    : v > 0
+      ? 1
+      : 0
 }
 
 function PenaltyChip({ value }) {
   const filled = bpLevel(value)
   return (
-    <Tooltip title={`Boundary penalty ${value}`}>
+    <Tooltip title={`Clustering ${LEVELS[bpLevel(value)]?.label ?? value} (${value})`}>
       <Box
         sx={{
           display: 'inline-flex',
