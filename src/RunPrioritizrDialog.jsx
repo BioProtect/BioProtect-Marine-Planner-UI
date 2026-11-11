@@ -1,8 +1,10 @@
 import { useOnValueChange } from '@hooks/useOnValueChange'
 import Box from '@mui/material/Box'
-
+import FormControlLabel from '@mui/material/FormControlLabel'
 import Stack from '@mui/material/Stack'
+import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
 import { toggleDialog } from '@slices/uiSlice'
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -24,6 +26,8 @@ function RunPrioritizrDialog({
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // off by default: the normalised cost penalty keeps targets met
+  const [cohon, setCohon] = useState(false)
 
   // Default the name to a timestamp every time the dialog opens so the user
   // gets something sensible without having to think.
@@ -58,6 +62,7 @@ function RunPrioritizrDialog({
         name: name.trim() || null,
         description: description.trim() || null,
         boundaryPenalty,
+        cohon,
       })
     }
     finally {
@@ -101,6 +106,23 @@ function RunPrioritizrDialog({
             value={boundaryPenalty ?? 0}
             onChange={setBoundaryPenalty}
           />
+          <Box sx={{ px: 2 }}>
+            <FormControlLabel
+              control={(
+                <Switch
+                  size="small"
+                  checked={cohon}
+                  onChange={e => setCohon(e.target.checked)}
+                />
+              )}
+              label={<Typography variant="caption" sx={{ fontWeight: 600 }}>Calibrate cost penalty (Cohon)</Typography>}
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic' }}>
+              {cohon
+                ? 'Weighs cost evenly against targets: cheaper plans, but some targets may fall short. Adds about a minute on large grids.'
+                : 'Cost only breaks ties between equally good cells, so targets are met first.'}
+            </Typography>
+          </Box>
         </Stack>
       </Box>
     </BPDialog>

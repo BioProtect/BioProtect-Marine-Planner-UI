@@ -5,9 +5,9 @@ import BoundaryPenaltyControl from './BoundaryPenaltyControl'
 
 describe('boundaryPenaltyControl', () => {
   it('shows the level matching the current penalty', () => {
-    render(<BoundaryPenaltyControl value={0.001} onChange={vi.fn()} />)
-    expect(screen.getByText(/Moderate\s*\(\s*0\.001\s*\)/)).toBeInTheDocument()
-    expect(screen.getByText('Balanced clustering. Slower.')).toBeInTheDocument()
+    render(<BoundaryPenaltyControl value={0.5} onChange={vi.fn()} />)
+    expect(screen.getByRole('slider')).toHaveValue('2')
+    expect(screen.getByText('Groups cells into larger patches.')).toBeInTheDocument()
   })
 
   it('treats an unknown penalty as None', () => {
@@ -17,11 +17,11 @@ describe('boundaryPenaltyControl', () => {
 
   it('reports the penalty for the chosen level', () => {
     const onChange = vi.fn()
-    render(<BoundaryPenaltyControl value={0.0005} onChange={onChange} />)
+    render(<BoundaryPenaltyControl value={0.3} onChange={onChange} />)
     // jsdom has no native range-input keyboard handling, so drive the change event
     fireEvent.change(screen.getByRole('slider'), {
       target: { value: 2 },
     })
-    expect(onChange).toHaveBeenCalledWith(0.001)
+    expect(onChange).toHaveBeenCalledWith(0.5)
   })
 })

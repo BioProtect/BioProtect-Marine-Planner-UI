@@ -3099,6 +3099,7 @@ function App() {
       name = null,
       description = null,
       boundaryPenalty: bpOverride,
+      cohon = false,
     } = opts
     const bp = bpOverride ?? boundaryPenalty
     try {
@@ -3113,7 +3114,10 @@ function App() {
       const runConfig = {
         name,
         description,
-        penalties: { boundary: Number(bp) || 0 },
+        penalties: {
+          boundary: Number(bp) || 0,
+          cohon: Boolean(cohon),
+        },
       }
       const paramsQS = encodeURIComponent(JSON.stringify(runConfig))
       // Call the WebSocket
