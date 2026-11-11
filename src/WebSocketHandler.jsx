@@ -56,7 +56,8 @@ function useWebSocketHandler(checkForErrors, setPreprocessing, setPid, newFeatur
       }
 
       const handleGeneralMessage = () => {
-        const allowDuplicates = ['RunningMarxan', 'Started', 'Finished']
+        // Running = one line per solver output line: keep them all, it's the run log
+        const allowDuplicates = ['Running', 'Started', 'Finished']
         if (!allowDuplicates.includes(message.status)) {
           dispatch(removeImportLogMessage(message.status))
         }

@@ -2987,6 +2987,12 @@ function App() {
       projectId: activeProjectId,
       featureId: feature.id,
     }).unwrap()
+    const puids = (data.data || []).map(String)
+    // an uncoloured line layer outlines EVERY cell, so add none at all
+    if (!puids.length) {
+      showMessage(`'${feature.alias}' does not occur in any planning unit of this project`, 'info')
+      return
+    }
 
     addMapLayer({
       'id': layerName,
@@ -3008,22 +3014,13 @@ function App() {
     })
     // update the paint property for the layer
     const propId = puLayerIdsRef.current?.propId || 'h3_index'
-    const puids = (data.data || []).map(String)
-
-    if (puids.length > 0) {
-      const line_color_expression = [
-        'match',
-        ['get', propId],
-        puids,
-        color,
-        'rgba(0,0,0,0)',
-      ]
-      mapRef.current.setPaintProperty(
-        layerName,
-        'line-color',
-        line_color_expression,
-      )
-    }
+    mapRef.current.setPaintProperty(layerName, 'line-color', [
+      'match',
+      ['get', propId],
+      puids,
+      color,
+      'rgba(0,0,0,0)',
+    ])
     // show the layer
     showLayer(layerName)
     dispatch(
