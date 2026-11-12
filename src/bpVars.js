@@ -238,6 +238,7 @@ const CONSTANTS = {
   LAYER_TYPE_PLANNING_UNITS_COST: 'cost',
   LAYER_TYPE_PLANNING_UNITS_STATUS: 'status',
   LAYER_TYPE_PROTECTED_AREAS: 'pas',
+  LAYER_TYPE_REFERENCE: 'reference', // user-uploaded reference layers
   LAYER_TYPE_FEATURE_LAYER: 'feature',
   LAYER_TYPE_FEATURE_PU_LAYER: 'feature_puid',
   LAYER_TYPE_ACTIVITY: 'activity',
