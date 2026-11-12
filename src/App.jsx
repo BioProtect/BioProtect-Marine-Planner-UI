@@ -1692,10 +1692,47 @@ function App() {
           ]
         }
 
+        ///////////////////////////////////////////
+        // User reference layers (view only): one group per layer
+        ///////////////////////////////////////////
+        const refLayers = getLayers([CONSTANTS.LAYER_TYPE_REFERENCE]).filter(
+          l => mapRef.current.getLayoutProperty(l.id, 'visibility') === 'visible',
+        )
+        let referenceShapes = []
+        if (refLayers.length) {
+          // a few pixels of slack so lines and points can be hit
+          const { x, y } = e.point
+          const hits = mapRef.current.queryRenderedFeatures(
+            [
+              [x - 4, y - 4],
+              [x + 4, y + 4],
+            ],
+            {
+              layers: refLayers.map(l => l.id),
+            },
+          )
+          referenceShapes = refLayers
+            .map((l) => {
+              // a shape comes back once per subdivided piece and per tile.
+              // ponytail: two shapes with identical attributes show once
+              const attrs = new Set(
+                hits.filter(h => h.layer.id === l.id).map(h => h.properties.attrs),
+              )
+              return {
+                id: l.metadata.refId,
+                name: l.metadata.name,
+                colour: l.metadata.colour,
+                shapes: [...attrs].map(a => JSON.parse(a || '{}')),
+              }
+            })
+            .filter(g => g.shapes.length)
+        }
+
         dispatch(
           setIdentifyPlanningUnits({
             identifiedFeatures,
             protectedAreas,
+            referenceShapes,
           }),
         )
 
@@ -3505,7 +3542,11 @@ function App() {
         />
         {dialogStates.referenceLayersDialogOpen
           ? (
-              <ReferenceLayersDialog map={mapRef} />
+              <ReferenceLayersDialog
+                map={mapRef}
+                fileUpload={uploadFileToFolder}
+                handleWebSocket={handleWebSocket}
+              />
             )
           : null}
 
