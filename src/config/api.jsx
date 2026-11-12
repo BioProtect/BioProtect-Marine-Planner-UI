@@ -42,6 +42,11 @@ export function getWdpaTilesTemplate() {
   return `${getTilesBaseUrl()}wdpa_tiles/{z}/{x}/{y}`
 }
 
+/** A user-uploaded reference layer (server/db/functions/reference_layers.sql) */
+export function getReferenceTilesTemplate(layerId) {
+  return `${getTilesBaseUrl()}reference_tiles/{z}/{x}/{y}?layer=${layerId}`
+}
+
 /** One Martin function source serves every planning grid (server/db/functions/grid_tiles.sql) */
 export function getGridTilesUrl(gridName) {
   return `${getTilesBaseUrl()}grid_tiles?layer=${encodeURIComponent(gridName)}`

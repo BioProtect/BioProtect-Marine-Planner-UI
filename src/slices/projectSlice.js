@@ -13,6 +13,24 @@ export const projectApiSlice = apiSlice.injectEndpoints({
     getReferenceLayers: builder.query({
       query: () => ({ url: 'reference-layers', method: 'GET' }),
     }),
+    deleteReferenceLayer: builder.mutation({
+      query: id => ({
+        url: 'reference-layers',
+        method: 'POST',
+        body: { action: 'delete', id },
+      }),
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled
+        }
+        catch {
+          return // the caller shows the error
+        }
+        dispatch(projectApiSlice.util.updateQueryData('getReferenceLayers', undefined, (draft) => {
+          draft.layers = (draft.layers || []).filter(l => l.id !== id)
+        }))
+      },
+    }),
 
     // -----------------------------
     // CREATE PROJECT (JSON)
@@ -207,6 +225,7 @@ export const projectApiSlice = apiSlice.injectEndpoints({
 export const {
   useCreateProjectMutation,
   useGetReferenceLayersQuery,
+  useDeleteReferenceLayerMutation,
   useUpdateProjectFeaturesMutation,
   useGetProjectQuery,
   useListProjectsQuery,

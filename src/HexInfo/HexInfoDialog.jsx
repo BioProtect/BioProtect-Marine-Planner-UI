@@ -56,12 +56,18 @@ function HexInfoDialog({ xy }) {
   const puFeatures = identifyPlanningUnits?.features || []
   // WDPA areas under the click, when that reference layer is on
   const protectedAreas = identifyPlanningUnits?.protectedAreas || []
+  // user reference layers under the click: [{ id, name, colour, shapes }]
+  const referenceShapes = identifyPlanningUnits?.referenceShapes || []
+  const refGroup = key => referenceShapes.find(g => `ref_${g.id}` === key)
 
   const [section, setSection] = useState('features')
-  // Protected areas menu item only exists when the WDPA layer returned some
-  const view = protectedAreas.length > 0
+  // Protected areas / reference menu items only exist when their layer
+  // returned something; fall back to features otherwise
+  const view = (section === 'protected' && protectedAreas.length > 0)
+    || refGroup(section)
     ? section
     : 'features'
+  const viewRef = refGroup(view)
 
   const virtualAnchor = useMemo(
     () =>
@@ -111,6 +117,11 @@ function HexInfoDialog({ xy }) {
           },
         ]
       : []),
+    ...referenceShapes.map(g => ({
+      key: `ref_${g.id}`,
+      label: g.name,
+      count: g.shapes.length,
+    })),
   ]
 
   return (
@@ -351,7 +362,9 @@ function HexInfoDialog({ xy }) {
                     >
                       {view === 'features'
                         ? 'Features'
-                        : 'Protected areas'}
+                        : viewRef
+                          ? viewRef.name
+                          : 'Protected areas'}
                     </Typography>
                     <IconButton
                       size="small"
@@ -384,47 +397,75 @@ function HexInfoDialog({ xy }) {
                                 </Typography>
                               )
                         )
-                      : (
-                          protectedAreas.map(pa => (
-                            <Box
-                              key={pa.wdpaid}
-                              sx={{
-                                px: 1.75,
-                                py: 1,
-                                borderBottom: '1px solid #f0f3f5',
-                              }}
-                            >
-                              <Link
-                                href={`https://www.protectedplanet.net/${pa.wdpaid}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                underline="hover"
-                                sx={{ fontSize: 13, fontWeight: 600 }}
-                              >
-                                {pa.name || `WDPA ${pa.wdpaid}`}
-                                {' '}
-                                ↗
-                              </Link>
-                              <Typography
+                      : viewRef
+                        ? (
+                            viewRef.shapes.map((attrs, i) => (
+                              <Box
+                                // eslint-disable-next-line react/no-array-index-key
+                                key={i}
                                 sx={{
-                                  fontSize: 11.5,
-                                  lineHeight: 1.35,
-                                  color: 'text.secondary',
+                                  px: 1.75,
+                                  py: 1,
+                                  borderBottom: '1px solid #f0f3f5',
+                                  fontSize: 12,
                                 }}
                               >
-                                {[
-                                  pa.desig_eng,
-                                  pa.iucn_cat && `IUCN ${pa.iucn_cat}`,
-                                  [pa.status, pa.status_yr || null]
+                                {Object.entries(attrs).map(([k, v]) => (
+                                  <Box key={k} sx={{ display: 'flex', gap: 1 }}>
+                                    <Box component="span" sx={{ color: 'text.secondary', minWidth: 110 }}>
+                                      {k}
+                                    </Box>
+                                    <Box component="span" sx={{ wordBreak: 'break-word' }}>
+                                      {v === null
+                                        ? ''
+                                        : String(v)}
+                                    </Box>
+                                  </Box>
+                                ))}
+                              </Box>
+                            ))
+                          )
+                        : (
+                            protectedAreas.map(pa => (
+                              <Box
+                                key={pa.wdpaid}
+                                sx={{
+                                  px: 1.75,
+                                  py: 1,
+                                  borderBottom: '1px solid #f0f3f5',
+                                }}
+                              >
+                                <Link
+                                  href={`https://www.protectedplanet.net/${pa.wdpaid}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  underline="hover"
+                                  sx={{ fontSize: 13, fontWeight: 600 }}
+                                >
+                                  {pa.name || `WDPA ${pa.wdpaid}`}
+                                  {' '}
+                                  ↗
+                                </Link>
+                                <Typography
+                                  sx={{
+                                    fontSize: 11.5,
+                                    lineHeight: 1.35,
+                                    color: 'text.secondary',
+                                  }}
+                                >
+                                  {[
+                                    pa.desig_eng,
+                                    pa.iucn_cat && `IUCN ${pa.iucn_cat}`,
+                                    [pa.status, pa.status_yr || null]
+                                      .filter(Boolean)
+                                      .join(' '),
+                                  ]
                                     .filter(Boolean)
-                                    .join(' '),
-                                ]
-                                  .filter(Boolean)
-                                  .join(' · ')}
-                              </Typography>
-                            </Box>
-                          ))
-                        )}
+                                    .join(' · ')}
+                                </Typography>
+                              </Box>
+                            ))
+                          )}
                   </Box>
 
                   {view === 'features' && puFeatures.length > 0 && (

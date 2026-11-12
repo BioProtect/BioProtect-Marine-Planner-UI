@@ -195,6 +195,22 @@ function MapLegend({ changeOpacity, visibleLayers, costsLoading }) {
               shape="square"
             />
           )
+        case CONSTANTS.LAYER_TYPE_REFERENCE:
+          return (
+            <LayerLegend
+              key={key}
+              changeOpacity={changeOpacity}
+              layer={layer}
+              items={[
+                {
+                  fillColor: layer.metadata.colour,
+                  strokeColor: layer.metadata.colour,
+                  label: layer.metadata.name,
+                },
+              ]}
+              shape="square"
+            />
+          )
 
         default:
           return null
