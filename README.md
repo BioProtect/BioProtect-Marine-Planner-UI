@@ -1,12 +1,13 @@
 # BioProtect
 
-Web client for BioProtect, a spatial conservation planning tool built on Priotizr. Built with React, Vite, MUI, Redux Toolkit and Mapbox GL.
+Web client for BioProtect, a spatial conservation planning tool built on Prioritizr. Built with React, Vite, MUI, Redux Toolkit and Mapbox GL.
 
 ## Requirements
 
 - Node.js (see `package.json` for dependency versions)
-- A Mapbox account (for map tiles and geocoding)
-- A running instance of the [server](https://gitlab.insight-centre.org/caltig/marxan-server) (or set `VITE_API_BASE_URL` to a remote one)
+- pnpm
+- A Mapbox public token (for the basemap and geocoding)
+- A running [BioProtect server](https://github.com/BioProtect/BioProtect-Marine-Planner-Server) and its Martin tile server (see that repo's README)
 
 ## Setup
 
@@ -14,7 +15,17 @@ Web client for BioProtect, a spatial conservation planning tool built on Priotiz
 git clone <this-repo>
 cd frontend
 pnpm install
+cp .env.example .env
 ```
+
+Set `VITE_MAPBOX_PUBLIC_TOKEN` in `.env` to your Mapbox public token.
+
+There's no API URL to configure: the client works it out from the host it's served from
+(`src/config/api.jsx`). On `localhost` it calls the server on `http://localhost:8080/server/` and Martin on
+`http://localhost:3000/`. On any other host it uses the same origin's `/server/` and `/tiles/`, which nginx
+proxies (see the server repo's `deploy/nginx.conf`).
+
+The server's `permitted_domains` must include the address the client runs on (`http://localhost:4500` in development).
 
 ## Development
 
@@ -47,9 +58,20 @@ Notable areas under `src/`:
 
 ## Deployment
 
+### Production
+
+```
+pnpm install --frozen-lockfile
+pnpm run build
+sudo cp -r build/* /opt/bioprotect-client/
+```
+
+Serve `/opt/bioprotect-client` from the same nginx site that proxies `/server/` and `/tiles/`; the server repo's
+README and `deploy/nginx.conf` cover that side.
+
 ### Docker
 
-A standalone Docker image is provided, intended to run behind an nginx-fronted deployment alongside a `marxan-server` instance and database.
+A standalone Docker image is provided, intended to run behind an nginx-fronted deployment alongside the BioProtect server and database.
 
 Build:
 
@@ -68,9 +90,8 @@ docker run -dp 5000:80 --name bioprotect-client bioprotect-client:latest
 - `--name` - names the container
 
 The image builds the app with Node, then serves the static `build/` output via nginx (see `nginx.conf`).
+Vite bakes the `VITE_*` values in at build time, from the `.env` copied into the image, so create `.env` before `docker build`.
 
 ## License
 
 See [LICENSE](LICENSE).
-
-## BioProtect Marine Planner UI

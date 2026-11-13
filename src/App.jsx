@@ -1708,7 +1708,8 @@ function App() {
               [x + 4, y + 4],
             ],
             {
-              layers: refLayers.map(l => l.id),
+              // plus each layer's dots (ref_dot_<id>) for shapes too small to draw
+              layers: refLayers.flatMap(l => [l.id, `ref_dot_${l.metadata.refId}`]),
             },
           )
           referenceShapes = refLayers
@@ -1716,7 +1717,7 @@ function App() {
               // a shape comes back once per subdivided piece and per tile.
               // ponytail: two shapes with identical attributes show once
               const attrs = new Set(
-                hits.filter(h => h.layer.id === l.id).map(h => h.properties.attrs),
+                hits.filter(h => h.source === l.source).map(h => h.properties.attrs),
               )
               return {
                 id: l.metadata.refId,
