@@ -28,7 +28,14 @@ import FileUpload from './Uploads/FileUpload'
 const FILL = CONSTANTS.WDPA_LAYER_NAME
 const LINE = CONSTANTS.WDPA_LINE_LAYER_NAME
 
-const SMALL_NOTE = 'Shapes smaller than a pixel only appear as you zoom in'
+const DOT_PAINT = {
+  'circle-radius': 4,
+  'circle-opacity': 0.9,
+  'circle-stroke-color': '#fff',
+  'circle-stroke-width': 1,
+}
+
+const SMALL_NOTE = 'Shapes smaller than a pixel show as dots until you zoom in'
 
 // "Oct2026" -> "Oct 2026"
 const releaseLabel = release => release?.replace(/(\D)(\d)/, '$1 $2')
@@ -42,6 +49,7 @@ function refIds(id) {
     src: `ref_src_${id}`,
     main: `martin_ref_${id}`,
     outline: `ref_outline_${id}`,
+    dot: `ref_dot_${id}`,
   }
 }
 
@@ -167,20 +175,23 @@ function addUserLayers(map, layer) {
       'id': ids.main,
       'type': 'circle',
       'source-layer': 'ref_point',
-      'paint': {
-        'circle-color': c,
-        'circle-radius': 4,
-        'circle-opacity': 0.9,
-        'circle-stroke-color': '#fff',
-        'circle-stroke-width': 1,
-      },
+      'paint': { ...DOT_PAINT, 'circle-color': c },
     }, before)
   }
+  // sub-pixel polygons and lines, served as points until you zoom in
+  // (empty for point layers)
+  map.current.addLayer({
+    'id': ids.dot,
+    'type': 'circle',
+    'source': ids.src,
+    'source-layer': 'ref_dot',
+    'paint': { ...DOT_PAINT, 'circle-color': c, 'circle-radius': 3 },
+  }, before)
 }
 
 function removeUserLayers(map, id) {
   const ids = refIds(id)
-  ;[ids.main, ids.outline].forEach((l) => {
+  ;[ids.main, ids.outline, ids.dot].forEach((l) => {
     if (map.current?.getLayer(l))
       map.current.removeLayer(l)
   })
@@ -244,7 +255,7 @@ function ReferenceLayersDialog({ map, fileUpload, handleWebSocket }) {
     const next = !isVisible(map, ids.main)
     if (!map.current.getSource(ids.src))
       addUserLayers(map, layer)
-    setVisibility(map, [ids.main, ids.outline], next)
+    setVisibility(map, [ids.main, ids.outline, ids.dot], next)
     rerender()
   }
 
