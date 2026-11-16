@@ -4,6 +4,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DeleteIcon from '@mui/icons-material/Delete'
 
 import FileUploadIcon from '@mui/icons-material/FileUpload'
+import MapIcon from '@mui/icons-material/Map'
 import PlayCircleIcon from '@mui/icons-material/PlayCircle'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -13,6 +14,7 @@ import Checkbox from '@mui/material/Checkbox'
 import Chip from '@mui/material/Chip'
 import FormControl from '@mui/material/FormControl'
 import FormControlLabel from '@mui/material/FormControlLabel'
+import IconButton from '@mui/material/IconButton'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
@@ -45,6 +47,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import ConfirmDeleteDialog from '../BPComponents/ConfirmDeleteDialog'
 import BPDialog from '../BPDialog'
+import MapContainer2 from '../MapContainer2'
 import FileUpload from '../Uploads/FileUpload'
 
 // Matches the server's LARGE_RASTER_PIXELS (services/raster_service.py)
@@ -83,6 +86,8 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
 
   // Activities tab state
   const [selectedActivityIds, setSelectedActivityIds] = useState([])
+  // Activity shown in the preview map, like the features dialog's Preview.
+  const [previewActivity, setPreviewActivity] = useState(null)
   const [profileName, setProfileName] = useState('')
   const [profileDescription, setProfileDescription] = useState('')
 
@@ -385,6 +390,7 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
       searchText={searchText}
       searchTextChanged={setSearchText}
       fullWidth={true}
+      maxWidth="xl"
     >
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1 }}>
         <Tabs value={tabIndex} onChange={(e, v) => setTabIndex(v)}>
@@ -540,10 +546,12 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
                 <TableRow>
                   <TableCell padding="checkbox"></TableCell>
                   <TableCell>Activity</TableCell>
+                  <TableCell>Description</TableCell>
                   <TableCell>Filename</TableCell>
                   <TableCell>Source</TableCell>
                   <TableCell>Created By</TableCell>
                   <TableCell>Date</TableCell>
+                  <TableCell align="center">Preview</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -565,17 +573,33 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
                       />
                     </TableCell>
                     <TableCell>{activity.activity}</TableCell>
-                    <TableCell>{activity.filename}</TableCell>
+                    <TableCell sx={{ minWidth: 240, whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
+                      {activity.description}
+                    </TableCell>
+                    <TableCell sx={{ overflowWrap: 'anywhere' }}>{activity.filename}</TableCell>
                     <TableCell>{activity.source}</TableCell>
                     <TableCell>{activity.created_by}</TableCell>
                     <TableCell>
-                      {activity.creation_date?.substring(0, 10)}
+                      {activity.creation_date?.split(' ')[0]}
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        color="primary"
+                        size="small"
+                        title="Preview this activity"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPreviewActivity(activity)
+                        }}
+                      >
+                        <MapIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
                 {filteredActivities.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={8} align="center">
                       <Typography variant="body2" color="text.secondary">
                         No activities uploaded.
                       </Typography>
@@ -1077,6 +1101,43 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
             )
           : null}
       </ConfirmDeleteDialog>
+      <BPDialog
+        open={Boolean(previewActivity)}
+        onOk={() => setPreviewActivity(null)}
+        onCancel={() => setPreviewActivity(null)}
+        showCancelButton={false}
+        title={previewActivity?.activity}
+        contentWidth={768}
+      >
+        {previewActivity && (
+          <Box>
+            {/* layer_tiles serves activities by activity_name */}
+            <MapContainer2
+              planningGridMetadata={{
+                feature_class_name: previewActivity.activity_name,
+                extent: previewActivity.extent,
+              }}
+              outlineColor="rgba(0, 0, 0, 0.2)"
+            />
+            <Table size="small" sx={{ mt: 2 }}>
+              <TableBody>
+                {[
+                  ['Description', previewActivity.description],
+                  ['Filename', previewActivity.filename],
+                  ['Source', previewActivity.source],
+                  ['Created by', previewActivity.created_by],
+                  ['Created', previewActivity.creation_date],
+                ].map(([label, value]) => (
+                  <TableRow key={label}>
+                    <TableCell sx={{ fontWeight: 600, width: 140 }}>{label}</TableCell>
+                    <TableCell>{value}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        )}
+      </BPDialog>
     </BPDialog>
   )
 }
