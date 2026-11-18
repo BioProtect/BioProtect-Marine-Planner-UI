@@ -24,6 +24,7 @@ import { Fragment, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { PALETTE } from '../bpVars'
 import { LEVELS } from '../LeftInfoPanel/clusteringLevels'
+import CompareRuns from './CompareRuns'
 
 function fmtDate(iso) {
   return new Intl.DateTimeFormat('en-GB', {
@@ -185,6 +186,7 @@ function RunsTab() {
 
   const projectId = useSelector(s => s.project.activeProjectId)
   const selectedRunIds = useSelector(s => s.prioritizr.selectedRunIds)
+  const comparing = useSelector(s => s.prioritizr.comparedRunIds.length > 0)
   const userId = useSelector(selectCurrentUserId)
 
   const { data: runsResp } = useListPrioritizrRunsQuery(projectId, {
@@ -453,7 +455,7 @@ function RunsTab() {
 
   return (
     <Box>
-      <FrequencyLegend runCount={selectedRunIds.length} />
+      {!comparing && <FrequencyLegend runCount={selectedRunIds.length} />}
 
       <Box
         sx={{
@@ -486,7 +488,7 @@ function RunsTab() {
           <span>
             <Button
               size="small"
-              disabled={selectedRunIds.length === 0}
+              disabled={selectedRunIds.length === 0 && !comparing}
               onClick={() => dispatch(clearRuns())}
               sx={{ whiteSpace: 'nowrap', fontSize: '0.7rem' }}
             >
@@ -495,6 +497,8 @@ function RunsTab() {
           </span>
         </Tooltip>
       </Box>
+
+      <CompareRuns />
 
       {query.trim()
         ? filtered.map(run => renderRun(run, { showDate: true }))

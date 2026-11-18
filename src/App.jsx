@@ -20,6 +20,7 @@ import { addFeatureAttributes } from '@features/featureUtils'
 import ImportFeaturesDialog from '@features/ImportFeaturesDialog'
 import useAppSnackbar from '@hooks/useAppSnackbar'
 import useFeatureNotifications from '@hooks/useFeatureNotifications'
+import useRunComparison from '@hooks/useRunComparison'
 // mapbox imports
 import PlanningGridDialog from '@planningGrids/PlanningGridDialog'
 import PlanningGridsDialog from '@planningGrids/PlanningGridsDialog'
@@ -247,11 +248,17 @@ function App() {
 
   // RESULTS QUERY - support multiple selected runs
   const selectedRunIds = useSelector(s => s.prioritizr.selectedRunIds)
+  // runs from other projects added: useRunComparison paints the map instead
+  const comparing = useSelector(s => s.prioritizr.comparedRunIds.length > 0)
+  const comparingRef = useRef(comparing)
+  comparingRef.current = comparing
 
   useEffect(() => {
     if (!mapRef.current)
       return
     if (!puLayerIdsRef.current?.resultsLayerId)
+      return
+    if (comparing)
       return
 
     if (!selectedRunIds.length) {
@@ -279,7 +286,7 @@ function App() {
     fetchAll()
     // refetch only when the selection changes; renderPuPrioritizrLayer is rebuilt every render
     // eslint-disable-next-line react/exhaustive-deps
-  }, [selectedRunIds])
+  }, [selectedRunIds, comparing])
 
   const [brew, setBrew] = useState(null)
   const [pid, setPid] = useState('')
@@ -315,6 +322,7 @@ function App() {
     sourceLayerName: null,
     propId: 'h3_index',
   })
+  useRunComparison(mapRef, puLayerIdsRef)
   const visibleLayersRef = useRef([])
 
   const { showMessage } = useAppSnackbar()
@@ -2193,7 +2201,7 @@ function App() {
     })
     // set the result layer in app state so that it can update the Legend component and its opacity control
     setResultsLayer(mapRef.current.getLayer(resultsLayerId))
-    if (selectedRunIds?.length) {
+    if (selectedRunIds?.length && !comparingRef.current) {
       // re-trigger the effect to re-fetch and render
       const fetchAll = async () => {
         const freq = {}

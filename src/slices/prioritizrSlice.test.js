@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import reducer, { clearRuns, setSelectedRuns, toggleRun } from './prioritizrSlice'
+import reducer, { clearRuns, setSelectedRuns, toggleComparedRun, toggleRun } from './prioritizrSlice'
+import { setActiveProjectId } from './projectSlice'
 
 describe('prioritizrSlice', () => {
   it('toggleRun adds an unselected run and removes a selected one', () => {
@@ -14,5 +15,29 @@ describe('prioritizrSlice', () => {
     const state = reducer(undefined, setSelectedRuns([1, 2]))
     expect(state.selectedRunIds).toEqual([1, 2])
     expect(reducer(state, clearRuns()).selectedRunIds).toEqual([])
+  })
+})
+
+describe('prioritizrSlice comparison', () => {
+  it('toggleComparedRun adds and removes; clearRuns empties both lists', () => {
+    let state = reducer(undefined, toggleRun(1))
+    state = reducer(state, toggleComparedRun(9))
+    state = reducer(state, toggleComparedRun(8))
+    expect(reducer(state, toggleComparedRun(9)).comparedRunIds).toEqual([8])
+    state = reducer(state, clearRuns())
+    expect([state.selectedRunIds, state.comparedRunIds]).toEqual([[], []])
+  })
+
+  it('switching project drops both lists; reloading the same one keeps them', () => {
+    let state = reducer(undefined, setActiveProjectId(4))
+    state = reducer(state, toggleRun(1))
+    state = reducer(state, toggleComparedRun(9))
+    state = reducer(state, setActiveProjectId(4))
+    expect([state.selectedRunIds, state.comparedRunIds]).toEqual([
+      [1],
+      [9],
+    ])
+    state = reducer(state, setActiveProjectId(5))
+    expect([state.selectedRunIds, state.comparedRunIds]).toEqual([[], []])
   })
 })
