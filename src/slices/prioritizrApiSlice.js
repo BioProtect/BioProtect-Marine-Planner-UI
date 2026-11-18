@@ -46,10 +46,29 @@ export const prioritizrApiSlice = apiSlice.injectEndpoints({
         { type: 'PrioritizrResults', id: `repr-${runIds.join('-')}` },
       ],
     }),
+
+    // runIds: sorted number[] from any projects the user may open
+    compareRuns: builder.query({
+      query: runIds =>
+        `prioritizr?action=compare-runs&run-ids=${runIds.join(',')}`,
+      providesTags: (res, err, runIds) => [
+        { type: 'PrioritizrResults', id: `compare-${runIds.join('-')}` },
+      ],
+    }),
+
+    listComparableProjects: builder.query({
+      query: projectId =>
+        `prioritizr?action=list-comparable-projects&project-id=${projectId}`,
+      providesTags: [
+        { type: 'PrioritizrRun', id: 'LIST' },
+      ],
+    }),
   }),
 })
 
 export const {
+  useCompareRunsQuery,
+  useListComparableProjectsQuery,
   useListPrioritizrRunsQuery,
   useGetFeatureRepresentationQuery,
   useDeletePrioritizrRunMutation,
