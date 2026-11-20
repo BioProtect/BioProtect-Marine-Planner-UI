@@ -35,6 +35,7 @@ import BPDialog from '../BPDialog.jsx'
 import SelectCostFeatures from '../SelectCostFeatures.jsx'
 import { setCurrentPUGrid } from '../slices/planningUnitSlice.js'
 import FileUpload from '../Uploads/FileUpload'
+import { originalName } from '../utils/originalName'
 
 // Suggestions only; any EPSG code PostGIS knows can be typed in.
 const CRS_OPTIONS = [
@@ -104,7 +105,7 @@ function NewProjectDialog({
   useOnValueChange(fileUploadResponse, (response) => {
     if (response?.file) {
       setPlanningGridName(
-        response.file.replaceAll('_', ' ').split('.')[0],
+        originalName(response.file).replaceAll('_', ' ').split('.')[0],
       )
     }
   })

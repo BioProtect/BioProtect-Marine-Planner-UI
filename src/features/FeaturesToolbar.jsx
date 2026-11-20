@@ -1,5 +1,6 @@
 import CheckBoxIcon from '@mui/icons-material/CheckBox'
 import ClearAllIcon from '@mui/icons-material/ClearAll'
+import DrawIcon from '@mui/icons-material/Draw'
 import Import from '@mui/icons-material/GetApp'
 
 import Button from '@mui/material/Button'
@@ -7,10 +8,13 @@ import ButtonGroup from '@mui/material/ButtonGroup'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { setSelectedFeatureIds, toggleFeatureD } from '@slices/featureSlice'
+import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import DrawFeatureDialog from './DrawFeatureDialog'
 
 function FeaturesToolbar({ selectAllFeatures, canChoose }) {
   const dispatch = useDispatch()
+  const [drawOpen, setDrawOpen] = useState(false)
   const uiState = useSelector(state => state.ui)
   // Import reads shapefiles without a .prj in the open project's CRS, which is
   // the wrong one for a project that doesn't exist yet.
@@ -39,6 +43,19 @@ function FeaturesToolbar({ selectAllFeatures, canChoose }) {
             Import shapefile
           </Button>
         )}
+        {!forNewProject && (
+          <Button
+            variant="outlined"
+            startIcon={<DrawIcon />}
+            title="Add a feature to the library by drawing it on a map"
+            disabled={uiState.loading}
+            onClick={() => setDrawOpen(true)}
+            sx={{ ml: 1 }}
+          >
+            Draw
+          </Button>
+        )}
+        {drawOpen && <DrawFeatureDialog open onClose={() => setDrawOpen(false)} />}
       </div>
       {canChoose
         ? (

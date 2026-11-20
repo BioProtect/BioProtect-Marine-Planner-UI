@@ -22,6 +22,7 @@ import {
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import FileUpload from '../Uploads/FileUpload'
+import { originalName } from '../utils/originalName'
 
 function ImportFeaturesDialog({
   importFeatures,
@@ -63,7 +64,7 @@ function ImportFeaturesDialog({
       unzipShapefile(featureState.featureFilename).then((response) => {
         const shapeFilePath = response.rootfilename
         setShapeFile(`${shapeFilePath}.shp`)
-        setName(`${shapeFilePath}`)
+        setName(originalName(shapeFilePath))
         setStepIndex(stepIndex + 1)
         handleGetShapefileFieldnames(`${shapeFilePath}.shp`)
       }).finally(() => setBusy(false))
