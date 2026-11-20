@@ -7,6 +7,8 @@ import { setFileUploadResponse } from '@slices/uiSlice'
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
 
+import { originalName } from '../utils/originalName'
+
 // FileUpload component refactored to use React 18 and MUI 5
 function FileUpload(props) {
   const dispatch = useDispatch()
@@ -60,7 +62,7 @@ function FileUpload(props) {
       >
         {props.label}
         {' '}
-        {props.filename}
+        {originalName(props.filename)}
       </Typography>
 
       <Box display="flex" alignItems="center">
@@ -81,7 +83,7 @@ function FileUpload(props) {
         </IconButton>
 
         <Typography sx={{ width: '168px', textOverflow: 'ellipsis' }}>
-          {props.filename}
+          {originalName(props.filename)}
         </Typography>
         {loading && (
           <CircularProgress size={24} sx={{ ml: 1, color: 'secondary.main' }} />

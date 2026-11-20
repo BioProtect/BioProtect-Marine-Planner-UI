@@ -6,8 +6,7 @@ import mapboxgl from 'mapbox-gl'
 import { useEffect, useRef } from 'react'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
-// Mini map with its own draw control, so the main map's draw.create
-// handler (which opens the new-feature dialog) is left alone.
+// Mini map with its own draw control (planning grids and drawn features).
 // onChange gets the drawn FeatureCollection, or null when nothing is drawn.
 function DrawPlanningGridMap({ onChange }) {
   const mapContainerRef = useRef(null)

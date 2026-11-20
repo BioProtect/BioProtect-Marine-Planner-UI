@@ -49,12 +49,16 @@ export const featureApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    createFeatureFromLinestring: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `features?action=create-from-linestring`,
+    // body: { name, description, geojson }; the server cuts out land
+    createFeatureFromDrawing: builder.mutation({
+      query: body => ({
+        url: `features?action=create-from-drawing`,
         method: 'POST',
-        body: { id, ...data },
+        body,
       }),
+      invalidatesTags: [
+        { type: 'Features', id: 'LIST' },
+      ],
     }),
 
     getSensitivities: builder.mutation({
@@ -73,12 +77,10 @@ export const {
   useListFeatureProjectsQuery,
   useListFeaturePUsQuery,
   useGetSensitivitiesMutation,
+  useCreateFeatureFromDrawingMutation,
 } = featureApiSlice
 
 const initialState = {
-  // client-only workflow + UI state
-  digitisedFeatures: [],
-
   // selection should be ids, not whole objects
   selectedFeatureId: null,
   selectedFeatureIds: [],
@@ -95,7 +97,6 @@ const initialState = {
   featureMetadata: {},
 
   dialogs: {
-    newFeatureDialogOpen: false,
     featureDialogOpen: false,
     featuresDialogOpen: false,
     importFeaturesDialogOpen: false,
@@ -125,9 +126,6 @@ const featureSlice = createSlice({
     setFeaturePlanningUnits(state, action) {
       state.featurePlanningUnits = action.payload
     },
-    setDigitisedFeatures(state, action) {
-      state.digitisedFeatures = action.payload
-    },
     setFeatureMetadata(state, action) {
       state.featureMetadata = action.payload
     },
@@ -145,6 +143,5 @@ export const {
   setFeaturePlanningUnits,
   setFeatureMetadata,
   toggleFeatureD,
-  setDigitisedFeatures,
 } = featureSlice.actions
 export default featureSlice.reducer
