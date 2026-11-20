@@ -40,7 +40,6 @@ import {
 import { useCreateProfileFromRasterMutation } from '@slices/costRasterSlice'
 import {
   featureApiSlice,
-  setDigitisedFeatures,
   setFeatureMetadata,
   setFeaturePlanningUnits,
   setSelectedFeatureId,
@@ -139,7 +138,6 @@ import UserMenu from './User/UserMenu'
 import UsersDialog from './User/UsersDialog'
 import UserSettingsDialog from './User/UserSettingsDialog'
 import useWebSocketHandler from './WebSocketHandler'
-import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 // GLOBAL VARIABLES
@@ -1567,7 +1565,6 @@ function App() {
     mapRef.current.addControl(new mapboxgl.ScaleControl())
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'bottom-right')
     mapRef.current.addControl(new HomeButton())
-    mapRef.current.on('draw.create', polygonDrawn)
 
     const COSTS_SOURCE = 'bioprotect_pu_source'
     const COSTS_LAYER = CONSTANTS.COSTS_LAYER_NAME // e.g. "bioprotect_pu_costs_layer"
@@ -2729,15 +2726,6 @@ function App() {
         : f,
     )
     await updateProjectFeatures(updatedFeatures)
-  }
-
-  // called when the user has drawn a polygon on screen
-  const polygonDrawn = (evt) => {
-    // open the new feature dialog for the metadata
-    dispatch(
-      toggleFeatureD({ dialogName: 'newFeatureDialogOpen', isOpen: true }),
-    )
-    dispatch(setDigitisedFeatures(evt.features))
   }
 
   // updates the target values for all features in the project to the passed value
