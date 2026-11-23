@@ -26,6 +26,7 @@ import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
+import TableSortLabel from '@mui/material/TableSortLabel'
 import Tabs from '@mui/material/Tabs'
 import TextField from '@mui/material/TextField'
 import ToggleButton from '@mui/material/ToggleButton'
@@ -46,12 +47,22 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import ConfirmDeleteDialog from '../BPComponents/ConfirmDeleteDialog'
+import { getComparator } from '../BPComponents/tableSort'
 import BPDialog from '../BPDialog'
 import MapContainer2 from '../MapContainer2'
 import FileUpload from '../Uploads/FileUpload'
 
 // Matches the server's LARGE_RASTER_PIXELS (services/raster_service.py)
 const LARGE_RASTER_PIXELS = 100_000_000
+
+const ACTIVITY_COLUMNS = [
+  ['activity', 'Activity'],
+  ['description', 'Description'],
+  ['filename', 'Filename'],
+  ['source', 'Source'],
+  ['created_by', 'Created By'],
+  ['creation_date', 'Date'],
+]
 
 // Shown before upload so a multi-minute extraction isn't a surprise.
 function LargeRasterWarning({ info }) {
@@ -88,6 +99,8 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
   const [selectedActivityIds, setSelectedActivityIds] = useState([])
   // Activity shown in the preview map, like the features dialog's Preview.
   const [previewActivity, setPreviewActivity] = useState(null)
+  const [activityOrder, setActivityOrder] = useState('asc')
+  const [activityOrderBy, setActivityOrderBy] = useState('activity')
   const [profileName, setProfileName] = useState('')
   const [profileDescription, setProfileDescription] = useState('')
 
@@ -135,7 +148,13 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
     activity =>
       activity.activity?.toLowerCase().includes(searchText.toLowerCase())
       || activity.description?.toLowerCase().includes(searchText.toLowerCase()),
-  )
+  ).sort(getComparator(activityOrder, activityOrderBy))
+
+  const sortActivitiesBy = (column) => {
+    const isAsc = activityOrderBy === column && activityOrder === 'asc'
+    setActivityOrder(isAsc ? 'desc' : 'asc')
+    setActivityOrderBy(column)
+  }
 
   // Preprocessing checks
   const projectFeatures = allFeatures.filter(f =>
@@ -545,12 +564,24 @@ function CumulativeImpactDialog({ _get, userRole, deleteCost, activateCostProfil
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox"></TableCell>
-                  <TableCell>Activity</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Filename</TableCell>
-                  <TableCell>Source</TableCell>
-                  <TableCell>Created By</TableCell>
-                  <TableCell>Date</TableCell>
+                  {ACTIVITY_COLUMNS.map(([id, label]) => (
+                    <TableCell
+                      key={id}
+                      sortDirection={activityOrderBy === id
+                        ? activityOrder
+                        : false}
+                    >
+                      <TableSortLabel
+                        active={activityOrderBy === id}
+                        direction={activityOrderBy === id
+                          ? activityOrder
+                          : 'asc'}
+                        onClick={() => sortActivitiesBy(id)}
+                      >
+                        {label}
+                      </TableSortLabel>
+                    </TableCell>
+                  ))}
                   <TableCell align="center">Preview</TableCell>
                 </TableRow>
               </TableHead>

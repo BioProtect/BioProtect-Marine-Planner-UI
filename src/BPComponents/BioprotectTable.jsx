@@ -12,53 +12,7 @@ import TableRow from '@mui/material/TableRow'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import BPTableHeadWithSort from './BPTableHeadWithSort'
 import BPTableTitleWithSearch from './BPTableTitleWithSearch'
-
-function parseCreatedAt(value) {
-  if (!value)
-    return null
-  const [d, m, y, ...rest] = value.replace(' ', '/').split('/')
-  const [hh, mm, ss] = rest[0].split(':')
-  const year = 2000 + Number(y) // "20" -> 2020
-  return new Date(
-    year,
-    Number(m) - 1,
-    Number(d),
-    Number(hh),
-    Number(mm),
-    Number(ss),
-  )
-}
-
-function descendingComparator(a, b, orderBy) {
-  if (orderBy === 'creation_date') {
-    const aDate = parseCreatedAt(a[orderBy])
-    const bDate = parseCreatedAt(b[orderBy])
-    const aTs = aDate
-      ? aDate.getTime()
-      : 0
-    const bTs = bDate
-      ? bDate.getTime()
-      : 0
-    if (bTs < aTs)
-      return -1
-    if (bTs > aTs)
-      return 1
-    return 0
-  }
-
-  // existing generic logic for other fields
-  if (b[orderBy] < a[orderBy])
-    return -1
-  if (b[orderBy] > a[orderBy])
-    return 1
-  return 0
-}
-
-function getComparator(order, orderBy) {
-  return order === 'desc'
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy)
-}
+import { getComparator } from './tableSort'
 
 /**
  * @param {object} props
