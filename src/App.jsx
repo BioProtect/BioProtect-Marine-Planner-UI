@@ -3317,7 +3317,7 @@ function App() {
         <ToolsMenu
           menuAnchor={menuAnchor}
           openUsersDialog={openUsersDialog}
-          userRole={userData}
+          userRole={userData?.role}
           cleanup={cleanup}
         />
         <UserMenu menuAnchor={menuAnchor} logout={handleLogOut} />
