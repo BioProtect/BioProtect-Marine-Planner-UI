@@ -295,7 +295,6 @@ function App() {
 
   const [preprocessing, setPreprocessing] = useState(false)
   const [boundaryPenalty, setBoundaryPenalty] = useState(0)
-  const [selectedCosts] = useState([])
   const [smallLinearGauge] = useState(true)
   const [tileset, setTileset] = useState(null)
   const [unauthorisedMethods] = useState([])
@@ -3472,7 +3471,6 @@ function App() {
         <NewProjectDialog
           loadProjectAndSetup={loadProjectAndSetup}
           loading={uiState.loading}
-          selectedCosts={selectedCosts}
           previewFeature={previewFeature}
           fileUpload={uploadFileToFolder}
         />

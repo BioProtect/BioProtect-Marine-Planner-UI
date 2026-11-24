@@ -32,7 +32,6 @@ import { setLoading } from '@slices/uiSlice'
 import { useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import BPDialog from '../BPDialog.jsx'
-import SelectCostFeatures from '../SelectCostFeatures.jsx'
 import { setCurrentPUGrid } from '../slices/planningUnitSlice.js'
 import FileUpload from '../Uploads/FileUpload'
 import { originalName } from '../utils/originalName'
@@ -49,7 +48,6 @@ const CRS_OPTIONS = [
 
 function NewProjectDialog({
   loadProjectAndSetup,
-  selectedCosts,
   previewFeature,
   fileUpload,
 }) {
@@ -67,12 +65,13 @@ function NewProjectDialog({
   const prevSelectedFeatureIdsRef = useRef(null)
   const projectWasCreatedRef = useRef(false)
 
-  // 0: Info, 1: Planning units (upload/select), 2: Features, 3: Costs
+  // 0: Info, 1: Planning units (upload/select), 2: Features
+  // ponytail: no Costs step - the project doesn't exist until Finish, so a cost
+  // upload here had no project_id. Costs are added from Activities & Costs.
   const [steps] = useState([
     'Info',
     'Planning units',
     'Features',
-    'Costs',
   ])
   const [stepIndex, setStepIndex] = useState(0)
 
@@ -511,11 +510,6 @@ function NewProjectDialog({
               </Button>
             </Box>
           </Box>
-        )}
-
-        {/* STEP 3 - Costs */}
-        {stepIndex === 3 && (
-          <SelectCostFeatures selectedCosts={selectedCosts} />
         )}
       </BPDialog>
     </>
