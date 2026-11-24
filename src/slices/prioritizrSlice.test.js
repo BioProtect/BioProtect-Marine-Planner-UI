@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import reducer, { clearRuns, setSelectedRuns, toggleComparedRun, toggleRun } from './prioritizrSlice'
+import reducer, {
+  addComparedProject,
+  clearRuns,
+  removeComparedProject,
+  setSelectedRuns,
+  toggleComparedRun,
+  toggleRun,
+} from './prioritizrSlice'
 import { setActiveProjectId } from './projectSlice'
 
 describe('prioritizrSlice', () => {
@@ -39,5 +46,27 @@ describe('prioritizrSlice comparison', () => {
     ])
     state = reducer(state, setActiveProjectId(5))
     expect([state.selectedRunIds, state.comparedRunIds]).toEqual([[], []])
+  })
+
+  it('a compared project stays listed with no run ticked; removing it drops its runs', () => {
+    let state = reducer(undefined, addComparedProject({ id: 7, name: 'B' }))
+    state = reducer(state, addComparedProject({ id: 7, name: 'B' }))
+    state = reducer(state, toggleComparedRun(9))
+    state = reducer(state, toggleComparedRun(9))
+    expect(state.comparedProjects).toEqual([
+      { id: 7, name: 'B' },
+    ])
+    state = reducer(state, toggleComparedRun(9))
+    state = reducer(state, toggleComparedRun(12))
+    state = reducer(state, removeComparedProject({
+      id: 7,
+      runIds: [9],
+    }))
+    expect([state.comparedProjects, state.comparedRunIds]).toEqual([
+      [],
+      [12],
+    ])
+    state = reducer(reducer(state, addComparedProject({ id: 7, name: 'B' })), clearRuns())
+    expect(state.comparedProjects).toEqual([])
   })
 })

@@ -1,5 +1,6 @@
 import logoSrc from '@images/bioprotect_nobgrnd.png'
 import JsPDF from 'jspdf'
+import { autoTable } from 'jspdf-autotable'
 import { PALETTE } from '../bpVars'
 
 // Brand colours
@@ -7,15 +8,65 @@ const TEAL = [0, 150, 135]
 const DARK = [33, 33, 33]
 const GREY = [117, 117, 117]
 const LIGHT_TEAL = [0, 188, 212]
+const GREEN = [21, 128, 61]
+const RED = [185, 28, 28]
+const AMBER = [161, 98, 7]
 
-/** Resolve the natural pixel dimensions of a base64/URL image. */
-function getImageDimensions(src) {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
-    img.onerror = () => resolve({ width: 16, height: 9 }) // safe fallback
-    img.src = src
-  })
+// More compared projects than this: one features table per project, as
+// three columns each no longer fit across the page.
+const MAX_SIDE_BY_SIDE = 3
+
+function hexRgb(hex) {
+  const n = Number.parseInt(hex.slice(1), 16)
+  return [n >> 16, (n >> 8) & 255, n & 255]
+}
+
+// t 0-1 on the results ramp (matches the map layer)
+function rampColour(t) {
+  const stops = PALETTE.results.map(hexRgb)
+  const x = Math.min(Math.max(t, 0), 1) * (stops.length - 1)
+  const i = Math.min(Math.floor(x), stops.length - 2)
+  return stops[i].map((v, k) => Math.round(v + (stops[i + 1][k] - v) * (x - i)))
+}
+
+function drawRamp(doc, x, y, w, h) {
+  const STEPS = 80 // enough steps for a smooth gradient
+  const sliceW = w / STEPS
+  for (let i = 0; i < STEPS; i++) {
+    doc.setFillColor(...rampColour(i / (STEPS - 1)))
+    // +0.15 overlap avoids hairline gaps between slices
+    doc.rect(x + i * sliceW, y, sliceW + 0.15, h, 'F')
+  }
+  doc.setDrawColor(160, 160, 160)
+  doc.setLineWidth(0.2)
+  doc.rect(x, y, w, h, 'S')
+}
+
+const runName = run => run.label?.trim() || `Run ${run.id}`
+function pct(v) {
+  return v == null
+    ? '–'
+    : `${Number(v).toFixed(1)}%`
+}
+function target(f) {
+  return f.target == null
+    ? '–'
+    : `${f.target}%`
+}
+
+// "2/3" runs met: green when every run met the target, red when none, else amber
+function metCell(f) {
+  if (!f.runCount)
+    return '–'
+  const color = f.metCount === f.runCount
+    ? GREEN
+    : f.metCount === 0
+      ? RED
+      : AMBER
+  return {
+    content: `${f.metCount}/${f.runCount}`,
+    styles: { textColor: color },
+  }
 }
 
 /** Load an image URL into an HTMLImageElement (waits for decode). */
@@ -31,23 +82,22 @@ function loadImage(src) {
 /**
  * Generate and auto-download a PDF report for a Prioritizr results view.
  *
- * Header layout (A4 portrait, 12 mm margins):
- *   ┌──────────┬─────────────────────────┬──────────────────┐
- *   │  Logo    │  BioProtect / project   │  PU metadata     │
- *   │  28 mm   │  teal block ~90 mm      │  ~65 mm          │
- *   └──────────┴─────────────────────────┴──────────────────┘
- *   Map - full content width, aspect-ratio preserved
- *   ┌──────────────────┬────────────────────┬────────────────┐
- *   │  Activities      │  Features (col 1)  │  Features (2)  │
- *   └──────────────────┴────────────────────┴────────────────┘
- *   Selected Runs - full width
+ * Page 1: header (logo | project | grid metadata), the map, and its legend.
+ * Then tables, continuing onto as many pages as they need: projects compared
+ * (comparison only), runs, features, activities. Footer on every page.
+ *
+ * projects: one entry per project on the map, in the map's colour order -
+ *   { id, name, grid, resolution, colour, runs, features }, features being
+ *   [{ uid, name, target, achieved, metCount, runCount }].
+ * comparing: runs from other projects are overlaid (the map then colours
+ *   cells by project, and by average share where projects overlap).
  */
 export async function generatePdfReport({
   project,
   metadata,
-  features = [],
   activities = [],
-  selectedRuns = [],
+  projects = [],
+  comparing = false,
   mapImageDataUrl = null,
 }) {
   // Pre-load logo before building the doc
@@ -59,7 +109,6 @@ export async function generatePdfReport({
   const PAGE_H = 297
   const MARGIN = 12
   const CONTENT_W = PAGE_W - 2 * MARGIN // 186 mm
-  const LINE_H = 4.5
 
   let y = MARGIN
 
@@ -147,8 +196,10 @@ export async function generatePdfReport({
 
   //  2. Map (full width, aspect-ratio preserved)
   if (mapImageDataUrl) {
-    const { width: imgW, height: imgH } = await getImageDimensions(mapImageDataUrl)
-    const ratio = imgH / imgW
+    const img = await loadImage(mapImageDataUrl)
+    const ratio = img
+      ? img.naturalHeight / img.naturalWidth
+      : 9 / 16
     const MAP_MAX_H = 190
     const mapH = Math.min(Math.round(CONTENT_W * ratio), MAP_MAX_H)
 
@@ -162,235 +213,233 @@ export async function generatePdfReport({
     y += mapH + 3
   }
 
-  //  2b. Selection frequency legend
-  if (selectedRuns.length > 0) {
-    // results ramp as [t, r, g, b] stops (matches the map layer)
-    const YLGN = PALETTE.results.map((hex, i, all) => {
-      const n = Number.parseInt(hex.slice(1), 16)
-      return [
-        i / (all.length - 1),
-        n >> 16,
-        (n >> 8) & 255,
-        n & 255,
-      ]
-    })
-
-    const lerp = (a, b, t) => Math.round(a + t * (b - a))
-    const interpColor = (t) => {
-      for (let i = 0; i < YLGN.length - 1; i++) {
-        const [t0, r0, g0, b0] = YLGN[i]
-        const [t1, r1, g1, b1] = YLGN[i + 1]
-        if (t <= t1) {
-          const f = (t - t0) / (t1 - t0)
-          return [
-            lerp(r0, r1, f),
-            lerp(g0, g1, f),
-            lerp(b0, b1, f),
-          ]
-        }
-      }
-      return YLGN[YLGN.length - 1].slice(1)
-    }
-
-    // Label above bar
+  //  3. Legend, matching what the map shows
+  const BAR_H = 5
+  const legendTitle = (text) => {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(7.5)
     doc.setTextColor(...DARK)
-    doc.text('Selection frequency', MARGIN, y + 4)
-
-    const BAR_H = 5
-    const barY = y + 6
-    const STEPS = 80 // enough steps for a smooth gradient
-    const sliceW = CONTENT_W / STEPS
-
-    for (let i = 0; i < STEPS; i++) {
-      const [r, g, b] = interpColor(i / (STEPS - 1))
-      doc.setFillColor(r, g, b)
-      // +0.15 overlap avoids hairline gaps between slices
-      doc.rect(MARGIN + i * sliceW, barY, sliceW + 0.15, BAR_H, 'F')
-    }
-
-    // Thin border around the whole bar
-    doc.setDrawColor(160, 160, 160)
-    doc.setLineWidth(0.2)
-    doc.rect(MARGIN, barY, CONTENT_W, BAR_H, 'S')
-
-    // End labels
-    const runsLabel = selectedRuns.length > 1
-      ? `${selectedRuns.length} runs`
-      : '1 run'
+    doc.text(text, MARGIN, y + 4)
+  }
+  const rampLabels = (left, right) => {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(6.5)
     doc.setTextColor(...GREY)
-    doc.text('1 run', MARGIN, barY + BAR_H + 3.5)
-    doc.text(runsLabel, MARGIN + CONTENT_W, barY + BAR_H + 3.5, { align: 'right' })
-
-    y += 6 + BAR_H + 6 // title + bar + label gap
+    doc.text(left, MARGIN, y + BAR_H + 3.5)
+    doc.text(right, MARGIN + CONTENT_W, y + BAR_H + 3.5, { align: 'right' })
+    y += BAR_H + 6
   }
-  else {
-    y += 3
-  }
-  //  Selected Runs - full width
-  if (selectedRuns.length > 0 && y < PAGE_H - MARGIN - 12) {
-    doc.setDrawColor(200, 200, 200)
-    doc.setLineWidth(0.2)
-    doc.line(MARGIN, y, MARGIN + CONTENT_W, y)
-    y += 4
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8.5)
-    doc.setTextColor(...TEAL)
-    doc.text(`SELECTED RUNS (${selectedRuns.length})`, MARGIN, y)
-    y += 5
+  const runCount = projects.reduce((n, p) => n + p.runs.length, 0)
 
-    for (const run of selectedRuns) {
-      if (y > PAGE_H - MARGIN - 8)
-        break
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(7.5)
-      doc.setTextColor(...DARK)
-      const name = run.label?.trim() || `Run ${run.id}`
-      const lines = doc.splitTextToSize(`• ${name}`, CONTENT_W - 3)
-      doc.text(lines, MARGIN + 2, y)
-      y += lines.length * LINE_H
-    }
-  }
-
-  // 3. Three-column section: Activities | Features col-1 | Features col-2
-  const COL_GAP = 4
-  const COL_W = (CONTENT_W - 2 * COL_GAP) / 3 // ~60.7 mm each
-  const COL_A_X = MARGIN
-  const COL_F1_X = MARGIN + COL_W + COL_GAP
-  const COL_F2_X = MARGIN + (COL_W + COL_GAP) * 2
-
-  // Helper - section divider + teal title
-  const sectionHeader = (title, count, x, yRef) => {
-    doc.setDrawColor(200, 200, 200)
-    doc.setLineWidth(0.2)
-    doc.line(x, yRef, x + COL_W, yRef)
-    yRef += 4
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8.5)
-    doc.setTextColor(...TEAL)
-    doc.text(`${title} (${count})`, x, yRef)
-    return yRef + 5
-  }
-
-  // Helper - bullet line (may wrap within column)
-  const bulletItem = (text, x, yRef) => {
+  if (comparing) {
+    legendTitle('Picked by one project: its colour')
+    y += 6
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7.5)
-    doc.setTextColor(...DARK)
-    const lines = doc.splitTextToSize(`• ${text}`, COL_W - 3)
-    doc.text(lines, x + 2, yRef)
-    return yRef + lines.length * LINE_H
-  }
-
-  // Feature bullet - name on line 1, target/achieved/status on line 2.
-  // Colour the status line green when every run met the target, red when none
-  // did, and amber for partial success.
-  const featureItem = (feat, x, yRef) => {
-    const label
-      = feat.alias || `Feature ${feat.feature_unique_id ?? feat.id ?? ''}`
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7.5)
-    doc.setTextColor(...DARK)
-    const nameLines = doc.splitTextToSize(`• ${label}`, COL_W - 3)
-    doc.text(nameLines, x + 2, yRef)
-    let nextY = yRef + nameLines.length * LINE_H
-
-    const target = feat.target_value != null
-      ? Number(feat.target_value)
-      : null
-    const achieved = feat.achieved != null
-      ? Number(feat.achieved)
-      : null
-    const runCount = Number(feat.runCount ?? 0)
-    const metCount = Number(feat.metCount ?? 0)
-
-    const parts = []
-    if (target != null)
-      parts.push(`target ${target}%`)
-    if (achieved != null)
-      parts.push(`got ${achieved.toFixed(1)}%`)
-    if (runCount > 0)
-      parts.push(`${metCount}/${runCount} runs met`)
-
-    if (parts.length > 0) {
-      let color = GREY
-      if (runCount > 0) {
-        if (metCount === runCount)
-          color = [21, 128, 61] // green
-        else if (metCount === 0)
-          color = [185, 28, 28] // red
-        else color = [161, 98, 7] // amber
+    doc.setFontSize(7)
+    let x = MARGIN
+    for (const p of projects) {
+      const w = 5 + doc.getTextWidth(p.name) + 6
+      if (x + w > MARGIN + CONTENT_W && x > MARGIN) {
+        x = MARGIN
+        y += 5
       }
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(6.8)
-      doc.setTextColor(...color)
-      const statusLines = doc.splitTextToSize(parts.join(' · '), COL_W - 6)
-      doc.text(statusLines, x + 5, nextY)
-      nextY += statusLines.length * (LINE_H - 0.6)
+      doc.setFillColor(...hexRgb(p.colour))
+      doc.rect(x, y, 3.5, 3.5, 'F')
+      doc.setTextColor(...DARK)
+      doc.text(p.name, x + 5, y + 3)
+      x += w
     }
-    return nextY + 0.5
+    y += 5
+    legendTitle('Picked by more than one: average share of runs')
+    y += 6
+    drawRamp(doc, MARGIN, y, CONTENT_W, BAR_H)
+    rampLabels('0%', '100%')
+  }
+  else if (runCount > 0) {
+    legendTitle('Selection frequency')
+    y += 6
+    drawRamp(doc, MARGIN, y, CONTENT_W, BAR_H)
+    rampLabels('1 run', runCount > 1
+      ? `${runCount} runs`
+      : '1 run')
+  }
+  y += 2
+
+  //  4. Tables (autoTable breaks pages and repeats headers)
+  const FOOTER_SPACE = 12
+  const table = (title, opts) => {
+    if (y > PAGE_H - MARGIN - FOOTER_SPACE - 20) {
+      doc.addPage()
+      y = MARGIN
+    }
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8.5)
+    doc.setTextColor(...TEAL)
+    doc.text(title, MARGIN, y + 3)
+    autoTable(doc, {
+      startY: y + 5,
+      margin: {
+        left: MARGIN,
+        right: MARGIN,
+        top: MARGIN,
+        bottom: FOOTER_SPACE,
+      },
+      theme: 'grid',
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 1.5,
+        textColor: DARK,
+        lineColor: [220, 225, 230],
+        lineWidth: 0.1,
+      },
+      headStyles: { fillColor: TEAL, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: {
+        fillColor: [245, 248, 250],
+      },
+      ...opts,
+    })
+    y = doc.lastAutoTable.finalY + 7
   }
 
-  let yAct = y
-  let yFeatL = y
-  let yFeatR = y
-
-  // Activities
-  if (activities.length > 0) {
-    yAct = sectionHeader('ACTIVITIES', activities.length, COL_A_X, yAct)
-    let shown = 0
-    for (const act of activities) {
-      if (yAct > PAGE_H - MARGIN - 12)
-        break
-      yAct = bulletItem(act.activity || act.filename || 'Unknown', COL_A_X, yAct)
-      if (++shown >= 30)
-        break
-    }
-    if (activities.length > shown) {
-      doc.setFont('helvetica', 'italic')
-      doc.setFontSize(7)
-      doc.setTextColor(...GREY)
-      doc.text(`+ ${activities.length - shown} more`, COL_A_X + 4, yAct)
-    }
-  }
-
-  // Features - split evenly across the two right columns
-  if (features.length > 0) {
-    const half = Math.ceil(features.length / 2)
-    yFeatL = sectionHeader('FEATURES', features.length, COL_F1_X, yFeatL)
-    // Right column header shows empty count placeholder (same title row height)
-    doc.setDrawColor(200, 200, 200)
-    doc.setLineWidth(0.2)
-    doc.line(COL_F2_X, yFeatR, COL_F2_X + COL_W, yFeatR)
-    yFeatR = yFeatL // align both columns after the header
-
-    features.forEach((feat, i) => {
-      const isLeft = i < half
-      const x = isLeft ? COL_F1_X : COL_F2_X
-      const yLimit = PAGE_H - MARGIN - 12
-
-      if (isLeft && yFeatL > yLimit)
-        return
-      if (!isLeft && yFeatR > yLimit)
-        return
-
-      const newY = featureItem(feat, x, isLeft ? yFeatL : yFeatR)
-
-      if (isLeft)
-        yFeatL = newY
-      else yFeatR = newY
+  if (comparing) {
+    table(`PROJECTS COMPARED (${projects.length})`, {
+      head: [
+        [
+          '',
+          'Project',
+          'Grid',
+          'Resolution',
+          'Runs',
+        ],
+      ],
+      body: projects.map(p => [
+        {
+          content: '',
+          styles: {
+            fillColor: hexRgb(p.colour),
+          },
+        },
+        p.name,
+        p.grid ?? '–',
+        p.resolution ?? '–',
+        p.runs.length,
+      ]),
+      columnStyles: {
+        0: { cellWidth: 5 },
+      },
     })
   }
 
-  //  5. Footer
-  doc.setFontSize(6.5)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...GREY)
-  doc.text('Generated by BioProtect', MARGIN, PAGE_H - 5)
-  doc.text('bioprotect-project.eu', PAGE_W - MARGIN, PAGE_H - 5, { align: 'right' })
+  table(`RUNS (${runCount})`, {
+    head: [
+      [
+        'Run',
+        ...(comparing
+          ? ['Project']
+          : []),
+        'Created by',
+        'Date',
+        'Boundary penalty',
+        'Cost profile',
+      ],
+    ],
+    body: projects.flatMap(p => p.runs.map(r => [
+      r.description?.trim()
+        ? `${runName(r)}\n${r.description.trim()}`
+        : runName(r),
+      ...(comparing
+        ? [p.name]
+        : []),
+      r.created_by_name ?? '–',
+      r.created_at
+        ? new Date(r.created_at).toLocaleDateString('en-GB')
+        : '–',
+      Number(r.params?.penalties?.boundary ?? 0),
+      r.cost_profile_name ?? '–',
+    ])),
+  })
+
+  const featureTable = (title, features) => table(title, {
+    head: [
+      [
+        'Feature',
+        'Target',
+        'Achieved',
+        'Runs met',
+      ],
+    ],
+    body: features.map(f => [
+      f.name,
+      target(f),
+      pct(f.achieved),
+      metCell(f),
+    ]),
+  })
+
+  if (!comparing) {
+    featureTable(`FEATURES (${projects[0]?.features.length ?? 0})`, projects[0]?.features ?? [])
+  }
+  else if (projects.length <= MAX_SIDE_BY_SIDE) {
+    // every feature of any project, '–' where a project does not have it
+    const names = new Map()
+    projects.forEach(p => p.features.forEach(f => names.set(f.uid, f.name)))
+    const uids = [
+      ...names.keys(),
+    ].sort((a, b) => String(names.get(a)).localeCompare(String(names.get(b))))
+    table(`FEATURES (${uids.length})`, {
+      head: [
+        [
+          {
+            content: 'Feature',
+            rowSpan: 2,
+            styles: { valign: 'bottom' },
+          },
+          ...projects.map(p => ({
+            content: p.name,
+            colSpan: 3,
+            styles: { halign: 'center' },
+          })),
+        ],
+        projects.flatMap(() => ['Target', 'Achieved', 'Met']),
+      ],
+      body: uids.map(uid => [
+        names.get(uid),
+        ...projects.flatMap((p) => {
+          const f = p.features.find(x => x.uid === uid)
+          return f
+            ? [
+                target(f),
+                pct(f.achieved),
+                metCell(f),
+              ]
+            : ['–', '–', '–']
+        }),
+      ]),
+    })
+  }
+  else {
+    projects.forEach(p => featureTable(`FEATURES - ${p.name} (${p.features.length})`, p.features))
+  }
+
+  if (activities.length > 0) {
+    table(`ACTIVITIES (${activities.length})`, {
+      theme: 'plain',
+      body: activities.map(a => [`• ${a.activity || a.filename || 'Unknown'}`]),
+      styles: { fontSize: 7.5, cellPadding: 0.8, textColor: DARK },
+    })
+  }
+
+  //  5. Footer on every page
+  const pages = doc.getNumberOfPages()
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i)
+    doc.setFontSize(6.5)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...GREY)
+    doc.text('Generated by BioProtect', MARGIN, PAGE_H - 5)
+    doc.text(`Page ${i} of ${pages}`, PAGE_W / 2, PAGE_H - 5, { align: 'center' })
+    doc.text('bioprotect-project.eu', PAGE_W - MARGIN, PAGE_H - 5, { align: 'right' })
+  }
 
   //  Save
   const safeName = (project?.name || 'report')

@@ -1,9 +1,17 @@
 // "Add runs from another project…": picks runs from other projects to
-// overlay on the loaded one (hooks/useRunComparison.jsx draws them).
+// overlay on the loaded one (hooks/useRunComparison.jsx draws them). Each
+// added project gets a group here listing its finished runs, so any of them
+// can be switched on and off; the loaded project's runs stay in the run list.
 import { projectColour, useComparedRunIds } from '@hooks/useRunComparison'
+import CloseIcon from '@mui/icons-material/Close'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import Accordion from '@mui/material/Accordion'
+import AccordionDetails from '@mui/material/AccordionDetails'
+import AccordionSummary from '@mui/material/AccordionSummary'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
+import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
@@ -13,8 +21,13 @@ import {
   useListComparableProjectsQuery,
   useListPrioritizrRunsQuery,
 } from '@slices/prioritizrApiSlice'
-import { toggleComparedRun } from '@slices/prioritizrSlice'
-import { Fragment, useState } from 'react'
+import {
+  addComparedProject,
+  removeComparedProject,
+  toggleComparedRun,
+} from '@slices/prioritizrSlice'
+import { useGetProjectQuery } from '@slices/projectSlice'
+import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { PALETTE } from '../bpVars'
 
@@ -54,13 +67,138 @@ function ProjectFeatures({ runIds }) {
   ))
 }
 
-function ComparisonLegend() {
+// One project in the comparison: an accordion whose header is the project
+// (colour, name, runs on) and whose body is a checkbox per finished run.
+function ProjectGroup({ projectId, name, colour, checkedIds, onToggle, onRemove }) {
+  const [showFeatures, setShowFeatures] = useState(false)
+  const { data, isFetching } = useListPrioritizrRunsQuery(projectId)
+  const runs = (data?.data ?? []).filter(r => FINISHED.has(r.status))
+  const on = runs.filter(r => checkedIds.includes(r.id)).map(r => r.id)
+
+  return (
+    <Accordion
+      disableGutters
+      defaultExpanded
+      sx={{
+        '&:before': { display: 'none' },
+        'boxShadow': 'none',
+        'mt': 0.75,
+      }}
+    >
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />}
+        sx={{
+          'backgroundColor': 'brand.surfaceTint',
+          'minHeight': 32,
+          'px': 1,
+          '& .MuiAccordionSummary-content': {
+            margin: '2px 0',
+            alignItems: 'center',
+            gap: 1,
+            minWidth: 0,
+          },
+        }}
+      >
+        <Box sx={{
+          width: 12,
+          height: 12,
+          borderRadius: 0.5,
+          flex: 'none',
+          border: colour ? 'none' : '1px solid #ccd6db',
+          backgroundColor: colour ?? 'transparent',
+        }}
+        />
+        <Typography variant="caption" fontWeight={600} noWrap title={name} sx={{ flex: 1, minWidth: 0 }}>
+          {name}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+          {on.length}
+          /
+          {runs.length}
+          {' '}
+          on
+        </Typography>
+        {on.length > 0 && (
+          <Button
+            size="small"
+            sx={{ fontSize: '0.65rem', minWidth: 0, p: 0 }}
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowFeatures(s => !s)
+            }}
+          >
+            {showFeatures ? 'Hide features' : 'Features'}
+          </Button>
+        )}
+        <IconButton
+          size="small"
+          title="Remove this project from the comparison"
+          aria-label={`Remove ${name} from the comparison`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onRemove(runs.map(r => r.id))
+          }}
+          sx={{ p: 0.25 }}
+        >
+          <CloseIcon sx={{ fontSize: 14 }} />
+        </IconButton>
+      </AccordionSummary>
+      <AccordionDetails sx={{ p: 0 }}>
+        {showFeatures && on.length > 0 && <ProjectFeatures runIds={[...on].sort((a, b) => a - b)} />}
+        {isFetching && !data && (
+          <Typography variant="caption" color="text.secondary" sx={{ pl: 2.5 }}>Loading runs…</Typography>
+        )}
+        {runs.map(run => (
+          <Box
+            key={run.id}
+            onClick={() => onToggle(run.id)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              pl: 1,
+              cursor: 'pointer',
+            }}
+          >
+            <Checkbox
+              size="small"
+              checked={checkedIds.includes(run.id)}
+              inputProps={{
+                'aria-label': runName(run),
+              }}
+              sx={{ p: 0.5 }}
+            />
+            <Typography noWrap title={runName(run)} sx={{ fontSize: '0.75rem', flex: 1, minWidth: 0 }}>
+              {runName(run)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+              {new Date(run.created_at).toLocaleDateString('en-GB')}
+            </Typography>
+          </Box>
+        ))}
+      </AccordionDetails>
+    </Accordion>
+  )
+}
+
+function ComparisonGroups() {
+  const dispatch = useDispatch()
   const loadedId = useSelector(s => s.project.activeProjectId)
-  const [featuresFor, setFeaturesFor] = useState(null)
+  const { data: projectResp } = useGetProjectQuery(loadedId, { skip: loadedId == null })
+  const compared = useSelector(s => s.prioritizr.comparedRunIds)
+  const others = useSelector(s => s.prioritizr.comparedProjects)
   const runIds = useComparedRunIds()
-  const { currentData, isFetching } = useCompareRunsQuery(runIds, { skip: !runIds.length })
-  if (!runIds.length)
+  const { currentData } = useCompareRunsQuery(runIds, { skip: !runIds.length })
+  if (!others.length)
     return null
+
+  // colours follow the server's order, as on the map; none while not on the map
+  const colourOf = (id) => {
+    const i = currentData?.projects.findIndex(p => p.id === id) ?? -1
+    return i === -1
+      ? null
+      : projectColour(i)
+  }
+
   return (
     <Box sx={{
       px: 1.5,
@@ -72,114 +210,79 @@ function ComparisonLegend() {
       <Typography variant="caption" fontWeight={700} sx={{ display: 'block', letterSpacing: '0.06em' }}>
         COMPARING PROJECTS
       </Typography>
-      {isFetching && !currentData && (
-        <Typography variant="caption" color="text.secondary">Comparing runs…</Typography>
+      {colourOf(loadedId) && (
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          mt: 0.75,
+        }}
+        >
+          <Box sx={{
+            width: 12,
+            height: 12,
+            borderRadius: 0.5,
+            flex: 'none',
+            backgroundColor: colourOf(loadedId),
+          }}
+          />
+          <Typography variant="caption" fontWeight={600} noWrap title={projectResp?.project?.name} sx={{ flex: 1, minWidth: 0 }}>
+            {projectResp?.project?.name}
+          </Typography>
+        </Box>
       )}
-      {currentData?.projects.map((p, i) => (
-        <Fragment key={p.id}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              mt: 0.5,
-            }}
-          >
+      {others.map(p => (
+        <ProjectGroup
+          key={p.id}
+          projectId={p.id}
+          name={p.name}
+          colour={colourOf(p.id)}
+          checkedIds={compared}
+          onToggle={id => dispatch(toggleComparedRun(id))}
+          onRemove={ids => dispatch(removeComparedProject({ id: p.id, runIds: ids }))}
+        />
+      ))}
+      {currentData && (
+        <>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+            Picked by one project: its colour. Picked by more than one: average share of runs
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="caption" color="text.secondary">0%</Typography>
             <Box sx={{
-              width: 12,
-              height: 12,
-              borderRadius: 0.5,
-              flex: 'none',
-              backgroundColor: projectColour(i),
+              flex: 1,
+              height: 14,
+              borderRadius: 1,
+              border: '1px solid #ccd6db',
+              background: `linear-gradient(to right, ${PALETTE.results.join(', ')})`,
             }}
             />
-            <Typography variant="caption" noWrap title={p.name} sx={{ flex: 1, minWidth: 0 }}>
-              {p.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-              {p.run_ids.length}
-              {' '}
-              run
-              {p.run_ids.length === 1
-                ? ''
-                : 's'}
-            </Typography>
-            {p.id !== loadedId && (
-              <Button
-                size="small"
-                sx={{ fontSize: '0.65rem', minWidth: 0, p: 0 }}
-                onClick={() => setFeaturesFor(featuresFor === p.id
-                  ? null
-                  : p.id)}
-              >
-                {featuresFor === p.id
-                  ? 'Hide features'
-                  : 'Features'}
-              </Button>
-            )}
+            <Typography variant="caption" color="text.secondary">100%</Typography>
           </Box>
-          {featuresFor === p.id && <ProjectFeatures runIds={p.run_ids} />}
-        </Fragment>
-      ))}
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-        Picked by one project: its colour. Picked by more than one: average share of runs
-      </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <Typography variant="caption" color="text.secondary">0%</Typography>
-        <Box sx={{
-          flex: 1,
-          height: 14,
-          borderRadius: 1,
-          border: '1px solid #ccd6db',
-          background: `linear-gradient(to right, ${PALETTE.results.join(', ')})`,
-        }}
-        />
-        <Typography variant="caption" color="text.secondary">100%</Typography>
-      </Box>
+        </>
+      )}
     </Box>
   )
 }
 
-function OtherProjectRuns({ projectId }) {
-  const dispatch = useDispatch()
-  const compared = useSelector(s => s.prioritizr.comparedRunIds)
-  const { data, isFetching } = useListPrioritizrRunsQuery(projectId)
-  const runs = (data?.data ?? []).filter(r => FINISHED.has(r.status))
-  if (isFetching && !data)
-    return <Typography variant="caption" sx={{ px: 1.5 }}>Loading runs…</Typography>
-  return runs.map(run => (
-    <Box
-      key={run.id}
-      onClick={() => dispatch(toggleComparedRun(run.id))}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        px: 1,
-        cursor: 'pointer',
-        borderBottom: '1px solid #edf1f4',
-      }}
-    >
-      <Checkbox size="small" checked={compared.includes(run.id)} sx={{ p: 0.5 }} />
-      <Typography noWrap title={runName(run)} sx={{ fontSize: '0.78rem', flex: 1, minWidth: 0 }}>
-        {runName(run)}
-      </Typography>
-      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-        {new Date(run.created_at).toLocaleDateString('en-GB')}
-      </Typography>
-    </Box>
-  ))
-}
-
 export default function CompareRuns() {
+  const dispatch = useDispatch()
   const projectId = useSelector(s => s.project.activeProjectId)
+  const added = useSelector(s => s.prioritizr.comparedProjects)
   const [open, setOpen] = useState(false)
-  const [otherId, setOtherId] = useState('')
   const { data, isFetching } = useListComparableProjectsQuery(projectId, { skip: !open || !projectId })
-  const projects = data?.data ?? []
+  const projects = (data?.data ?? []).filter(p => !added.some(a => a.id === p.id))
+
+  const add = (id) => {
+    const p = projects.find(x => x.id === id)
+    if (p)
+      dispatch(addComparedProject({ id: p.id, name: p.name }))
+    setOpen(false)
+  }
 
   return (
     <Box>
-      <ComparisonLegend />
+      <ComparisonGroups />
       <Box sx={{
         px: 1,
         py: 0.5,
@@ -188,7 +291,7 @@ export default function CompareRuns() {
       }}
       >
         <Button size="small" onClick={() => setOpen(o => !o)} sx={{ fontSize: '0.7rem' }}>
-          {open ? 'Hide other projects' : 'Add runs from another project…'}
+          {open ? 'Cancel' : 'Add runs from another project…'}
         </Button>
         {open && (
           <TextField
@@ -198,8 +301,8 @@ export default function CompareRuns() {
             label={isFetching && !data
               ? 'Loading projects…'
               : 'Project'}
-            value={otherId}
-            onChange={e => setOtherId(e.target.value)}
+            value=""
+            onChange={e => add(e.target.value)}
             sx={{ my: 1 }}
           >
             {!projects.length && <MenuItem disabled value="">No other projects with finished runs</MenuItem>}
@@ -216,7 +319,6 @@ export default function CompareRuns() {
           </TextField>
         )}
       </Box>
-      {open && otherId !== '' && <OtherProjectRuns projectId={otherId} />}
     </Box>
   )
 }
