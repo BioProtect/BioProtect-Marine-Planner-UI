@@ -7,6 +7,9 @@ const prioritizrSlice = createSlice({
   initialState: {
     selectedRunIds: [], // runs of the loaded project
     comparedRunIds: [], // runs of other projects, overlaid for comparison
+    // other projects in the comparison ({ id, name }); one stays listed with no
+    // run ticked, so its runs can be switched back on
+    comparedProjects: [],
     projectId: null, // the project both lists belong to
   },
   reducers: {
@@ -28,12 +31,23 @@ const prioritizrSlice = createSlice({
       else
         state.comparedRunIds.splice(idx, 1)
     },
+    addComparedProject(state, action) {
+      if (!state.comparedProjects.some(p => p.id === action.payload.id))
+        state.comparedProjects.push(action.payload)
+    },
+    // payload: { id, runIds } - the project's runs come off the map with it
+    removeComparedProject(state, action) {
+      const { id, runIds } = action.payload
+      state.comparedProjects = state.comparedProjects.filter(p => p.id !== id)
+      state.comparedRunIds = state.comparedRunIds.filter(r => !runIds.includes(r))
+    },
     setSelectedRuns(state, action) {
       state.selectedRunIds = action.payload
     },
     clearRuns(state) {
       state.selectedRunIds = []
       state.comparedRunIds = []
+      state.comparedProjects = []
     },
   },
   extraReducers: (builder) => {
@@ -43,12 +57,19 @@ const prioritizrSlice = createSlice({
       if (action.payload !== state.projectId) {
         state.selectedRunIds = []
         state.comparedRunIds = []
+        state.comparedProjects = []
       }
       state.projectId = action.payload
     })
   },
 })
 
-export const { toggleRun, toggleComparedRun, setSelectedRuns, clearRuns }
-  = prioritizrSlice.actions
+export const {
+  toggleRun,
+  toggleComparedRun,
+  addComparedProject,
+  removeComparedProject,
+  setSelectedRuns,
+  clearRuns,
+} = prioritizrSlice.actions
 export default prioritizrSlice.reducer

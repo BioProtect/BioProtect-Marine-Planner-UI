@@ -1,7 +1,8 @@
 import { getApiBaseUrl } from '@config/api'
 import useAppSnackbar from '@hooks/useAppSnackbar'
-import DownloadIcon from '@mui/icons-material/Download'
+import { projectColour, useComparedRunIds } from '@hooks/useRunComparison'
 
+import DownloadIcon from '@mui/icons-material/Download'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -13,6 +14,8 @@ import Tabs from '@mui/material/Tabs'
 import Tooltip from '@mui/material/Tooltip'
 import { useGetAllFeaturesQuery } from '@slices/featureSlice'
 import {
+  prioritizrApiSlice,
+  useCompareRunsQuery,
   useGetFeatureRepresentationQuery,
   useListPrioritizrRunsQuery,
 } from '@slices/prioritizrApiSlice'
@@ -27,6 +30,21 @@ import RunsTab from './RunsTab'
 
 const TAB_VALUES = ['legend', 'runs', 'log']
 
+// achieved % and how many of the runs met the target, from a
+// get-feature-representation row
+function featureResult(row, target) {
+  if (!row)
+    return { achieved: null, metCount: 0, runCount: 0 }
+  const perRun = Array.isArray(row.per_run) && row.per_run.length > 0
+    ? row.per_run.map(p => p.represented_percent)
+    : [row.represented_percent]
+  return {
+    achieved: row.represented_percent,
+    metCount: perRun.filter(p => p >= target).length,
+    runCount: perRun.length,
+  }
+}
+
 function ResultsPanel(props) {
   const { map, project, projectFeatures, metadata } = props
   const { showMessage } = useAppSnackbar()
@@ -36,6 +54,10 @@ function ResultsPanel(props) {
     = useSelector(state => state.ui)
   const projectId = useSelector(s => s.project.activeProjectId)
   const selectedRunIds = useSelector(s => s.prioritizr.selectedRunIds)
+  const comparedIds = useComparedRunIds()
+  const { currentData: comparison } = useCompareRunsQuery(comparedIds, {
+    skip: !comparedIds.length,
+  })
 
   const { data: runsResp } = useListPrioritizrRunsQuery(projectId, {
     skip: !projectId,
@@ -58,19 +80,7 @@ function ResultsPanel(props) {
   const reprByFeatureUniqueId = useMemo(() => {
     if (sortedRunIds.length === 0 || !reprResp?.data)
       return {}
-    return Object.fromEntries(
-      reprResp.data.map((r) => {
-        const pct = r.represented_percent
-        const perRun
-          = Array.isArray(r.per_run) && r.per_run.length > 0
-            ? r.per_run.map(p => p.represented_percent)
-            : [pct]
-        return [
-          r.feature_unique_id,
-          { achieved: pct, perRun },
-        ]
-      }),
-    )
+    return Object.fromEntries(reprResp.data.map(r => [r.feature_unique_id, r]))
   }, [reprResp, sortedRunIds])
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,14 +89,30 @@ function ResultsPanel(props) {
   const [pdfLoading, setPdfLoading] = useState(false)
 
   const handleDownloadPdf = useCallback(async () => {
-    if (selectedRunIds.length === 0) {
+    const comparing = comparedIds.length > 0
+    if (selectedRunIds.length === 0 && !comparing) {
       showMessage(
         'Please select at least one run to include in the report.',
         'error',
       )
       return
     }
+    if (comparing && !comparison) {
+      showMessage('The comparison is still loading - try again in a moment.', 'warning')
+      return
+    }
     setPdfLoading(true)
+
+    // one-off fetch through the RTK Query cache, for the compared projects
+    const fetchOnce = async (endpoint, arg) => {
+      const q = dispatch(endpoint.initiate(arg))
+      try {
+        return await q.unwrap()
+      }
+      finally {
+        q.unsubscribe()
+      }
+    }
 
     try {
       // Capture map canvas (requires preserveDrawingBuffer: true on the map)
@@ -97,54 +123,87 @@ function ResultsPanel(props) {
         mapImageDataUrl = map.current.getCanvas().toDataURL('image/png')
       }
 
-      // Gather the selected run objects (for display names in the PDF)
-      const selectedRuns = runs.filter(r => selectedRunIds.includes(r.id))
-
-      // Enrich features with alias (from getAllFeatures - `name` is the
-      // auto-generated table name, `alias` is the human label) and the
-      // achieved / target-met data from the selected runs. Target met =
-      // number of selected runs whose represented_percent >= target_value.
+      // alias from getAllFeatures - `name` is the auto-generated table name
       const featureAliasById = new Map(
         allFeatures.map(f => [f.id ?? f.feature_unique_id, f.alias]),
       )
       const prettify = s => (s
         ? String(s).replace(/_/g, ' ')
         : s)
-      const enrichedFeatures = (projectFeatures ?? []).map((f) => {
-        const uid = f.feature_unique_id ?? f.id
-        const repr = reprByFeatureUniqueId[uid] ?? null
-        const perRun = repr?.perRun ?? null
-        const target = Number(f.target_value ?? 0)
-        const metCount
-          = perRun != null
-            ? perRun.filter(p => p >= target).length
-            : 0
-        const alias = f.alias ?? featureAliasById.get(uid) ?? null
-        return {
-          ...f,
-          alias: prettify(alias),
-          achieved: repr?.achieved ?? null,
-          metCount,
-          runCount: perRun?.length ?? 0,
-        }
-      })
+
+      // the loaded project: all its features, results from its selected runs
+      const loaded = {
+        id: projectId,
+        name: project?.name ?? 'This project',
+        grid: metadata?.pu_alias,
+        runs: runs.filter(r => selectedRunIds.includes(r.id)),
+        features: (projectFeatures ?? []).map((f) => {
+          const uid = f.feature_unique_id ?? f.id
+          const tgt = Number(f.target_value ?? 0)
+          return {
+            uid,
+            name: prettify(f.alias ?? featureAliasById.get(uid) ?? `Feature ${uid}`),
+            target: f.target_value ?? null,
+            ...featureResult(reprByFeatureUniqueId[uid], tgt),
+          }
+        }),
+      }
+
+      // comparing: every project on the map, in the map's colour order
+      const projects = comparing
+        ? await Promise.all(comparison.projects.map(async (cp, i) => {
+            const colour = projectColour(i)
+            if (cp.id === projectId) {
+              return {
+                ...loaded,
+                colour,
+                grid: loaded.grid ?? cp.grid_alias,
+                resolution: cp.resolution,
+              }
+            }
+            const [runsData, reprData] = await Promise.all([
+              fetchOnce(prioritizrApiSlice.endpoints.listPrioritizrRuns, cp.id),
+              fetchOnce(prioritizrApiSlice.endpoints.getFeatureRepresentation, cp.run_ids),
+            ])
+            return {
+              id: cp.id,
+              name: cp.name,
+              grid: cp.grid_alias ?? cp.grid,
+              resolution: cp.resolution,
+              colour,
+              runs: (runsData?.data ?? []).filter(r => cp.run_ids.includes(r.id)),
+              features: (reprData?.data ?? []).map(r => ({
+                uid: r.feature_unique_id,
+                name: prettify(featureAliasById.get(r.feature_unique_id) ?? r.feature_name),
+                target: r.target_value ?? null,
+                ...featureResult(r, Number(r.target_value ?? 0)),
+              })),
+            }
+          }))
+        : [loaded]
 
       await generatePdfReport({
         project,
         metadata,
-        features: enrichedFeatures,
         activities: uploadedActivities ?? [],
-        selectedRuns,
+        projects,
+        comparing,
         mapImageDataUrl,
       })
+    }
+    catch (err) {
+      console.error('PDF report failed:', err)
+      showMessage(`Could not build the report: ${err?.message ?? err}`, 'error')
     }
     finally {
       setPdfLoading(false)
     }
   }, [
     showMessage,
+    dispatch,
     map,
     project,
+    projectId,
     metadata,
     projectFeatures,
     allFeatures,
@@ -152,6 +211,8 @@ function ResultsPanel(props) {
     uploadedActivities,
     runs,
     selectedRunIds,
+    comparedIds,
+    comparison,
   ])
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
